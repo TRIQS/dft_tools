@@ -1,0 +1,975 @@
+#!/bin/csh -f
+hup
+unalias rm
+
+set name  = $0
+set bin   = $name:h		#directory of WIEN-executables
+if !(-d $bin) set bin = .
+set name  = $name:t 		#name of this script-file
+set logfile = :log
+set tmp   = (:$name)		#temporary files
+
+set scratch =                   # set directory for vectors and help files
+if ($?SCRATCH) then              #if envronment SCRATCH is set
+ set scratch=`echo $SCRATCH  | sed -e 's/\/$//'`/ #set $scratch to that value  
+endif                          
+
+#---> functions & subroutines
+alias	testinput	'set errin="\!:1";if (! -e \!:1 || -z \!:1) goto \!:2'
+alias	teststatus	'if ($status) goto error'
+alias	testerror	'if ( -e \!:1.error && ! -z \!:1.error) goto error'
+alias	teststop	'if (\!:1 == $stopafter ) goto stop'
+alias   cleandayfile    'grep -v "\[" $dayfile >.tmp;'\
+                        'mv .tmp $dayfile'
+alias	output		'set date = `date +"(%T)"`;'\
+			'printf ">   %s\t%s " "\!:*" "$date" >> $dayfile'
+
+alias	exec		'($bin/x  \!:*) >> $dayfile;'\
+			'teststatus'
+
+alias	total_exec	'output \!:*;'\
+			'exec \!:*;'\
+                        'cleandayfile;'\
+			'testerror \!:1;'\
+			'testerror up\!:1;'\
+			'testerror dn\!:1;'\
+			'teststop \!:1'
+alias	TOTtoFOR	'sed "s/TOT/FOR/" \!:1 > $tmp;'\
+			'mv $tmp \!:1'
+alias	FORtoTOT	'sed "s/FOR/TOT/" \!:1 > $tmp;'\
+			'mv $tmp \!:1'
+alias   IPRINT_inc      'sed "s/0  NUMBER/1  NUMBER/g" \!:1 > $tmp;'\
+                        'mv $tmp \!:1'
+
+#---> default parameters
+set ccut	= 0.0000 	#upper limit for charge convergence
+set fcut	= 0 	 	#upper limit for force convergence
+set ecut	= 0.0001	#upper limit for energy convergence
+unset ec_conv
+set cc_conv
+set fc_conv
+set ec_test
+unset ec_test1
+unset cc_test
+unset fc_test
+set iter	= 40	#maximum number of iterations
+set riter	= 99	#restart after $riter iterations
+set stopafter		#stop after $stopafter
+set next		#set -> start cycle with $next
+set qlimit = 0.05       #set -> writes E-L in new in1 when qlimit is fulfilled
+set in1new = 999
+set write_all = -ef     # new default: -in1ef is activated (version 10.1)
+set para
+set nohns
+set nohns1 = 0
+set it
+set readHinv
+unset vec2pratt
+set it0
+set itnum=0
+set itnum1=0
+set complex
+set complex2
+set cmplx
+set cmplx2
+set so
+set orb
+set broyd
+set eece1
+unset eece
+unset orbc
+unset orbdu
+unset dm
+set ctest=(0 0 0)
+set etest=(0 0 0)
+set msrcount=0
+# QDMFT
+set qdmft
+set hf
+set diaghf
+set nonself
+set noibz
+set newklist
+set redklist
+set NSLOTS = 1
+# END QDMFT
+
+#---> default flags
+unset renorm
+set   in1orig
+unset force		#set -> force-calculation after self-consistency
+unset f_not_conv
+unset help		#set -> help output
+#unset complex		#set -> complex calculation
+unset init		#set -> switches initially set to total energy calc.
+unset lcore             #set -> core density superposition
+
+#---> handling of input options
+echo ">   ($name) options: $argv"	>> $logfile
+alias sb 'shift; breaksw'	#definition used in switch
+while ($#argv)
+  switch ($1)
+  case -[H|h]:
+    set help; sb
+  case -so:
+    set complex2 = c
+    set cmplx2 = -c
+     set so = -so; sb
+  case -nohns:
+    set nohns = -nohns; shift; set nohns1 = $1;sb
+  case -dm:
+    set dm; sb
+  case -orb:
+    set orb = -orb; sb
+  case -orbc:
+    set orbc
+    set orb = -orb; sb
+  case -eece:
+    set eece
+    set eece1 = -eece
+    set orbc
+    set orb = -orb; sb
+  case -orbdu:
+    set orbdu
+    set orb = -orb; sb
+  case -it:
+    set itnum = 99; set it = -it; set it0 = -it; sb
+  case -it1:
+    set itnum = 99; set it = -it; set it0 = -it; touch .noHinv; sb
+  case -it2:
+    set itnum = 99; set it = -it; set it0 = -it; touch .fulldiag; sb
+  case -noHinv:
+    set itnum = 99; set it = -it; set it0 = -it; set readHinv = -noHinv; sb
+  case -vec2pratt:
+    set vec2pratt; sb
+  case -p:
+    set para = -p; sb
+  case -I:
+    set init; sb
+  case -NI:
+    unset broyd; sb
+  case -e: 
+    shift; set stopafter = $1; sb
+  case -cc: 
+    shift; set ccut = $1; set cc_test;unset cc_conv; sb
+  case -ec: 
+    shift; set ecut = $1; set ec_test1;unset ec_conv; sb
+  case -fc: 
+    shift; set f_not_conv; set fcut = $1; set fc_test;unset fc_conv; sb
+  case -ql: 
+    shift; set qlimit = $1;  sb
+  case -in1ef: 
+    set in1new = -1;set write_all = -ef;  sb
+  case -in1new: 
+    shift; set in1new = $1;set write_all;  sb
+  case -in1orig:
+    set in1orig = -in1orig; set in1new = 999; sb
+  case -renorm: 
+    set renorm; set next=scf1;  sb
+  case -i:
+    shift; set iter  = $1; sb
+  case -r:
+    shift; set riter = $1; sb
+  case -s:
+    shift; set next  = $1; sb
+# QDMFT
+  case -qdmft:
+    set qdmft=-qdmft; shift; set NSLOTS = $1; sb 
+# END QDMFT
+  case -hf:
+    set hf = -hf; sb
+  case -diaghf:
+    set diaghf = -diaghf; set hf = -hf; set iter  = 1; sb
+  case -nonself:
+    set nonself = -nonself; set hf = -hf; set iter  = 1; sb
+  case -noibz:
+    set noibz = -noibz; sb
+  case -newklist:
+    set newklist = -newklist; set hf = -hf; sb
+  case -redklist:
+    set redklist = -redklist; set hf = -hf; sb
+  default: 
+    echo "ERROR: option $1 does not exist\!"; sb
+  endsw
+end
+if ($?help) goto help
+
+if($?cc_test) then
+       unset ec_test;set ec_conv
+endif
+if($?fc_test) then
+       unset ec_test;set ec_conv
+endif
+if($?ec_test1) then
+       set ec_test;unset ec_conv
+endif
+if(! $?ec_test) then
+       set ecut=0
+endif
+  
+#---> path- and file-names
+set file    = `pwd`
+set file    = $file:t		#tail of file-names
+set dayfile = $file.dayfile	#main output-file
+
+#---> starting out
+printf "\nCalculating $file in `pwd`\non `hostname` with PID $$\n"  > $dayfile
+echo "using `cat $WIENROOT/VERSION` in $WIENROOT"  >> $dayfile
+printf "\n:LABEL1: Calculations in `pwd`\n:LABEL2: on `hostname` at `date`\n"  >> $file.scf
+echo ":LABEL3: using `cat $WIENROOT/VERSION` in $WIENROOT"  >> $file.scf
+
+if ( "$so" == "-so" && "$hf" == "-hf") then
+   echo "Hartree-Fock and spin-orbit coupling not supported yet. STOP"
+   echo "Hartree-Fock and spin-orbit coupling not supported yet. STOP" >> $file.dayfile
+   exit 9
+endif
+
+if ( "$hf" == "-hf")  then
+   if (-e $file.corewfup) rm $file.corewfup
+   if (-e $file.corewfdn) rm $file.corewfdn
+   IPRINT_inc $file.inc    # modify IPRINT switch in case.inc
+   if (  ! -z $file.incup && -e $file.incup ) then
+     IPRINT_inc $file.incup 
+     IPRINT_inc $file.incdn
+   endif
+endif
+
+#---> complex
+if ((-e $file.in1c) && !(-z $file.in1c)) then
+   set complex = c
+   set complex2 = c
+   set cmplx = -c
+   set cmplx2 = -c
+endif
+
+set vresp
+testinput       $file.inm_vresp no_vresp
+set vresp=-vresp
+no_vresp:
+
+# set iter/riter to 999 when MSR1a/MSECa is used
+set testmsr=`head -1 $file.inm | grep "MSR[12]a" | cut -c1-3`
+set testmsr1=`head -1 $file.inm | grep "MSECa" | cut -c1-5`
+if($testmsr1 == 'MSECa') set testmsr=MSR
+if ($testmsr == 'MSR') then
+   if($riter == "99") set riter=999 
+   if($iter == "40")  set iter=999 
+   foreach i ($file.in2*)
+        TOTtoFOR $i		#switch FOR-label
+echo changing $i
+   end
+   if (! -e $file.inM &&  ! -z $file.inM ) then
+     x pairhess
+     echo $file.inM  and .minrestart have been created by pairhess >>$dayfile
+   endif
+endif
+
+if ($next != "") goto start	#start with optional program
+set next = lapw0		#default start with lstart
+
+if !(-e $file.clmsum) then
+   if (-e $file.clmsum_old) then
+    cp $file.clmsum_old $file.clmsum
+   else
+     echo 'no' $file'.clmsum(_old) file found, which is necessary for lapw0 \!'
+     echo 'no' $file'.clmsum(_old) file found, which is necessary for lapw0 \!'\
+	>>$dayfile
+     goto error
+   endif
+endif
+
+if ($?broyd) then
+   if (-e $file.broyd1) then
+     echo "$file.broyd* files present \! You did not save_lapw a previous clculation." 
+     echo "You have 60 seconds to kill this job ( ^C   or   kill $$ )" 
+     echo "or the script will rm *.broyd* and continue (use -NI to avoid automatic rm)"
+     sleep 60
+     rm *.broyd*
+     echo "$file.broyd* files removed \!"  >> $dayfile
+   endif
+endif
+
+start:				#initalization of in2-files
+if ($?init && $testmsr != 'MSR') then
+  foreach i ($file.in2*)
+    sed "1s/[A-Z]..../TOT  /" $i > $tmp
+    mv $tmp $i
+  end
+endif
+
+set icycle=1
+
+set riter_save=$riter
+printf "\n\n    start \t(%s) " "`date`"	>> $dayfile
+
+#goto mixer only if clmval file is present
+if ($next == "scf1") then
+   if !(-e $file.clmvalup) then
+   set next = lapw0
+   endif
+endif
+
+echo  "with $next ($iter/$riter to go)"	>> $dayfile
+goto $next
+
+cycle:					#begin of sc-cycle
+nohup echo in cycle $icycle "   ETEST: $etest[3]   CTEST: $ctest[3]"
+hup
+
+if ($it == '-it' ) then
+ set ittest=`echo "$icycle / $itnum * $itnum "| bc`
+ if ( $ittest == $icycle ) touch .fulldiag
+endif
+
+lapw0:
+printf "\n    cycle $icycle \t(%s) \t(%s)\n\n" "`date`" "$iter/$riter to go" 	>> $dayfile
+
+testinput	$file.in0_grr cont_lapw0
+total_exec	lapw0 -grr $para
+
+cont_lapw0:
+testinput	$file.in0 error_input
+
+#fix for NFS bug
+touch $file.vspup $file.vspdn $file.vnsup $file.vnsdn
+rm $file.vspup $file.vspdn $file.vnsup $file.vnsdn
+
+total_exec	lapw0 $para
+
+if ($fcut == "0") goto orb
+set f_exist=`grep :FHF $file.scf0`
+if ($#f_exist == 0 ) then
+  set fcut=0
+  set fc_conv
+  echo Force-convergence not possible. Forces not present.
+  echo Force-convergence not possible. Forces not present.>> $dayfile
+  if($?ec_test) goto orb
+  if($?cc_test) goto orb
+  goto error
+endif
+
+#---> test of force-convergence for all forces
+if !(-e $file.scf) goto orb
+      if(! $?ec_conv) goto orb 
+      if(! $?cc_conv) goto orb
+set natom=`head -2 $file.struct |tail -1 |cut -c28-30`
+#set natom = `grep UNITCELL $file.output0 |awk '{print $NF}'`
+set iatom = 1
+set ftest = (1 0)
+grep :FOR $file.scf >test_forces.scf
+while ($iatom <= $natom) 		#cycle over all atoms 
+  set itest=$iatom
+  @ itest ++
+  testinput	$file.inM cont_force_test
+    set atest=`head -$itest $file.inM |tail -1`
+    set itest=`echo " $atest[1] + $atest[2] + $atest[3]"|bc`
+    if ( $itest == '0' ) goto skipforce
+  cont_force_test:
+  if ($iatom <= 9) then
+      set test = (`$bin/testconv -p :FOR00$iatom -c $fcut -f test_forces`)
+  else if ($iatom <= 99) then
+      set test = (`$bin/testconv -p :FOR0$iatom -c $fcut -f test_forces`)
+   else
+      set test = (`$bin/testconv -p :FOR$iatom -c $fcut -f test_forces`)
+  endif
+  if  !($test[1]) set ftest[1] = 0
+  set ftest[2] = $test[2]
+  set ftest    = ($ftest $test[3] $test[4])
+skipforce:
+  @ iatom ++
+end
+rm test_forces.scf
+echo ":FORCE convergence:"  $ftest[1-]			>> $dayfile
+
+if ($ftest[1]) then			#force convergenced
+  if ($nohns == '-nohns') then			#force convergenced
+      set nohns 
+      echo "NOHNS deactivated by FORCE convergence"		>> $dayfile
+  else
+#      set iter = 1
+       if(! $?ec_conv) goto orb 
+       if(! $?cc_conv) goto orb
+      set fc_conv
+      unset f_not_conv 
+      foreach i ($file.in2*)
+        TOTtoFOR $i				#switch FOR-label
+      end
+  endif
+else
+      unset fc_conv
+endif
+
+orb:
+foreach i (dmatup dmatdn dmatud )
+  if (-e $file.$i"_old" ) rm $file.$i"_old"	
+  if (-e $file.$i ) cp $file.$i $file.$i"_old"		#save this cycle for next
+end
+
+if ( -e $file.scforbup ) rm $file.scforbup 
+if ( -e $file.scforbdn ) rm $file.scforbdn 
+if ( -e $file.scforbdu ) rm $file.scforbdu 
+if ( -e $file.vorbdu   ) rm $file.vorbdu
+
+if ( "$orb" != "-orb" ) goto lapw1
+if ( $?orbc ) goto lapw1
+if (! -e $file.dmatup || -z $file.dmatup ) then
+   set renorm
+   goto lapw1
+endif
+testinput	$file.inorb error_input
+total_exec	orb -up $para
+total_exec	orb -dn $para
+if ( "$so" == "-so" && ! -z $file.dmatud && -e $file.dmatud ) then
+   if( $?orbdu ) then
+      total_exec	orb -du $para
+# vorbdu seems unphysical large, so we use it only with -orbdu switch)
+   endif
+endif
+
+lapw1:
+testinput	$file.in1$complex error_input
+set readHinv0 = $readHinv
+if (-e .noHinv) then
+  echo "    case.storeHinv files removed"
+  set readHinv0 = -noHinv0
+  rm .noHinv
+endif
+if (-e .fulldiag) then
+  echo "    full diagonalization forced"
+  set it0
+  set readHinv0
+  rm .fulldiag
+  touch ${scratch}$file.vector.old
+  rm    ${scratch}$file.vector*.old
+endif
+if ( $it0 == "-it" ) then
+  touch ${scratch}$file.vector.old
+  if( ! $?vec2pratt ) then
+   foreach i (${scratch}$file.vector*.old)
+    rm $i 
+  end
+    vec2old_lapw $para -up >> $dayfile
+    vec2old_lapw $para -dn >> $dayfile
+  else
+    vec2pratt_lapw $para -up >> $dayfile
+    vec2pratt_lapw $para -dn >> $dayfile
+  endif
+endif
+
+if ( -e dnlapw1.error  ) rm dnlapw1.error 
+
+if ( $hf == "-hf" ) then
+  if ((-e $file.vectorhfup) && !(-z $file.vectorhfup) && \
+      (-e $file.vectorhfdn) && !(-z $file.vectorhfdn)) then
+    mv $file.vectorhfup $file.vectorhfup_old
+    mv $file.vectorhfdn $file.vectorhfdn_old
+    if (!(-e $file.weighhfup) || (-z $file.weighhfup) || \
+        !(-e $file.weighhfdn) || (-z $file.weighhfdn)) then
+      mv $file.energyhfup $file.tmp_energyhfup
+      mv $file.energyhfdn $file.tmp_energyhfdn
+    endif
+  else if ((-e $file.vectorhfup_old) && !(-z $file.vectorhfup_old) && \
+           (-e $file.vectorhfdn_old) && !(-z $file.vectorhfdn_old)) then
+    if (!(-e $file.weighhfup) || (-z $file.weighhfup) || \
+        !(-e $file.weighhfdn) || (-z $file.weighhfdn)) then
+      mv $file.energyhfup $file.tmp_energyhfup
+      mv $file.energyhfdn $file.tmp_energyhfdn
+    endif
+  else
+    cp $file.kgen_fbz $file.kgen
+    cp $file.klist_fbz $file.klist
+    total_exec lapw1 $it0 -up $nohns $readHinv0 $cmplx
+    total_exec lapw1 $it0 -dn $nohns $readHinv0 $cmplx
+    mv $file.vectorup $file.vectorhfup_old
+    mv $file.vectordn $file.vectorhfdn_old
+    mv $file.energyup $file.tmp_energyhfup
+    mv $file.energydn $file.tmp_energyhfdn
+    if (-e $file.weighhfup) rm $file.weighhfup
+    if (-e $file.weighhfdn) rm $file.weighhfdn
+  endif
+  cp $file.kgen_ibz $file.kgen
+  cp $file.klist_ibz $file.klist
+  if (!(-e $file.vspup_old) || (-z $file.vspup_old) || \
+      !(-e $file.vspdn_old) || (-z $file.vspdn_old)) then
+    cp $file.vspup $file.vspup_old
+    cp $file.vspdn $file.vspdn_old
+  endif
+endif
+
+#generates in1-file from :EPL/EPH in case.scf2 
+#  if ($icycle == $in1new) rm $file.broyd1 $file.broyd2 
+  if ($icycle >= $in1new ) then
+    if (! -e $file.in1${complex}_orig ) cp $file.in1${complex} $file.in1${complex}_orig
+    write_in1_lapw $write_all -up -ql $qlimit ${cmplx} >> $dayfile
+    if($status == 0 ) cp $file.in1${complex}new $file.in1${complex}
+  endif
+if($?in1orig == '-in1orig') then
+    if ( -e $file.in1${complex}_orig ) mv $file.in1${complex}_orig $file.in1${complex}
+#    unset in1orig
+endif
+if ( "$so" == "-so" ) then
+  total_exec	lapw1 $it0 -up $para $nohns  $readHinv0 $cmplx
+else
+  total_exec	lapw1 $it0 -up $para $nohns $orb  $readHinv0 $cmplx
+endif
+  if ($icycle >= $in1new ) then
+    write_in1_lapw $write_all -dn -ql $qlimit ${cmplx}>> $dayfile
+    if($status == 0 ) cp $file.in1${complex}new $file.in1${complex}
+  endif
+if ( "$so" == "-so" ) then
+  total_exec	lapw1 $it0 -dn $para $nohns  $readHinv0 $cmplx
+else
+  total_exec	lapw1 $it0 -dn $para $nohns $orb  $readHinv0 $cmplx
+endif
+set it0 = $it
+set readHinv0 = $readHinv
+
+lapwso:
+if ( -e $file.scfso ) rm $file.scfso 
+if ( "$so" == "-so" ) then
+   testinput	$file.inso error_input
+   total_exec lapwso -up $orb $para $cmplx
+endif
+
+lapw2:
+testinput	$file.in2$complex2 error_input
+if ( -e dnlapw2.error  ) rm dnlapw2.error 
+if ( $hf == "-hf" ) then
+  if (!(-e $file.weighhfup) || (-z $file.weighhfup) || \
+      !(-e $file.weighhfdn) || (-z $file.weighhfdn)) then
+     cp $file.kgen_fbz $file.kgen
+     cp $file.klist_fbz $file.klist
+     if (-e $file.vectorup) mv $file.vectorup $file.vectorup_save
+     if (-e $file.vectordn) mv $file.vectordn $file.vectordn_save
+     mv $file.vectorhfup_old $file.vectorup
+     mv $file.vectorhfdn_old $file.vectordn
+     if (-e $file.energyup) mv $file.energyup $file.energyup_save
+     if (-e $file.energydn) mv $file.energydn $file.energydn_save
+     mv $file.tmp_energyhfup $file.energyup
+     mv $file.tmp_energyhfdn $file.energydn
+     total_exec	lapw2 -up $vresp $in1orig $cmplx2
+     total_exec	lapw2 -dn $vresp $in1orig $cmplx2
+     mv $file.weighup $file.weighhfup
+     mv $file.weighdn $file.weighhfdn
+     mv $file.vectorup $file.vectorhfup_old
+     mv $file.vectordn $file.vectorhfdn_old
+     if (-e $file.vectorup_save) mv $file.vectorup_save $file.vectorup
+     if (-e $file.vectordn_save) mv $file.vectordn_save $file.vectordn
+     mv $file.energyup $file.energyhfup
+     mv $file.energydn $file.energyhfdn
+     if (-e $file.energyup_save) mv $file.energyup_save $file.energyup
+     if (-e $file.energydn_save) mv $file.energydn_save $file.energydn
+     cp $file.kgen_ibz $file.kgen
+     cp $file.klist_ibz $file.klist
+  endif
+endif
+#QDMFT
+if ( "$qdmft" == "-qdmft" ) then
+  total_exec      lapw2 -up $para $vresp -almd $cmplx2 $so
+  total_exec      lapw2 -dn $para $vresp -almd $cmplx2 $so
+  dmftproj $so -sp                                
+  # pytriqs call
+  printf "\n>   ERROR: Insert a correct call of pytriqs (with mpi wrapper, if needed) in runsp_triqs Wien2k script\n"	>> $dayfile
+  printf "\n>   stop\n"			        >> $dayfile
+  printf "\n>   ERROR: Insert a correct call of pytriqs (with mpi wrapper, if needed) in runsp_triqs Wien2k script\n"
+  exit 0
+  # to call pytriqs uncomment and modify the line below to adapt it to your system
+  # the number of core is in NSLOTS variable
+  #mpprun  --force-mpi=openmpi/1.3.2-i110074  /home/x_leopo/TRIQS_segment/triqs_install/bin/pytriqs $file.py 
+  total_exec      lapw2 -up $para $vresp -qdmft $cmplx2 $so
+  total_exec      lapw2 -dn $para $vresp -qdmft $cmplx2 $so
+else
+  total_exec	lapw2 -up $para $vresp $in1orig $cmplx2 $so 
+  total_exec	lapw2 -dn $para $vresp $in1orig $cmplx2 $so 
+  if ( $hf == "-hf" ) then
+    sed 's/:SUM/:SLSUM/g' < $file.scf2up > $file.scf2up_tmp
+    mv $file.scf2up_tmp $file.scf2up
+    mv $file.clmvalup $file.clmvalslup
+    if ( -e $file.scfhfup_1 ) rm $file.scfhfup_*
+    sed 's/:SUM/:SLSUM/g' < $file.scf2dn > $file.scf2dn_tmp
+    mv $file.scf2dn_tmp $file.scf2dn
+    mv $file.clmvaldn $file.clmvalsldn
+    if ( -e $file.scfhfdn_1 ) rm $file.scfhfdn_*
+  endif
+endif
+# END QDMFT
+
+rm -f $file.clmscup $file.clmscdn
+
+if ( $hf == "-hf" ) goto hf
+
+lapwdm:
+if ( -e $file.scfdmup ) rm $file.scfdmup 
+if ( -e $file.scfdmdn ) rm $file.scfdmdn
+if ( ! $?dm ) then 
+ if ( "$orb" != "-orb" ) goto lapw1s
+ if ( $?orbc ) goto lapw1s
+endif
+#if ( "$so" == "-so" ) goto lapwdmc
+testinput	$file.indm$complex2 error_input
+if ( -e dnlapwdm.error  ) rm dnlapwdm.error 
+total_exec	lapwdm -up $para $cmplx2 $so
+if ( "$so" != "-so" ) then
+total_exec	lapwdm -dn $para $cmplx2 $so
+endif
+lapw1s:
+testinput	$file.in1${complex}s lcore
+total_exec	lapw1 -sc -up $para $nohns $orb  $readHinv0 $cmplx
+total_exec	lapw1 -sc -dn $para $nohns $orb $readHinv0 $cmplx
+
+lapw2s:
+testinput	$file.in2${complex2}s error_input
+total_exec	lapw2 -sc -up $para $vresp $in1orig  $cmplx2
+total_exec	lapw2 -sc -dn $para $vresp $in1orig  $cmplx2
+goto lcore
+
+hf:
+testinput	$file.inhf error_input
+if (-e dnhf.error) rm dnhf.error
+if (!(-e $file.corewfup) || (-z $file.corewfup)) then
+  total_exec lcore -up
+  total_exec lcore -dn
+endif
+total_exec	hf -up $diaghf $nonself $noibz $newklist $redklist $para $cmplx
+total_exec	hf -dn $diaghf $nonself $noibz $newklist $redklist $para $cmplx
+
+lapw2hf:
+testinput	$file.in2$complex2 error_input
+cp $file.kgen_fbz $file.kgen
+cp $file.klist_fbz $file.klist
+total_exec	lapw2 -up -hf $vresp $in1orig $cmplx2
+total_exec	lapw2 -dn -hf $vresp $in1orig $cmplx2
+cp $file.kgen_ibz $file.kgen
+cp $file.klist_ibz $file.klist
+
+lcore:
+testinput	$file.inc scf
+if (  ! -z $file.incup && -e $file.incup ) then
+  cp $file.incup $file.inc
+  echo "spinpolarized $file.incup/dn used"		>> $dayfile
+endif
+if ( -e dnlcore.error  ) rm dnlcore.error 
+total_exec	lcore -up
+if (  ! -z $file.incdn && -e $file.incdn ) then
+  cp $file.incdn $file.inc
+endif
+total_exec	lcore -dn
+
+coresuper:
+   if ( ! -e .lcore) goto scf
+   total_exec      dstart -lcore -up
+   total_exec      dstart -lcore -dn
+   rm $file.clmcorup $file.clmcordn
+
+scf:
+if ( $hf == "-hf" ) then
+  foreach i ( 0 0_grr orbup orbdn orbdu 1up 1dn so 2up 2dn dmup dmdn 1sup 1sdn 2sup 2sdn cup cdn hfup hfdn 2hfup 2hfdn )
+    if (-e $file.scf$i) then
+        if ("$i" != "dmdn" || "$so" != "-so") cat $file.scf$i  >> $file.scf
+    endif
+  end
+else
+  foreach i ( 0 orbup orbdn orbdu 1up 1dn so 2up 2dn dmup dmdn 1sup 1sdn 2sup 2sdn cup cdn )
+    if (-e $file.scf$i) then
+        if ("$i" != "dmdn" || "$so" != "-so") cat $file.scf$i  >> $file.scf
+    endif
+  end
+endif
+
+if ( $?eece ) then
+   mv $file.scf2up $file.scf2up-tmp
+   mv $file.scf2dn $file.scf2dn-tmp
+   if( $vresp == '-vresp' ) then
+     mv $file.vrespvalup $file.vrespvalup-tmp
+     mv $file.vrespvaldn $file.vrespvaldn-tmp
+     mv $file.vrespcorup $file.vrespcorup-tmp
+     mv $file.vrespcordn $file.vrespcordn-tmp
+   endif
+   foreach i ( vorbup vorbdn vorbdu )
+     if (-e $file.$i"_old" ) rm $file.$i"_old"	
+     if (-e $file.$i )   cp $file.$i $file.$i"_old"	#save last cycle
+   end
+   runeece_lapw  $so $para $vresp
+   teststatus
+   foreach i (vorbup vorbdn vorbud )
+     if (-e $file.$i"_unmixed" ) rm $file.$i"_unmixed"	
+     if (-e $file.$i ) cp $file.$i $file.$i"_unmixed"	#save unmixed dmat
+   end
+   mv $file.scf2up $file.scf2upeece
+   mv $file.scf2dn $file.scf2dneece
+   mv $file.scf2up-tmp $file.scf2up
+   mv $file.scf2dn-tmp $file.scf2dn
+   if( $vresp == '-vresp' ) then
+     mv $file.vrespvalup $file.vrespvaleeceup
+     mv $file.vrespvaldn $file.vrespvaleecedn
+     mv $file.vrespvalup-tmp $file.vrespvalup
+     mv $file.vrespvaldn-tmp $file.vrespvaldn
+     mv $file.vrespcorup-tmp $file.vrespcorup
+     mv $file.vrespcordn-tmp $file.vrespcordn
+   endif
+   goto scf1
+endif
+
+foreach i (dmatup dmatdn dmatud )
+  if (-e $file.$i"_unmixed" ) rm $file.$i"_unmixed"	
+  if (-e $file.$i ) cp $file.$i $file.$i"_unmixed"	#save the unmixed dmat
+end
+
+scf1:
+foreach i (clmsum clmup clmdn vspup vspdn vnsup vnsdn )
+  if (-e $file.$i ) cp $file.$i $file.$i"_old"		#save last cycle
+end
+
+
+mixer:
+testinput	$file.inm error_input
+if ( $?orbc ) then
+    total_exec	mixer 
+else
+    total_exec	mixer $eece1 $orb
+endif
+cat $file.scfm >> $file.scf
+
+if($?renorm) then
+   unset renorm
+   rm $file.broy*
+endif
+
+mixer_vresp:
+testinput       $file.inm_vresp energytest
+total_exec      mixer_vresp
+grep -e "CTO " -e NEC $file.outputm_vresp | sed 's/:/:VRESP/' >> $file.scf
+#total_exec      int16
+
+energytest:
+#---> output energies
+#set EF = `grep 'F E R' $file.scf2    |awk '{printf("%.5f", $NF)}'`
+#set ET = `grep 'AL EN' $file.outputm |awk '{printf("%.5f", $NF)}'`
+#cat << theend				>> $dayfile
+#EF  $EF
+#ET  $ET
+#theend
+#echo $ET 				> $file.finM
+
+#---> test of energy convergence
+#if ($ecut == "0") goto chargetest
+set etest = (`$bin/testconv -p :ENE -c $ecut`)	
+teststatus
+echo ":ENERGY convergence:  $etest[1-3]"		>> $dayfile
+if (! $?ec_test) goto chargetest
+if ($etest[1]) then
+  if ($nohns == '-nohns') then
+      set nohns 
+      echo "NOHNS deactivated by ENERGY convergence"		>> $dayfile
+  else
+#      set iter = 1
+      set ec_conv
+  endif
+else
+      unset ec_conv
+endif
+
+chargetest:
+#if ($ccut == "0") goto nextiter
+set ctest = (`$bin/testconv -p :DIS -c $ccut`)	
+teststatus
+echo ":CHARGE convergence:  $ctest[1-3]"		>> $dayfile
+if (! $?cc_test) goto nextiter
+if ($ctest[1]) then
+  if ($nohns == '-nohns') then
+      set nohns 
+      echo "NOHNS deactivated by CHARGE convergence"		>> $dayfile
+  else
+#      set iter = 1
+      set cc_conv
+  endif
+else
+      unset cc_conv
+endif
+
+# check F-condition for MSR1a mode
+if ($testmsr == 'MSR') then
+  set msrtest =(`grep :FRMS $file.scf |tail -1` )
+  if ($#msrtest >= 13 ) then
+    echo msrcount $msrcount msrtest $msrtest[13]
+#   Trap silly early convergene with "minimum-requests"
+    set etest2 = (`$bin/testconv -p :ENE -c 0.001`)
+    if ( $etest2[1] == '0')set msrtest[13]='F'
+    set ctest2 = (`$bin/testconv -p :DIS -c 0.01`)
+    if ( $ctest2[1] == '0')set msrtest[13]='F'
+#
+    if ($msrtest[13] == 'T') then
+    #change in case.inm MSR1a/MSECa to MSR1/MSEC3, rm *.bro*, unset testmsr
+@     msrcount ++
+      if($msrcount == 3) then
+        sed "1s/MSR1a/MSR1 /" $file.inm >$file.inm_tmp
+        sed "1s/MSECa/MSEC3/" $file.inm_tmp >$file.inm
+        rm *.broy* $file.inm_tmp
+        set a=`grep -e GREED *scfm | tail -1 | cut -c 50-55`
+        set b=`echo "scale=5; if( $a/2 > 0.05) $a/2  else 0.05 " |bc -l`
+        echo $b > .msec
+        echo "MSR1a/MSECa changed to MSR1/MSEC3 in $file.inm, relaxing only electrons" >> $dayfile
+        set testmsr
+      endif
+    else
+      set msrcount=0
+    endif
+  endif
+endif
+
+#---> output forces
+#grep 'FTOT' $file.outputm|awk '{print "FT ",$2,$4,$5,$6}'\
+#					>> $dayfile
+#grep 'FTOT' $file.outputm|awk '{print $4,$5,$6}' \
+#					>> $file.finM	
+
+nextiter:
+@  iter --
+@ riter --
+@ nohns1 --
+@ icycle ++
+
+if ($icycle == 2) set newklist
+
+#---> nohns
+if (! $nohns1 ) then
+  set nohns
+  echo "NOHNS deactivated" 			>> $dayfile
+endif
+
+#---> restart
+if (! $riter && -e $file.broyd1) then
+  echo "    restart" 			>> $dayfile
+  rm $file.broyd1 $file.broyd2
+  set riter=$riter_save
+endif
+
+foreach i ($tmp)			#delete temporary files
+  if (-e $i) rm $i
+end
+
+#output		cycle
+#printf "%s\n\n" "$iter/$riter to go" 	>> $dayfile
+if (-e .stop) goto stop1
+if ($testmsr == 'MSR' && -e .minstop) then
+        sed "1s/MSR1a/MSR1 /" $file.inm >$file.inm_tmp
+        sed "1s/MSECa/MSEC3/" $file.inm_tmp >$file.inm
+        rm *.broy* $file.inm_tmp
+        set a=`grep -e GREED *scfm | tail -1 | cut -c 50-55`
+        set b=`echo "scale=5; if( $a/2 > 0.05) $a/2  else 0.05 " |bc -l`
+        echo $b > .msec
+        echo "MSR1a/MSECa changed to MSR1/MSEC3 in $file.inm, relaxing only electrons" >> $dayfile
+        set testmsr
+endif
+
+
+if($?ec_conv && $?cc_conv && $?fc_conv && ($testmsr == '')) goto stop
+
+if ($iter) goto cycle			#end of sc-cycle
+
+if ( $?f_not_conv ) then
+      printf "\n>   FORCES NOT CONVERGED\n"			>> $dayfile
+      printf "\n>   stop\n"			                >> $dayfile 
+      printf "\n>   FORCES NOT CONVERGED\n"		    
+      exit 3
+endif
+if ( ! $?ec_conv ) then
+      printf "\n>   energy in SCF NOT CONVERGED\n" 	>> $dayfile
+      printf "\n>   stop\n"			        >> $dayfile
+      printf "\n>   energy in SCF NOT CONVERGED\n"  
+      exit 0
+endif
+if ( ! $?cc_conv ) then
+      printf "\n>   charge in SCF NOT CONVERGED\n"	>> $dayfile  
+      printf "\n>   stop\n"			        >> $dayfile
+      printf "\n>   charge in SCF NOT CONVERGED\n"
+      exit 0
+endif
+
+stop:					#normal exit
+printf "\n>   stop\n"			>> $dayfile
+printf "\n>   stop\n"	
+exit 0 
+
+stop1:					#normal exit
+printf "\n>   stop due to .stop file\n"			>> $dayfile
+if (-e .stop) rm .stop
+printf "\n>   stop due to .stop file\n"	
+exit 1 
+
+error_input:					#error exit	
+printf "\n>   stop error: the required input file $errin for the next step could not be found\n"		>> $dayfile
+printf "\n>   stop error: the required input file $errin for the next step could not be found\n"
+exit 9
+
+error:					#error exit	
+printf "\n>   stop error\n"		>> $dayfile
+printf "\n>   stop error\n"
+exit 9
+
+help:					#help exit 
+cat << theend 
+
+PROGRAM:	$0
+
+PURPOSE:	running the spinpolarized scf-cycle in WIEN
+		to be called within the case-directory
+		has to be located in '$WIENROOT' directory
+
+USAGE:		$name [OPTIONS] [FLAGS]
+
+OPTIONS:
+-cc LIMIT ->	charge convergence LIMIT (0.0001 e)
+-ec LIMIT ->	energy convergence LIMIT ($ecut Ry)
+-fc LIMIT ->	force  convergence LIMIT (1.0 mRy/a.u.)
+                default is -ec 0.0001; multiple convergence tests possible
+-e PROGRAM ->	exit after PROGRAM ($stopafter)
+-i NUMBER -> 	max. NUMBER ($iter) of iterations
+-s PROGRAM -> 	start with PROGRAM ($next)
+-r NUMBER -> 	restart after NUMBER ($riter) iterations (rm *.broyd*)
+-nohns NUMBER ->do not use HNS for NUMBER iterations 
+-in1new N ->    create "new" in1 file after N iter (write_in1 using scf2 info)
+-ql LIMIT ->    select LIMIT ($qlimit) as min.charge for E-L setting in new in1
+-qdmft NP ->    including DMFT from Aichhorn/Georges/Biermann running on NP proc
+
+FLAGS:
+-h/-H ->	help
+-I    ->	with initialization of in2-files to "TOT" 
+-NI   ->	does NOT remove case.broyd* (default: rm *.broyd* after 60 sec)
+-p    ->        run k-points in parallel (needs .machine file [speed:name])
+-it   ->        use iterative diagonalization
+-it1  ->        use iterative diag. with recreating H_inv (after basis change)
+-it2  ->        use iterative diag. with reinitialization (after basis change)
+-noHinv   ->    use iterative diag. without H_inv
+-vec2pratt ->   use vec2pratt instead of vec2old for iterative diag.
+-so   ->	run SCF including spin-orbit coupling
+-dm   ->	calculate the density matrix (when -so is set, but -orb is not)
+-eece ->        use "ecact exchange+hybrid" methods
+-orb  ->        use LDA+U, OP or B-ext correction 
+-orbc ->        use LDA+U correction, but with constant V-matrix 
+-orbdu ->       use LDA+U with crossterms up-dn (needs also -so) 
+-renorm->       start with mixer and renormalize density
+-in1orig->      if present, use case.in1_orig file; do not modify case.in1
+-hf   ->        HF/hybrid-DFT calculation
+-diaghf ->      non-selfconsistent HF with diagonal HF only (only e_i) 
+-nonself   ->   non-selfconsistent HF/hybrid-DFT calculation (only E_x(HF))
+-newklist ->    HF/hybrid-DFT calculation starting from a different k-mesh
+-redklist ->    HF/hybrid-DFT calculation with a reduced k-mesh for the potential
+		
+CONTROL FILES:
+.lcore          runs core density superposition producing case.clmsc
+.stop		stop after SCF cycle
+.minstop        stops MSR1a minimization and changes to MSR1
+.fulldiag	force full diagonalization
+.noHinv         remove case.storeHinv files
+case.inm_vresp  activates calculation of vresp files for meta-GGAs
+case.in0_grr    activates a second call of lapw0 (mBJ pot., or E_xc analysis)
+
+ENVIRONMENT VARIBLES:
+SCRATCH         directory  where vectors and help files should go
+
+theend
+
+exit 1
+
+
