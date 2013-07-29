@@ -8,7 +8,7 @@ set(CMAKE_BUILD_TYPE Release)
 enable_testing()
 
 # Load TRIQS, including all predefined variables from TRIQS installation
-find_package(TRIQS)
+find_package(TRIQS REQUIRED)
 
 if (NOT ${TRIQS_WITH_PYTHON_SUPPORT})
  MESSAGE(FATAL_ERROR "Wien2TRIQS require Python support in TRIQS")
