@@ -7,4 +7,3 @@ triqs_add_test_hdf(sumklda_basic " -d 1.e-6" )
 triqs_add_test_hdf(srvo3_Gloc "  -d 1.e-6" )
 triqs_add_test_hdf(U_mat " -d 1.e-6" )
 
-

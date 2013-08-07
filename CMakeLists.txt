@@ -18,6 +18,6 @@ endif()
 set(CMAKE_INSTALL_PREFIX ${TRIQS_PATH})
 
 add_subdirectory(fortran/dmftproj) 
-add_subdirectory(fortran/F90)
+add_subdirectory(fortran/vertex)
 add_subdirectory(python)
 add_subdirectory(test)

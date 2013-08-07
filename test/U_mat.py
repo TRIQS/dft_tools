@@ -22,8 +22,7 @@
 
 from pytriqs.archive import *
 import numpy
-#from pytriqs.applications.dft.U_matrix import Umatrix
-from U_matrix import Umatrix
+from pytriqs.applications.dft.U_matrix import Umatrix
 
 U = Umatrix(U_interact = 2.0, J_hund = 0.5, l=2)
 

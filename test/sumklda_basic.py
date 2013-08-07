@@ -21,8 +21,7 @@
 ################################################################################
 
 from pytriqs.archive import *
-#from pytriqs.applications.dft.sumk_lda_tools import SumkLDATools
-from sumk_lda_tools import SumkLDATools
+from pytriqs.applications.dft.sumk_lda_tools import SumkLDATools
 
 
 SK = SumkLDATools(hdf_file = 'SrVO3.h5')

@@ -1,22 +1,9 @@
-triqs_make_target_to_copy_all_py_files_from_python_dir_to_build_dir()
+# where will the python end up in triqs?
+set(python_destination applications/dft)
 
-execute_process(COMMAND ln -fs ${CMAKE_BINARY_DIR}/fortran/F90/vertex.so ${CMAKE_CURRENT_BINARY_DIR} )
+# make a local pytriqs copy
+triqs_prepare_local_pytriqs_merged_with_my_python(${python_destination})
 
-add_subdirectory(converters)
-
-#installation 
-SET(PYTHON_SOURCES 
- ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py 
- ${CMAKE_CURRENT_SOURCE_DIR}/solver_multiband.py 
- ${CMAKE_CURRENT_SOURCE_DIR}/sumk_lda.py 
- ${CMAKE_CURRENT_SOURCE_DIR}/sumk_lda_tools.py 
- ${CMAKE_CURRENT_SOURCE_DIR}/symmetry.py 
- ${CMAKE_CURRENT_SOURCE_DIR}/U_matrix.py 
- )
-install (FILES ${PYTHON_SOURCES} DESTINATION ${TRIQS_PYTHON_LIB_DEST}/applications/dft)
-
-#make sure that the __init__.py empty files are present ...
-file (WRITE __init__.py.all_empty  "__all__=[]")
-install (FILES __init__.py.all_empty DESTINATION ${TRIQS_PYTHON_LIB_DEST}/applications/                  RENAME __init__.py)
-
+# to be able to run from toplevel
+execute_process(COMMAND ln -fs ${CMAKE_BINARY_DIR}/fortran/vertex/vertex.so ${CMAKE_BINARY_DIR}/pytriqs/${python_destination})
 

@@ -21,9 +21,7 @@
 ################################################################################
 
 from pytriqs.archive import *
-#from pytriqs.applications.dft.converters import Wien2kConverter
-from converters import Wien2kConverter
-
+from pytriqs.applications.dft.converters import Wien2kConverter
 
 
 Converter = Wien2kConverter(filename='SrVO3')

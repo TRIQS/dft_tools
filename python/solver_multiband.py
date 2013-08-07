@@ -21,12 +21,9 @@
 ################################################################################
 
 
-#from pytriqs.applications.dft.U_matrix import *
-from U_matrix import *
-#from pytriqs.applications.impurity_solvers.operators import *
 from pytriqs.operators import *
-#from pytriqs.applications.impurity_solvers.ctqmc_hyb import Solver
-from pytriqs.applications.impurity_solvers.ctqmc_hyb_matrix import Solver
+from pytriqs.applications.impurity_solvers.cthyb_matrix import Solver
+from pytriqs.applications.dft.U_matrix import *
 
 import pytriqs.utility.mpi as mpi
 from types import *
