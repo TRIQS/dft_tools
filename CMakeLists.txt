@@ -3,7 +3,7 @@ list(APPEND CMAKE_MODULE_PATH ${TRIQS_PATH}/share/triqs/cmake)
 
 # start configuration 
 cmake_minimum_required(VERSION 2.8)
-project(ctseg CXX Fortran)
+project(dft_tools CXX Fortran)
 set(CMAKE_BUILD_TYPE Release)
 enable_testing()
 
