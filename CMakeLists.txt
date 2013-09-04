@@ -1,3 +1,7 @@
+# Version number of the application
+set (DFT_TOOLS_VERSION "1.0")
+set (DFT_TOOLS_RELEASE "1.0.0")
+
 # Append triqs installed files to the cmake load path
 list(APPEND CMAKE_MODULE_PATH ${TRIQS_PATH}/share/triqs/cmake)
 
@@ -12,6 +16,11 @@ find_package(TRIQS REQUIRED)
 
 if (NOT ${TRIQS_WITH_PYTHON_SUPPORT})
  MESSAGE(FATAL_ERROR "Wien2TRIQS require Python support in TRIQS")
+endif()
+
+# Check that versions are compatible
+if(NOT DFT_TOOLS_VERSION EQUAL TRIQS_VERSION)
+  message(FATAL_ERROR "The application version is not compatible with the TRIQS library (TRIQS library version: ${TRIQS_VERSION} while this application version: ${DFT_TOOLS_VERSION})")
 endif()
 
 # We want to be installed in the TRIQS tree
