@@ -9,12 +9,13 @@ extensions = ['sphinx.ext.autodoc',
 
 source_suffix = '.rst'
 
-project = u'TRIQS interface to Wien2k'
+project = u'TRIQS Interface to Wien2k'
 copyright = u'2011-2013, M. Aichhorn, L. Pourovskii, V. Vildosola, C. Martins'
-version = '1.0'
-release = '1.0.0'
+version = '@DFT_TOOLS_VERSION@'
+release = '@DFT_TOOLS_RELEASE@'
 
 mathjax_path = "@TRIQS_MATHJAX_PATH@/MathJax.js?config=default"
+templates_path = ['@CMAKE_SOURCE_DIR@/doc/_templates']
 
 html_theme = 'triqs'
 html_theme_path = ['@TRIQS_THEMES_PATH@']
@@ -25,13 +26,10 @@ html_context = {'header_title': 'Wien2TRIQS',
                                  ['Documentation', 'documentation'],
                                  ['Issues', 'issues'],
                                  ['About Wien2TRIQS', 'about']]}
-
-templates_path = ['@TRIQS_THEMES_PATH@/../export/_templates']
-html_sidebars = {'index': ['sideb_appli.html', 'searchbox.html']}
-html_static_path = ['@TRIQS_THEMES_PATH@/../export/_static']
+html_static_path = ['@CMAKE_SOURCE_DIR@/doc/_static']
+html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = 'TRIQSDftToolsdoc'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 
-#'triqscthybmatrix': ('@TRIQS_THEMES_PATH@/../../doc/triqs',None),
-'triqslibs': ('@TRIQS_THEMES_PATH@/../../doc/triqs',None)}
+intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('http://ipht.cea.fr/triqs', None),
+                       'triqscthyb': ('http://ipht.cea.fr/triqs/cthyb_matrix', None)}

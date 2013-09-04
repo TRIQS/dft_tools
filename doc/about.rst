@@ -24,7 +24,7 @@ calculations.
 .. [#wien2k2] `M. Aichhorn, L. Pourovskii, and A. Georges, Phys. Rev. B 84, 054529 (2011) <http://link.aps.org/doi/10.1103/PhysRevB.84.054529>`_ (:download:`bibtex file <wien2k2.bib>`)
 
 This application is a part of our scientific work and we would appreciate if
-projects using it will include a citation to the following relevant papers.  In
+projects using it will include a citation to the above relevant papers.  In
 order to help you, we provide a BibTeX entry for each paper.
 
 If you find the application useful, giving proper reference and citation is
