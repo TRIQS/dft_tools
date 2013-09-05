@@ -5,12 +5,12 @@ Copyright (C) 2011-2013, M. Aichhorn, L. Pourovskii, V. Vildosola and C. Martins
 1. Documentation
 
 You will find the documentation of this application under
-<http://ipht.cea.fr/triqs/dft_tools/>.
+<http://ipht.cea.fr/triqs/applications/dft_tools/>.
 
 2. Installation
 
 The installation steps are described in
-<http://ipht.cea.fr/triqs/dft_tools/install.html>
+<http://ipht.cea.fr/triqs/dft_tools/applications/install.html>
 
 3. Version
 
