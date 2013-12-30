@@ -99,20 +99,20 @@ class SumkLDATools(SumkLDA):
         return gf_rotated
 
 
-    def lattice_gf_realfreq(self, ik, mu, broadening, mesh=None, beta=40, with_Sigma=True):
+    def lattice_gf_realfreq(self, ik, mu, broadening, mesh=None, with_Sigma=True):
         """Calculates the lattice Green function on the real frequency axis. If self energy is
            present and with_Sigma=True, the mesh is taken from Sigma. Otherwise, the mesh has to be given."""
 
         ntoi = self.names_to_ind[self.SO]
-        bln = self.blocnames[self.SO]
+        bln = self.block_names[self.SO]
 
         if (not hasattr(self,"Sigma_imp")): with_Sigma=False
         if (with_Sigma): 
             assert type(self.Sigma_imp[0]) == GfReFreq, "Real frequency Sigma needed for lattice_gf_realfreq!"
-            beta = self.Sigma_imp[0].mesh.beta
+            #beta = self.Sigma_imp[0].mesh.beta
             stmp = self.add_dc()
         else:
-            assert (not (mesh is None)),"Without Sigma, give the mesh for lattice_gf_realfreq!"
+            assert (not (mesh is None)),"Without Sigma, give the mesh=(om_min,om_max,n_points) for lattice_gf_realfreq!"
 
 	if (self.Gupf_refreq is None):
             # first setting up of Gupf_refreq
@@ -122,7 +122,7 @@ class SumkLDATools(SumkLDA):
             if (with_Sigma):
                 glist = lambda : [ GfReFreq(indices = al, mesh =self.Sigma_imp[0].mesh) for a,al in gf_struct]
             else:
-                glist = lambda : [ GfReFreq(indices = al, beta = beta, mesh_array = mesh) for a,al in gf_struct] 
+                glist = lambda : [ GfReFreq(indices = al, window=(mesh[0],mesh[1]),n_points=mesh[2]) for a,al in gf_struct] 
             self.Gupf_refreq = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
             self.Gupf_refreq.zero()
 
@@ -137,7 +137,7 @@ class SumkLDATools(SumkLDA):
             if (with_Sigma):
                 glist = lambda : [ GfReFreq(indices = al, mesh =self.Sigma_imp[0].mesh) for a,al in gf_struct]
             else:
-                glist = lambda : [ GfReFreq(indices = al, beta = beta, mesh_array = mesh) for a,al in gf_struct]
+                glist = lambda : [ GfReFreq(indices = al, window=(mesh[0],mesh[1]),n_points=mesh[2]) for a,al in gf_struct]
             self.Gupf_refreq = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
             self.Gupf_refreq.zero()
         
@@ -167,8 +167,9 @@ class SumkLDATools(SumkLDA):
         
        
         delta_om = (om_max-om_min)/(n_om-1)
-        mesh = numpy.zeros([n_om],numpy.float_)
-
+        om_mesh = numpy.zeros([n_om],numpy.float_)
+        for i in range(n_om): om_mesh[i] = om_min + delta_om * i
+        
         DOS = {}
         for bn in self.block_names[self.SO]:
             DOS[bn] = numpy.zeros([n_om],numpy.float_)
@@ -179,22 +180,22 @@ class SumkLDATools(SumkLDA):
             for bn in self.block_names[self.corr_shells[self.invshellmap[icrsh]][4]]:
                 dl = self.corr_shells[self.invshellmap[icrsh]][3]
                 DOSproj[icrsh][bn] = numpy.zeros([n_om],numpy.float_)
-                DOSproj_orb[icrsh][bn] = numpy.zeros([dl,dl,n_om],numpy.float_)
-
+                DOSproj_orb[icrsh][bn] = numpy.zeros([n_om,dl,dl],numpy.float_)
+     
       
-        for i in range(n_om): mesh[i] = om_min + delta_om * i
 
         # init:
         Gloc = []
         for icrsh in range(self.n_corr_shells):
             b_list = [a for a,al in self.gf_struct_corr[icrsh]]
-            glist = lambda : [ GfReFreq(indices = al, beta = beta, mesh_array = mesh) for a,al in self.gf_struct_corr[icrsh]]   
+            #glist = lambda : [ GfReFreq(indices = al, beta = beta, mesh_array = mesh) for a,al in self.gf_struct_corr[icrsh]]
+            glist = lambda : [ GfReFreq(indices = al, window = (om_min,om_max), n_points = n_om) for a,al in self.gf_struct_corr[icrsh]]
             Gloc.append(BlockGf(name_list = b_list, block_list = glist(),make_copies=False))
         for icrsh in xrange(self.n_corr_shells): Gloc[icrsh].zero()                        # initialize to zero
             
         for ik in xrange(self.n_k):
 
-            Gupf=self.lattice_gf_realfreq(ik=ik,mu=self.chemical_potential,broadening=broadening,beta=beta,mesh=mesh,with_Sigma=False)
+            Gupf=self.lattice_gf_realfreq(ik=ik,mu=self.chemical_potential,broadening=broadening,mesh=(om_min,om_max,n_om),with_Sigma=False)
             Gupf *= self.bz_weights[ik]
 
             # non-projected DOS
@@ -227,19 +228,19 @@ class SumkLDATools(SumkLDA):
         if (mpi.is_master_node()):
             for bn in self.block_names[self.SO]:
                 f=open('DOS%s.dat'%bn, 'w')
-                for i in range(n_om): f.write("%s    %s\n"%(mesh[i],DOS[bn][i]))
+                for i in range(n_om): f.write("%s    %s\n"%(om_mesh[i],DOS[bn][i]))
                 f.close()  
 
                 for ish in range(self.n_inequiv_corr_shells):
                     f=open('DOS%s_proj%s.dat'%(bn,ish),'w')
-                    for i in range(n_om): f.write("%s    %s\n"%(mesh[i],DOSproj[ish][bn][i]))
+                    for i in range(n_om): f.write("%s    %s\n"%(om_mesh[i],DOSproj[ish][bn][i]))
                     f.close()  
             
                     for i in range(self.corr_shells[self.invshellmap[ish]][3]):
                         for j in range(i,self.corr_shells[self.invshellmap[ish]][3]):
                             Fname = 'DOS'+bn+'_proj'+str(ish)+'_'+str(i)+'_'+str(j)+'.dat'
                             f=open(Fname,'w')
-                            for iom in range(n_om): f.write("%s    %s\n"%(mesh[iom],DOSproj_orb[ish][bn][i,j,iom]))
+                            for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj_orb[ish][bn][iom,i,j]))
                             f.close()
  
 
@@ -287,7 +288,7 @@ class SumkLDATools(SumkLDA):
             for bn in self.block_names[self.SO]:
                 dl = self.shells[ish][3]
                 DOSproj[ish][bn] = numpy.zeros([n_om],numpy.float_)
-                DOSproj_orb[ish][bn] = numpy.zeros([dl,dl,n_om],numpy.float_)
+                DOSproj_orb[ish][bn] = numpy.zeros([n_om,dl,dl],numpy.float_)
 
         ikarray=numpy.array(range(self.n_k))
 
@@ -344,7 +345,7 @@ class SumkLDATools(SumkLDA):
                         for j in range(i,self.shells[ish][3]):
                             Fname = './DOScorr'+bn+'_proj'+str(ish)+'_'+str(i)+'_'+str(j)+'.dat'
                             f=open(Fname,'w')
-                            for iom in range(n_om): f.write("%s    %s\n"%(Msh[iom],DOSproj_orb[ish][bn][i,j,iom]))
+                            for iom in range(n_om): f.write("%s    %s\n"%(Msh[iom],DOSproj_orb[ish][bn][iom,i,j]))
                             f.close()
 
 
@@ -539,7 +540,7 @@ class SumkLDATools(SumkLDA):
 
         # now initialize the GF with the mesh
         a_list = [a for a,al in self.gf_struct_solver[orb]]
-        glist = lambda : [ GfReFreq(indices = al, beta = beta, mesh_array = mesh) for a,al in self.gf_struct_solver[orb] ] 
+        glist = lambda : [ GfReFreq(indices = al, window=(mesh[0],mesh[n_om-1]),n_points=n_om) for a,al in self.gf_struct_solver[orb] ] 
         SigmaME = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
         SigmaME.load(filename)
 
