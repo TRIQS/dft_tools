@@ -654,13 +654,13 @@ class SumkLDA:
         
 
         #if (not hasattr(self,"dc_imp")): self.__init_dc()
-                    
-                
-        dm = [ {} for i in xrange(self.n_corr_shells)]
-        for i in xrange(self.n_corr_shells):
-            l = self.corr_shells[i][3] #*(1+self.corr_shells[i][4])
-            for j in xrange(len(self.gf_struct_corr[i])):
-                dm[i]['%s'%self.gf_struct_corr[i][j][0]] = numpy.zeros([l,l],numpy.float_)
+        
+
+        #dm = [ {} for i in xrange(self.n_corr_shells)]
+        #for i in xrange(self.n_corr_shells):
+        #    l = self.corr_shells[i][3] #*(1+self.corr_shells[i][4])
+        #    for j in xrange(len(self.gf_struct_corr[i])):
+        #        dm[i]['%s'%self.gf_struct_corr[i][j][0]] = numpy.zeros([l,l],numpy.float_)
         
 
         for icrsh in xrange(self.n_corr_shells):
@@ -676,10 +676,14 @@ class SumkLDA:
                     self.dc_imp[icrsh]['%s'%self.gf_struct_corr[icrsh][j][0]] = numpy.identity(l,numpy.float_)
                     blname = self.gf_struct_corr[icrsh][j][0]
                     Ncr[blname] = 0.0
-                    for bl in self.map[iorb][blname]:
-                        Ncr[blname] += dens_mat[bl].real.trace()
                     
-
+                for a,al in self.gf_struct_solver[iorb]:
+                #for bl in self.map[iorb][blname]:
+                    bl = self.map_inv[iorb][a]
+                    #print 'bl, valiue = ',bl,dens_mat[a].real.trace()
+                    Ncr[bl] += dens_mat[a].real.trace()
+                    
+                    #print 'Ncr=',Ncr
                 M = self.corr_shells[icrsh][3]
                
                 Ncrtot = 0.0

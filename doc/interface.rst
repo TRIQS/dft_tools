@@ -5,7 +5,7 @@ The interface
 
 The basic function of the interface to the Wien2k program package is
 to take the output of the program that constructs the projected local
-orbitals (:program:`dmftproj`), and to store all the necessary information into
+orbitals (:program:`dmftproj`, for documentation see :download:`TutorialDmftproj.pdf <TutorialDmftproj.pdf>`), and to store all the necessary information into
 an hdf5 file. This latter file is then used to do the DMFT calculation. The
 reason for this structure is that this enables the user to have everything
 that is necessary to reproduce the calculation in one single hdf5 arxive.

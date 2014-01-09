@@ -1,12 +1,12 @@
 from pytriqs.applications.dft.sumk_lda import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
-from pytriqs.applications.impurity_solvers.hubbard_I.solver import Solver
+from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
-LDAFilename = 'Ce-gamma'
+LDAFilename = 'Ce'
 Beta = 40
 Uint = 6.00
 JHund = 0.70
-Loops =  3                       # Number of DMFT sc-loops
+Loops =  2                       # Number of DMFT sc-loops
 Mix = 0.7                        # Mixing factor in QMC
 DC_type = 0                      # 0...FLL, 1...Held, 2... AMF, 3...Lichtenstein
 DC_Mix = 1.0                     # 1.0 ... all from imp; 0.0 ... all from Gloc   
@@ -17,7 +17,7 @@ HDFfilename = LDAFilename+'.h5'
 
 # Convert DMFT input:
 # Can be commented after the first run
-Converter = Wien2kConverter(filename=LDAFilename,repacking=True)
+Converter = Wien2kConverter(filename=LDAFilename)
 Converter.convert_dmft_input()
 
 #check if there are previous runs:
@@ -45,8 +45,7 @@ Norb = SK.corr_shells[0][3]
 l    = SK.corr_shells[0][2]
 
 # Init the Solver:
-S = Solver(Beta = Beta, Uint = Uint, JHund = JHund, l = l, Verbosity=2)
-S.Nmoments=10
+S = Solver(beta = Beta, l = l)
 
 if (previous_present):
     # load previous data:
@@ -64,21 +63,21 @@ for Iteration_Number in range(1,Loops+1):
         itn = Iteration_Number + previous_runs
        
         # put Sigma into the SumK class:
-        SK.put_Sigma(Sigmaimp = [ S.Sigma ])
+        SK.put_Sigma(Sigma_imp = [ S.Sigma ])
 
         # Compute the SumK, possibly fixing mu by dichotomy
-        if SK.Density_Required and (Iteration_Number > 0):
-            Chemical_potential = SK.find_mu( precision = 0.000001 )
+        if SK.density_required and (Iteration_Number > 0):
+            Chemical_potential = SK.find_mu( precision = 0.01 )
         else:
             mpi.report("No adjustment of chemical potential\nTotal density  = %.3f"%SK.total_density(mu=Chemical_potential))
 
         # Density:
-        S.G <<= SK.extract_Gloc()[0]
+        S.G <<= SK.extract_G_loc()[0]
         mpi.report("Total charge of Gloc : %.6f"%S.G.total_density())
         dm = S.G.density()
 
         if ((Iteration_Number==1)and(previous_present==False)):
-	    SK.SetDoubleCounting( dm, U_interact = Uint, J_Hund = JHund, orb = 0, useDCformula = DC_type)
+	    SK.set_dc( dens_mat=dm, U_interact = Uint, J_hund = JHund, orb = 0, use_dc_formula = DC_type)
 
         # set atomic levels:
         eal = SK.eff_atomic_levels()[0]
@@ -91,7 +90,7 @@ for Iteration_Number in range(1,Loops+1):
             del ar
 
         # solve it:
-        S.Solve()
+        S.solve(U_int = Uint, J_hund = JHund, verbosity = 1)
 
         if (mpi.is_master_node()):
             ar = HDFArchive(HDFfilename)
@@ -99,7 +98,7 @@ for Iteration_Number in range(1,Loops+1):
  
         # Now mix Sigma and G:
         if ((itn>1)or(previous_present)):
-            if (mpi.is_master_node()):
+            if (mpi.is_master_node()and (Mix<1.0)):
                 mpi.report("Mixing Sigma and G with factor %s"%Mix)
                 if ('SigmaF' in ar):
                     S.Sigma <<= Mix * S.Sigma + (1.0-Mix) * ar['SigmaF']
@@ -117,13 +116,13 @@ for Iteration_Number in range(1,Loops+1):
         
         # after the Solver has finished, set new double counting: 
         dm = S.G.density()
-        SK.SetDoubleCounting( dm, U_interact = Uint, J_Hund = JHund, orb = 0, useDCformula = DC_type )
+        SK.set_dc( dm, U_interact = Uint, J_hund = JHund, orb = 0, use_dc_formula = DC_type )
         # correlation energy calculations:
         correnerg = 0.5 * (S.G * S.Sigma).total_density()
         mpi.report("Corr. energy = %s"%correnerg)
         if (mpi.is_master_node()):
             ar['correnerg%s'%itn] = correnerg
-            ar['DCenerg%s'%itn] = SK.DCenerg
+            ar['DCenerg%s'%itn] = SK.dc_energ
             del ar
 
 
@@ -150,9 +149,9 @@ for Iteration_Number in range(1,Loops+1):
 
 
 # find exact chemical potential
-if (SK.Density_Required):
-    SK.Chemical_potential = SK.find_mu( precision = 0.000001 )
-dN,d = SK.calc_DensityCorrection(Filename = LDAFilename+'.qdmft')
+if (SK.density_required):
+    SK.chemical_potential = SK.find_mu( precision = 0.000001 )
+dN,d = SK.calc_density_correction(filename = LDAFilename+'.qdmft')
 
 mpi.report("Trace of Density Matrix: %s"%d)
 
@@ -167,5 +166,4 @@ if (mpi.is_master_node()):
     f=open(LDAFilename+'.qdmft','a')
     f.write("%.16f\n"%correnerg)
     f.close()
-
 

@@ -41,15 +41,23 @@ Setting up the Multi-Band Solver
 There is a module that helps setting up the multiband CTQMC solver. It is loaded and initialized by::
 
   from pytriqs.applications.dft.solver_multiband import *
-  S = SolverMultiBand(Beta, U_interact, J_Hund, Norb)
+  S = SolverMultiBand(beta, n_orb, gf_struct = SK.gf_struct_solver[0], map=SK.map[0])
 
 The necessary parameters are the inverse temperature `beta`, the Coulomb interaction `U_interact`, the Hund's rule coupling `J_hund`,
 and the number of orbitals `n_orb`. There are again several optional parameters that allow to modify the local Hamiltonian to
 specific needs. They are:
 
   * `gf_struct`: Contains the block structure of the local density matrix. Has to be given in the format as calculated by :class:`SumkLDA`.
-  * `map`: If `gf_Struct` is given as parameter, also `map` has to be given. This is the mapping from the block structure to a general 
+  * `map`: If `gf_struct` is given as parameter, also `map` has to be given. This is the mapping from the block structure to a general 
     up/down structure.
+
+The solver method is called later by this statement::
+
+  S.solve(U_interact = U, J_hund = J)
+
+The parameters for the Coulomb interaction `U_interact` and the Hunds coupling `J_hund` are necessary parameters.
+The following parameters are optional, by highly recommended to be set:
+
   * `use_matrix`: If `True`, the interaction matrix is calculated from Slater integrals, which are calculated from `U_interact` and 
     `J_hund`. Otherwise, a Kanamori representation is used. Attention: We define the intraorbital interaction as 
     `U_interact+2J_hund`, the interorbital interaction for opposite spins as `U_interact`, and interorbital for equal spins as 
@@ -69,8 +77,8 @@ at the end of this tutorial.
 
 After initialisation, several other CTQMC parameters can be set (see CTQMC doc). The most important are:
 
-  * `S.N_Cycles`: Number of QMC cycles per node.
-  * `S.N_Warmup_Cycles`: Number of iterations used for thermalisation
+  * `S.n_cycles`: Number of QMC cycles per node.
+  * `S.n_warmup_cycles`: Number of iterations used for thermalisation
 
 
 
@@ -91,7 +99,7 @@ set up the loop over DMFT iterations and the self-consistency condition::
           S.G <<= SK.extract_G_loc()[0]              # extract the local Green function
           S.G0 <<= inverse(S.Sigma + inverse(S.G))   # finally get G0, the input for the Solver
 
-          S.Solve()                                  # now solve the impurity problem
+          S.Solve(U_interact = U, J_hund = J)                                  # now solve the impurity problem
 
 	  dm = S.G.density()                         # density matrix of the impurity problem  
           SK.set_dc( dm, U_interact = U, J_hund = J, use_dc_formula = 0)     # Set the double counting term
@@ -112,7 +120,7 @@ At the end of the calculation, we can save the Greens function and self energy i
   from pytriqs.archive import HDFArchive
   import pytriqs.utility.mpi as mpi
   if mpi.is_master_node():
-      R = HDFArchive("single_site_bethe.h5",'w')
+      R = HDFArchive("YourLDADMFTcalculation.h5",'w')
       R["G"] = S.G
       R["Sigma"] = S.Sigma
 
