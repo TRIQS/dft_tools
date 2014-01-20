@@ -1,0 +1,27 @@
+Dear users,
+
+I'm new user in DMFT-TRIQS and when i was calcul the Ce-gamma_DOS.py i get the error below:
+
+boujnah@boujnah-mourad:~/WIEN2k/DMFT/Ce-gamma$ pytriqs Ce-gamma_DOS.py
+Starting on 1 Nodes at : 2014-01-17 23:00:19.151318
+Traceback (most recent call last):
+  File "Ce-gamma_DOS.py", line 3, in <module>
+    from pytriqs.applications.impurity_solvers.hubbard_I.solver import Solver
+ImportError: No module named solver
+
+after when i modified the script ( from pytriqs.applications.impurity_solvers.hubbard_I.old_solver import Solver) and i return the last command i get the message below:
+
+boujnah@boujnah-mourad:~/WIEN2k/DMFT/Ce-gamma$ pytriqs Ce-gamma_DOS.py
+Starting on 1 Nodes at : 2014-01-17 23:09:20.387800
+Repacking the file Ce-gamma.h5
+Reading input from Ce-gamma.ctqmcout...
+Reading symmetry input from Ce-gamma.symqmc...
+Traceback (most recent call last):
+  File "Ce-gamma_DOS.py", line 48, in <module>
+    S = Solver(Beta = Beta, Uint = Uint, JHund = JHund, l = l, Verbosity=2)
+TypeError: __init__() got an unexpected keyword argument 'JHund'
+boujnah@boujnah-mourad:~/WIEN2k/DMFT/Ce-gamma$
+ 
+Please can some one help to solve this problem and thank you for your help.
+
+Cordially.
