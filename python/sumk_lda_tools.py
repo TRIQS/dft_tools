@@ -42,8 +42,8 @@ def read_fortran_file (filename):
     import os.path
     if not(os.path.exists(filename)) : raise IOError, "File %s does not exists"%filename
     for line in open(filename,'r') :
-	for x in line.replace('D','E').split() : 
-	    yield string.atof(x)
+        for x in line.replace('D','E').split() :
+            yield string.atof(x)
 
 
 class SumkLDATools(SumkLDA):
@@ -99,22 +99,21 @@ class SumkLDATools(SumkLDA):
         return gf_rotated
 
 
-    def lattice_gf_realfreq(self, ik, mu, broadening, mesh=None, beta=40, with_Sigma=True):
+    def lattice_gf_realfreq(self, ik, mu, broadening, mesh=None, with_Sigma=True):
         """Calculates the lattice Green function on the real frequency axis. If self energy is
            present and with_Sigma=True, the mesh is taken from Sigma. Otherwise, the mesh has to be given."""
 
         ntoi = self.names_to_ind[self.SO]
-        bln = self.blocnames[self.SO]
+        bln = self.block_names[self.SO]
 
         if (not hasattr(self,"Sigma_imp")): with_Sigma=False
         if (with_Sigma): 
-            assert type(self.Sigma_imp[0]) == GfReFreq, "Real frequency Sigma needed for lattice_gf_realfreq!"
-            beta = self.Sigma_imp[0].mesh.beta
+            assert self.Sigma_imp[0].note == 'ReFreq', "Real frequency Sigma needed for lattice_gf_realfreq!"
             stmp = self.add_dc()
         else:
-            assert (not (mesh is None)),"Without Sigma, give the mesh for lattice_gf_realfreq!"
+            assert (not (mesh is None)),"Without Sigma, give the mesh=(om_min,om_max,n_points) for lattice_gf_realfreq!"
 
-	if (self.Gupf_refreq is None):
+        if (self.Gupf_refreq is None):
             # first setting up of Gupf_refreq
             BS = [ range(self.n_orbitals[ik,ntoi[ib]]) for ib in bln ]
             gf_struct = [ (bln[ib], BS[ib]) for ib in range(self.n_spin_blocks_gf[self.SO]) ]
@@ -122,7 +121,7 @@ class SumkLDATools(SumkLDA):
             if (with_Sigma):
                 glist = lambda : [ GfReFreq(indices = al, mesh =self.Sigma_imp[0].mesh) for a,al in gf_struct]
             else:
-                glist = lambda : [ GfReFreq(indices = al, beta = beta, mesh_array = mesh) for a,al in gf_struct] 
+                glist = lambda : [ GfReFreq(indices = al, window=(mesh[0],mesh[1]),n_points=mesh[2]) for a,al in gf_struct]
             self.Gupf_refreq = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
             self.Gupf_refreq.zero()
 
@@ -137,7 +136,7 @@ class SumkLDATools(SumkLDA):
             if (with_Sigma):
                 glist = lambda : [ GfReFreq(indices = al, mesh =self.Sigma_imp[0].mesh) for a,al in gf_struct]
             else:
-                glist = lambda : [ GfReFreq(indices = al, beta = beta, mesh_array = mesh) for a,al in gf_struct]
+                glist = lambda : [ GfReFreq(indices = al, window=(mesh[0],mesh[1]),n_points=mesh[2]) for a,al in gf_struct]
             self.Gupf_refreq = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
             self.Gupf_refreq.zero()
         
@@ -165,9 +164,10 @@ class SumkLDATools(SumkLDA):
 
     def check_input_dos(self, om_min, om_max, n_om, beta=10, broadening=0.01):
         
-       
+
         delta_om = (om_max-om_min)/(n_om-1)
-        mesh = numpy.zeros([n_om],numpy.float_)
+        om_mesh = numpy.zeros([n_om],numpy.float_)
+        for i in range(n_om): om_mesh[i] = om_min + delta_om * i
 
         DOS = {}
         for bn in self.block_names[self.SO]:
@@ -179,22 +179,20 @@ class SumkLDATools(SumkLDA):
             for bn in self.block_names[self.corr_shells[self.invshellmap[icrsh]][4]]:
                 dl = self.corr_shells[self.invshellmap[icrsh]][3]
                 DOSproj[icrsh][bn] = numpy.zeros([n_om],numpy.float_)
-                DOSproj_orb[icrsh][bn] = numpy.zeros([dl,dl,n_om],numpy.float_)
-
-      
-        for i in range(n_om): mesh[i] = om_min + delta_om * i
+                DOSproj_orb[icrsh][bn] = numpy.zeros([n_om,dl,dl],numpy.float_)
 
         # init:
         Gloc = []
         for icrsh in range(self.n_corr_shells):
             b_list = [a for a,al in self.gf_struct_corr[icrsh]]
-            glist = lambda : [ GfReFreq(indices = al, beta = beta, mesh_array = mesh) for a,al in self.gf_struct_corr[icrsh]]   
+            #glist = lambda : [ GfReFreq(indices = al, beta = beta, mesh_array = mesh) for a,al in self.gf_struct_corr[icrsh]]
+            glist = lambda : [ GfReFreq(indices = al, window = (om_min,om_max), n_points = n_om) for a,al in self.gf_struct_corr[icrsh]]
             Gloc.append(BlockGf(name_list = b_list, block_list = glist(),make_copies=False))
         for icrsh in xrange(self.n_corr_shells): Gloc[icrsh].zero()                        # initialize to zero
             
         for ik in xrange(self.n_k):
 
-            Gupf=self.lattice_gf_realfreq(ik=ik,mu=self.chemical_potential,broadening=broadening,beta=beta,mesh=mesh,with_Sigma=False)
+            Gupf=self.lattice_gf_realfreq(ik=ik,mu=self.chemical_potential,broadening=broadening,mesh=(om_min,om_max,n_om),with_Sigma=False)
             Gupf *= self.bz_weights[ik]
 
             # non-projected DOS
@@ -227,19 +225,19 @@ class SumkLDATools(SumkLDA):
         if (mpi.is_master_node()):
             for bn in self.block_names[self.SO]:
                 f=open('DOS%s.dat'%bn, 'w')
-                for i in range(n_om): f.write("%s    %s\n"%(mesh[i],DOS[bn][i]))
+                for i in range(n_om): f.write("%s    %s\n"%(om_mesh[i],DOS[bn][i]))
                 f.close()  
 
                 for ish in range(self.n_inequiv_corr_shells):
                     f=open('DOS%s_proj%s.dat'%(bn,ish),'w')
-                    for i in range(n_om): f.write("%s    %s\n"%(mesh[i],DOSproj[ish][bn][i]))
+                    for i in range(n_om): f.write("%s    %s\n"%(om_mesh[i],DOSproj[ish][bn][i]))
                     f.close()  
             
                     for i in range(self.corr_shells[self.invshellmap[ish]][3]):
                         for j in range(i,self.corr_shells[self.invshellmap[ish]][3]):
                             Fname = 'DOS'+bn+'_proj'+str(ish)+'_'+str(i)+'_'+str(j)+'.dat'
                             f=open(Fname,'w')
-                            for iom in range(n_om): f.write("%s    %s\n"%(mesh[iom],DOSproj_orb[ish][bn][i,j,iom]))
+                            for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj_orb[ish][bn][iom,i,j]))
                             f.close()
  
 
@@ -274,7 +272,7 @@ class SumkLDATools(SumkLDA):
                  for ish in xrange(self.n_shells)]
         for ish in range(self.n_shells): Gproj[ish].zero()
 
-        Msh = [x for x in self.Sigma_imp[0].mesh]
+        Msh = [x.real for x in self.Sigma_imp[0].mesh]
         n_om = len(Msh)
 
         DOS = {}
@@ -287,7 +285,7 @@ class SumkLDATools(SumkLDA):
             for bn in self.block_names[self.SO]:
                 dl = self.shells[ish][3]
                 DOSproj[ish][bn] = numpy.zeros([n_om],numpy.float_)
-                DOSproj_orb[ish][bn] = numpy.zeros([dl,dl,n_om],numpy.float_)
+                DOSproj_orb[ish][bn] = numpy.zeros([n_om,dl,dl],numpy.float_)
 
         ikarray=numpy.array(range(self.n_k))
 
@@ -325,7 +323,7 @@ class SumkLDATools(SumkLDA):
             for sig,gf in Gproj[ish]:  
                 for iom in range(n_om): DOSproj[ish][sig][iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
                 DOSproj_orb[ish][sig][:,:,:] += gf.data[:,:,:].imag / (-3.1415926535)
-	    
+
 
         if (mpi.is_master_node()):
             # output to files
@@ -344,7 +342,7 @@ class SumkLDATools(SumkLDA):
                         for j in range(i,self.shells[ish][3]):
                             Fname = './DOScorr'+bn+'_proj'+str(ish)+'_'+str(i)+'_'+str(j)+'.dat'
                             f=open(Fname,'w')
-                            for iom in range(n_om): f.write("%s    %s\n"%(Msh[iom],DOSproj_orb[ish][bn][i,j,iom]))
+                            for iom in range(n_om): f.write("%s    %s\n"%(Msh[iom],DOSproj_orb[ish][bn][iom,i,j]))
                             f.close()
 
 
@@ -514,37 +512,92 @@ class SumkLDATools(SumkLDA):
  
                         f.close()
 
-    
-    def constr_Sigma_ME(self, filename, beta, n_om, orb = 0):
-        """Uses Data from files to construct a GF object on the real axis."""
 
+    def constr_Sigma_real_axis(self, filename, hdf=True, hdf_dataset='SigmaReFreq',n_om=0,orb=0, tol_mesh=1e-6):
+        """Uses Data from files to construct Sigma (or GF)  on the real axis."""
+
+        if not hdf:
+            # read sigma from text files
+            #first get the mesh out of one of the files:
+            if (len(self.gf_struct_solver[orb][0][1])==1):
+                Fname = filename+'_'+self.gf_struct_solver[orb][0][0]+'.dat'
+            else:
+                Fname = filename+'_'+self.gf_struct_solver[orb][0][0]+'/'+str(self.gf_struct_solver[orb][0][1][0])+'_'+str(self.gf_struct_solver[orb][0][1][0])+'.dat'
+
+            R = read_fortran_file(Fname)
+            mesh = numpy.zeros([n_om],numpy.float_)
+            try:
+                for i in xrange(n_om):
+                    mesh[i] = R.next()
+                    sk = R.next()
+                    sk = R.next()
+
+            except StopIteration : # a more explicit error if the file is corrupted.
+                raise "SumkLDA.read_Sigma_ME : reading mesh failed!"
+            R.close()
+
+            # check whether the mesh is uniform
+            bin = (mesh[n_om-1]-mesh[0])/(n_om-1)
+            for i in xrange(n_om):
+                assert abs(i*bin+mesh[0]-mesh[i]) < tol_mesh, 'constr_Sigma_ME: real-axis mesh is non-uniform!'
+
+            # construct Sigma
+            a_list = [a for a,al in self.gf_struct_solver[orb]]
+            glist = lambda : [ GfReFreq(indices = al, window=(mesh[0],mesh[n_om-1]),n_points=n_om) for a,al in self.gf_struct_solver[orb]]
+            SigmaME = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
+
+            #read Sigma
         
-        #first get the mesh out of one of the files:
-        if (len(self.gf_struct_solver[orb][0][1])==1):
-            Fname = filename+'_'+self.gf_struct_solver[orb][0][0]+'.dat'
+            for i,g in SigmaME:
+                mesh=[w for w in g.mesh]
+                for iL in g.indices:
+                    for iR in g.indices:
+                        if (len(g.indices) == 1):
+                            Fname = filename+'_%s'%(i)+'.dat'
+                        else:
+                            Fname = 'SigmaME_'+'%s'%(i)+'_%s'%(iL)+'_%s'%(iR)+'.dat'
+                        R = read_fortran_file(Fname)
+                        try:
+                            for iom in xrange(n_om):
+                                sk = R.next()
+                                rsig = R.next()
+                                isig = R.next()
+                                g.data[iom,iL,iR]=rsig+1j*isig
+                        except StopIteration : # a more explicit error if the file is corrupted.
+                            raise "SumkLDA.read_Sigma_ME : reading Sigma from file failed!"
+                        R.close()
+
+
         else:
-            Fname = filename+'_'+self.gf_struct_solver[orb][0][0]+'/'+str(self.gf_struct_solver[orb][0][1][0])+'_'+str(self.gf_struct_solver[orb][0][1][0])+'.dat'
 
-        R = read_fortran_file(Fname)
-        mesh = numpy.zeros([n_om],numpy.float_)
-        try:
-            for i in xrange(n_om): 
-                mesh[i] = R.next()
-                sk = R.next()
-                sk = R.next()
-                
-        except StopIteration : # a more explicit error if the file is corrupted.
-            raise "SumkLDA.read_Sigma_ME : reading file failed!"
-        R.close()
+            # read sigma from hdf
+            omega_min=0.0
+            omega_max=0.0
+            n_om=0
+            if (mpi.is_master_node()):
+                ar = HDFArchive(filename)
+                SigmaME = ar[hdf_dataset]
+                del ar
+                # we need some parameters to construct Sigma on other nodes
+                omega_min=SigmaME.mesh.omega_min
+                omega_max=SigmaME.mesh.omega_max
+                n_om=len(SigmaME.mesh)
+            omega_min=mpi.bcast(omega_min)
+            omega_max=mpi.bcast(omega_max)
+            n_om=mpi.bcast(n_om)
+            mpi.barrier()
+            # construct Sigma on other nodes
+            if (not mpi.is_master_node()):
+                a_list = [a for a,al in self.gf_struct_solver[orb]]
+                glist = lambda : [ GfReFreq(indices = al, window=(omega_min,omega_max),n_points=n_om) for a,al in self.gf_struct_solver[orb]]
+                SigmaME = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
+            # pass SigmaME to other nodes
+            SigmaME = mpi.bcast(SigmaME)
+            mpi.barrier()
 
-        # now initialize the GF with the mesh
-        a_list = [a for a,al in self.gf_struct_solver[orb]]
-        glist = lambda : [ GfReFreq(indices = al, beta = beta, mesh_array = mesh) for a,al in self.gf_struct_solver[orb] ] 
-        SigmaME = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
-        SigmaME.load(filename)
+        SigmaME.note='ReFreq'
 
         return SigmaME
-
 
         
 
@@ -620,6 +673,5 @@ class SumkLDATools(SumkLDA):
                      for isp in range(len(bln)) ]
 
         return dens_mat
-
 
 
