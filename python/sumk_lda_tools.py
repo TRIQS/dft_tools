@@ -423,7 +423,7 @@ class SumkLDATools(SumkLDA):
             if (ishell is None):
                 # non-projected A(k,w)
                 for iom in range(n_om): 
-                    if (M[iom]>om_minplot) and (M[iom]<om_maxplot):
+                    if (M[iom].real>om_minplot) and (M[iom].real<om_maxplot):
                         if fermi_surface:
                             for sig,gf in S: Akw[sig][ik,0] += gf.data[iom,:,:].imag.trace()/(-3.1415926535) * (M[1]-M[0])
                         else:
@@ -445,7 +445,7 @@ class SumkLDATools(SumkLDA):
                 #    for sig,gf in Gproj: Gproj[sig] <<= self.rotloc(0,gf,direction='toLocal')
 
                 for iom in range(n_om): 
-                    if (M[iom]>om_minplot) and (M[iom]<om_maxplot):
+                    if (M[iom].real>om_minplot) and (M[iom].real<om_maxplot):
                         for ish in range(self.shells[ishell][3]):
                             for ibn in bln:
                                 Akw[ibn][ish,ik,iom] = Gproj[ibn].data[iom,ish,ish].imag/(-3.1415926535)
@@ -476,7 +476,7 @@ class SumkLDATools(SumkLDA):
                             f.write('%s    %s\n'%(ik,Akw[ibn][ik,0]))
                         else:
                             for iom in range(n_om): 
-                                if (M[iom]>om_minplot) and (M[iom]<om_maxplot):
+                                if (M[iom].real>om_minplot) and (M[iom].real<om_maxplot):
                                     if (invert_Akw):
                                         Akw[ibn][ik,iom] = 1.0/(minAkw-maxAkw)*(Akw[ibn][ik,iom] - maxAkw)
                                     if (shift>0.0001):
@@ -500,7 +500,7 @@ class SumkLDATools(SumkLDA):
 
                         for ik in range(self.n_k):
                             for iom in range(n_om): 
-                                if (M[iom]>om_minplot) and (M[iom]<om_maxplot):
+                                if (M[iom].real>om_minplot) and (M[iom].real<om_maxplot):
                                     if (invert_Akw):
                                         Akw[ibn][ish,ik,iom] = 1.0/(minAkw-maxAkw)*(Akw[ibn][ish,ik,iom] - maxAkw)
                                     if (shift>0.0001):
