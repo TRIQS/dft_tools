@@ -64,16 +64,14 @@ The next step is to initialise the Solver::
 
   Norb = SK.corr_shells[0][3]
   l = SK.corr_shells[0][2]
-  S = SolverMultiBand(beta=beta,U_interact=U,J_hund=J,n_orb=Norb,use_matrix=use_matrix, 
-                     T=SK.T[0], gf_struct=SK.gf_struct_solver[0],map=SK.map[0], 
-                     l=l, deg_orbs=SK.deg_shells[0], use_spinflip=use_spinflip)
+  S = SolverMultiBand(beta=beta,n_orb=Norb,gf_struct=SK.gf_struct_solver[0],map=SK.map[0])
 
 As we can see, many options of the solver are set by properties of the :class:`SumkLDA` class, so we don't have
 to set them manually. We now set the basic parameters of the QMC solver::
 
-  S.N_Cycles  = qmc_cycles
-  S.Length_Cycle = length_cycle
-  S.N_Warmup_Cycles = warming_iterations
+  S.n_cycles  = qmc_cycles
+  S.length_cycle = length_cycle
+  S.n_warmup_cycles = warming_iterations
 
 If there are previous runs stored in the hdf5 archive, we can now load the self energy
 of the last iteration::
@@ -121,7 +119,9 @@ previous section, with some additional refinement::
         S.G0 = mpi.bcast(S.G0)
 
         # Solve the impurity problem:
-        S.Solve()
+        S.Solve(U_interact=U,J_hund=J,n_orb=Norb,use_matrix=use_matrix, 
+                T=SK.T[0], gf_struct=SK.gf_struct_solver[0],map=SK.map[0], 
+                l=l, deg_orbs=SK.deg_shells[0], use_spinflip=use_spinflip))
 
         # solution done, do the post-processing:
         mpi.report("Total charge of impurity problem : %.6f"%S.G.total_density())

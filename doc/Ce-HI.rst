@@ -77,7 +77,7 @@ In order to run LDA+DMFT calculations within Hubbard-I we need the corresponding
 It is generally similar to the script for the case of DMFT calculations with the CT-QMC solver (see :ref:`advanced`), 
 however there are also some differences. First, instead of *pytriqs.applications.dft.solver_multiband* we import Hubbard-I solver ::
 
-   from pytriqs.applications.impurity_solvers.hubbard_I.solver import Solver
+   from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
 The Hubbard-I solver is very fast and we do not need to take into account the LDA blocking structure or use any approximation for the *U*-matrix ::
 
@@ -87,18 +87,19 @@ The Hubbard-I solver is very fast and we do not need to take into account the LD
 We load and convert the :program:`dmftproj` output and initialize the *SumkLDA* class as described in :ref:`LDADMFTmain` and :ref:`advanced` and then set up the Hubbard-I solver ::
 
  
-   S = Solver(beta = beta, U_int = U_int, J_hund = J_hund, l = l)
-   S.Nmoments=10
+   S = Solver(beta = beta, l = l)
 
-where the solver is initialized with the value of `beta` as well  as the `U` parameter (`U_int`) and Hund's rule coupling `J_hund`. Notice that `Solver_Hubbard-I` constructs the full 4-index `U`-matrix by default, and the `U` parameter is in fact the Slatter `F0` integral. 
-The last necessary parameter is the orbital quantum number `l` (equal to 3 in our case). 
-The next line gives the number of self-energy momenta used to compute contribution from the high-frequency tails.
+where the solver is initialized with the value of `beta`, and the orbital quantum number `l` (equal to 3 in our case). 
 
-The Hubbard-I solver initialization `Solver` has also several optional parameters one may use:
+
+The Hubbard-I initialization `Solver` has also optional parameters one may use:
 
   * `n_msb`: is the number of Matsubara frequencies used (default is `n_msb=1025`)
-  * `T`: A matrix that transforms the interaction matrix from complex spherical harmonics to a symmetry adapted basis. By default complex spherical harmonics basis is used and `T=None`
   * `use_spin_orbit`: if set 'True' the solver is run with spin-orbit coupling included. To perform actual LDA+DMFT calculations with spin-orbit one should also run   :program:`Wien2k` and :program:`dmftproj` in spin-polarized mode and with spin-orbit included. By default `use_spin_orbit=False`
+
+The `Solver.solve(U_int, J_hund)` statement has two necessary parameters, the `U` parameter (`U_int`) and Hund's rule coupling `J_hund`. Notice that the solver constructs the full 4-index `U`-matrix by default, and the `U` parameter is in fact the Slatter `F0` integral. Other optional parameters are:
+
+  * `T`: A matrix that transforms the interaction matrix from complex spherical harmonics to a symmetry adapted basis. By default complex spherical harmonics basis is used and `T=None`
   * `verbosity` tunes output from the solver. If `verbosity=0` only basic information is printed, if `verbosity=1` the ground state atomic occupancy and its energy are printed, if `verbosity=2` additional information is printed for all occupancies that were diagonalized. By default `verbosity=0`
 
 We need also to introduce some changes in the DMFT loop with respect to the ones used for CT-QMC calculations in :ref:`advanced`. 

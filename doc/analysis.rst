@@ -43,7 +43,7 @@ density of states of the Wannier orbitals, you simply type::
 
   SK.check_input_dos(om_min, om_max, n_om)
 
-which produces plots between real frequencies `ommin` and `ommax`, using a mesh of `N_om` points. There
+which produces plots between real frequencies `om_min` and `om_max`, using a mesh of `n_om` points. There
 is an optional parameter, `broadening`, which defines an additional Lorentzian broadening, and is set to `0.01` 
 by default.
 
