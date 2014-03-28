@@ -66,19 +66,28 @@ Routines with real-frequency self energy
 ----------------------------------------
 
 In order to plot data including correlation effects on the real axis, one has to provide the real frequency self energy. 
-Most conveniently, it is stored as a real frequency :class:`BlockGf` object in the hdf5 file. There is one important thing to
-keep in mind. The real frequency self energy has to carry the note `ReFreq`::
+Most conveniently, it is stored as a real frequency :class:`BlockGf` object in the hdf5 file::
 
-  SigmaReFreq.note = 'ReFreq'
-
-This tells the SumkLDA routines, that it is indeed a real frequency Greens function. Supposed you have your self energy now
-in the archive, you can type::
-
-  ar=HDFArchive(SK.hdf_file)
-  SK.put_Sigma([ ar['SigmaReFreq'] ])
+  ar = HDFArchive(filename+'.h5','a')
+  ar['SigmaReFreq'] = Sigma_real
   del ar
 
-This loads the self energy and puts it into the :class:`SumkLDA` class. The chemical potential as well as the double
+You may also store it in text files. If all blocks of your self energy are of dimension 1x1  you store them in `filename_(block)0.dat` files. Here `(block)` is a block name (`up`, `down`, or combined `ud`). In the case when you have matrix blocks, you store them in `(i)_(j).dat` files in the `filename_(block)` directory
+
+
+This self energy is loaded and put into the :class:`SumkLDA` class by the function:: 
+
+  SK.constr_Sigma_real_axis(filename, hdf=True, hdf_dataset='SigmaReFreq',n_om=0)
+
+where:
+ 
+  * `filename` is the file name of the hdf5 archive file or the `fname` pattern in text files names as described above.  
+  * `hdf=True` the real-axis self energy will be read from the hdf5 file, `hdf=False`: from the text files
+  * `hdf_dataset` the name of dataset where the self energy is stored in the hdf5 file
+  * `n_om` number of points in the real-axis mesh (used only if `hdf=False`)
+  
+
+The chemical potential as well as the double
 counting correction was already read in the initialisation process.
 
 With this self energy, we can do now::

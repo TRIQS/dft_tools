@@ -178,7 +178,7 @@ Then one needs to load projectors needed for calculations of corresponding proje
 Then after the solver initialization and setting up atomic levels we compute atomic Green's function and self-energy on the real axis::
 
    S.set_atomic_levels( eal = eal )
-   S.GF_realomega(ommin=ommin, ommax = ommax, N_om=N_om)
+   S.GF_realomega(ommin=ommin, ommax = ommax, N_om=N_om,U_int=U_int,J_hund=J_hund)
 
 put it into SK class and then calculated the actual DOS::
 

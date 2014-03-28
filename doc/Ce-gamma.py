@@ -2,22 +2,25 @@ from pytriqs.applications.dft.sumk_lda import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
 from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
-LDAFilename = 'Ce'
-Beta = 40
-Uint = 6.00
-JHund = 0.70
+lda_filename = 'Ce-gamma'
+beta = 40
+U_int = 6.00
+J_hund = 0.70
 Loops =  2                       # Number of DMFT sc-loops
 Mix = 0.7                        # Mixing factor in QMC
 DC_type = 0                      # 0...FLL, 1...Held, 2... AMF, 3...Lichtenstein
 DC_Mix = 1.0                     # 1.0 ... all from imp; 0.0 ... all from Gloc   
 useBlocs = False                 # use bloc structure from LDA input
 useMatrix = True                 # use the U matrix calculated from Slater coefficients instead of (U+2J, U, U-J)
+Natomic = 1
 
-HDFfilename = LDAFilename+'.h5'
+HDFfilename = lda_filename+'.h5'
+
+use_val= U_int * (Natomic - 0.5) - J_hund * (Natomic*0.5 - 0.5)
 
 # Convert DMFT input:
 # Can be commented after the first run
-Converter = Wien2kConverter(filename=LDAFilename)
+Converter = Wien2kConverter(filename=lda_filename)
 Converter.convert_dmft_input()
 
 #check if there are previous runs:
@@ -39,13 +42,13 @@ previous_runs    = mpi.bcast(previous_runs)
 previous_present = mpi.bcast(previous_present)
 
 # Init the SumK class
-SK=SumkLDA(hdf_file=LDAFilename+'.h5',use_lda_blocks=False)
+SK=SumkLDA(hdf_file=lda_filename+'.h5',use_lda_blocks=False)
 
 Norb = SK.corr_shells[0][3]
 l    = SK.corr_shells[0][2]
 
 # Init the Solver:
-S = Solver(beta = Beta, l = l)
+S = Solver(beta = beta, l = l)
 
 if (previous_present):
     # load previous data:
@@ -77,7 +80,7 @@ for Iteration_Number in range(1,Loops+1):
         dm = S.G.density()
 
         if ((Iteration_Number==1)and(previous_present==False)):
-	    SK.set_dc( dens_mat=dm, U_interact = Uint, J_hund = JHund, orb = 0, use_dc_formula = DC_type)
+	    SK.set_dc( dens_mat=dm, U_interact = U_int, J_hund = J_hund, orb = 0, use_dc_formula = DC_type, use_val=use_val)
 
         # set atomic levels:
         eal = SK.eff_atomic_levels()[0]
@@ -90,7 +93,7 @@ for Iteration_Number in range(1,Loops+1):
             del ar
 
         # solve it:
-        S.solve(U_int = Uint, J_hund = JHund, verbosity = 1)
+        S.solve(U_int = U_int, J_hund = J_hund, verbosity = 1)
 
         if (mpi.is_master_node()):
             ar = HDFArchive(HDFfilename)
@@ -116,7 +119,7 @@ for Iteration_Number in range(1,Loops+1):
         
         # after the Solver has finished, set new double counting: 
         dm = S.G.density()
-        SK.set_dc( dm, U_interact = Uint, J_hund = JHund, orb = 0, use_dc_formula = DC_type )
+        SK.set_dc( dm, U_interact = U_int, J_hund = J_hund, orb = 0, use_dc_formula = DC_type , use_val=use_val)
         # correlation energy calculations:
         correnerg = 0.5 * (S.G * S.Sigma).total_density()
         mpi.report("Corr. energy = %s"%correnerg)
@@ -151,7 +154,7 @@ for Iteration_Number in range(1,Loops+1):
 # find exact chemical potential
 if (SK.density_required):
     SK.chemical_potential = SK.find_mu( precision = 0.000001 )
-dN,d = SK.calc_density_correction(filename = LDAFilename+'.qdmft')
+dN,d = SK.calc_density_correction(filename = lda_filename+'.qdmft')
 
 mpi.report("Trace of Density Matrix: %s"%d)
 
@@ -163,7 +166,6 @@ if (mpi.is_master_node()):
     DCenerg = ar['DCenerg%s'%itn]
     del ar
     correnerg -= DCenerg[0]
-    f=open(LDAFilename+'.qdmft','a')
+    f=open(lda_filename+'.qdmft','a')
     f.write("%.16f\n"%correnerg)
     f.close()
-

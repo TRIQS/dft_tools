@@ -1,13 +1,13 @@
 from pytriqs.applications.dft.sumk_lda_tools import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
-from pytriqs.applications.impurity_solvers.hubbard_I.solver import Solver
+from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
 # Creates the data directory, cd into it:
 #Prepare_Run_Directory(DirectoryName = "Ce-Gamma") 
-LDAFilename = 'Ce-gamma'
+lda_filename = 'Ce-gamma'
 Beta =  40
-Uint = 6.00
-JHund = 0.70
+U_int = 6.00
+J_hund = 0.70
 DC_type = 0                      # 0...FLL, 1...Held, 2... AMF, 3...Lichtenstein
 load_previous = True              # load previous results
 useBlocs = False                 # use bloc structure from LDA input
@@ -17,13 +17,13 @@ ommax=6.0
 N_om=2001
 broadening = 0.02
 
-HDFfilename = LDAFilename+'.h5'
+HDFfilename = lda_filename+'.h5'
 
 # Convert DMFT input:
 # Can be commented after the first run
-Converter = Wien2kConverter(filename=LDAFilename,repacking=True)
+Converter = Wien2kConverter(filename=lda_filename,repacking=True)
 Converter.convert_dmft_input()
-Converter.convert_par_proj_input()
+Converter.convert_parproj_input()
 
 #check if there are previous runs:
 previous_runs = 0
@@ -48,7 +48,7 @@ previous_present = mpi.bcast(previous_present)
 # from a converted h5 archive.
 
 # Init the SumK class
-SK = SumkLDATools(hdf_file=LDAFilename+'.h5',use_lda_blocks=False)
+SK = SumkLDATools(hdf_file=lda_filename+'.h5',use_lda_blocks=False)
 
 
 if (mpi.is_master_node()):
@@ -58,13 +58,12 @@ N = SK.corr_shells[0][3]
 l = SK.corr_shells[0][2]
 
 # Init the Solver:
-S = Solver(Beta = Beta, Uint = Uint, JHund = JHund, l = l)
-S.Nmoments=10
+S = Solver(beta = Beta, l = l)
+S.Nmoments= 8
 
 # set atomic levels:
 eal = SK.eff_atomic_levels()[0]
 S.set_atomic_levels( eal = eal )
-S.GF_realomega(ommin=ommin, ommax = ommax, N_om=N_om)
-S.Sigma.save('S.Sigma')
-SK.put_Sigma(Sigmaimp = [S.Sigma])
+S.GF_realomega(ommin=ommin, ommax = ommax, N_om=N_om,U_int=U_int,J_hund=J_hund)
+SK.put_Sigma(Sigma_imp = [S.Sigma])
 SK.dos_partial(broadening=broadening)

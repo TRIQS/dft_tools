@@ -53,10 +53,12 @@ specific needs. They are:
 
 The solver method is called later by this statement::
 
-  S.solve(U_interact = U, J_hund = J)
+  S.solve(U_interact,J_hund,use_spinflip=False,use_matrix=True,
+                   l=2,T=None, dim_reps=None, irep=None, deg_orbs=[],n_cycles =10000,
+                   length_cycle=200,n_warmup_cycles=1000)
 
-The parameters for the Coulomb interaction `U_interact` and the Hunds coupling `J_hund` are necessary parameters.
-The following parameters are optional, by highly recommended to be set:
+The parameters for the Coulomb interaction `U_interact` and the Hunds coupling `J_hund` are necessary parameters. The rest are optional parameters, for which default values are set. 
+They denerally should be reset for a given problem. Their meaning is as follows:
 
   * `use_matrix`: If `True`, the interaction matrix is calculated from Slater integrals, which are calculated from `U_interact` and 
     `J_hund`. Otherwise, a Kanamori representation is used. Attention: We define the intraorbital interaction as 
@@ -65,22 +67,20 @@ The following parameters are optional, by highly recommended to be set:
   * `T`: A matrix that transforms the interaction matrix from spherical harmonics, to a symmetry adapted basis. Only effective, if 
     `use_matrix=True`.
   * `l`: Orbital quantum number. Again, only effective for Slater parametrisation.
-  * `deg_shells`: A list that gives the degeneracies of the orbitals. It is used to set up a global move of the CTQMC solver.
+  * `deg_orbs`: A list that gives the degeneracies of the orbitals. It is used to set up a global move of the CTQMC solver.
   * `use_spinflip`: If `True`, the full rotationally-invariant interaction is used. Otherwise, only density-density terms are
     kept in the local Hamiltonian.
   * `dim_reps`: If only a subset of the full d-shell is used a correlated orbtials, one can specify here the dimensions of all the subspaces
     of the d-shell, i.e. t2g and eg. Only effective for Slater parametrisation.
   * `irep`: The index in the list `dim_reps` of the subset that is used. Only effective for Slater parametrisation.
+  * `n_cycles`: Number of CTQMC cycles (a sequence of moves followed by a measurement) per core. The default value of 10000 is the minimum, and generally should be incresed
+  * `length_cycle`: Number of CTQMC moves per one cycle
+  * `n_warmup_cycles`: Number of initial CTQMC cycles before measurements start. Usually of order of 10000, sometimes needs to be increased significantly.
 
 Most of above parameters can be taken directly from the :class:`SumkLDA` class, without defining them by hand. We will see a specific example 
 at the end of this tutorial.
 
-After initialisation, several other CTQMC parameters can be set (see CTQMC doc). The most important are:
-
-  * `S.n_cycles`: Number of QMC cycles per node.
-  * `S.n_warmup_cycles`: Number of iterations used for thermalisation
-
-
+After initialisation, several other CTQMC parameters can be set (see CTQMC doc). 
 
 
 .. index:: LDA+DMFT loop, one-shot calculation
@@ -120,9 +120,9 @@ At the end of the calculation, we can save the Greens function and self energy i
   from pytriqs.archive import HDFArchive
   import pytriqs.utility.mpi as mpi
   if mpi.is_master_node():
-      R = HDFArchive("YourLDADMFTcalculation.h5",'w')
-      R["G"] = S.G
-      R["Sigma"] = S.Sigma
+      ar = HDFArchive("YourLDADMFTcalculation.h5",'w')
+      ar["G"] = S.G
+      ar["Sigma"] = S.Sigma
 
 This is it! 
 
