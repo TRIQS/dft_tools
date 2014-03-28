@@ -440,9 +440,9 @@ def set_U_matrix(U_interact,J_hund,n_orb,l,use_matrix=True,T=None,sl_int=None,us
         for i in range(n_orb):
             for j in range(n_orb):
 	        if (i==j):
-	            Up[i,i] = U_interact + 2.0*J_hund
+	            Up[i,i] = U_interact 
 	        else:
-	       	    Up[i,j] = U_interact
-		    U[i,j]  = U_interact - J_hund
+	       	    Up[i,j] = U_interact - 2.0*J_hund
+		    U[i,j]  = U_interact - 3.0*J_hund
 
     return U, Up, U4ind, offset
