@@ -710,10 +710,12 @@ class SumkLDA:
                             self.dc_energ[icrsh]  -= J_hund / 2.0 * (Ncr[bl]) * (Ncr[bl]-1.0)
                             mpi.report("DC for shell %(icrsh)i and block %(bl)s = %(Uav)f"%locals())
                     elif (use_dc_formula==1):
-                        self.dc_energ[icrsh] = (U_interact + J_hund * (2.0-(M-1)) / (2*M-1)  ) / 2.0 * Ncrtot * (Ncrtot-1.0)
+                        self.dc_energ[icrsh] = (U_interact + (M-1)*(U_interact-2.0*J_hund) + (M-1)*(U_interact-3.0*J_hund))/(2*M-1) / 2.0 * Ncrtot * (Ncrtot-1.0)
+                        #self.dc_energ[icrsh] = (U_interact + J_hund * (2.0-(M-1)) / (2*M-1)  ) / 2.0 * Ncrtot * (Ncrtot-1.0)
                         for bl in a_list:
                             # Held's formula, with U_interact the interorbital onsite interaction
-                            Uav = (U_interact + J_hund * (2.0-(M-1)) / (2*M-1)  ) * (Ncrtot-0.5)
+                            Uav =(U_interact + (M-1)*(U_interact-2.0*J_hund) + (M-1)*(U_interact-3.0*J_hund))/(2*M-1) * (Ncrtot-0.5)
+                            #Uav = (U_interact + J_hund * (2.0-(M-1)) / (2*M-1)  ) * (Ncrtot-0.5)
                             self.dc_imp[icrsh][bl] *= Uav 
                             mpi.report("DC for shell %(icrsh)i and block %(bl)s = %(Uav)f"%locals())
                     elif (use_dc_formula==2):

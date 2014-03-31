@@ -37,7 +37,7 @@ useMatrix = False                # True: Slater parameters, False: Kanamori para
 use_spinflip = False             # use the full rotational invariant interaction?
 #=====================================================
 
-U=U-2*J
+#U=U-2*J
 
 HDFfilename = LDAFilename+'.h5'
 

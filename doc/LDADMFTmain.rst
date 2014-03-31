@@ -62,8 +62,8 @@ They denerally should be reset for a given problem. Their meaning is as follows:
 
   * `use_matrix`: If `True`, the interaction matrix is calculated from Slater integrals, which are calculated from `U_interact` and 
     `J_hund`. Otherwise, a Kanamori representation is used. Attention: We define the intraorbital interaction as 
-    `U_interact+2J_hund`, the interorbital interaction for opposite spins as `U_interact`, and interorbital for equal spins as 
-    `U_interact-J_hund`!
+    `U_interact`, the interorbital interaction for opposite spins as `U_interact-2*J_hund`, and interorbital for equal spins as 
+    `U_interact-3*J_hund`.
   * `T`: A matrix that transforms the interaction matrix from spherical harmonics, to a symmetry adapted basis. Only effective, if 
     `use_matrix=True`.
   * `l`: Orbital quantum number. Again, only effective for Slater parametrisation.

@@ -16,7 +16,7 @@ First, we load the necessary modules::
 Then we define some parameters::
 
   lda_filename='srvo3'
-  U = 2.7
+  U = 4.0
   J = 0.65
   beta = 40
   loops =  10                      # Number of DMFT sc-loops
@@ -24,7 +24,7 @@ Then we define some parameters::
   Delta_mix = 1.0                  # Mixing factor of Delta as input for the AIM
   dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
   use_blocks = True                # use bloc structure from LDA input
-  use_matrix = False               # True: Slater parameters, False: Kanamori parameters U+2J, U, U-J
+  use_matrix = False               # True: Slater parameters, False: Kanamori parameters U, U-2J, U-3J
   use_spinflip = False             # use the full rotational invariant interaction?
   prec_mu = 0.0001
   qmc_cycles = 20000
