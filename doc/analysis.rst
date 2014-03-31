@@ -72,7 +72,7 @@ Most conveniently, it is stored as a real frequency :class:`BlockGf` object in t
   ar['SigmaReFreq'] = Sigma_real
   del ar
 
-You may also store it in text files. If all blocks of your self energy are of dimension 1x1  you store them in `filename_(block)0.dat` files. Here `(block)` is a block name (`up`, `down`, or combined `ud`). In the case when you have matrix blocks, you store them in `(i)_(j).dat` files in the `filename_(block)` directory
+You may also store it in text files. If all blocks of your self energy are of dimension 1x1  you store them in `fname_(block)0.dat` files. Here `(block)` is a block name (`up`, `down`, or combined `ud`). In the case when you have matrix blocks, you store them in `(i)_(j).dat` files (where `(i)` and `(j)` are the orbital indices) in the `fname_(block)` directory
 
 
 This self energy is loaded and put into the :class:`SumkLDA` class by the function:: 
@@ -81,20 +81,21 @@ This self energy is loaded and put into the :class:`SumkLDA` class by the functi
 
 where:
  
-  * `filename` is the file name of the hdf5 archive file or the `fname` pattern in text files names as described above.  
-  * `hdf=True` the real-axis self energy will be read from the hdf5 file, `hdf=False`: from the text files
+  * `filename` is the name of the hdf5 archive file or the `fname` pattern in text files names as described above.  
+  * `hdf=True`: the real-axis self energy will be read from the hdf5 file, `hdf=False`: from the text files
   * `hdf_dataset` the name of dataset where the self energy is stored in the hdf5 file
   * `n_om` number of points in the real-axis mesh (used only if `hdf=False`)
   
 
 The chemical potential as well as the double
-counting correction was already read in the initialisation process.
+counting correction were already read in the initialisation process.
 
 With this self energy, we can do now::
 
-  SK.dos_partial()
+  SK.dos_partial(broadening=broadening)
 
 This produces the momentum-integrated spectral functions (density of states, DOS), also orbitally resolved. 
+The variable `broadening` is an additional Lorentzian broadening that is added to the resulting spectra.
 The output is printed into the files
 
   * `DOScorr(sp).dat`: The total DOS. `(sp)` stands for `up`, `down`, or combined `ud`. The latter case
@@ -111,7 +112,7 @@ converter routines, see :ref:`interfacetowien`. The spectral function is calcula
 
   SK.spaghettis(broadening)
 
-The variable `broadening`1 is an additional Lorentzian broadening that is added to the resulting spectra. The output is
+The output is
 written as the 3-column files ``Akw(sp).dat``, where `(sp)` has the same meaning as above. The output format is 
 `k`, :math:`\omega`, `value`. Optional parameters are
 

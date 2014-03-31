@@ -62,8 +62,8 @@ They denerally should be reset for a given problem. Their meaning is as follows:
 
   * `use_matrix`: If `True`, the interaction matrix is calculated from Slater integrals, which are calculated from `U_interact` and 
     `J_hund`. Otherwise, a Kanamori representation is used. Attention: We define the intraorbital interaction as 
-    `U_interact`, the interorbital interaction for opposite spins as `U_interact-2*J_hund`, and interorbital for equal spins as 
-    `U_interact-3*J_hund`.
+    `U_interact+2J_hund`, the interorbital interaction for opposite spins as `U_interact`, and interorbital for equal spins as 
+    `U_interact-J_hund`!
   * `T`: A matrix that transforms the interaction matrix from spherical harmonics, to a symmetry adapted basis. Only effective, if 
     `use_matrix=True`.
   * `l`: Orbital quantum number. Again, only effective for Slater parametrisation.
@@ -79,8 +79,6 @@ They denerally should be reset for a given problem. Their meaning is as follows:
 
 Most of above parameters can be taken directly from the :class:`SumkLDA` class, without defining them by hand. We will see a specific example 
 at the end of this tutorial.
-
-After initialisation, several other CTQMC parameters can be set (see CTQMC doc). 
 
 
 .. index:: LDA+DMFT loop, one-shot calculation
@@ -99,7 +97,9 @@ set up the loop over DMFT iterations and the self-consistency condition::
           S.G <<= SK.extract_G_loc()[0]              # extract the local Green function
           S.G0 <<= inverse(S.Sigma + inverse(S.G))   # finally get G0, the input for the Solver
 
-          S.Solve(U_interact = U, J_hund = J)                                  # now solve the impurity problem
+          S.solve(U_interact,J_hund,use_spinflip=False,use_matrix=True,     # now solve the impurity problem
+                           l=2,T=None, dim_reps=None, irep=None, deg_orbs=[],n_cycles =10000,
+                           length_cycle=200,n_warmup_cycles=1000)
 
 	  dm = S.G.density()                         # density matrix of the impurity problem  
           SK.set_dc( dm, U_interact = U, J_hund = J, use_dc_formula = 0)     # Set the double counting term
