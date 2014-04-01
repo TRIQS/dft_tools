@@ -142,21 +142,22 @@ where `-qdmft` flag turns on LDA+DMFT calculations with :program:`Wien2k`. We us
 After calculations are done we may check the value of correlational ('Hubbard') energy correction to the total energy::
     
    >grep HUBBARD Ce-gamma.scf|tail -n 1
-   HUBBARD ENERGY(included in SUM OF EIGENVALUES):           -0.220501
+   HUBBARD ENERGY(included in SUM OF EIGENVALUES):           -0.220502
 
 and the band("kinetic") energy with DMFT correction::
 
    >grep DMFT Ce-gamma.scf |tail -n 1
-   KINETIC ENERGY with DMFT correction:                      -5.337286
+   KINETIC ENERGY with DMFT correction:                      -5.329087
 
 as well as the convergence in total energy::
    
    >grep :ENE Ce-gamma.scf |tail -n 5
-   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.554865
-   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.554577
-   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.554420
-   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.554371
-   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.554419
+   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.77119670
+   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.77050935
+   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.77040176
+   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.77020712
+   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.77037540
+
 
 Calculating DOS with Hubbard-I
 ------------------------------
