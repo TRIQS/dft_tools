@@ -66,7 +66,7 @@ class HkConverter:
         
         
 
-    def convert_dmft_input(self, only_upper_triangle = True, weights_in_file = False):
+    def convert_dmft_input(self, first_real_part_matrix = True, only_upper_triangle = False, weights_in_file = False):
         """
         Reads the input files, and stores the data in the HDFfile
         """
@@ -184,16 +184,38 @@ class HkConverter:
             for isp in range(n_spin_blocks):
                 for ik in xrange(n_k) :
                     no = n_orbitals[ik][isp]
-                    for i in xrange(no):
-                        if (only_upper_triangle):
-                            ii=i
-                        else:
-                            ii = 0
-                        for j in xrange(ii,no):
-                            hopping[ik,isp,i,j] = R.next()
-                            hopping[ik,isp,i,j] += R.next() * 1j
+                    
+                    if (first_real_part_matrix):
+                        
+                        for i in xrange(no):
+                            if (only_upper_triangle):
+                                istart = i
+                            else:
+                                istart = 0
+                            for j in xrange(istart,no):
+                                hopping[ik,isp,i,j] = R.next()
+                
+                        for i in xrange(no):
+                            if (only_upper_triangle):
+                                istart = i
+                            else:
+                                istart = 0
+                            for j in xrange(istart,no):
+                                hopping[ik,isp,i,j] += R.next() * 1j
+                                if ((only_upper_triangle)and(i!=j)): hopping[ik,isp,j,i] = hopping[ik,isp,i,j].conjugate()
+                
+                    else:
+                    
+                        for i in xrange(no):
+                            if (only_upper_triangle):
+                                istart = i
+                            else:
+                                istart = 0
+                            for j in xrange(istart,no):
+                                hopping[ik,isp,i,j] = R.next()
+                                hopping[ik,isp,i,j] += R.next() * 1j
                             
-                            if ((only_upper_triangle)and(i!=j)): hopping[ik,isp,j,i] = hopping[ik,isp,i,j].conjugate()
+                                if ((only_upper_triangle)and(i!=j)): hopping[ik,isp,j,i] = hopping[ik,isp,i,j].conjugate()
             
             #keep some things that we need for reading parproj:
             self.n_shells = n_shells
