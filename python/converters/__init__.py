@@ -21,7 +21,8 @@
 ################################################################################
 
 from wien2k_converter import Wien2kConverter
+from hk_converter import HkConverter
 
-__all__ =['Wien2kConverter']
+__all__ =['Wien2kConverter','HkConverter']
 
 

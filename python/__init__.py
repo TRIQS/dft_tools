@@ -26,6 +26,6 @@ from sumk_lda_tools import SumkLDATools
 from U_matrix import Umatrix
 from converters import *
 
-__all__ =['SumkLDA','Symmetry','SumkLDATools','Umatrix','Wien2kConverter']
+__all__ =['SumkLDA','Symmetry','SumkLDATools','Umatrix','Wien2kConverter','HkConverter']
 
 
