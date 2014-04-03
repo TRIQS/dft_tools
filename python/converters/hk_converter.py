@@ -49,7 +49,7 @@ class HkConverter:
         on. 
         """
 
-        assert type(nmto_file)==StringType,"LDA_file must be a filename"
+        assert type(hk_file)==StringType,"hk_file must be a filename"
         self.hdf_file = hdf_file
         self.lda_file = hk_file
         #self.Symm_file = Filename+'.symqmc'
@@ -137,7 +137,7 @@ class HkConverter:
             # define the number of N_Orbitals for all k points: it is the number of total bands and independent of k!
             n_orb = sum([ shells[ish][3] for ish in range(n_shells)])
             #n_orbitals = [ [n_orb for isp in range(n_spin_blocks)] for ik in xrange(n_k)]
-            n_orbitals = numpy.ones([n_k,n_spin_blocs],numpy.int) * n_orb
+            n_orbitals = numpy.ones([n_k,n_spin_blocks],numpy.int) * n_orb
             #print N_Orbitals
 
             # Initialise the projectors:
@@ -145,23 +145,25 @@ class HkConverter:
             #                for icrsh in range (n_corr_shells)] 
             #               for isp in range(n_spin_blocks)] 
             #             for ik in range(n_k) ]
-            proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max(numpy.array(corr_shells)[:,3]),max(n_orbitals)],numpy.complex_)
+            proj_mat = numpy.zeros([n_k,n_spin_blocks,n_corr_shells,max(numpy.array(corr_shells)[:,3]),max(n_orbitals)],numpy.complex_)
 
 
             # Read the projectors from the file:
             for ik in xrange(n_k):
                 for icrsh in range(n_corr_shells):
-                    # calculate the offset:
-                    offset = 0
-                    no = 0
-                    for i in range(n_shells):
-                        if (no==0):
-                            if ((shells[i][0]==corr_shells[icrsh][0]) and (shells[i][1]==corr_shells[icrsh][1])):
-                                no = corr_shells[icrsh][3]
-                            else:
-                                offset += shells[i][3]
+                    for isp in range(n_spin_blocks):
 
-                    proj_mat[ik,isp,icrsh,0:no,offset:offset+no] = numpy.identity(no)
+                        # calculate the offset:
+                        offset = 0
+                        no = 0
+                        for i in range(n_shells):
+                            if (no==0):
+                                if ((shells[i][0]==corr_shells[icrsh][0]) and (shells[i][1]==corr_shells[icrsh][1])):
+                                    no = corr_shells[icrsh][3]
+                                else:
+                                    offset += shells[i][3]
+
+                        proj_mat[ik,isp,icrsh,0:no,offset:offset+no] = numpy.identity(no)
                     
                       
           
@@ -169,7 +171,7 @@ class HkConverter:
             bz_weights = numpy.ones([n_k],numpy.float_)/ float(n_k)  # w(k_index),  default normalisation 
             #hopping = [ [numpy.zeros([n_orbitals[ik][isp],n_orbitals[ik][isp]],numpy.complex_) 
             #             for isp in range(n_spin_blocks)] for ik in xrange(n_k) ]
-            hopping = numpy.zeros([n_k,n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
+            hopping = numpy.zeros([n_k,n_spin_blocks,max(n_orbitals),max(n_orbitals)],numpy.complex_)
 
             if (weights_in_file):
                 # weights in the file
@@ -181,9 +183,10 @@ class HkConverter:
 
 
             # Grab the H
-            for isp in range(n_spin_blocks):
-                for ik in xrange(n_k) :
-                    no = n_orbitals[ik][isp]
+            for ik in xrange(n_k) :
+                for isp in range(n_spin_blocks):
+
+                    no = n_orbitals[ik,isp]
                     
                     if (first_real_part_matrix):
                         
