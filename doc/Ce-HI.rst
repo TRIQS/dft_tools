@@ -135,7 +135,7 @@ where :program:`mpirun` launches these calculations in parallel mode and enables
 
 Instead of doing one-shot run one may also  perform fully self-consistent LDA+DMFT calculations, as we will do in this tutorial. We launch these calculations as follows ::
 
-   run_para -qdmft
+   run_triqs -qdmft
 
 where `-qdmft` flag turns on LDA+DMFT calculations with :program:`Wien2k`. We use here the default convergence criterion in :program:`Wien2k` (convergence to 0.1 mRy in energy). 
 
