@@ -397,7 +397,7 @@ def set_U_matrix(U_interact,J_hund,n_orb,l,use_matrix=True,T=None,sl_int=None,us
                 Rcl = numpy.array(sl_int)
             else:
                 Rcl = sl_int
-            Umat(T=T,Rcl=Rcl)
+            Umat(T=T,rcl=Rcl)
         else:
             if ((U_interact==None)and(J_hund==None)):
                 mpi.report("Give U,J or Slater integrals!!!")
