@@ -19,7 +19,7 @@ Then we define some parameters::
   U = 2.7
   J = 0.65
   beta = 40
-  loops =  1                      # Number of DMFT sc-loops
+  loops =  10                     # Number of DMFT sc-loops
   mix = 0.8                        # Mixing factor of Sigma after solution of the AIM
   Delta_mix = 1.0                  # Mixing factor of Delta as input for the AIM
   dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
@@ -27,9 +27,9 @@ Then we define some parameters::
   use_matrix = False               # True: Slater parameters, False: Kanamori parameters U+2J, U, U-J
   use_spinflip = False             # use the full rotational invariant interaction?
   prec_mu = 0.0001
-  qmc_cycles = 200000
+  qmc_cycles = 20000
   length_cycle = 200
-  warming_iterations = 10000
+  warming_iterations = 2000
 
 
 Most of these parameters are self-explaining. The first, `lda_filename`, gives the filename of the input files. 
