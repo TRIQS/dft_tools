@@ -16,20 +16,21 @@ First, we load the necessary modules::
 Then we define some parameters::
 
   lda_filename='srvo3'
-  U = 4.0
+  U = 2.7
   J = 0.65
   beta = 40
-  loops =  10                      # Number of DMFT sc-loops
-  mix = 1.0                        # Mixing factor of Sigma after solution of the AIM
+  loops =  1                      # Number of DMFT sc-loops
+  mix = 0.8                        # Mixing factor of Sigma after solution of the AIM
   Delta_mix = 1.0                  # Mixing factor of Delta as input for the AIM
   dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
   use_blocks = True                # use bloc structure from LDA input
-  use_matrix = False               # True: Slater parameters, False: Kanamori parameters U, U-2J, U-3J
+  use_matrix = False               # True: Slater parameters, False: Kanamori parameters U+2J, U, U-J
   use_spinflip = False             # use the full rotational invariant interaction?
   prec_mu = 0.0001
-  qmc_cycles = 20000
+  qmc_cycles = 200000
   length_cycle = 200
-  warming_iterations = 2000
+  warming_iterations = 10000
+
 
 Most of these parameters are self-explaining. The first, `lda_filename`, gives the filename of the input files. 
 The next step, as described in the previous section, is to convert the input files::
@@ -84,71 +85,67 @@ Now we can go to the definition of the self-consistency step. It consists again 
 previous section, with some additional refinement::
 
   for iteration_number in range(1,loops+1) :
-     
+  
         SK.symm_deg_gf(S.Sigma,orb=0)                           # symmetrise Sigma
         SK.put_Sigma(Sigma_imp = [ S.Sigma ])                   # put Sigma into the SumK class:
-
+  
         chemical_potential = SK.find_mu( precision = prec_mu )  # find the chemical potential
         S.G <<= SK.extract_G_loc()[0]                           # calculation of the local Green function
         mpi.report("Total charge of Gloc : %.6f"%S.G.total_density())
-
+  
         if ((iteration_number==1)and(previous_present==False)):
             # Init the DC term and the real part of Sigma, if no previous run was found:
             dm = S.G.density()
             SK.set_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
             S.Sigma <<= SK.dc_imp[0]['up'][0,0]
-        
-        # now calculate new G0:
-        if (mpi.is_master_node()):
-            # We can do a mixing of Delta in order to stabilize the DMFT iterations:
-            S.G0 <<= S.Sigma + inverse(S.G)
-            ar = HDFArchive(lda_filename+'.h5','a')
-            if ((iteration_number>1) or (previous_present)):
-                mpi.report("Mixing input Delta with factor %s"%Delta_mix)
-                Delta = (Delta_mix * S.G0.delta()) + (1.0-Delta_mix) * ar['DeltaF']
-                S.G0 <<= S.G0 + S.G0.delta() - Delta
-                
-            ar['DeltaF'] = S.G0.delta()
-            S.G0 <<= inverse(S.G0)
-            del ar
-            
-        S.G0 = mpi.bcast(S.G0)
-
+  
+        S.G0 <<= inverse(S.Sigma + inverse(S.G))
+  
         # Solve the impurity problem:
-        S.Solve(U_interact=U,J_hund=J,n_orb=Norb,use_matrix=use_matrix, 
-                T=SK.T[0], gf_struct=SK.gf_struct_solver[0],map=SK.map[0], 
-                l=l, deg_orbs=SK.deg_shells[0], use_spinflip=use_spinflip,
-                n_cycles =qmc_cycles,length_cycle=length_cycle,n_warmup_cycles=warming_iterations)
-
+        S.solve(U_interact=U,J_hund=J,use_spinflip=use_spinflip,use_matrix=use_matrix,
+                     l=l,T=SK.T[0], dim_reps=SK.dim_reps[0], irep=2, deg_orbs=SK.deg_shells[0],n_cycles =qmc_cycles,
+                     length_cycle=length_cycle,n_warmup_cycles=warming_iterations)
+  
         # solution done, do the post-processing:
         mpi.report("Total charge of impurity problem : %.6f"%S.G.total_density())
-
+  
+        S.Sigma <<=(inverse(S.G0)-inverse(S.G))
+        # Solve the impurity problem:
+        S.solve(U_interact=U,J_hund=J,use_spinflip=use_spinflip,use_matrix=use_matrix,
+                     l=l,T=SK.T[0], dim_reps=SK.dim_reps[0], irep=2, deg_orbs=SK.deg_shells[0],n_cycles =qmc_cycles,
+                     length_cycle=length_cycle,n_warmup_cycles=warming_iterations)
+  
+        # solution done, do the post-processing:
+        mpi.report("Total charge of impurity problem : %.6f"%S.G.total_density())
+  
+        S.Sigma <<=(inverse(S.G0)-inverse(S.G))
+  
         # Now mix Sigma and G with factor Mix, if wanted:
-        if ((iteratio_number>1) or (previous_present)):
+        if ((iteration_number>1) or (previous_present)):
             if (mpi.is_master_node()):
                 ar = HDFArchive(lda_filename+'.h5','a')
                 mpi.report("Mixing Sigma and G with factor %s"%mix)
-                S.Sigma <<= mix * S.Sigma + (1.0-mix) * ar['SigmaF']
+                S.Sigma <<= mix * S.Sigma + (1.0-mix) * ar['Sigma']
                 S.G <<= mix * S.G + (1.0-mix) * ar['GF']
                 del ar
             S.G = mpi.bcast(S.G)
             S.Sigma = mpi.bcast(S.Sigma)
-
+  
         # Write the final Sigma and G to the hdf5 archive:
         if (mpi.is_master_node()):
             ar = HDFArchive(lda_filename+'.h5','a')
-            ar['iterations'] = previous_runs + iteration_number	
-            ar['SigmaF'] = S.Sigma
+            ar['iterations'] = previous_runs + iteration_number
+            ar['Sigma'] = S.Sigma
             ar['GF'] = S.G
-	    del ar
-
+            del ar
+        save_Gf(S.Sigma,'Sigma')
         # Now set new double counting:
         dm = S.G.density()
         SK.set_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
-        
-	#Save stuff:
+  
+        #Save stuff:
         SK.save()
-
+                                
 This is all we need for the LDA+DMFT calculation. At the end, all results are stored in the hdf5 output file.
 
 
