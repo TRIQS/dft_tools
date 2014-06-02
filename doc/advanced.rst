@@ -138,7 +138,7 @@ previous section, with some additional refinement::
             ar['Sigma'] = S.Sigma
             ar['GF'] = S.G
             del ar
-        save_Gf(S.Sigma,'Sigma')
+
         # Now set new double counting:
         dm = S.G.density()
         SK.set_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
