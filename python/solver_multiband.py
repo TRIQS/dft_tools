@@ -57,7 +57,7 @@ class SolverMultiBand(Solver):
                
     """
     
-    def __init__(self, beta, n_orb, gf_struct = False, map = False):
+    def __init__(self, beta, n_orb, gf_struct = False, map = False, omega_max = None):
 
         self.n_orb = n_orb
 
@@ -71,7 +71,12 @@ class SolverMultiBand(Solver):
             self.map = {'up' : ['up' for v in range(n_orb)], 'down' : ['down' for v in range(n_orb)]}
 
         # now initialize the solver with the stuff given above:
-        Solver.__init__(self, beta = beta, gf_struct = gf_struct)
+        if (omega_max is None):
+            Solver.__init__(self, beta = beta, gf_struct = gf_struct)
+        else:
+            n_w = int(omega_max*beta/(2.*numpy.pi))
+            Solver.__init__(self, beta = beta, gf_struct = gf_struct, n_w = n_w)
+            
 
 
     def solve(self, U_interact=None, J_hund=None, use_spinflip=False,
