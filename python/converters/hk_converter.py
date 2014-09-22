@@ -28,10 +28,10 @@ import string
 from math import sqrt
 
 
-def Read_Fortran_File (filename):
+def read_fortran_file (filename):
     """ Returns a generator that yields all numbers in the Fortran file as float, one by one"""
     import os.path
-    if not(os.path.exists(filename)) : raise IOError, "File %s does not exists"%filename
+    if not(os.path.exists(filename)) : raise IOError, "File %s does not exist."%filename
     for line in open(filename,'r') :
 	for x in line.replace('D','E').replace('(',' ').replace(')',' ').replace(',',' ').split() : 
 	    yield string.atof(x)
@@ -40,22 +40,18 @@ def Read_Fortran_File (filename):
 
 class HkConverter:
     """
-    Conversion from general H(k) file to an hdf5 file, that can be used as input for the SumK_LDA class.
+    Conversion from general H(k) file to an hdf5 file that can be used as input for the SumK_LDA class.
     """
 
     def __init__(self, hk_file, hdf_file, lda_subgrp = 'SumK_LDA', symm_subgrp = 'SymmCorr', repacking = False):
         """
-        Init of the class. Variable Filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so
+        Init of the class.
         on. 
         """
 
         assert type(hk_file)==StringType,"hk_file must be a filename"
         self.hdf_file = hdf_file
         self.lda_file = hk_file
-        #self.Symm_file = Filename+'.symqmc'
-        #self.Parproj_file = Filename+'.parproj'
-        #self.Symmpar_file = Filename+'.sympar'
-        #self.Band_file = Filename+'.outband'
         self.lda_subgrp = lda_subgrp
         self.symm_subgrp = symm_subgrp
 
@@ -72,12 +68,12 @@ class HkConverter:
         """
         
                    
-        if not (mpi.is_master_node()): return # do it only on master:
+        # Read and write only on the master node
+        if not (mpi.is_master_node()): return
         mpi.report("Reading input from %s..."%self.lda_file)
 
-        # Read and write only on Master!!!
         # R is a generator : each R.Next() will return the next number in the file
-        R = Read_Fortran_File(self.lda_file)
+        R = read_fortran_file(self.lda_file)
         try:
             energy_unit = 1.0                              # the energy conversion factor is 1.0, we assume eV in files
             n_k = int(R.next())                            # read the number of k points
@@ -101,7 +97,6 @@ class HkConverter:
 
             self.inequiv_shells(corr_shells)              # determine the number of inequivalent correlated shells, has to be known for further reading...
 
-
             use_rotations = 0
             rot_mat = [numpy.identity(corr_shells[icrsh][3],numpy.complex_) for icrsh in xrange(n_corr_shells)]
             rot_mat_time_inv = [0 for i in range(n_corr_shells)]
@@ -109,16 +104,13 @@ class HkConverter:
             # Representative representations are read from file
             n_reps = [1 for i in range(self.n_inequiv_corr_shells)]
             dim_reps = [0 for i in range(self.n_inequiv_corr_shells)]
-            
+            T = []
             for icrsh in range(self.n_inequiv_corr_shells):
                 n_reps[icrsh] = int(R.next())   # number of representatives ("subsets"), e.g. t2g and eg
                 dim_reps[icrsh] = [int(R.next()) for i in range(n_reps[icrsh])]   # dimensions of the subsets
             
-            # The transformation matrix:
-            # it is of dimension 2l+1, it is taken to be standard d (as in Wien2k)
-            T = []
-            for icrsh in range(self.n_inequiv_corr_shells):
-            #for ish in xrange(self.N_inequiv_corr_shells):
+                # The transformation matrix:
+                # is of dimension 2l+1, it is taken to be standard d (as in Wien2k)
                 ll = 2*corr_shells[self.invshellmap[icrsh]][2]+1
                 lmax = ll * (corr_shells[self.invshellmap[icrsh]][4] + 1)
                 T.append(numpy.zeros([lmax,lmax],numpy.complex_))
@@ -131,27 +123,21 @@ class HkConverter:
 
     
             # Spin blocks to be read:
-            n_spin_blocks = SP + 1 - SO   # number of spins to read for Norbs and Ham, NOT Projectors
+            n_spin_blocs = SP + 1 - SO   # number of spins to read for Norbs and Ham, NOT Projectors
                  
         
-            # define the number of N_Orbitals for all k points: it is the number of total bands and independent of k!
-            n_orb = sum([ shells[ish][3] for ish in range(n_shells)])
-            #n_orbitals = [ [n_orb for isp in range(n_spin_blocks)] for ik in xrange(n_k)]
-            n_orbitals = numpy.ones([n_k,n_spin_blocks],numpy.int) * n_orb
-            #print N_Orbitals
+            # define the number of n_orbitals for all k points: it is the number of total bands and independent of k!
+            n_orb = sum([ shells[ish][3] for ish in range(n_shells) ])
+            n_orbitals = numpy.ones([n_k,n_spin_blocs],numpy.int) * n_orb
 
             # Initialise the projectors:
-            #proj_mat = [ [ [numpy.zeros([corr_shells[icrsh][3], n_orbitals[ik][isp]], numpy.complex_) 
-            #                for icrsh in range (n_corr_shells)] 
-            #               for isp in range(n_spin_blocks)] 
-            #             for ik in range(n_k) ]
-            proj_mat = numpy.zeros([n_k,n_spin_blocks,n_corr_shells,max(numpy.array(corr_shells)[:,3]),max(n_orbitals)],numpy.complex_)
+            proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max(numpy.array(corr_shells)[:,3]),max(n_orbitals)],numpy.complex_)
 
 
             # Read the projectors from the file:
             for ik in xrange(n_k):
                 for icrsh in range(n_corr_shells):
-                    for isp in range(n_spin_blocks):
+                    for isp in range(n_spin_blocs):
 
                         # calculate the offset:
                         offset = 0
@@ -169,9 +155,7 @@ class HkConverter:
           
             # now define the arrays for weights and hopping ...
             bz_weights = numpy.ones([n_k],numpy.float_)/ float(n_k)  # w(k_index),  default normalisation 
-            #hopping = [ [numpy.zeros([n_orbitals[ik][isp],n_orbitals[ik][isp]],numpy.complex_) 
-            #             for isp in range(n_spin_blocks)] for ik in xrange(n_k) ]
-            hopping = numpy.zeros([n_k,n_spin_blocks,max(n_orbitals),max(n_orbitals)],numpy.complex_)
+            hopping = numpy.zeros([n_k,n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
 
             if (weights_in_file):
                 # weights in the file
@@ -181,11 +165,9 @@ class HkConverter:
             sm = sum(bz_weights)
             bz_weights[:] /= sm 
 
-
             # Grab the H
-            for ik in xrange(n_k) :
-                for isp in range(n_spin_blocks):
-
+            for isp in range(n_spin_blocs):
+                for ik in xrange(n_k) :
                     no = n_orbitals[ik,isp]
                     
                     if (first_real_part_matrix):
@@ -220,24 +202,22 @@ class HkConverter:
                             
                                 if ((only_upper_triangle)and(i!=j)): hopping[ik,isp,j,i] = hopping[ik,isp,i,j].conjugate()
             
-            #keep some things that we need for reading parproj:
+            # keep some things that we need for reading parproj:
             self.n_shells = n_shells
             self.shells = shells
             self.n_corr_shells = n_corr_shells
             self.corr_shells = corr_shells
-            self.n_spin_blocks = n_spin_blocks
+            self.n_spin_blocs = n_spin_blocs
             self.n_orbitals = n_orbitals
             self.n_k = n_k
             self.SO = SO
             self.SP = SP
             self.energy_unit = energy_unit
         except StopIteration : # a more explicit error if the file is corrupted.
-            raise "SumK_LDA : reading file HMLT_file failed!"
+            raise "HK Converter : reading file lda_file failed!"
 
         R.close()
         
-        #print Proj_Mat[0]
-
         #-----------------------------------------
         # Store the input into HDF5:
         ar = HDFArchive(self.hdf_file,'a')
@@ -276,7 +256,7 @@ class HkConverter:
 
     def __repack(self):
         """Calls the h5repack routine, in order to reduce the file size of the hdf5 archive.
-           Should only be used BEFORE the first invokation of HDF_Archive in the program, otherwise
+           Should only be used BEFORE the first invokation of HDFArchive in the program, otherwise
            the hdf5 linking is broken!!!"""
 
         import subprocess

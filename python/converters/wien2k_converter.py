@@ -30,7 +30,7 @@ import string
 def read_fortran_file (filename):
     """ Returns a generator that yields all numbers in the Fortran file as float, one by one"""
     import os.path
-    if not(os.path.exists(filename)) : raise IOError, "File %s does not exists"%filename
+    if not(os.path.exists(filename)) : raise IOError, "File %s does not exist."%filename
     for line in open(filename,'r') :
 	for x in line.replace('D','E').split() : 
 	    yield string.atof(x)
@@ -39,13 +39,12 @@ def read_fortran_file (filename):
 
 class Wien2kConverter:
     """
-    Conversion from Wien2k output to an hdf5 file, that can be used as input for the SumkLDA class.
+    Conversion from Wien2k output to an hdf5 file that can be used as input for the SumkLDA class.
     """
 
     def __init__(self, filename, lda_subgrp = 'SumK_LDA', symm_subgrp = 'SymmCorr', repacking = False):
         """
-        Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so
-        on. 
+        Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so on. 
         """
 
         assert type(filename)==StringType,"LDA_file must be a filename"
@@ -71,10 +70,10 @@ class Wien2kConverter:
         """
         
                    
-        if not (mpi.is_master_node()): return # do it only on master:
+        # Read and write only on the master node
+        if not (mpi.is_master_node()): return
         mpi.report("Reading input from %s..."%self.lda_file)
 
-        # Read and write only on Master!!!
         # R is a generator : each R.Next() will return the next number in the file
         R = read_fortran_file(self.lda_file)
         try:
@@ -91,15 +90,13 @@ class Wien2kConverter:
             n_shells = int(R.next())                      # number of shells (e.g. Fe d, As p, O p) in the unit cell, 
                                                                # corresponds to index R in formulas
             shells = [ [ int(R.next()) for i in range(4) ] for icrsh in range(n_shells) ]    # reads iatom, sort, l, dim
-            #shells = numpy.array(shells)
-            
+
             n_corr_shells = int(R.next())                 # number of corr. shells (e.g. Fe d, Ce f) in the unit cell, 
                                                           # corresponds to index R in formulas
             # now read the information about the shells:
             corr_shells = [ [ int(R.next()) for i in range(6) ] for icrsh in range(n_corr_shells) ]    # reads iatom, sort, l, dim, SO flag, irep
 
             self.inequiv_shells(corr_shells)              # determine the number of inequivalent correlated shells, has to be known for further reading...
-            #corr_shells = numpy.array(corr_shells)
 
             use_rotations = 1
             rot_mat = [numpy.identity(corr_shells[icrsh][3],numpy.complex_) for icrsh in xrange(n_corr_shells)]
@@ -120,7 +117,7 @@ class Wien2kConverter:
                     
                   
             
-            # Read here the infos for the transformation of the basis:
+            # Read here the info for the transformation of the basis:
             n_reps = [1 for i in range(self.n_inequiv_corr_shells)]
             dim_reps = [0 for i in range(self.n_inequiv_corr_shells)]
             T = []
@@ -128,10 +125,8 @@ class Wien2kConverter:
                 n_reps[icrsh] = int(R.next())   # number of representatives ("subsets"), e.g. t2g and eg
                 dim_reps[icrsh] = [int(R.next()) for i in range(n_reps[icrsh])]   # dimensions of the subsets
             
-            # The transformation matrix:
-            # it is of dimension 2l+1, if no SO, and 2*(2l+1) with SO!!
-            #T = []
-            #for ish in xrange(self.n_inequiv_corr_shells):
+                # The transformation matrix:
+                # is of dimension 2l+1 without SO, and 2*(2l+1) with SO!
                 ll = 2*corr_shells[self.invshellmap[icrsh]][2]+1
                 lmax = ll * (corr_shells[self.invshellmap[icrsh]][4] + 1)
                 T.append(numpy.zeros([lmax,lmax],numpy.complex_))
@@ -151,21 +146,14 @@ class Wien2kConverter:
         
             # read the list of n_orbitals for all k points
             n_orbitals = numpy.zeros([n_k,n_spin_blocs],numpy.int)
-            #n_orbitals = [ [0 for isp in range(n_spin_blocs)] for ik in xrange(n_k)]
             for isp in range(n_spin_blocs):
                 for ik in xrange(n_k):
-                    #n_orbitals[ik][isp] = int(R.next())
                     n_orbitals[ik,isp] = int(R.next())
-            #print n_orbitals
             
 
             # Initialise the projectors:
-            #proj_mat = [ [ [numpy.zeros([corr_shells[icrsh][3], n_orbitals[ik][isp]], numpy.complex_) 
-            #                for icrsh in range (n_corr_shells)] 
-            #               for isp in range(n_spin_blocs)] 
-            #             for ik in range(n_k) ]
             proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max(numpy.array(corr_shells)[:,3]),max(n_orbitals)],numpy.complex_)
-            
+
 
             # Read the projectors from the file:
             for ik in xrange(n_k):
@@ -175,39 +163,34 @@ class Wien2kConverter:
                     for isp in range(n_spin_blocs):
                         for i in xrange(no):
                             for j in xrange(n_orbitals[ik][isp]):
-                                #proj_mat[ik][isp][icrsh][i,j] = R.next()
                                 proj_mat[ik,isp,icrsh,i,j] = R.next()
                     # now Imag part:
                     for isp in range(n_spin_blocs):
                         for i in xrange(no):
                             for j in xrange(n_orbitals[ik][isp]):
-                                #proj_mat[ik][isp][icrsh][i,j] += 1j * R.next()
                                 proj_mat[ik,isp,icrsh,i,j] += 1j * R.next()
-            
+
           
             # now define the arrays for weights and hopping ...
             bz_weights = numpy.ones([n_k],numpy.float_)/ float(n_k)  # w(k_index),  default normalisation 
-            #hopping = [ [numpy.zeros([n_orbitals[ik][isp],n_orbitals[ik][isp]],numpy.complex_) 
-            #             for isp in range(n_spin_blocs)] for ik in xrange(n_k) ]
             hopping = numpy.zeros([n_k,n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
-                            
+
             # weights in the file
             for ik in xrange(n_k) : bz_weights[ik] = R.next()         
                 
             # if the sum over spins is in the weights, take it out again!!
             sm = sum(bz_weights)
             bz_weights[:] /= sm 
-	    
+
             # Grab the H
             # we use now the convention of a DIAGONAL Hamiltonian!!!!
             for isp in range(n_spin_blocs):
                 for ik in xrange(n_k) :
-                    no = n_orbitals[ik][isp]
+                    no = n_orbitals[ik,isp]
                     for i in xrange(no):
-                        #hopping[ik][isp][i,i] = R.next() * energy_unit
                         hopping[ik,isp,i,i] = R.next() * energy_unit
             
-            #keep some things that we need for reading parproj:
+            # keep some things that we need for reading parproj:
             self.n_shells = n_shells
             self.shells = shells
             self.n_corr_shells = n_corr_shells
@@ -219,12 +202,10 @@ class Wien2kConverter:
             self.SP = SP
             self.energy_unit = energy_unit
         except StopIteration : # a more explicit error if the file is corrupted.
-            raise "SumkLDA : reading file HMLT_file failed!"
+            raise "Wien2k_converter : reading file lda_file failed!"
 
         R.close()
         
-        #print proj_mat[0]
-
         #-----------------------------------------
         # Store the input into HDF5:
         ar = HDFArchive(self.hdf_file,'a')
@@ -279,25 +260,17 @@ class Wien2kConverter:
                            for isp in range(self.n_spin_blocs) ]
 
         R = read_fortran_file(self.parproj_file)
-        #try:
 
         n_parproj = [int(R.next()) for i in range(self.n_shells)]
         n_parproj = numpy.array(n_parproj)
                 
         # Initialise P, here a double list of matrices:
-        #proj_mat_pc = [ [ [ [numpy.zeros([self.shells[ish][3], self.n_orbitals[ik][isp]], numpy.complex_) 
-        #                     for ir in range(n_parproj[ish])]
-        #                    for ish in range (self.n_shells) ]
-        #                  for isp in range(self.n_spin_blocs) ]
-        #                for ik in range(self.n_k) ]
-        
         proj_mat_pc = numpy.zeros([self.n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max(numpy.array(self.shells)[:,3]),max(self.n_orbitals)],numpy.complex_)
         
         rot_mat_all = [numpy.identity(self.shells[ish][3],numpy.complex_) for ish in xrange(self.n_shells)]
         rot_mat_all_time_inv = [0 for i in range(self.n_shells)]
 
         for ish in range(self.n_shells):
-            #print ish   
             # read first the projectors for this orbital:
             for ik in xrange(self.n_k):
                 for ir in range(n_parproj[ish]):
@@ -337,8 +310,6 @@ class Wien2kConverter:
             if (self.SP):
                 rot_mat_all_time_inv[ish] = int(R.next())
 
-        #except StopIteration : # a more explicit error if the file is corrupted.
-        #    raise "Wien2kConverter: reading file for Projectors failed!"
         R.close()
 
         #-----------------------------------------
@@ -378,10 +349,6 @@ class Wien2kConverter:
                     n_orbitals[ik,isp] = int(R.next())
 
             # Initialise the projectors:
-            #proj_mat = [ [ [numpy.zeros([self.corr_shells[icrsh][3], n_orbitals[ik][isp]], numpy.complex_) 
-            #                for icrsh in range (self.n_corr_shells)] 
-            #               for isp in range(self.n_spin_blocs)] 
-            #             for ik in range(n_k) ]
             proj_mat = numpy.zeros([n_k,self.n_spin_blocs,self.n_corr_shells,max(numpy.array(self.corr_shells)[:,3]),max(n_orbitals)],numpy.complex_)
 
             # Read the projectors from the file:
@@ -399,8 +366,6 @@ class Wien2kConverter:
                             for j in xrange(n_orbitals[ik,isp]):
                                 proj_mat[ik,isp,icrsh,i,j] += 1j * R.next()
 
-            #hopping = [ [numpy.zeros([n_orbitals[ik][isp],n_orbitals[ik][isp]],numpy.complex_) 
-            #             for isp in range(self.n_spin_blocs)] for ik in xrange(n_k) ]
             hopping = numpy.zeros([n_k,self.n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
          	    
             # Grab the H
@@ -416,11 +381,6 @@ class Wien2kConverter:
             n_parproj = numpy.array(n_parproj)
             
             # Initialise P, here a double list of matrices:
-            #proj_mat_pc = [ [ [ [numpy.zeros([self.shells[ish][3], n_orbitals[ik][isp]], numpy.complex_) 
-            #                     for ir in range(n_parproj[ish])]
-            #                    for ish in range (self.n_shells) ]
-            #                  for isp in range(self.n_spin_blocs) ]
-            #                for ik in range(n_k) ]
             proj_mat_pc = numpy.zeros([n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max(numpy.array(self.shells)[:,3]),max(n_orbitals)],numpy.complex_)
 
 
@@ -439,7 +399,7 @@ class Wien2kConverter:
                                     proj_mat_pc[ik,isp,ish,ir,i,j] += 1j * R.next()
 
         except StopIteration : # a more explicit error if the file is corrupted.
-            raise "SumkLDA : reading file HMLT_file failed!"
+            raise "Wien2k_converter : reading file band_file failed!"
 
         R.close()
         # reading done!
@@ -448,18 +408,11 @@ class Wien2kConverter:
         # Store the input into HDF5:
         ar = HDFArchive(self.hdf_file,'a')
         if not (self.bands_subgrp in ar): ar.create_group(self.bands_subgrp) 
+
         # The subgroup containing the data. If it does not exist, it is created.
         # If it exists, the data is overwritten!!!
         thingstowrite = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_pc']
         for it in thingstowrite: exec "ar['%s']['%s'] = %s"%(self.bands_subgrp,it,it)
-
-        #ar[self.bands_subgrp]['n_k'] = n_k
-        #ar[self.bands_subgrp]['n_orbitals'] = n_orbitals
-        #ar[self.bands_subgrp]['proj_mat'] = proj_mat
-        #self.proj_mat = proj_mat
-        #self.n_orbitals = n_orbitals
-        #self.n_k = n_k
-        #self.hopping = hopping
         del ar
    
 
@@ -501,7 +454,7 @@ class Wien2kConverter:
                             mat[in_s][orb][i,j] += 1j * R.next()      # imaginary part
 
             # determine the inequivalent shells:
-            #SHOULD BE FINALLY REMOVED, PUT IT FOR ALL ORBITALS!!!!!
+            #SHOULD BE FINALLY REMOVED, PUT IT FOR ALL ORBITALS!!!!! (PS: FIXME?)
             #self.inequiv_shells(orbits)
             mat_tinv = [numpy.identity(orbits[orb][3],numpy.complex_)
                         for orb in range(n_orbits)]
@@ -519,7 +472,7 @@ class Wien2kConverter:
 
 
         except StopIteration : # a more explicit error if the file is corrupted.
-	    raise "Symmetry : reading file failed!"
+            raise "Wien2k_converter : reading file symm_file failed!"
         
         R.close()
 

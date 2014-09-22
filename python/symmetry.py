@@ -60,24 +60,24 @@ class Symmetry:
 
         #broadcasting
         for it in thingstoread: exec "self.%s = mpi.bcast(self.%s)"%(it,it)
-        
+
         # now define the mapping of orbitals:
-        # self.map[iorb]=jorb gives the permutation of the orbitals as given in the list, when the 
+        # self.map[iorb]=jorb gives the permutation of the orbitals as given in the list, when the
         # permutation of the atoms is done:
         self.n_orbits = len(self.orbits)
 
         self.map = [ [0 for iorb in range(self.n_orbits)] for in_s in range(self.n_s) ]
         for in_s in range(self.n_s):
             for iorb in range(self.n_orbits):
-             
+
                 srch = copy.deepcopy(self.orbits[iorb])
                 srch[0] = self.perm[in_s][self.orbits[iorb][0]-1]
                 self.map[in_s][iorb] = self.orbits.index(srch)
-                    
-       
+
+
 
     def symmetrize(self,obj):
-        
+
         assert isinstance(obj,list),"obj has to be a list of objects!"
         assert len(obj)==self.n_orbits,"obj has to be a list of the same length as defined in the init"
 
@@ -88,14 +88,14 @@ class Symmetry:
             # if not a BlockGf, we assume it is a matrix (density matrix), has to be complex since self.mat is complex!
             #symm_obj = [ numpy.zeros([self.orbits[iorb][3],self.orbits[iorb][3]],numpy.complex_) for iorb in range(self.n_orbits) ]
             symm_obj = [ copy.deepcopy(obj[i]) for i in range(len(obj)) ]
-         
+
             for iorb in range(self.n_orbits):
                 if (type(symm_obj[iorb])==DictType):
                     for ii in symm_obj[iorb]: symm_obj[iorb][ii] *= 0.0
                 else:
                     symm_obj[iorb] *= 0.0
-        
-                
+
+
         for in_s in range(self.n_s):
 
             for iorb in range(self.n_orbits):
@@ -104,13 +104,9 @@ class Symmetry:
                 dim = self.orbits[iorb][3]
                 jorb = self.map[in_s][iorb]
 
-             
+
                 if (isinstance(obj[0],BlockGf)):
-                    
-                    #if l==0:
-                    #    symm_obj[jorb] += obj[iorb]
-                    #else:
-                    
+
                     tmp = obj[iorb].copy()
                     if (self.time_inv[in_s]): tmp <<= tmp.transpose()
                     for sig,gf in tmp: tmp[sig].from_L_G_R(self.mat[in_s][iorb],tmp[sig],self.mat[in_s][iorb].conjugate().transpose())
@@ -122,9 +118,6 @@ class Symmetry:
                     if (type(obj[iorb])==DictType):
 
                         for ii in obj[iorb]:
-                            #if (l==0):
-                            #    symm_obj[jorb][ii] += obj[iorb][ii]/self.n_s
-                            #else:
                             if (self.time_inv[in_s]==0):
                                 symm_obj[jorb][ii] += numpy.dot(numpy.dot(self.mat[in_s][iorb],obj[iorb][ii]),
                                                                 self.mat[in_s][iorb].conjugate().transpose()) / self.n_s
@@ -132,20 +125,17 @@ class Symmetry:
                                 symm_obj[jorb][ii] += numpy.dot(numpy.dot(self.mat[in_s][iorb],obj[iorb][ii].conjugate()),
                                                                 self.mat[in_s][iorb].conjugate().transpose()) / self.n_s
 
-                            
+
 
                     else:
-                        #if (l==0):
-                        #    symm_obj[jorb] += obj[iorb]/self.n_s
-                        #else:
                         if (self.time_inv[in_s]==0):
                             symm_obj[jorb] += numpy.dot(numpy.dot(self.mat[in_s][iorb],obj[iorb]),self.mat[in_s][iorb].conjugate().transpose()) / self.n_s
                         else:
                             symm_obj[jorb] += numpy.dot(numpy.dot(self.mat[in_s][iorb],obj[iorb].conjugate()),
                                                         self.mat[in_s][iorb].conjugate().transpose()) / self.n_s
-                        
-     
-# This does not what it is supposed to do, check how this should work:       
+
+
+# This does not what it is supposed to do, check how this should work:
 #        if ((self.SO==0) and (self.SP==0)):
 #            # add time inv:
             #mpi.report("Add time inversion")
@@ -156,7 +146,7 @@ class Symmetry:
 #                    for sig,gf in tmp: tmp[sig].from_L_G_R(self.mat_tinv[iorb],tmp[sig],self.mat_tinv[iorb].transpose().conjugate())
 #                    symm_obj[iorb] += tmp
 #                    symm_obj[iorb] /= 2.0
-#                    
+#
 #                else:
 #                    if (type(symm_obj[iorb])==DictType):
 #                        for ii in symm_obj[iorb]:
@@ -167,10 +157,10 @@ class Symmetry:
 #                        symm_obj[iorb] += numpy.dot(numpy.dot(self.mat_tinv[iorb],symm_obj[iorb].conjugate()),
 #                                                    self.mat_tinv[iorb].transpose().conjugate())
 #                        symm_obj[iorb] /= 2.0
-                                
-    
+
+
         return symm_obj
-                    
-  
-                    
- 
+
+
+
+
