@@ -57,7 +57,9 @@ Installation steps
    In addition, :file:`path_to_Wien2k/SRC_templates` also contains
    :program:`run_triqs` and :program:`runsp_triqs` scripts for running Wien2k+DMFT
    fully self-consistent calculations. These files should be copied to
-   :file:`path_to_Wien2k`. 
+   :file:`path_to_Wien2k`, and set as executables by running::
+
+     $ chmod +x run*_triqs 
 
    You will also need to insert manually a correct call of :file:`pytriqs` into
    these scripts using an appropriate for your system MPI wrapper (mpirun,

@@ -8,15 +8,15 @@ U_int = 6.00
 J_hund = 0.70
 Loops =  2                       # Number of DMFT sc-loops
 Mix = 0.7                        # Mixing factor in QMC
+                                 # 1.0 ... all from imp; 0.0 ... all from Gloc
 DC_type = 0                      # 0...FLL, 1...Held, 2... AMF, 3...Lichtenstein
-DC_Mix = 1.0                     # 1.0 ... all from imp; 0.0 ... all from Gloc   
 useBlocs = False                 # use bloc structure from LDA input
 useMatrix = True                 # use the U matrix calculated from Slater coefficients instead of (U+2J, U, U-J)
 Natomic = 1
 
 HDFfilename = lda_filename+'.h5'
 
-use_val= U_int * (Natomic - 0.5) - J_hund * (Natomic*0.5 - 0.5)
+use_val= U_int * (Natomic - 0.5) - J_hund * (Natomic * 0.5 - 0.5)
 
 # Convert DMFT input:
 # Can be commented after the first run
@@ -55,7 +55,7 @@ if (previous_present):
     mpi.report("Using stored data for initialisation")
     if (mpi.is_master_node()):
         ar = HDFArchive(HDFfilename,'a')
-        S.Sigma <<= ar['SigmaF']
+        S.Sigma <<= ar['SigmaImFreq']
         del ar
     S.Sigma = mpi.bcast(S.Sigma)
     SK.load()
@@ -103,8 +103,8 @@ for Iteration_Number in range(1,Loops+1):
         if ((itn>1)or(previous_present)):
             if (mpi.is_master_node()and (Mix<1.0)):
                 mpi.report("Mixing Sigma and G with factor %s"%Mix)
-                if ('SigmaF' in ar):
-                    S.Sigma <<= Mix * S.Sigma + (1.0-Mix) * ar['SigmaF']
+                if ('SigmaImFreq' in ar):
+                    S.Sigma <<= Mix * S.Sigma + (1.0-Mix) * ar['SigmaImFreq']
                 if ('GF' in ar):
                     S.G <<= Mix * S.G + (1.0-Mix) * ar['GF']
 
@@ -114,7 +114,7 @@ for Iteration_Number in range(1,Loops+1):
 
         
         if (mpi.is_master_node()):
-            ar['SigmaF'] = S.Sigma
+            ar['SigmaImFreq'] = S.Sigma
             ar['GF'] = S.G
         
         # after the Solver has finished, set new double counting: 

@@ -22,16 +22,16 @@ to get the local quantities used in DMFT. It is initialized by::
 
 The only necessary parameter is the filename of the hdf5 archive. In addition, there are some optional parameters:
 
-  * `mu`: The chemical potential at initialization. This value is only used, if there is no other value found in the hdf5 arxive. Standard is 0.0
-  * `h_field`: External magnetic field, standard is 0.0
+  * `mu`: The chemical potential at initialization. This value is only used if no other value is found in the hdf5 arxive. The default value is 0.0.
+  * `h_field`: External magnetic field. The default value is 0.0.
   * `use_lda_blocks`: If true, the structure of the density matrix is analysed at initialisation, and non-zero matrix elements 
     are identified. The DMFT calculation is then restricted to these matrix elements, yielding a more efficient solution of the 
-    local interaction problem. Also degeneracies in orbital and spin space are recognised, and stored for later use. Standard value is `False`. 
+    local interaction problem. Degeneracies in orbital and spin space are also identified and stored for later use. The default value is `False`. 
   * `lda_data`, `symm_corr_data`, `par_proj_data`, `symm_par_data`, `bands_data`: These string variables define the subgroups in the hdf5 arxive,
-    where the corresponding information is stored. The standard values are consistent with the standard values in :ref:`interfacetowien`.
+    where the corresponding information is stored. The default values are consistent with those in :ref:`interfacetowien`.
 
-At initialisation, the necessary data is read from the hdf5 file. If we restart a calculation from a previous one, also the information on
-the degenerate shells, the block structure of the density matrix, the chemical potential, and double counting correction are read.
+At initialisation, the necessary data is read from the hdf5 file. If a calculation is restarted based on a previous hdf5 file, information on
+degenerate shells, the block structure of the density matrix, the chemical potential, and double counting correction is also read in.
 
 .. index:: Multiband solver
 
@@ -44,37 +44,36 @@ There is a module that helps setting up the multiband CTQMC solver. It is loaded
   S = SolverMultiBand(beta, n_orb, gf_struct = SK.gf_struct_solver[0], map=SK.map[0])
 
 The necessary parameters are the inverse temperature `beta`, the Coulomb interaction `U_interact`, the Hund's rule coupling `J_hund`,
-and the number of orbitals `n_orb`. There are again several optional parameters that allow to modify the local Hamiltonian to
+and the number of orbitals `n_orb`. There are again several optional parameters that allow the tailoring of the local Hamiltonian to
 specific needs. They are:
 
-  * `gf_struct`: Contains the block structure of the local density matrix. Has to be given in the format as calculated by :class:`SumkLDA`.
-  * `map`: If `gf_struct` is given as parameter, also `map` has to be given. This is the mapping from the block structure to a general 
+  * `gf_struct`: The block structure of the local density matrix given in the format calculated by :class:`SumkLDA`.
+  * `map`: If `gf_struct` is given as parameter, `map` also must be given. This is the mapping from the block structure to a general 
     up/down structure.
 
 The solver method is called later by this statement::
 
   S.solve(U_interact,J_hund,use_spinflip=False,use_matrix=True,
-                   l=2,T=None, dim_reps=None, irep=None, deg_orbs=[],n_cycles =10000,
+                   l=2,T=None, dim_reps=None, irep=None, n_cycles =10000,
                    length_cycle=200,n_warmup_cycles=1000)
 
-The parameters for the Coulomb interaction `U_interact` and the Hunds coupling `J_hund` are necessary parameters. The rest are optional parameters, for which default values are set. 
-They denerally should be reset for a given problem. Their meaning is as follows:
+The parameters for the Coulomb interaction `U_interact` and the Hund's coupling `J_hund` are necessary input parameters. The rest are optional 
+parameters for which default values are set. Generally, they should be reset for the problem at hand. Here is a description of the parameters:
 
-  * `use_matrix`: If `True`, the interaction matrix is calculated from Slater integrals, which are calculated from `U_interact` and 
+  * `use_matrix`: If `True`, the interaction matrix is calculated from Slater integrals, which are computed from `U_interact` and 
     `J_hund`. Otherwise, a Kanamori representation is used. Attention: We define the intraorbital interaction as 
     `U_interact`, the interorbital interaction for opposite spins as `U_interact-2*J_hund`, and interorbital for equal spins as 
-    `U_interact-3*J_hund`!
-  * `T`: A matrix that transforms the interaction matrix from spherical harmonics, to a symmetry adapted basis. Only effective, if 
-    `use_matrix=True`.
-  * `l`: Orbital quantum number. Again, only effective for Slater parametrisation.
-  * `deg_orbs`: A list that gives the degeneracies of the orbitals. It is used to set up a global move of the CTQMC solver.
+    `U_interact-3*J_hund`.
+  * `T`: The matrix that transforms the interaction matrix from spherical harmonics to a symmetry-adapted basis. Only effective for Slater
+     parametrisation, i.e. `use_matrix=True`.
+  * `l`: The orbital quantum number. Again, only effective for Slater parametrisation, i.e. `use_matrix=True`.
   * `use_spinflip`: If `True`, the full rotationally-invariant interaction is used. Otherwise, only density-density terms are
     kept in the local Hamiltonian.
-  * `dim_reps`: If only a subset of the full d-shell is used a correlated orbtials, one can specify here the dimensions of all the subspaces
+  * `dim_reps`: If only a subset of the full d-shell is used as correlated orbtials, one can specify here the dimensions of all the subspaces
     of the d-shell, i.e. t2g and eg. Only effective for Slater parametrisation.
   * `irep`: The index in the list `dim_reps` of the subset that is used. Only effective for Slater parametrisation.
-  * `n_cycles`: Number of CTQMC cycles (a sequence of moves followed by a measurement) per core. The default value of 10000 is the minimum, and generally should be incresed
-  * `length_cycle`: Number of CTQMC moves per one cycle
+  * `n_cycles`: Number of CTQMC cycles (a sequence of moves followed by a measurement) per core. The default value of 10000 is the minimum, and generally should be increased.
+  * `length_cycle`: Number of CTQMC moves per one cycle.
   * `n_warmup_cycles`: Number of initial CTQMC cycles before measurements start. Usually of order of 10000, sometimes needs to be increased significantly.
 
 Most of above parameters can be taken directly from the :class:`SumkLDA` class, without defining them by hand. We will see a specific example 
@@ -98,7 +97,7 @@ set up the loop over DMFT iterations and the self-consistency condition::
           S.G0 <<= inverse(S.Sigma + inverse(S.G))   # finally get G0, the input for the Solver
 
           S.solve(U_interact,J_hund,use_spinflip=False,use_matrix=True,     # now solve the impurity problem
-                           l=2,T=None, dim_reps=None, irep=None, deg_orbs=[],n_cycles =10000,
+                           l=2,T=None, dim_reps=None, irep=None, n_cycles =10000,
                            length_cycle=200,n_warmup_cycles=1000)
 
 	  dm = S.G.density()                         # density matrix of the impurity problem  

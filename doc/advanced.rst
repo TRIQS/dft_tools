@@ -76,7 +76,7 @@ of the last iteration::
   if (previous_present):
     if (mpi.is_master_node()):
         ar = HDFArchive(lda_filename+'.h5','a')
-        S.Sigma <<= ar['SigmaF']
+        S.Sigma <<= ar['SigmaImFreq']
         del ar
     S.Sigma = mpi.bcast(S.Sigma)
     
@@ -103,7 +103,7 @@ previous section, with some additional refinement::
   
         # Solve the impurity problem:
         S.solve(U_interact=U,J_hund=J,use_spinflip=use_spinflip,use_matrix=use_matrix,
-                     l=l,T=SK.T[0], dim_reps=SK.dim_reps[0], irep=2, deg_orbs=SK.deg_shells[0],n_cycles =qmc_cycles,
+                     l=l,T=SK.T[0], dim_reps=SK.dim_reps[0], irep=2, n_cycles=qmc_cycles,
                      length_cycle=length_cycle,n_warmup_cycles=warming_iterations)
   
         # solution done, do the post-processing:
@@ -112,7 +112,7 @@ previous section, with some additional refinement::
         S.Sigma <<=(inverse(S.G0)-inverse(S.G))
         # Solve the impurity problem:
         S.solve(U_interact=U,J_hund=J,use_spinflip=use_spinflip,use_matrix=use_matrix,
-                     l=l,T=SK.T[0], dim_reps=SK.dim_reps[0], irep=2, deg_orbs=SK.deg_shells[0],n_cycles =qmc_cycles,
+                     l=l,T=SK.T[0], dim_reps=SK.dim_reps[0], irep=2, n_cycles=qmc_cycles,
                      length_cycle=length_cycle,n_warmup_cycles=warming_iterations)
   
         # solution done, do the post-processing:

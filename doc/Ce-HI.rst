@@ -51,7 +51,7 @@ specify the energy window for Wannier functions' construction. For a more comple
 
 To prepaire input data for :program:`dmftproj` we execute :program:`lapw2` with the `-almd` option ::
    
-   lapw2 -almd 
+   x lapw2 -almd 
 
 Then  :program:`dmftproj` is executed in its default mode (i.e. without spin-polarization or spin-orbit included) ::
 
@@ -94,18 +94,29 @@ where the solver is initialized with the value of `beta`, and the orbital quantu
 
 The Hubbard-I initialization `Solver` has also optional parameters one may use:
 
-  * `n_msb`: is the number of Matsubara frequencies used (default is `n_msb=1025`)
-  * `use_spin_orbit`: if set 'True' the solver is run with spin-orbit coupling included. To perform actual LDA+DMFT calculations with spin-orbit one should also run   :program:`Wien2k` and :program:`dmftproj` in spin-polarized mode and with spin-orbit included. By default `use_spin_orbit=False`
+  * `n_msb`: the number of Matsubara frequencies used. The default is `n_msb=1025`.
+  * `use_spin_orbit`: if set 'True' the solver is run with spin-orbit coupling
+included. To perform actual LDA+DMFT calculations with spin-orbit one should
+also run   :program:`Wien2k` and :program:`dmftproj` in spin-polarized mode and
+with spin-orbit included. By default, `use_spin_orbit=False`.
 
-The `Solver.solve(U_int, J_hund)` statement has two necessary parameters, the `U` parameter (`U_int`) and Hund's rule coupling `J_hund`. Notice that the solver constructs the full 4-index `U`-matrix by default, and the `U` parameter is in fact the Slatter `F0` integral. Other optional parameters are:
+The `Solver.solve(U_int, J_hund)` statement has two necessary parameters, the
+Hubbard U parameter `U_int` and Hund's rule coupling `J_hund`. Notice that the
+solver constructs the full 4-index `U`-matrix by default, and the `U_int` parameter
+is in fact the Slatter `F0` integral. Other optional parameters are:
 
-  * `T`: A matrix that transforms the interaction matrix from complex spherical harmonics to a symmetry adapted basis. By default complex spherical harmonics basis is used and `T=None`
-  * `verbosity` tunes output from the solver. If `verbosity=0` only basic information is printed, if `verbosity=1` the ground state atomic occupancy and its energy are printed, if `verbosity=2` additional information is printed for all occupancies that were diagonalized. By default `verbosity=0`
+  * `T`: matrix that transforms the interaction matrix from complex spherical
+harmonics to a symmetry adapted basis. By default, the complex spherical harmonics
+basis is used and `T=None`.
+  * `verbosity`: tunes output from the solver. If `verbosity=0` only basic
+information is printed, if `verbosity=1` the ground state atomic occupancy and
+its energy are printed, if `verbosity=2` additional information is printed for
+all occupancies that were diagonalized. By default, `verbosity=0`.
 
-We need also to introduce some changes in the DMFT loop with respect to the ones used for CT-QMC calculations in :ref:`advanced`. 
+We need also to introduce some changes in the DMFT loop with respect that used for CT-QMC calculations in :ref:`advanced`. 
 The hybridization function is neglected in the Hubbard-I approximation, and only non-interacting level 
 positions (:math:`\hat{\epsilon}=-\mu+\langle H^{ff} \rangle - \Sigma_{DC}`) are required.
-Hence, instead of computing `S.G0` as in :ref:`advanced` we set the level positions  ::
+Hence, instead of computing `S.G0` as in :ref:`advanced` we set the level positions::
 
    # set atomic levels:
    eal = SK.eff_atomic_levels()[0]
@@ -123,28 +134,35 @@ Finally, we compute the modified charge density and save it as well as correlati
 Running LDA+DMFT calculations
 -----------------------------
 
-After having prepaired the script one may run one-shot DMFT calculations by executing :ref:`Ce-gamma-script` with :program:`pytriqs` in one-processor ::
+After having prepared the script one may run one-shot DMFT calculations by
+executing :ref:`Ce-gamma-script` with :program:`pytriqs` on a single processor::
 
    pytriqs Ce-gamma.py
 
-or parallel mode ::
+or in parallel mode::
 
    mpirun  pytriqs Ce-gamma.py
 
-where :program:`mpirun` launches these calculations in parallel mode and enables MPI. The exact form of this command will, of course, depend on mpi-launcher installed in your system.
+where :program:`mpirun` launches these calculations in parallel mode and
+enables MPI. The exact form of this command will, of course, depend on
+mpi-launcher installed in your system.
 
-Instead of doing one-shot run one may also  perform fully self-consistent LDA+DMFT calculations, as we will do in this tutorial. We launch these calculations as follows ::
+Instead of doing one-shot run one may also  perform fully self-consistent
+LDA+DMFT calculations, as we will do in this tutorial. We launch these
+calculations as follows ::
 
    run_triqs -qdmft
 
-where `-qdmft` flag turns on LDA+DMFT calculations with :program:`Wien2k`. We use here the default convergence criterion in :program:`Wien2k` (convergence to 0.1 mRy in energy). 
+where `-qdmft` flag turns on LDA+DMFT calculations with :program:`Wien2k`. We
+use here the default convergence criterion in :program:`Wien2k` (convergence to
+0.1 mRy in energy). 
 
-After calculations are done we may check the value of correlational ('Hubbard') energy correction to the total energy::
+After calculations are done we may check the value of correlation ('Hubbard') energy correction to the total energy::
     
    >grep HUBBARD Ce-gamma.scf|tail -n 1
    HUBBARD ENERGY(included in SUM OF EIGENVALUES):           -0.220502
 
-and the band("kinetic") energy with DMFT correction::
+and the band ("kinetic") energy with DMFT correction::
 
    >grep DMFT Ce-gamma.scf |tail -n 1
    KINETIC ENERGY with DMFT correction:                      -5.329087
@@ -162,8 +180,11 @@ as well as the convergence in total energy::
 Calculating DOS with Hubbard-I
 ------------------------------
 
-Within Hubbard-I one may also easily obtain the spectral function ("band structure") and integrated spectral function ("density of states, DOS").
-In difference with the CT-QMC approach one does not need to provide the real-frequency self-energy (see :ref:`analysis`) it can be calculated directly by the Hubbard-I solver.
+Within Hubbard-I one may also easily obtain the angle-resolved spectral function (band
+structure) and integrated spectral function (density of states or DOS).  In
+difference with the CT-QMC approach one does not need to provide the
+real-frequency self-energy (see :ref:`analysis`) as it can be calculated directly
+in the Hubbard-I solver.
 
 The corresponding script :ref:`Ce-gamma_DOS-script` contains several new parameters ::
 
