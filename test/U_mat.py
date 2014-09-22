@@ -1,4 +1,3 @@
-
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -22,29 +21,16 @@
 
 from pytriqs.archive import *
 import numpy
-from pytriqs.applications.dft.U_matrix import Umatrix
+from pytriqs.applications.dft.U_matrix import *
 
-U = Umatrix(U_interact = 2.0, J_hund = 0.5, l=2)
-
-T = numpy.zeros([5,5],numpy.complex_)
-sqtwo = 1.0/numpy.sqrt(2.0)
-T[0,0] = 1j*sqtwo
-T[0,4] = -1j*sqtwo
-T[1,1] = -1j*sqtwo
-T[1,3] = -1j*sqtwo
-T[2,2] = 1.0
-T[3,1] = -sqtwo
-T[3,3] = sqtwo
-T[4,0] = sqtwo
-T[4,4] = sqtwo
-
-U(T=T)
-
-U.reduce_matrix()
+U_sph = U_matrix(l=2, U_int=2.0, J_hund=0.5)
+U_cubic = transform_U_matrix(U_sph,spherical_to_cubic(l=2))
+U,Up = reduce_4index_to_2index(U_cubic)
 
 ar = HDFArchive('U_mat.output.h5')
-ar['U'] = U.U
-ar['Up'] = U.Up
-ar['Ufull'] = U.Ufull
-del ar
+ar['Ufull_sph'] = U_sph
+ar['Ufull_cubic'] = U_cubic
+ar['U'] = U
+ar['Up'] = Up
 
+del ar

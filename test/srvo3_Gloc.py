@@ -1,5 +1,3 @@
-
-
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -24,36 +22,31 @@
 from pytriqs.archive import *
 from pytriqs.applications.dft.sumk_lda import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
+from pytriqs.applications.dft.solver_multiband import *
+from pytriqs.applications.dft.U_matrix import *
+from pytriqs.applications.impurity_solvers.cthyb import *
 
-#=====================================================
-#Basic input parameters:
-LDAFilename = 'SrVO3'
+# Basic input parameters
 U = 4.0
 J = 0.6
-Beta = 40
-DC_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
-useBlocs = True                  # use bloc structure from LDA input
-useMatrix = False                # True: Slater parameters, False: Kanamori parameters U+2J, U, U-J
-use_spinflip = False             # use the full rotational invariant interaction?
-#=====================================================
-
-#U=U-2*J
-
-HDFfilename = LDAFilename+'.h5'
+beta = 40
 
 # Init the SumK class
 SK=SumkLDA(hdf_file='SrVO3.h5',use_lda_blocks=True)
 
-
-Norb = SK.corr_shells[0][3]
+num_orbitals = SK.corr_shells[0][3]
 l = SK.corr_shells[0][2]
+spin_names = ["up","down"]
+orb_names = ["%s"%i for i in range(num_orbitals)]
+orb_hybridized = False
 
+# Construct U matrix for density-density calculations
+Umat, Upmat = U_matrix_kanamori(n_orb=num_orbitals, U_int=U, J_hund=J)
 
-from pytriqs.applications.dft.solver_multiband import *
+L = LocalProblem(spin_names, orb_names, orb_hybridized, h_loc_type="density", U=Umat, Uprime=Upmat, H_dump="srvo3_Gloc_H.txt" )
+S = Solver(beta=beta, gf_struct=L.gf_struct)
 
-S=SolverMultiBand(beta=Beta,n_orb=Norb,gf_struct=SK.gf_struct_solver[0],map=SK.map[0])
-
-SK.put_Sigma([S.Sigma])
+SK.put_Sigma([S.Sigma_iw]) 
 Gloc=SK.extract_G_loc()
 
 ar = HDFArchive('srvo3_Gloc.output.h5','w')
