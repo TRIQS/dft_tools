@@ -22,13 +22,10 @@
 from pytriqs.archive import *
 from pytriqs.applications.dft.sumk_lda import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
-from pytriqs.applications.dft.solver_multiband import *
-from pytriqs.applications.dft.U_matrix import *
 from pytriqs.applications.impurity_solvers.cthyb import *
+from pytriqs.operators.hamiltonians import set_operator_structure
 
 # Basic input parameters
-U = 4.0
-J = 0.6
 beta = 40
 
 # Init the SumK class
@@ -40,11 +37,7 @@ spin_names = ["up","down"]
 orb_names = ["%s"%i for i in range(num_orbitals)]
 orb_hybridized = False
 
-# Construct U matrix for density-density calculations
-Umat, Upmat = U_matrix_kanamori(n_orb=num_orbitals, U_int=U, J_hund=J)
-
-L = LocalProblem(spin_names, orb_names, orb_hybridized, h_loc_type="density", U=Umat, Uprime=Upmat, H_dump="srvo3_Gloc_H.txt" )
-S = Solver(beta=beta, gf_struct=L.gf_struct)
+S = Solver(beta=beta, gf_struct=set_operator_structure(spin_names,orb_names,orb_hybridized))
 
 SK.put_Sigma([S.Sigma_iw]) 
 Gloc=SK.extract_G_loc()
