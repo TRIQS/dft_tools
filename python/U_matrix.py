@@ -60,7 +60,7 @@ def reduce_4index_to_2index(U_4index):
     return U, Uprime
 
 # Construct the 2-index matrices for the density-density form
-def U_matrix_kanamori(n_orb, U_int=None, J_hund=None):
+def U_matrix_kanamori(n_orb, U_int, J_hund):
     """Calculate the Kanamori U and Uprime matrices."""
 
     U  = np.zeros((n_orb,n_orb),dtype=float)      # matrix for same spin
