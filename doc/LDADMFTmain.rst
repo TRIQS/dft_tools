@@ -93,8 +93,8 @@ set up the loop over DMFT iterations and the self-consistency condition::
 
           SK.put_Sigma(Sigma_imp = [ S.Sigma ])      # Put self energy to the SumK class
           chemical_potential = SK.find_mu()          # find the chemical potential for the given density
-          S.G <<= SK.extract_G_loc()[0]              # extract the local Green function
-          S.G0 <<= inverse(S.Sigma + inverse(S.G))   # finally get G0, the input for the Solver
+          S.G << SK.extract_G_loc()[0]              # extract the local Green function
+          S.G0 << inverse(S.Sigma + inverse(S.G))   # finally get G0, the input for the Solver
 
           S.solve(U_interact,J_hund,use_spinflip=False,use_matrix=True,     # now solve the impurity problem
                            l=2,T=None, dim_reps=None, irep=None, n_cycles =10000,

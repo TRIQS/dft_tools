@@ -26,7 +26,7 @@ and store it in a format such that :program:`Wien2k` can read it. Therefore, aft
 previous section, we symmetrise the self energy, and recalculate the impurity Green function::
 
   SK.symm_deg_gf(S.Sigma,orb=0)
-  S.G <<= inverse(S.G0) - S.Sigma
+  S.G << inverse(S.G0) - S.Sigma
   S.G.invert()
 
 These steps are not necessary, but can help to reduce fluctuations in the total energy. 

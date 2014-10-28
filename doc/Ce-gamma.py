@@ -55,7 +55,7 @@ if (previous_present):
     mpi.report("Using stored data for initialisation")
     if (mpi.is_master_node()):
         ar = HDFArchive(HDFfilename,'a')
-        S.Sigma <<= ar['SigmaImFreq']
+        S.Sigma << ar['SigmaImFreq']
         del ar
     S.Sigma = mpi.bcast(S.Sigma)
     SK.load()
@@ -75,7 +75,7 @@ for Iteration_Number in range(1,Loops+1):
             mpi.report("No adjustment of chemical potential\nTotal density  = %.3f"%SK.total_density(mu=Chemical_potential))
 
         # Density:
-        S.G <<= SK.extract_G_loc()[0]
+        S.G << SK.extract_G_loc()[0]
         mpi.report("Total charge of Gloc : %.6f"%S.G.total_density())
         dm = S.G.density()
 
@@ -104,9 +104,9 @@ for Iteration_Number in range(1,Loops+1):
             if (mpi.is_master_node()and (Mix<1.0)):
                 mpi.report("Mixing Sigma and G with factor %s"%Mix)
                 if ('SigmaImFreq' in ar):
-                    S.Sigma <<= Mix * S.Sigma + (1.0-Mix) * ar['SigmaImFreq']
+                    S.Sigma << Mix * S.Sigma + (1.0-Mix) * ar['SigmaImFreq']
                 if ('GF' in ar):
-                    S.G <<= Mix * S.G + (1.0-Mix) * ar['GF']
+                    S.G << Mix * S.G + (1.0-Mix) * ar['GF']
 
             S.G = mpi.bcast(S.G)
             S.Sigma = mpi.bcast(S.Sigma)

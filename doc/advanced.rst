@@ -76,7 +76,7 @@ of the last iteration::
   if (previous_present):
     if (mpi.is_master_node()):
         ar = HDFArchive(lda_filename+'.h5','a')
-        S.Sigma <<= ar['SigmaImFreq']
+        S.Sigma << ar['SigmaImFreq']
         del ar
     S.Sigma = mpi.bcast(S.Sigma)
     
@@ -90,16 +90,16 @@ previous section, with some additional refinement::
         SK.put_Sigma(Sigma_imp = [ S.Sigma ])                   # put Sigma into the SumK class:
   
         chemical_potential = SK.find_mu( precision = prec_mu )  # find the chemical potential
-        S.G <<= SK.extract_G_loc()[0]                           # calculation of the local Green function
+        S.G << SK.extract_G_loc()[0]                           # calculation of the local Green function
         mpi.report("Total charge of Gloc : %.6f"%S.G.total_density())
   
         if ((iteration_number==1)and(previous_present==False)):
             # Init the DC term and the real part of Sigma, if no previous run was found:
             dm = S.G.density()
             SK.set_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
-            S.Sigma <<= SK.dc_imp[0]['up'][0,0]
+            S.Sigma << SK.dc_imp[0]['up'][0,0]
   
-        S.G0 <<= inverse(S.Sigma + inverse(S.G))
+        S.G0 << inverse(S.Sigma + inverse(S.G))
   
         # Solve the impurity problem:
         S.solve(U_interact=U,J_hund=J,use_spinflip=use_spinflip,use_matrix=use_matrix,
@@ -109,7 +109,7 @@ previous section, with some additional refinement::
         # solution done, do the post-processing:
         mpi.report("Total charge of impurity problem : %.6f"%S.G.total_density())
   
-        S.Sigma <<=(inverse(S.G0)-inverse(S.G))
+        S.Sigma <<(inverse(S.G0)-inverse(S.G))
         # Solve the impurity problem:
         S.solve(U_interact=U,J_hund=J,use_spinflip=use_spinflip,use_matrix=use_matrix,
                      l=l,T=SK.T[0], dim_reps=SK.dim_reps[0], irep=2, n_cycles=qmc_cycles,
@@ -118,15 +118,15 @@ previous section, with some additional refinement::
         # solution done, do the post-processing:
         mpi.report("Total charge of impurity problem : %.6f"%S.G.total_density())
   
-        S.Sigma <<=(inverse(S.G0)-inverse(S.G))
+        S.Sigma <<(inverse(S.G0)-inverse(S.G))
   
         # Now mix Sigma and G with factor Mix, if wanted:
         if ((iteration_number>1) or (previous_present)):
             if (mpi.is_master_node()):
                 ar = HDFArchive(lda_filename+'.h5','a')
                 mpi.report("Mixing Sigma and G with factor %s"%mix)
-                S.Sigma <<= mix * S.Sigma + (1.0-mix) * ar['Sigma']
-                S.G <<= mix * S.G + (1.0-mix) * ar['GF']
+                S.Sigma << mix * S.Sigma + (1.0-mix) * ar['Sigma']
+                S.G << mix * S.G + (1.0-mix) * ar['GF']
                 del ar
             S.G = mpi.bcast(S.G)
             S.Sigma = mpi.bcast(S.Sigma)

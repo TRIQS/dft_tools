@@ -108,7 +108,7 @@ class Symmetry:
                 if (isinstance(obj[0],BlockGf)):
 
                     tmp = obj[iorb].copy()
-                    if (self.time_inv[in_s]): tmp <<= tmp.transpose()
+                    if (self.time_inv[in_s]): tmp << tmp.transpose()
                     for sig,gf in tmp: tmp[sig].from_L_G_R(self.mat[in_s][iorb],tmp[sig],self.mat[in_s][iorb].conjugate().transpose())
                     tmp *= 1.0/self.n_s
                     symm_obj[jorb] += tmp
@@ -142,7 +142,7 @@ class Symmetry:
 #            for iorb in range(self.n_orbits):
 #                if (isinstance(symm_obj[0],BlockGf)):
 #                    tmp = symm_obj[iorb].copy()
-#                    tmp <<= tmp.transpose()
+#                    tmp << tmp.transpose()
 #                    for sig,gf in tmp: tmp[sig].from_L_G_R(self.mat_tinv[iorb],tmp[sig],self.mat_tinv[iorb].transpose().conjugate())
 #                    symm_obj[iorb] += tmp
 #                    symm_obj[iorb] /= 2.0

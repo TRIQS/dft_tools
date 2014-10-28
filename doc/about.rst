@@ -1,8 +1,8 @@
 License
 =======
 
-Wien2TRIQS  is published under the `GNU General Public License, version 3
-<http://www.gnu.org/licenses/gpl.html>`_.
+The dft_tools package is published under the 
+`GNU General Public License, version 3 <http://www.gnu.org/licenses/gpl.html>`_.
 
 Authors & Quotation
 =======================

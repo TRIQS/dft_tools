@@ -20,12 +20,12 @@ templates_path = ['@CMAKE_SOURCE_DIR@/doc/_templates']
 html_theme = 'triqs'
 html_theme_path = ['@TRIQS_THEMES_PATH@']
 html_show_sphinx = False
-html_context = {'header_title': 'Wien2TRIQS',
+html_context = {'header_title': 'dft_tools',
                 'header_subtitle': 'Connecting <a class="triqs" style="font-size: 12px" href="http://ipht.cea.fr/triqs">TRIQS</a>  to the Wien2k package',
                 'header_links': [['Install', 'install'],
                                  ['Documentation', 'documentation'],
                                  ['Issues', 'issues'],
-                                 ['About Wien2TRIQS', 'about']]}
+                                 ['About dft_tools', 'about']]}
 html_static_path = ['@CMAKE_SOURCE_DIR@/doc/_static']
 html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 

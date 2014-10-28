@@ -83,7 +83,7 @@ class TransBasis:
                 for j in range(len(orblist)):
                     ind1 = orblist[i]
                     ind2 = orblist[j]
-                    gfrotated[self.SK.map_inv[s][bl]][ind1,ind2] <<= gf_to_rot[bl][ind1,ind2]
+                    gfrotated[self.SK.map_inv[s][bl]][ind1,ind2] << gf_to_rot[bl][ind1,ind2]
 
         # Rotate using the matrix w
         for sig,bn in gfrotated:
@@ -96,7 +96,7 @@ class TransBasis:
                 for j in range(len(orblist)):
                     ind1 = orblist[i]
                     ind2 = orblist[j]
-                    gfreturn[bl][ind1,ind2] <<= gfrotated[self.SK.map_inv[0][bl]][ind1,ind2]
+                    gfreturn[bl][ind1,ind2] << gfrotated[self.SK.map_inv[0][bl]][ind1,ind2]
 
         return gfreturn
 
