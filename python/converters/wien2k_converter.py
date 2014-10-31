@@ -191,16 +191,8 @@ class Wien2kConverter:
                         hopping[ik,isp,i,i] = R.next() * energy_unit
             
             # keep some things that we need for reading parproj:
-            self.n_shells = n_shells
-            self.shells = shells
-            self.n_corr_shells = n_corr_shells
-            self.corr_shells = corr_shells
-            self.n_spin_blocs = n_spin_blocs
-            self.n_orbitals = n_orbitals
-            self.n_k = n_k
-            self.SO = SO
-            self.SP = SP
-            self.energy_unit = energy_unit
+            things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
+            for it in things_to_set: setattr(self,it,locals()[it])
         except StopIteration : # a more explicit error if the file is corrupted.
             raise "Wien2k_converter : reading file lda_file failed!"
 
@@ -212,35 +204,16 @@ class Wien2kConverter:
         if not (self.lda_subgrp in ar): ar.create_group(self.lda_subgrp) 
         # The subgroup containing the data. If it does not exist, it is created.
         # If it exists, the data is overwritten!!!
-        
-        ar[self.lda_subgrp]['energy_unit'] = energy_unit
-        ar[self.lda_subgrp]['n_k'] = n_k
-        ar[self.lda_subgrp]['k_dep_projection'] = k_dep_projection
-        ar[self.lda_subgrp]['SP'] = SP
-        ar[self.lda_subgrp]['SO'] = SO
-        ar[self.lda_subgrp]['charge_below'] = charge_below
-        ar[self.lda_subgrp]['density_required'] = density_required
-        ar[self.lda_subgrp]['symm_op'] = symm_op
-        ar[self.lda_subgrp]['n_shells'] = n_shells
-        ar[self.lda_subgrp]['shells'] = shells
-        ar[self.lda_subgrp]['n_corr_shells'] = n_corr_shells
-        ar[self.lda_subgrp]['corr_shells'] = corr_shells
-        ar[self.lda_subgrp]['use_rotations'] = use_rotations
-        ar[self.lda_subgrp]['rot_mat'] = rot_mat
-        ar[self.lda_subgrp]['rot_mat_time_inv'] = rot_mat_time_inv
-        ar[self.lda_subgrp]['n_reps'] = n_reps
-        ar[self.lda_subgrp]['dim_reps'] = dim_reps
-        ar[self.lda_subgrp]['T'] = T
-        ar[self.lda_subgrp]['n_orbitals'] = n_orbitals
-        ar[self.lda_subgrp]['proj_mat'] = proj_mat
-        ar[self.lda_subgrp]['bz_weights'] = bz_weights
-        ar[self.lda_subgrp]['hopping'] = hopping
-        
+        things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
+                          'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
+                          'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping']
+        for it in things_to_save: ar[self.lda_subgrp][it] = locals()[it]
         del ar
-              
+
+
         # Symmetries are used, 
         # Now do the symmetries for correlated orbitals:
-        self.read_symmetry_input(orbits=corr_shells,symm_file=self.symm_file,symm_subgrp=self.symm_subgrp,SO=SO,SP=SP)
+        self.convert_symmetry_input(orbits=corr_shells,symm_file=self.symm_file,symm_subgrp=self.symm_subgrp,SO=SO,SP=SP)
 
 
     def convert_parproj_input(self, par_proj_subgrp='SumK_LDA_ParProj', symm_par_subgrp='SymmPar'):
@@ -318,13 +291,13 @@ class Wien2kConverter:
         if not (self.par_proj_subgrp in ar): ar.create_group(self.par_proj_subgrp) 
         # The subgroup containing the data. If it does not exist, it is created.
         # If it exists, the data is overwritten!!!
-        thingstowrite = ['dens_mat_below','n_parproj','proj_mat_pc','rot_mat_all','rot_mat_all_time_inv']
-        for it in thingstowrite: exec "ar['%s']['%s'] = %s"%(self.par_proj_subgrp,it,it)
+        things_to_save = ['dens_mat_below','n_parproj','proj_mat_pc','rot_mat_all','rot_mat_all_time_inv']
+        for it in things_to_save: ar[self.par_proj_subgrp][it] = locals()[it]
         del ar
 
         # Symmetries are used, 
         # Now do the symmetries for all orbitals:
-        self.read_symmetry_input(orbits=self.shells,symm_file=self.symmpar_file,symm_subgrp=self.symm_par_subgrp,SO=self.SO,SP=self.SP)
+        self.convert_symmetry_input(orbits=self.shells,symm_file=self.symmpar_file,symm_subgrp=self.symm_par_subgrp,SO=self.SO,SP=self.SP)
 
 
     def convert_bands_input(self, bands_subgrp = 'SumK_LDA_Bands'):
@@ -411,15 +384,13 @@ class Wien2kConverter:
 
         # The subgroup containing the data. If it does not exist, it is created.
         # If it exists, the data is overwritten!!!
-        thingstowrite = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_pc']
-        for it in thingstowrite: exec "ar['%s']['%s'] = %s"%(self.bands_subgrp,it,it)
+        things_to_save = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_pc']
+        for it in things_to_save: ar[self.bands_subgrp][it] = locals()[it]
         del ar
    
 
 
-
-
-    def read_symmetry_input(self, orbits, symm_file, symm_subgrp, SO, SP):
+    def convert_symmetry_input(self, orbits, symm_file, symm_subgrp, SO, SP):
         """
         Reads input for the symmetrisations from symm_file, which is case.sympar or case.symqmc.
         """
@@ -453,9 +424,6 @@ class Wien2kConverter:
                         for j in xrange(orbits[orb][3]):
                             mat[in_s][orb][i,j] += 1j * R.next()      # imaginary part
 
-            # determine the inequivalent shells:
-            #SHOULD BE FINALLY REMOVED, PUT IT FOR ALL ORBITALS!!!!! (PS: FIXME?)
-            #self.inequiv_shells(orbits)
             mat_tinv = [numpy.identity(orbits[orb][3],numpy.complex_)
                         for orb in range(n_orbits)]
 
@@ -479,8 +447,8 @@ class Wien2kConverter:
         # Save it to the HDF:
         ar=HDFArchive(self.hdf_file,'a')
         if not (symm_subgrp in ar): ar.create_group(symm_subgrp)
-        thingstowrite = ['n_s','n_atoms','perm','orbits','SO','SP','time_inv','mat','mat_tinv']
-        for it in thingstowrite: exec "ar['%s']['%s'] = %s"%(symm_subgrp,it,it)
+        things_to_save = ['n_s','n_atoms','perm','orbits','SO','SP','time_inv','mat','mat_tinv']
+        for it in things_to_save: ar[symm_subgrp][it] = locals()[it]
         del ar
         
         
@@ -531,4 +499,3 @@ class Wien2kConverter:
                     self.n_inequiv_corr_shells += 1
                     tmp.append( lst[i+1][1:3] )
                     self.invshellmap.append(i+1)
-                                

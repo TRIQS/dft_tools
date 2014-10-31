@@ -1,2 +1,19 @@
 * realfreq --> w?
 * matsubara --> iw?
+
+
+Changed the following:
+
+* <<= --> <<
+* retval -> read_value
+* Gupf -> G_upfold
+* read_symmetry_input -> convert_symmetry_input
+
+* moved find_dc, find_mu_nonint, check_projectors, sorts_of_atoms, 
+number_of_atoms to end, not to be documented.
+* replaced all instances of 
+exec "self.%s = mpi.bcast(self.%s)"%(it,it)
+with
+setattr(self,it,mpi.bcast(getattr(self,it))
+* replaced long archive saves in converters by setattr construction
+* removed G_upfolded_id -- looked redundant

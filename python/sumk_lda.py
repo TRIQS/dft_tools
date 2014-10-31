@@ -27,10 +27,6 @@ import pytriqs.utility.dichotomy as dichotomy
 from pytriqs.gf.local import *
 from pytriqs.archive import *
 import pytriqs.utility.mpi as mpi
-from math import cos,sin
-
-# FIXME PS: This isn't used it seems
-# from pytriqs.operators.operators2 import *
 
 class SumkLDA:
     """This class provides a general SumK method for combining ab-initio code and pytriqs."""
@@ -133,9 +129,9 @@ class SumkLDA:
         """
 
         read_value = True
-        # init variables on all nodes:
-        for it in things_to_read: exec "self.%s = 0"%it
-        for it in optional_things: exec "self.%s = 0"%it
+        # init variables on all nodes to ensure mpi broadcast works at the end
+        for it in things_to_read: setattr(self,it,0)
+        for it in optional_things: setattr(self,it,0)
 
         if (mpi.is_master_node()):
             ar=HDFArchive(self.hdf_file,'a')
@@ -143,7 +139,7 @@ class SumkLDA:
                 # first read the necessary things:
                 for it in things_to_read:
                     if (it in ar[subgrp]):
-                        exec "self.%s = ar['%s']['%s']"%(it,subgrp,it)
+                        setattr(self,it,ar[subgrp][it])
                     else:
                         mpi.report("Loading %s failed!"%it)
                         read_value = False
@@ -153,7 +149,7 @@ class SumkLDA:
                     read_value = {}
                     for it in optional_things:
                         if (it in ar[subgrp]):
-                            exec "self.%s = ar['%s']['%s']"%(it,subgrp,it)
+                            setattr(self,it,ar[subgrp][it])
                             read_value['%s'%it] = True
                         else:
                             read_value['%s'%it] = False
@@ -164,9 +160,8 @@ class SumkLDA:
             del ar
 
         # now do the broadcasting:
-        for it in things_to_read: exec "self.%s = mpi.bcast(self.%s)"%(it,it)
-        for it in optional_things: exec "self.%s = mpi.bcast(self.%s)"%(it,it)
-
+        for it in things_to_read: setattr(self,it,mpi.bcast(getattr(self,it)))
+        for it in optional_things: setattr(self,it,mpi.bcast(getattr(self,it)))
 
         read_value = mpi.bcast(read_value)
 
@@ -178,11 +173,9 @@ class SumkLDA:
         """Saves some quantities into an HDF5 arxiv"""
 
         if not (mpi.is_master_node()): return # do nothing on nodes
-
         ar=HDFArchive(self.hdf_file,'a')
-        ar[self.lda_data]['chemical_potential'] = self.chemical_potential
-        ar[self.lda_data]['dc_energ'] = self.dc_energ
-        ar[self.lda_data]['dc_imp'] = self.dc_imp
+        things_to_save=['chemical_potential','dc_imp','dc_energ']
+        for it in things_to_save: ar[self.lda_data][it] = getattr(self,it)
         del ar
 
 
@@ -190,7 +183,6 @@ class SumkLDA:
         """Loads some quantities from an HDF5 arxiv"""
 
         things_to_read=['chemical_potential','dc_imp','dc_energ']
-
         read_value = self.read_input_from_hdf(subgrp=self.lda_data,things_to_read=things_to_read)
         return read_value
 
@@ -259,51 +251,17 @@ class SumkLDA:
 
         if (with_Sigma):
             stmp = self.add_dc()
-            beta = self.Sigma_imp[0].mesh.beta        #override beta if Sigma is present
+            beta = self.Sigma_imp[0].mesh.beta        # override beta if Sigma is present
 
-#
-#        if (self.G_upfold is None):
-#            # first setting up of G_upfold
-#            BS = [ range(self.n_orbitals[ik,ntoi[ib]]) for ib in bln ]
-#            gf_struct = [ (bln[ib], BS[ib]) for ib in range(self.n_spin_blocks_gf[self.SO]) ]
-#            a_list = [a for a,al in gf_struct]
-#            if (with_Sigma):                     #take the mesh from Sigma if necessary
-#                glist = lambda : [ GfImFreq(indices = al, mesh = self.Sigma_imp[0].mesh) for a,al in gf_struct]
-#            else:
-#                glist = lambda : [ GfImFreq(indices = al, beta = beta) for a,al in gf_struct]
-#            self.G_upfold = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
-#            self.G_upfold.zero()
-#            self.G_upfold_id = self.G_upfold.copy()
-#            self.G_upfold_id << iOmega_n
-#
-#        GFsize = [ gf.N1 for sig,gf in self.G_upfold]
-#        unchangedsize = all( [ self.n_orbitals[ik,ntoi[bln[ib]]]==GFsize[ib]
-#                               for ib in range(self.n_spin_blocks_gf[self.SO]) ] )
-#
-#        if ((not unchangedsize)or(self.G_upfold.mesh.beta!=beta)):
-#            BS = [ range(self.n_orbitals[ik,ntoi[ib]]) for ib in bln ]
-#            gf_struct = [ (bln[ib], BS[ib]) for ib in range(self.n_spin_blocks_gf[self.SO]) ]
-#            a_list = [a for a,al in gf_struct]
-#            if (with_Sigma):
-#                glist = lambda : [ GfImFreq(indices = al, mesh = self.Sigma_imp[0].mesh) for a,al in gf_struct]
-#            else:
-#                glist = lambda : [ GfImFreq(indices = al, beta = beta) for a,al in gf_struct]
-#            self.G_upfold = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
-#            self.G_upfold.zero()
-#            self.G_upfold_id = self.G_upfold.copy()
-#            self.G_upfold_id << iOmega_n
-#
-###
-# FIXME PS Remove commented out code above if this works
         # Do we need to set up G_upfold?
-        set_up_G_upfold = False
-        if self.G_upfold == None:
+        set_up_G_upfold = False # assume not
+        if self.G_upfold == None: # yes if not G_upfold provided
             set_up_G_upfold = True
-        else:
+        else: # yes if inconsistencies present in existing G_upfold
             GFsize = [ gf.N1 for sig,gf in self.G_upfold]
             unchangedsize = all( [ self.n_orbitals[ik,ntoi[bln[ib]]]==GFsize[ib]
                                    for ib in range(self.n_spin_blocks_gf[self.SO]) ] )
-            if ((not unchangedsize)or(self.G_upfold.mesh.beta!=beta)): set_up_G_upfold = True
+            if ( (not unchangedsize) or (self.G_upfold.mesh.beta != beta) ): set_up_G_upfold = True
 
         # Set up G_upfold
         if set_up_G_upfold:
@@ -316,13 +274,9 @@ class SumkLDA:
                 glist = lambda : [ GfImFreq(indices = al, beta = beta) for a,al in gf_struct]
             self.G_upfold = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
             self.G_upfold.zero()
-            self.G_upfold_id = self.G_upfold.copy()
-            self.G_upfold_id << iOmega_n
-###
 
+        self.G_upfold << iOmega_n
         idmat = [numpy.identity(self.n_orbitals[ik,ntoi[bl]],numpy.complex_) for bl in bln]
-
-        self.G_upfold << self.G_upfold_id
         M = copy.deepcopy(idmat)
         for ibl in range(self.n_spin_blocks_gf[self.SO]):
             ind = ntoi[bln[ibl]]
@@ -868,33 +822,6 @@ class SumkLDA:
         return self.chemical_potential
 
 
-#FIXME NOT USED!
-    def find_mu_nonint(self, dens_req, orb = None, beta = 40, precision = 0.01):
-
-        def F(mu):
-            #gnonint = self.nonint_G(beta=beta,mu=mu)
-            gnonint = self.extract_G_loc(mu=mu,with_Sigma=False)
-
-            if (orb is None):
-                dens = 0.0
-                for ish in range(self.n_inequiv_corr_shells):
-                    dens += gnonint[ish].total_density()
-            else:
-                dens = gnonint[orb].total_density()
-
-            return dens
-
-
-        self.chemical_potential = dichotomy.dichotomy(function = F,
-                                      x_init = self.chemical_potential, y_value = dens_req,
-                                      precision_on_y = precision, delta_x=0.5,
-                                      max_loops = 100, x_name="chemical_potential", y_name= "Local Density",
-                                      verbosity = 3)[0]
-
-        return self.chemical_potential
-
-
-
     def extract_G_loc(self, mu=None, with_Sigma = True):
         """
         extracts the local downfolded Green function at the chemical potential of the class.
@@ -1072,6 +999,32 @@ class SumkLDA:
 ################
 # FIXME LEAVE UNDOCUMENTED
 ################
+
+    def find_mu_nonint(self, dens_req, orb = None, beta = 40, precision = 0.01):
+
+        def F(mu):
+            #gnonint = self.nonint_G(beta=beta,mu=mu)
+            gnonint = self.extract_G_loc(mu=mu,with_Sigma=False)
+
+            if (orb is None):
+                dens = 0.0
+                for ish in range(self.n_inequiv_corr_shells):
+                    dens += gnonint[ish].total_density()
+            else:
+                dens = gnonint[orb].total_density()
+
+            return dens
+
+
+        self.chemical_potential = dichotomy.dichotomy(function = F,
+                                      x_init = self.chemical_potential, y_value = dens_req,
+                                      precision_on_y = precision, delta_x=0.5,
+                                      max_loops = 100, x_name="chemical_potential", y_name= "Local Density",
+                                      verbosity = 3)[0]
+
+        return self.chemical_potential
+
+
 
     def find_dc(self,orb,guess,dens_mat,dens_req=None,precision=0.01):
         """Searches for DC in order to fulfill charge neutrality.

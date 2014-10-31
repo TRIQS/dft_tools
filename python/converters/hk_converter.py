@@ -169,7 +169,7 @@ class HkConverter:
             for isp in range(n_spin_blocs):
                 for ik in xrange(n_k) :
                     no = n_orbitals[ik,isp]
-                    
+            # IF TRUE, FIRST READ ALL REAL COMPONENTS OF ONE kPOINT, OTHERWISE TUPLE OF real,im        
                     if (first_real_part_matrix):
                         
                         for i in xrange(no):
@@ -201,18 +201,9 @@ class HkConverter:
                                 hopping[ik,isp,i,j] += R.next() * 1j
                             
                                 if ((only_upper_triangle)and(i!=j)): hopping[ik,isp,j,i] = hopping[ik,isp,i,j].conjugate()
-            
             # keep some things that we need for reading parproj:
-            self.n_shells = n_shells
-            self.shells = shells
-            self.n_corr_shells = n_corr_shells
-            self.corr_shells = corr_shells
-            self.n_spin_blocs = n_spin_blocs
-            self.n_orbitals = n_orbitals
-            self.n_k = n_k
-            self.SO = SO
-            self.SP = SP
-            self.energy_unit = energy_unit
+            things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit']
+            for it in things_to_set: setattr(self,it,locals()[it])
         except StopIteration : # a more explicit error if the file is corrupted.
             raise "HK Converter : reading file lda_file failed!"
 
@@ -224,32 +215,11 @@ class HkConverter:
         if not (self.lda_subgrp in ar): ar.create_group(self.lda_subgrp) 
         # The subgroup containing the data. If it does not exist, it is created.
         # If it exists, the data is overwritten!!!
-        
-        ar[self.lda_subgrp]['energy_unit'] = energy_unit
-        ar[self.lda_subgrp]['n_k'] = n_k
-        ar[self.lda_subgrp]['k_dep_projection'] = k_dep_projection
-        ar[self.lda_subgrp]['SP'] = SP
-        ar[self.lda_subgrp]['SO'] = SO
-        ar[self.lda_subgrp]['charge_below'] = charge_below
-        ar[self.lda_subgrp]['density_required'] = density_required
-        ar[self.lda_subgrp]['symm_op'] = symm_op
-        ar[self.lda_subgrp]['n_shells'] = n_shells
-        ar[self.lda_subgrp]['shells'] = shells
-        ar[self.lda_subgrp]['n_corr_shells'] = n_corr_shells
-        ar[self.lda_subgrp]['corr_shells'] = corr_shells
-        ar[self.lda_subgrp]['use_rotations'] = use_rotations
-        ar[self.lda_subgrp]['rot_mat'] = rot_mat
-        ar[self.lda_subgrp]['rot_mat_time_inv'] = rot_mat_time_inv
-        ar[self.lda_subgrp]['n_reps'] = n_reps
-        ar[self.lda_subgrp]['dim_reps'] = dim_reps
-        ar[self.lda_subgrp]['T'] = T
-        ar[self.lda_subgrp]['n_orbitals'] = n_orbitals
-        ar[self.lda_subgrp]['proj_mat'] = proj_mat
-        ar[self.lda_subgrp]['bz_weights'] = bz_weights
-        ar[self.lda_subgrp]['hopping'] = hopping
-        
-        del ar
-             
+        things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
+                          'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
+                          'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping']
+        for it in things_to_save: ar[self.lda_subgrp][it] = locals()[it]
+        del ar             
        
 
         
@@ -300,4 +270,3 @@ class HkConverter:
                     self.n_inequiv_corr_shells += 1
                     tmp.append( lst[i+1][1:3] )
                     self.invshellmap.append(i+1)
-                                

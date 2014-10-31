@@ -76,6 +76,7 @@ def U_matrix_kanamori(n_orb, U_int, J_hund):
 
     return U, Uprime
 
+#FIXME WIEN CONVENTION first eg then t2g
 # Get t2g or eg components
 def t2g_submatrix(U):
     """Return only the t2g part of the full d-manifold two- or four-index U matrix."""

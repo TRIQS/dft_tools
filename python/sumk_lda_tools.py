@@ -242,8 +242,8 @@ class SumkLDATools(SumkLDA):
         Reads the data for the partial projectors from the HDF file
         """
 
-        thingstoread = ['dens_mat_below','n_parproj','proj_mat_pc','rot_mat_all','rot_mat_all_time_inv']
-        read_value = self.read_input_from_hdf(subgrp=self.par_proj_data,things_to_read = thingstoread)
+        things_to_read = ['dens_mat_below','n_parproj','proj_mat_pc','rot_mat_all','rot_mat_all_time_inv']
+        read_value = self.read_input_from_hdf(subgrp=self.par_proj_data,things_to_read = things_to_read)
         return read_value
 
 
@@ -253,8 +253,8 @@ class SumkLDATools(SumkLDA):
 
         assert hasattr(self,"Sigma_imp"), "Set Sigma First!!"
 
-        #thingstoread = ['Dens_Mat_below','N_parproj','Proj_Mat_pc','rotmat_all']
-        #read_value = self.read_input_from_HDF(SubGrp=self.par_proj_data, thingstoread=thingstoread)
+        #things_to_read = ['Dens_Mat_below','N_parproj','Proj_Mat_pc','rotmat_all']
+        #read_value = self.read_input_from_HDF(SubGrp=self.par_proj_data, things_to_read=things_to_read)
         read_value = self.read_par_proj_input_from_hdf()
         if not read_value: return read_value
         if self.symm_op: self.Symm_par = Symmetry(self.hdf_file,subgroup=self.symm_par_data)
@@ -347,12 +347,13 @@ class SumkLDATools(SumkLDA):
             ATTENTION: Many things from the original input file are are overwritten!!!"""
 
         assert hasattr(self,"Sigma_imp"), "Set Sigma First!!"
-        thingstoread = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_pc']
-        read_value = self.read_input_from_hdf(subgrp=self.bands_data,things_to_read=thingstoread)
+        things_to_read = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_pc']
+        read_value = self.read_input_from_hdf(subgrp=self.bands_data,things_to_read=things_to_read)
         if not read_value: return read_value
 
         if fermi_surface: ishell=None
 
+        # FIXME CAN REMOVE?
         # print hamiltonian for checks:
         if ((self.SP==1)and(self.SO==0)):
             f1=open('hamup.dat','w')
@@ -422,7 +423,7 @@ class SumkLDATools(SumkLDA):
                             for sig,gf in S: Akw[sig][ik,0] += gf.data[iom,:,:].imag.trace()/(-3.1415926535) * (M[1]-M[0])
                         else:
                             for sig,gf in S: Akw[sig][ik,iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
-                            Akw[sig][ik,iom] += ik*shift                       # shift Akw for plotting in xmgrace
+                            Akw[sig][ik,iom] += ik*shift                       # shift Akw for plotting in xmgrace -- REMOVE
 
 
             else:
@@ -433,6 +434,7 @@ class SumkLDATools(SumkLDA):
                     for sig,gf in tmp: tmp[sig] << self.downfold_pc(ik,ir,ishell,sig,S[sig],gf)
                     Gproj += tmp
 
+                # FIXME NEED TO READ IN ROTMAT_ALL FROM PARPROJ SUBGROUP, REPLACE ROTLOC WITH ROTLOC_ALL
                 # TO BE FIXED:
                 # rotate to local frame
                 #if (self.use_rotations):
@@ -506,7 +508,7 @@ class SumkLDATools(SumkLDA):
 
                         f.close()
 
-
+    # FIXME MOVE OUT OF HERE! THIS IS TEXT FILE READING!
     def constr_Sigma_real_axis(self, filename, hdf=True, hdf_dataset='SigmaReFreq',n_om=0,orb=0, tol_mesh=1e-6):
         """Uses Data from files to construct Sigma (or GF)  on the real axis."""
 
@@ -572,6 +574,12 @@ class SumkLDATools(SumkLDA):
                 ar = HDFArchive(filename)
                 SigmaME = ar[hdf_dataset]
                 del ar
+
+            #OTHER SOLUTION FIXME
+            #else:
+            #    SigmaME=0
+            #SigmaME = mpi.broadcast..
+
                 # we need some parameters to construct Sigma on other nodes
                 omega_min=SigmaME.mesh.omega_min
                 omega_max=SigmaME.mesh.omega_max
@@ -600,8 +608,8 @@ class SumkLDATools(SumkLDA):
            The theta-projectors are used, hence case.parproj data is necessary"""
 
 
-        #thingstoread = ['Dens_Mat_below','N_parproj','Proj_Mat_pc','rotmat_all']
-        #read_value = self.read_input_from_HDF(SubGrp=self.par_proj_data,thingstoread=thingstoread)
+        #things_to_read = ['Dens_Mat_below','N_parproj','Proj_Mat_pc','rotmat_all']
+        #read_value = self.read_input_from_HDF(SubGrp=self.par_proj_data,things_to_read=things_to_read)
         read_value = self.read_par_proj_input_from_hdf()
         if not read_value: return read_value
         if self.symm_op: self.Symm_par = Symmetry(self.hdf_file,subgroup=self.symm_par_data)
