@@ -40,7 +40,7 @@ def U_matrix(l, radial_integrals=None, U_int=None, J_hund=None, basis="spherical
     if basis == "cubic": T = spherical_to_cubic(l)
     if basis == "other" and T == None:
         raise ValueError("U_matrix: provide T for other bases.")
-    if T != None: transform_U_matrix(U_matrix, T)
+    if T != None: U_matrix = transform_U_matrix(U_matrix, T)
 
     return U_matrix
 
