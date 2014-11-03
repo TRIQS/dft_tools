@@ -32,8 +32,8 @@ class SumkLDA:
     """This class provides a general SumK method for combining ab-initio code and pytriqs."""
 
 
-    def __init__(self, hdf_file, mu = 0.0, h_field = 0.0, use_lda_blocks = False, lda_data = 'SumK_LDA', symm_corr_data = 'SymmCorr',
-                 par_proj_data = 'SumK_LDA_ParProj', symm_par_data = 'SymmPar', bands_data = 'SumK_LDA_Bands'):
+    def __init__(self, hdf_file, mu = 0.0, h_field = 0.0, use_lda_blocks = False, lda_data = 'lda_input', symmcorr_data = 'lda_symmcorr_input',
+                 parproj_data = 'lda_parproj_input', symmpar_data = 'lda_symmpar_input', bands_data = 'lda_bands_input'):
         """
         Initialises the class from data previously stored into an HDF5
         """
@@ -43,10 +43,10 @@ class SumkLDA:
         else:
             self.hdf_file = hdf_file
             self.lda_data = lda_data
-            self.par_proj_data = par_proj_data
+            self.symmcorr_data = symmcorr_data
+            self.parproj_data = parproj_data
+            self.symmpar_data = symmpar_data
             self.bands_data = bands_data
-            self.symm_par_data = symm_par_data
-            self.symm_corr_data = symm_corr_data
             self.block_names = [ ['up','down'], ['ud'] ]
             self.n_spin_blocks_gf = [2,1]
             self.G_upfold = None
@@ -105,7 +105,7 @@ class SumkLDA:
 
             if self.symm_op:
                 #mpi.report("Do the init for symm:")
-                self.Symm_corr = Symmetry(hdf_file,subgroup=self.symm_corr_data)
+                self.Symm_corr = Symmetry(hdf_file,subgroup=self.symmcorr_data)
 
             # Analyse the block structure and determine the smallest blocs, if desired
             if (use_lda_blocks): dm=self.analyse_BS()

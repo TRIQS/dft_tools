@@ -9,6 +9,32 @@ Changed the following:
 * Gupf -> G_upfold
 * read_symmetry_input -> convert_symmetry_input
 
+**********
+* changed default h5 subgroup names
+
+SumK_LDA -> dft_input
+dft_band_input
+SymmCorr -> dft_symmcorr_input
+
+SumK_LDA_ParProj -> dft_parproj_input
+SymmPar -> dft_symmpar_input
+
+def __init__(self, filename, lda_subgrp = 'SumK_LDA', symm_subgrp = 'SymmCorr', repacking = False):
+-->
+def __init__(self, filename, lda_subgrp = 'dft_input', symm_subgrp = 'dft_symm_input', repacking = False):
+
+declare all groupnames in init
+
+symm_subgrp -> symmcorr_subgrp
+symm_par_subgrp -> symmpar_subgrp
+par_proj_subgrp -> parproj_subgrp
+
+symm_data -> symmcorr_data
+par_proj_data -> parproj_data
+symm_par_data -> symmpar_data
+
+**********
+
 * moved find_dc, find_mu_nonint, check_projectors, sorts_of_atoms, 
 number_of_atoms to end, not to be documented.
 * replaced all instances of 

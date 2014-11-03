@@ -44,13 +44,13 @@ class SumkLDATools(SumkLDA):
     """Extends the SumkLDA class with some tools for analysing the data."""
 
 
-    def __init__(self, hdf_file, mu = 0.0, h_field = 0.0, use_lda_blocks = False, lda_data = 'SumK_LDA', symm_corr_data = 'SymmCorr',
-                 par_proj_data = 'SumK_LDA_ParProj', symm_par_data = 'SymmPar', bands_data = 'SumK_LDA_Bands'):
+    def __init__(self, hdf_file, mu = 0.0, h_field = 0.0, use_lda_blocks = False, lda_data = 'lda_input', symmcorr_data = 'lda_symmcorr_input',
+                 parproj_data = 'lda_parproj_input', symmpar_data = 'lda_symmpar_input', bands_data = 'lda_bands_input'):
 
         self.G_upfold_refreq = None
-        SumkLDA.__init__(self,hdf_file=hdf_file,mu=mu,h_field=h_field,use_lda_blocks=use_lda_blocks,lda_data=lda_data,
-                          symm_corr_data=symm_corr_data,par_proj_data=par_proj_data,symm_par_data=symm_par_data,
-                          bands_data=bands_data)
+        SumkLDA.__init__(self, hdf_file=hdf_file, mu=mu, h_field=h_field, use_lda_blocks=use_lda_blocks,
+                          lda_data=lda_data, symmcorr_data=symmcorr_data, parproj_data=parproj_data, 
+                          symmpar_data=symmpar_data, bands_data=bands_data)
 
 
     def downfold_pc(self,ik,ir,ish,sig,gf_to_downfold,gf_inp):
@@ -237,13 +237,13 @@ class SumkLDATools(SumkLDA):
 
 
 
-    def read_par_proj_input_from_hdf(self):
+    def read_parproj_input_from_hdf(self):
         """
         Reads the data for the partial projectors from the HDF file
         """
 
         things_to_read = ['dens_mat_below','n_parproj','proj_mat_pc','rot_mat_all','rot_mat_all_time_inv']
-        read_value = self.read_input_from_hdf(subgrp=self.par_proj_data,things_to_read = things_to_read)
+        read_value = self.read_input_from_hdf(subgrp=self.parproj_data,things_to_read = things_to_read)
         return read_value
 
 
@@ -254,10 +254,10 @@ class SumkLDATools(SumkLDA):
         assert hasattr(self,"Sigma_imp"), "Set Sigma First!!"
 
         #things_to_read = ['Dens_Mat_below','N_parproj','Proj_Mat_pc','rotmat_all']
-        #read_value = self.read_input_from_HDF(SubGrp=self.par_proj_data, things_to_read=things_to_read)
-        read_value = self.read_par_proj_input_from_hdf()
+        #read_value = self.read_input_from_HDF(SubGrp=self.parproj_data, things_to_read=things_to_read)
+        read_value = self.read_parproj_input_from_hdf()
         if not read_value: return read_value
-        if self.symm_op: self.Symm_par = Symmetry(self.hdf_file,subgroup=self.symm_par_data)
+        if self.symm_op: self.Symm_par = Symmetry(self.hdf_file,subgroup=self.symmpar_data)
 
         mu = self.chemical_potential
 
@@ -515,10 +515,10 @@ class SumkLDATools(SumkLDA):
 
 
         #things_to_read = ['Dens_Mat_below','N_parproj','Proj_Mat_pc','rotmat_all']
-        #read_value = self.read_input_from_HDF(SubGrp=self.par_proj_data,things_to_read=things_to_read)
-        read_value = self.read_par_proj_input_from_hdf()
+        #read_value = self.read_input_from_HDF(SubGrp=self.parproj_data,things_to_read=things_to_read)
+        read_value = self.read_parproj_input_from_hdf()
         if not read_value: return read_value
-        if self.symm_op: self.Symm_par = Symmetry(self.hdf_file,subgroup=self.symm_par_data)
+        if self.symm_op: self.Symm_par = Symmetry(self.hdf_file,subgroup=self.symmpar_data)
 
         # Density matrix in the window
         bln = self.block_names[self.SO]

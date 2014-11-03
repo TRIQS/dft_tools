@@ -27,7 +27,7 @@ The only necessary parameter is the filename of the hdf5 archive. In addition, t
   * `use_lda_blocks`: If true, the structure of the density matrix is analysed at initialisation, and non-zero matrix elements 
     are identified. The DMFT calculation is then restricted to these matrix elements, yielding a more efficient solution of the 
     local interaction problem. Degeneracies in orbital and spin space are also identified and stored for later use. The default value is `False`. 
-  * `lda_data`, `symm_corr_data`, `par_proj_data`, `symm_par_data`, `bands_data`: These string variables define the subgroups in the hdf5 arxive,
+  * `lda_data`, `symmcorr_data`, `parproj_data`, `symmpar_data`, `bands_data`: These string variables define the subgroups in the hdf5 arxive,
     where the corresponding information is stored. The default values are consistent with those in :ref:`interfacetowien`.
 
 At initialisation, the necessary data is read from the hdf5 file. If a calculation is restarted based on a previous hdf5 file, information on

@@ -43,7 +43,7 @@ class HkConverter:
     Conversion from general H(k) file to an hdf5 file that can be used as input for the SumK_LDA class.
     """
 
-    def __init__(self, hk_file, hdf_file, lda_subgrp = 'SumK_LDA', symm_subgrp = 'SymmCorr', repacking = False):
+    def __init__(self, hk_file, hdf_file, lda_subgrp = 'lda_input', symmcorr_subgrp = 'lda_symmcorr_input', repacking = False):
         """
         Init of the class.
         on. 
@@ -53,20 +53,18 @@ class HkConverter:
         self.hdf_file = hdf_file
         self.lda_file = hk_file
         self.lda_subgrp = lda_subgrp
-        self.symm_subgrp = symm_subgrp
+        self.symmcorr_subgrp = symmcorr_subgrp
 
         # Checks if h5 file is there and repacks it if wanted:
         import os.path
         if (os.path.exists(self.hdf_file) and repacking):
             self.__repack()
-        
-        
+
 
     def convert_dmft_input(self, first_real_part_matrix = True, only_upper_triangle = False, weights_in_file = False):
         """
         Reads the input files, and stores the data in the HDFfile
         """
-        
                    
         # Read and write only on the master node
         if not (mpi.is_master_node()): return
@@ -121,10 +119,8 @@ class HkConverter:
                                        [0.0, 1.0/sqrt(2.0), 0.0, -1.0/sqrt(2.0), 0.0],
                                        [0.0, 1.0/sqrt(2.0), 0.0, 1.0/sqrt(2.0), 0.0]])
 
-    
             # Spin blocks to be read:
             n_spin_blocs = SP + 1 - SO   # number of spins to read for Norbs and Ham, NOT Projectors
-                 
         
             # define the number of n_orbitals for all k points: it is the number of total bands and independent of k!
             n_orb = sum([ shells[ish][3] for ish in range(n_shells) ])
@@ -132,7 +128,6 @@ class HkConverter:
 
             # Initialise the projectors:
             proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max(numpy.array(corr_shells)[:,3]),max(n_orbitals)],numpy.complex_)
-
 
             # Read the projectors from the file:
             for ik in xrange(n_k):
@@ -151,8 +146,6 @@ class HkConverter:
 
                         proj_mat[ik,isp,icrsh,0:no,offset:offset+no] = numpy.identity(no)
                     
-                      
-          
             # now define the arrays for weights and hopping ...
             bz_weights = numpy.ones([n_k],numpy.float_)/ float(n_k)  # w(k_index),  default normalisation 
             hopping = numpy.zeros([n_k,n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
@@ -208,13 +201,10 @@ class HkConverter:
             raise "HK Converter : reading file lda_file failed!"
 
         R.close()
-        
-        #-----------------------------------------
-        # Store the input into HDF5:
+
+        # Save to the HDF5:
         ar = HDFArchive(self.hdf_file,'a')
         if not (self.lda_subgrp in ar): ar.create_group(self.lda_subgrp) 
-        # The subgroup containing the data. If it does not exist, it is created.
-        # If it exists, the data is overwritten!!!
         things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                           'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping']
