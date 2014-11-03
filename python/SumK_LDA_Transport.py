@@ -30,54 +30,15 @@
 from types import *
 import numpy
 
-
-# NEW
 import pytriqs.utility.dichotomy as Dichotomy
-# OLD
-#import pytriqs.Base.Utility.Dichotomy as Dichotomy
-
-# NEW
-#from pytriqs.gf.local.descriptors import A_Omega_Plus_B
 from pytriqs.gf.local import *
-# OLD
-#from pytrigs.Base.GF_Local.GF import GF
-#from pytriqs.Base.GF_local.GFBloc_ImFreq import GFBloc_ImFreq
-#from pytriqs.Base.GF_Local.GFBloc_ReFreq import GFBloc_ReFreq
-#from pytriqs.Base.GF_Local.GFBloc_ImTime import GFBloc_ImTime
-#from pytriqs.Base.GF_Local import GF_Initializers
-
-# NEW
-#from pytriqs.operators.operators2 import *
-# OLD
-#from pytriqs.Solvers.Operators import *
-
-# NEW
-# NOT FOUND
-# OLD
-#from pytriqs.Base.Utility.myUtils import Sum
-
-# NEW
 import pytriqs.utility.mpi as myMPI
-# OLD
-#import pytriqs.Base.Utility.MPI as myMPI
-
 from datetime import datetime
-
-#from pytriqs.Wien2k.Symmetry import *
-
-# NEW
 from pytriqs.applications.dft.sumk_lda import *
 from pytriqs.applications.dft.sumk_lda_tools import *
-#k in xrange(self OLD
-#from pytriqs.Wien2k.SumK_LDA import SumK_LDA
-#from pytriqs.Wien2k.SumK_LDA_tools import SumK_LDA_tools
-
 import string
 import copy
-
 import SumK_LDA_Transport_Wien2k_input as Wien
-
-
 
 def Read_Fortran_File (filename):
     """ Returns a generator that yields all numbers in the Fortran file as float, one by one"""
@@ -918,7 +879,7 @@ class TransportEtOptic(SumkLDATools):
     def bandwinfromwiencase(self, wiencase):
         """ read in the band window from wiencase.outbwin file.
         """
-        bandwin = [numpy.zeros(self.n_k * 2, dtype=int).reshape(self.n_k, 2) for isp in range(self.SP + 1 - self.SO)]
+        bandwin = [numpy.zeros((self.n_k,  2), dtype=int) for isp in range(self.SP + 1 - self.SO)]
         for isp in range(self.SP + 1 - self.SO):
             if(self.SP == 0 or self.SO == 1):
                 winfile = Read_Fortran_File2(wiencase + ".oubwin")

@@ -97,7 +97,7 @@ class Velocities:
                             if(nu_prime != nu):
                                 vxyz[nu_prime][nu][i] = vxyz[nu][nu_prime][i].conjugate()
                                                 
-                        vec.vel = vxyz
+                vec.vel = vxyz
                 self.vks.append(vec)
              
             except IOError: 

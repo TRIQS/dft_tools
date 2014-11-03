@@ -21,7 +21,7 @@
 ################################################################################
 
 from types import *
-import numpy
+import numpy, os.path
 from pytriqs.archive import *
 from converter_tools import *
 
@@ -33,7 +33,7 @@ class Wien2kConverter(ConverterTools):
     def __init__(self, filename, hdf_filename = None,
                        dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input',
                        parproj_subgrp='dft_parproj_input', symmpar_subgrp='dft_symmpar_input',
-                       bands_subgrp = 'dft_bands_input', repacking = False):
+                       bands_subgrp = 'dft_bands_input', transp_subgrp = 'dft_transp_input', repacking = False):
         """
         Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so on. 
         """
@@ -51,7 +51,12 @@ class Wien2kConverter(ConverterTools):
         self.parproj_subgrp = parproj_subgrp
         self.symmpar_subgrp = symmpar_subgrp
         self.bands_subgrp = bands_subgrp
+        self.transp_subgrp = transp_subgrp
         self.fortran_to_replace = {'D':'E'}
+        self.vel_file = filename+'.pmat'
+        self.outputs_file = filename+'.outputs'
+        self.struct_file = filename+'.struct'
+        self.oubwin_file = filename+'.oubwin'
 
         # Checks if h5 file is there and repacks it if wanted:
         import os.path
@@ -362,6 +367,197 @@ class Wien2kConverter(ConverterTools):
         for it in things_to_save: ar[self.bands_subgrp][it] = locals()[it]
         del ar
 
+
+    def convert_transport_input(self, spinbl=['']):
+        """ 
+        Reads the input files necessary for transport calculations
+        and stores the data in the HDFfile
+        """
+
+        #Read and write files only on the master node
+        if not (mpi.is_master_node()): return
+        
+        # Check if SP, SO and n_k are already in h5
+        ar = HDFArchive(self.hdf_file, 'a')
+        if not (self.lda_subgrp in ar): raise IOError, "No SumK_LDA subgroup in hdf file found! Call convert_dmft_input first."
+        SP = ar[self.lda_subgrp]['SP']
+        SO = ar[self.lda_subgrp]['SO']
+        n_k = ar[self.lda_subgrp]['n_k']
+        del ar
+
+        # Read relevant data from .pmat file
+        ############################################
+       
+        vk = []
+        kp = []
+        bandwin_opt = []
+        
+        for ispinbl in spinbl:
+            vks = []
+            kps = []
+            bandwins_opt = []
+            if not (os.path.exists(self.vel_file + ispinbl)) : raise IOError, "File %s does not exist" %self.vel_file+ispinbl
+            print "Reading input from %s..."%self.vel_file+ispinbl
+
+            with  open(self.vel_file + ispinbl) as f:
+                    while 1:
+                        try:
+                            s = f.readline()
+                            if (s == ''):
+                                break
+                        except:
+                            break
+                        try:
+                           [k, nu1, nu2] = [int(x) for x in s.strip().split()]
+                           bandwins_opt.append((nu1,nu2))
+                           dim = nu2 - nu1 +1
+                           v_xyz = numpy.zeros((dim,dim,3), dtype = complex)
+                           # kp.append(f.readline().strip().split())
+                           temp = f.readline().strip().split()
+                           kps.append(numpy.array([float(t) for t in temp[0:3]]))
+                           for nu_i in xrange(dim):
+                               for nu_j in xrange(nu_i, dim):
+                                   for i in xrange(3):
+                                       s = f.readline().strip("\n ()").split(',')
+                                       v_xyz[nu_i][nu_j][i] = float(s[0]) + float(s[1])*1j
+                                       if (nu_i != nu_j):
+                                            v_xyz[nu_j][nu_i][i] = v_xyz[nu_i][nu_j][i].conjugate()
+
+                           vks.append(v_xyz)
+        
+                        except IOError:
+                            raise "Wien2k_converter : reading file %s failed" %self.vel_file
+            vk.append(vks)
+            kp.append(kps)
+            bandwin_opt.append(numpy.array(bandwins_opt))
+
+        print "Read in %s file done!" %self.vel_file
+
+
+        # Read relevant data from .struct file
+        ############################################
+        if not (os.path.exists(self.struct_file)) : raise IOError, "File %s does not exist" %self.struct_file
+        print "Reading input from %s..."%self.struct_file
+        
+        with open(self.struct_file) as f:
+                try:
+                    f.readline() #title
+                    temp = f.readline() #lattice
+                    #latticetype = temp[0:10].split()[0]
+                    latticetype = temp.split()[0]
+
+                    print 'Lattice: ', latticetype
+ 
+                    f.readline()
+                    temp = f.readline().strip().split() # lattice constants
+                    latticeconstants = numpy.array([float(t) for t in temp[0:3]])
+                    latticeangles = numpy.array([float(t) for t in temp[3:6]])
+                    latticeangles *= numpy.pi/180.0
+                    print 'Lattice constants: ', latticeconstants
+                    print 'Lattice angles: ', latticeangles
+
+                except IOError:
+                    raise "Wien2k_converter : reading file %s failed" %self.struct_file
+
+        print "Read in %s file done!" %self.struct_file
+
+
+        # Read relevant data from .outputs file
+        ############################################
+        if not (os.path.exists(self.outputs_file)) : raise IOError, "File %s does not exist" %self.outputs_file
+        print "Reading input from %s..."%self.outputs_file
+        
+        symmcartesian = []
+        taucartesian = []
+
+        with open(self.outputs_file) as f:
+                try:
+                    while 1:
+                        temp = f.readline().strip(' ').split()
+                        if (temp[0] =='PGBSYM:'):
+                             nsymm = int(temp[-1])
+                             break
+                    for i in range(nsymm):
+                        while 1:
+                            temp = f.readline().strip().split()
+                            if (temp[0] == 'Symmetry'):
+                                break
+
+                        # read cartesian symmetries
+                        symmt = numpy.zeros((3, 3), dtype = float)
+                        taut = numpy.zeros(3, dtype = float)
+                        for ir in range(3):
+                            temp = f.readline().strip().split()
+                            for ic in range(3):
+                                symmt[ir, ic] = float(temp[ic])
+                        temp = f.readline().strip().split()
+                        for ir in range(3):
+                            taut[ir] = float(temp[ir])
+
+                        symmcartesian.append(symmt)
+                        taucartesian.append(taut)
+                except IOError:
+                     raise "Wien2k_converter : reading file %s failed" %self.outputs_file
+     
+        print "Read in %s file done!" %self.outputs_file
+
+
+        # Read relevant data from .oubwin/up/down files
+        ############################################
+        
+        # convert_dmft_inputar = HDFArchive(self.hdf_file, 'a')
+
+        bandwin = [numpy.zeros((n_k, 2), dtype=int) for isp in range(SP + 1 - SO)]
+
+        for isp in range(SP + 1 - SO):
+            if(SP == 0 or SO == 1):        
+                if not (os.path.exists(self.oubwin_file)) : raise IOError, "File %s does not exist" %self.oubwin_file
+                print "Reading input from %s..."%self.oubwin_file
+                f = read_fortran_file(self.oubwin_file)
+            elif (SP == 1 and isp == 0):
+                if not (os.path.exists(self.oubwin_file+'up')) : raise IOError, "File %s does not exist" %self.oubwin_file+'up'
+                print "Reading input from %s..."%self.oubwin_file+'up'
+                f = read_fortran_file(self.oubwin_file+'up')
+            elif (SP == 1 and isp ==1):
+                if not (os.path.exists(self.oubwin_file+'dn')) : raise IOError, "File %s does not exist" %self.oubwin_file+'dn'    
+                print "Reading input from %s..."%self.oubwin_file+'dn'
+                f = read_fortran_file(self.oubwin_file+'dn')
+            else:
+                assert 0, "Reding oubwin error! Check SP and SO!"
+            assert int(f.next()) == n_k, "Number of k-points is unconsistent in oubwin file!"
+            assert int(f.next()) == SO, "SO is unconsistent in oubwin file!"
+
+            for i in xrange(n_k):
+                f.next()
+                bandwin[isp][i, 0] = f.next()
+                bandwin[isp][i, 1] = f.next()
+                f.next()
+
+        print "Read in %s files done!" %self.oubwin_file
+
+
+        # Put data to HDF5 file
+        ar = HDFArchive(self.hdf_file, 'a')
+        if not (self.transp_subgrp in ar): ar.create_group(self.transp_subgrp)
+        # The subgroup containing the data. If it does not exist, it is created.
+        # If it exists, the data is overwritten!!!
+       
+        # Data from .pmat file
+        ar[self.transp_subgrp]['bandwin_opt'] = bandwin_opt
+        ar[self.transp_subgrp]['kp'] = kp
+        ar[self.transp_subgrp]['vk'] = vk
+        # Data from .struct file
+        ar[self.transp_subgrp]['latticetype'] = latticetype
+        ar[self.transp_subgrp]['latticeconstants'] = latticeconstants
+        ar[self.transp_subgrp]['latticeangles'] = latticeangles
+        # Data from .outputs file
+        ar[self.transp_subgrp]['nsymm'] = nsymm
+        ar[self.transp_subgrp]['symmcartesian'] = symmcartesian
+        ar[self.transp_subgrp]['taucartesian'] = taucartesian
+        # Data from .oubwin files
+        ar[self.transp_subgrp]['bandwin'] = bandwin
+
+        del ar
 
     def convert_symmetry_input(self, orbits, symm_file, symm_subgrp, SO, SP):
         """
