@@ -436,10 +436,7 @@ class TransportEtOptic(SumkLDATools):
         bln = self.block_names[self.SO]
         ntoi = self.names_to_ind[self.SO]
 
-        S = BlockGf(name_block_generator=[(bln[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]),
-                                                                     mesh=self.Sigma_imp[0].mesh))
-                                                    for isp in range(self.Nspinblocs) ],
-                            make_copies=False)
+        S = BlockGf(name_block_generator=[(bln[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]), mesh=self.Sigma_imp[0].mesh)) for isp in range(self.Nspinblocs) ], make_copies=False)
         mupat = [numpy.identity(self.n_orbitals[ik][isp], numpy.complex_) * mu for isp in range(self.Nspinblocs)]   # construct mupat
         Annkw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], N_om), dtype=numpy.complex_) for isp in range(self.Nspinblocs)]
 
@@ -448,43 +445,40 @@ class TransportEtOptic(SumkLDATools):
             unchangesize = all([ self.n_orbitals[ik][isp] == mupat[isp].shape[0] for isp in range(self.Nspinblocs)])
             if (not unchangesize):
                 # recontruct green functions.
-                S = BlockGf(name_block_generator=[(bln[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]),
-                                                                        mesh=self.Sigma_imp[0].mesh))
-                                                       for isp in range(self.Nspinblocs) ],
-                               make_copies=False)
+                S = BlockGf(name_block_generator=[(bln[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]), mesh=self.Sigma_imp[0].mesh)) for isp in range(self.Nspinblocs) ], make_copies=False)
 
                 # S = GF(name_block_generator=[ (s, GFBloc_ReFreq(Indices=BS, Mesh=self.Sigma_imp[0].mesh)) for s in ['up', 'down'] ], Copy=False)
                 # mupat = numpy.identity(self.n_orbitals[ik], numpy.complex_)                                     # change size of mupat
                 mupat = [numpy.identity(self.n_orbitals[ik][isp], numpy.complex_) * mu for isp in range(self.Nspinblocs)]   # construct mupat
                 # mupat *= mu
 
-            #set a temporary array storing spectral functions with band index. Note, usually we should have spin index
+                #set a temporary array storing spectral functions with band index. Note, usually we should have spin index
                 #Annkw=numpy.zeros((self.n_orbitals[ik],self.n_orbitals[ik],N_om),dtype=numpy.complex_)
                 Annkw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], N_om), dtype=numpy.complex_) for isp in range(self.Nspinblocs)]
 
             # get lattice green functions.
-            # S <<= A_Omega_Plus_B(A=1, B=1j * broadening)
+           # S <<= A_Omega_Plus_B(A=1, B=1j * broadening)
+            S <<= 1*Omega + 1j*broadening
             
-	    S <<= 1*Omega + 1j*broadening
-
             Ms = copy.deepcopy(mupat)
             for ibl in range(self.Nspinblocs):
                 ind = ntoi[bln[ibl]]
-		n_orb = self.n_orbitals[ik][ibl]
-		Ms[ibl] = self.hopping[ik,ind,0:n_orb,0:n_orb].real - mupat[ibl]
+                n_orb = self.n_orbitals[ik][ibl]
+                Ms[ibl] = self.hopping[ik,ind,0:n_orb,0:n_orb].real - mupat[ibl]
             S -= Ms
 
+          #  print S[self.block_names[self.SO][0]].data
             tmp = S.copy()    # init temporary storage
             ## substract self energy
             for icrsh in xrange(self.n_corr_shells):
                 for sig, gf in tmp: tmp[sig] <<= self.upfold(ik, icrsh, sig, stmp[icrsh][sig], gf)
                 S -= tmp
-
+            
             S.invert()
 
             for isp in range(self.Nspinblocs):
                 Annkw[isp].real = -copy.deepcopy(S[self.block_names[self.SO][isp]].data.swapaxes(0,1).swapaxes(1,2)).imag / numpy.pi
-
+                
             for isp in range(self.Nspinblocs):
                 if(ik%100==0):
                     print "ik,isp", ik, isp
@@ -508,9 +502,8 @@ class TransportEtOptic(SumkLDATools):
                             for iq in range(len(Qmesh_ex)):
                                 #if(Qmesh_ex[iq]==0 or iw+Qmesh_ex[iq]>=N_om ):
                                 # here use fermi distribution to truncate self energy mesh.
-				if(Qmesh_ex[iq] == 0 or iw + Qmesh_ex[iq] >= N_om  
-                                   or M[iw].real + Qmesh[iq] < -10.0 / Beta or M[iw].real >10.0 / Beta):
-                                    continue
+                                if(Qmesh_ex[iq] == 0 or iw + Qmesh_ex[iq] >= N_om or M[iw].real + Qmesh[iq] < -10.0 / Beta or M[iw].real >10.0 / Beta):
+                                        continue
 				
                                 if (M[iw].real > omminplot) and (M[iw].real < ommaxplot):
                                 # here use bandwin to construct match matrix for A and velocity.
@@ -558,7 +551,7 @@ class TransportEtOptic(SumkLDATools):
                 for i in xrange(L1):
                     for iq in xrange(L2):
                         for iw in xrange(L3):
-                            pwout.write(str(self.Pw_optic[i, iq, iw]) + "    ")
+                            pwout.write(str(self.Pw_optic[i, iq, iw]) + "  ")
                 pwout.write("\n")
 
         # sum over omega to get optic conductivity for ik in xrange(self
@@ -701,14 +694,15 @@ class TransportEtOptic(SumkLDATools):
 
             # get lattice green functions.
             # S <<= A_Omega_Plus_B(A=1, B=1j * broadening)
-             
-	    S <<= 1*Omega + 1j*broadening
-
+            
+            S <<= 1*Omega + 1j*broadening
+            
             Ms = copy.deepcopy(mupat)
             for ibl in range(self.Nspinblocs):
                 ind = ntoi[bln[ibl]]
-		n_orb = self.n_orbitals[ik][ibl]
-		Ms[ibl] = self.hopping[ik,ind,0:n_orb,0:n_orb].real - mupat[ibl]
+                n_orb = self.n_orbitals[ik][ibl]
+                Ms[ibl] = self.hopping[ik,ind,0:n_orb,0:n_orb].real - mupat[ibl]
+            
             S -= Ms
 #            tmp = S.copy()    # init temporary storage
 #            ## substract self energy
@@ -717,10 +711,10 @@ class TransportEtOptic(SumkLDATools):
 #                S -= tmp
 
             S.invert()
-
+           
             for isp in range(self.Nspinblocs):
                 Annkw[isp].real = -copy.deepcopy(S[self.block_names[self.SO][isp]].data.swapaxes(0,1).swapaxes(1,2)).imag / numpy.pi
-
+                    
             for isp in range(self.Nspinblocs):
                 if(ik%100==0):
                     print "ik,isp", ik, isp
@@ -777,21 +771,26 @@ class TransportEtOptic(SumkLDATools):
             with open("TD_Optic_LDA.dat", "w") as pwout:
                 L1,L2,L3=self.Pw_optic.shape
                 pwout.write("%s  %s  %s\n"%(L1,L2,L3))
+                Qmeshr=[i*deltaM for i in Qmesh_ex]
+                for iq in xrange(L2):
+                    pwout.write(str(Qmeshr[iq])+"  ")
+                pwout.write("\n")
+                for iw in xrange(L3):
+                    pwout.write(str(M[iw].real)+"  ")
+                pwout.write("\n")               
                 for i in xrange(L1):
                     for iq in xrange(L2):
                         for iw in xrange(L3):
-                            pwout.write(str(i)+"   "+str(Qmesh_ex[iq] * deltaM) + "   " + str(M[iw]) + "   ")
-                            pwout.write(str(self.Pw_optic[i, iq, iw]) + "    ")
-                            pwout.write("\n")
-                    pwout.write("\n")
-
+                            pwout.write(str(self.Pw_optic[i, iq, iw]) + "  ")
+                pwout.write("\n")
+      
         # sum over omega to get optic conductivity
         if myMPI.is_master_node():
             OpticConductivity = numpy.zeros((mshape.sum(), len(Qmesh)), dtype=numpy.float_)
             for im in range(mshape.sum()):
                 for iq in range(len(Qmesh)):
                     for iw in xrange(N_om):
-                        omegaT = M[iw] * Beta
+                        omegaT = M[iw].real * Beta
                         omega_aug = Qmesh_ex[iq] * deltaM
                         OpticConductivity[im, iq] += self.Pw_optic[im, iq, iw] * (fermidis(omegaT) - fermidis(omegaT + omega_aug * Beta)) / omega_aug
             OpticConductivity *= deltaM
