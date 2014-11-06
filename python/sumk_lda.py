@@ -32,13 +32,14 @@ class SumkLDA:
     """This class provides a general SumK method for combining ab-initio code and pytriqs."""
 
 
-    def __init__(self, hdf_file, mu = 0.0, h_field = 0.0, use_lda_blocks = False, lda_data = 'lda_input', symmcorr_data = 'lda_symmcorr_input',
-                 parproj_data = 'lda_parproj_input', symmpar_data = 'lda_symmpar_input', bands_data = 'lda_bands_input'):
+    def __init__(self, hdf_file, mu = 0.0, h_field = 0.0, use_lda_blocks = False, 
+	         lda_data = 'lda_input', symmcorr_data = 'lda_symmcorr_input', parproj_data = 'lda_parproj_input', 
+                 symmpar_data = 'lda_symmpar_input', bands_data = 'lda_bands_input', lda_output = 'lda_output'):
         """
         Initialises the class from data previously stored into an HDF5
         """
 
-        if  not (type(hdf_file)==StringType):
+        if not (type(hdf_file)==StringType):
             mpi.report("Give a string for the HDF5 filename to read the input!")
         else:
             self.hdf_file = hdf_file
@@ -47,6 +48,7 @@ class SumkLDA:
             self.parproj_data = parproj_data
             self.symmpar_data = symmpar_data
             self.bands_data = bands_data
+            self.lda_output = lda_output
             self.block_names = [ ['up','down'], ['ud'] ]
             self.n_spin_blocks_gf = [2,1]
             self.G_upfold = None
@@ -56,14 +58,11 @@ class SumkLDA:
             things_to_read = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                               'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                               'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping']
-            optional_things = ['gf_struct_solver','map_inv','map','chemical_potential','dc_imp','dc_energ','deg_shells']
-
-            self.read_value = self.read_input_from_hdf(subgrp=self.lda_data,things_to_read=things_to_read,optional_things=optional_things)
+            self.subgroup_present, self.value_read = self.read_input_from_hdf(subgrp = self.lda_data, things_to_read = things_to_read)
 
             if (self.SO) and (abs(self.h_field)>0.000001):
                 self.h_field=0.0
                 mpi.report("For SO, the external magnetic field is not implemented, setting it to 0!")
-
 
             # determine the number of inequivalent correlated shells (self.n_inequiv_corr_shells)
             # and related maps (self.shellmap, self.invshellmap)
@@ -73,14 +72,19 @@ class SumkLDA:
             self.names_to_ind = [{}, {}]
             for ibl in range(2):
                 for inm in range(self.n_spin_blocks_gf[ibl]):
-                    self.names_to_ind[ibl][self.block_names[ibl][inm]] = inm * self.SP #(self.Nspinblocs-1)
+                    self.names_to_ind[ibl][self.block_names[ibl][inm]] = inm * self.SP
 
             # GF structure used for the local things in the k sums
             # Most general form allowing for all hybridisation, i.e. largest blocks possible
             self.gf_struct_corr = [ [ (al, range( self.corr_shells[i][3])) for al in self.block_names[self.corr_shells[i][4]] ]
                                    for i in xrange(self.n_corr_shells) ]
 
-            if not (self.read_value['gf_struct_solver']):
+            #-----
+            # If these quantities are not in HDF, set them up and save into HDF
+            optional_things = ['gf_struct_solver','map_inv','map','chemical_potential','dc_imp','dc_energ','deg_shells']
+            self.subgroup_present, self.value_read = self.read_input_from_hdf(subgrp = self.lda_output, things_to_read = [], 
+                                                                              optional_things = optional_things)
+            if (not self.subgroup_present) or (not self.value_read['gf_struct_solver']):
                 # No gf_struct was stored in HDF, so first set a standard one:
                 self.gf_struct_solver = [ dict([ (al, range(self.corr_shells[self.invshellmap[i]][3]) )
                                                         for al in self.block_names[self.corr_shells[self.invshellmap[i]][4]] ])
@@ -93,98 +97,89 @@ class SumkLDA:
                         self.map[i][al] = [al for j in range( self.corr_shells[self.invshellmap[i]][3] ) ]
                         self.map_inv[i][al] = al
 
-            if not (self.read_value['dc_imp']):
+            if (not self.subgroup_present) or (not self.value_read['dc_imp']):
                 # init the double counting:
                 self.__init_dc()
 
-            if not (self.read_value['chemical_potential']):
+            if (not self.subgroup_present) or (not self.value_read['chemical_potential']):
                 self.chemical_potential = mu
 
-            if not (self.read_value['deg_shells']):
+            if (not self.subgroup_present) or (not self.value_read['deg_shells']):
                 self.deg_shells = [ [] for i in range(self.n_inequiv_corr_shells)]
+            #-----
 
             if self.symm_op:
                 #mpi.report("Do the init for symm:")
-                self.Symm_corr = Symmetry(hdf_file,subgroup=self.symmcorr_data)
+                self.symmcorr = Symmetry(hdf_file,subgroup=self.symmcorr_data)
 
             # Analyse the block structure and determine the smallest blocs, if desired
             if (use_lda_blocks): dm=self.analyse_BS()
 
-
-            # now save things again to HDF5:
-            if (mpi.is_master_node()):
-                ar=HDFArchive(self.hdf_file,'a')
-                ar[self.lda_data]['h_field'] = self.h_field
-                del ar
-            self.save()
+            # Now save things again to HDF5: 
+            # FIXME WHAT HAPPENS TO h_field? INPUT TO __INIT__? ADD TO OPTIONAL_THINGS?
+            things_to_save=['chemical_potential','dc_imp','dc_energ','h_field']
+            self.save(things_to_save)
 
 
-
-
-
-
-    def read_input_from_hdf(self, subgrp, things_to_read, optional_things=[]):
+    def read_input_from_hdf(self, subgrp, things_to_read=[], optional_things=[]):
         """
         Reads data from the HDF file
         """
 
-        read_value = True
+        value_read = True
         # init variables on all nodes to ensure mpi broadcast works at the end
         for it in things_to_read: setattr(self,it,0)
         for it in optional_things: setattr(self,it,0)
 
-        if (mpi.is_master_node()):
+        if mpi.is_master_node():
             ar=HDFArchive(self.hdf_file,'a')
-            if (subgrp in ar):
+            if subgrp in ar:
+                subgroup_present = True
                 # first read the necessary things:
                 for it in things_to_read:
-                    if (it in ar[subgrp]):
+                    if it in ar[subgrp]:
                         setattr(self,it,ar[subgrp][it])
                     else:
                         mpi.report("Loading %s failed!"%it)
-                        read_value = False
+                        value_read = False
 
-                if ((read_value) and (len(optional_things)>0)):
+                if (value_read and (len(optional_things)>0)):
                     # if necessary things worked, now read optional things:
-                    read_value = {}
+                    value_read = {}
                     for it in optional_things:
-                        if (it in ar[subgrp]):
+                        if it in ar[subgrp]:
                             setattr(self,it,ar[subgrp][it])
-                            read_value['%s'%it] = True
+                            value_read['%s'%it] = True
                         else:
-                            read_value['%s'%it] = False
+                            value_read['%s'%it] = False
             else:
                 mpi.report("Loading failed: No %s subgroup in HDF5!"%subgrp)
-                read_value = False
+                subgroup_present = False
+                value_read = False
 
             del ar
 
         # now do the broadcasting:
         for it in things_to_read: setattr(self,it,mpi.bcast(getattr(self,it)))
         for it in optional_things: setattr(self,it,mpi.bcast(getattr(self,it)))
+        subgroup_present = mpi.bcast(subgroup_present)
+        value_read = mpi.bcast(value_read)
 
-        read_value = mpi.bcast(read_value)
-
-        return read_value
+        return (subgroup_present, value_read)
 
 
-
-    def save(self):
+    def save(self,things_to_save):
         """Saves some quantities into an HDF5 arxiv"""
 
         if not (mpi.is_master_node()): return # do nothing on nodes
-        ar=HDFArchive(self.hdf_file,'a')
-        things_to_save=['chemical_potential','dc_imp','dc_energ']
-        for it in things_to_save: ar[self.lda_data][it] = getattr(self,it)
+        ar = HDFArchive(self.hdf_file,'a')
+        if not (self.lda_output in ar): ar.create_group(self.lda_output)
+        for it in things_to_save: 
+            try:
+                ar[self.lda_output][it] = getattr(self,it)
+            except:
+                mpi.report("%s not found, and so not stored."%it)
         del ar
-
-
-    def load(self):
-        """Loads some quantities from an HDF5 arxiv"""
-
-        things_to_read=['chemical_potential','dc_imp','dc_energ']
-        read_value = self.read_input_from_hdf(subgrp=self.lda_data,things_to_read=things_to_read)
-        return read_value
 
 
     def downfold(self,ik,icrsh,sig,gf_to_downfold,gf_inp):
@@ -344,7 +339,7 @@ class SumkLDA:
         mpi.barrier()
 
 
-        if (self.symm_op!=0): dens_mat = self.Symm_corr.symmetrize(dens_mat)
+        if (self.symm_op!=0): dens_mat = self.symmcorr.symmetrize(dens_mat)
 
         # Rotate to local coordinate system:
         if (self.use_rotations):
@@ -391,7 +386,7 @@ class SumkLDA:
         mpi.barrier()
 
 
-        if (self.symm_op!=0): dens_mat = self.Symm_corr.symmetrize(dens_mat)
+        if (self.symm_op!=0): dens_mat = self.symmcorr.symmetrize(dens_mat)
 
         # Rotate to local coordinate system:
         if (self.use_rotations):
@@ -486,16 +481,8 @@ class SumkLDA:
                             elif ((ind1<0)and(ind2<0)):
                                 self.deg_shells[ish].append([bl[0],bl2[0]])
 
-        if (mpi.is_master_node()):
-            ar=HDFArchive(self.hdf_file,'a')
-            ar[self.lda_data]['gf_struct_solver'] = self.gf_struct_solver
-            ar[self.lda_data]['map'] = self.map
-            ar[self.lda_data]['map_inv'] = self.map_inv
-            try:
-                ar[self.lda_data]['deg_shells'] = self.deg_shells
-            except:
-                mpi.report("deg_shells not stored, degeneracies not found")
-            del ar
+        things_to_save=['gf_struct_solver','map','map_inv','deg_shells']
+        self.save(things_to_save)
 
         return dens_mat
 
@@ -552,7 +539,7 @@ class SumkLDA:
                                                                                   self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb].conjugate().transpose() )
 
             # symmetrisation:
-            if (self.symm_op!=0): self.Hsumk = self.Symm_corr.symmetrize(self.Hsumk)
+            if (self.symm_op!=0): self.Hsumk = self.symmcorr.symmetrize(self.Hsumk)
 
             # Rotate to local coordinate system:
             if (self.use_rotations):
@@ -743,9 +730,8 @@ class SumkLDA:
 
     def set_mu(self,mu):
         """Sets a new chemical potential"""
-        self.chemical_potential = mu
-        #print "Chemical potential in SumK set to ",mu
 
+        self.chemical_potential = mu
 
 
     def inequiv_shells(self,lst):
@@ -810,13 +796,13 @@ class SumkLDA:
 
         F = lambda mu : self.total_density(mu = mu)
 
-        Dens_rel = self.density_required - self.charge_below
+        density = self.density_required - self.charge_below
 
 
         self.chemical_potential = dichotomy.dichotomy(function = F,
-                                         x_init = self.chemical_potential, y_value = Dens_rel,
-                                         precision_on_y = precision, delta_x=0.5,
-                                         max_loops = 100, x_name="chemical_potential", y_name= "Total Density",
+                                         x_init = self.chemical_potential, y_value = density,
+                                         precision_on_y = precision, delta_x = 0.5, max_loops = 100, 
+                                         x_name = "Chemical Potential", y_name = "Total Density",
                                          verbosity = 3)[0]
 
         return self.chemical_potential
@@ -856,7 +842,7 @@ class SumkLDA:
 
         # Gloc[:] is now the sum over k projected to the local orbitals.
         # here comes the symmetrisation, if needed:
-        if (self.symm_op!=0): Gloc = self.Symm_corr.symmetrize(Gloc)
+        if (self.symm_op!=0): Gloc = self.symmcorr.symmetrize(Gloc)
 
         # Gloc is rotated to the local coordinate system:
         if (self.use_rotations):
@@ -1003,7 +989,6 @@ class SumkLDA:
     def find_mu_nonint(self, dens_req, orb = None, beta = 40, precision = 0.01):
 
         def F(mu):
-            #gnonint = self.nonint_G(beta=beta,mu=mu)
             gnonint = self.extract_G_loc(mu=mu,with_Sigma=False)
 
             if (orb is None):
@@ -1017,10 +1002,10 @@ class SumkLDA:
 
 
         self.chemical_potential = dichotomy.dichotomy(function = F,
-                                      x_init = self.chemical_potential, y_value = dens_req,
-                                      precision_on_y = precision, delta_x=0.5,
-                                      max_loops = 100, x_name="chemical_potential", y_name= "Local Density",
-                                      verbosity = 3)[0]
+                                         x_init = self.chemical_potential, y_value = dens_req,
+                                         precision_on_y = precision, delta_x = 0.5, max_loops = 100, 
+                                         x_name = "Chemical Potential", y_name = "Total Density",
+                                         verbosity = 3)[0]
 
         return self.chemical_potential
 
@@ -1042,12 +1027,12 @@ class SumkLDA:
 
 
         if (dens_req is None):
-            Dens_rel = self.density_required - self.charge_below
+            density = self.density_required - self.charge_below
         else:
-            Dens_rel = dens_req
+            density = dens_req
 
         dcnew = dichotomy.dichotomy(function = F,
-                                    x_init = guess, y_value = Dens_rel,
+                                    x_init = guess, y_value = density,
                                     precision_on_y = precision, delta_x=0.5,
                                     max_loops = 100, x_name="Double-Counting", y_name= "Total Density",
                                     verbosity = 3)[0]
@@ -1068,7 +1053,7 @@ class SumkLDA:
                 n_orb = self.n_orbitals[ik,0]
                 dens_mat[ish][:,:] += numpy.dot(self.proj_mat[ik,0,ish,0:dim,0:n_orb],self.proj_mat[ik,0,ish,0:dim,0:n_orb].transpose().conjugate()) * self.bz_weights[ik]
 
-        if (self.symm_op!=0): dens_mat = self.Symm_corr.symmetrize(dens_mat)
+        if (self.symm_op!=0): dens_mat = self.symmcorr.symmetrize(dens_mat)
 
         # Rotate to local coordinate system:
         if (self.use_rotations):

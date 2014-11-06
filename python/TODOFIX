@@ -8,6 +8,7 @@ Changed the following:
 * retval -> read_value
 * Gupf -> G_upfold
 * read_symmetry_input -> convert_symmetry_input
+* Symm_corr -> symmcorr
 
 **********
 * changed default h5 subgroup names

@@ -202,7 +202,7 @@ class SumkLDATools(SumkLDA):
 
 
 
-        if (self.symm_op!=0): Gloc = self.Symm_corr.symmetrize(Gloc)
+        if (self.symm_op!=0): Gloc = self.symmcorr.symmetrize(Gloc)
 
         if (self.use_rotations):
             for icrsh in xrange(self.n_corr_shells):
@@ -243,8 +243,8 @@ class SumkLDATools(SumkLDA):
         """
 
         things_to_read = ['dens_mat_below','n_parproj','proj_mat_pc','rot_mat_all','rot_mat_all_time_inv']
-        read_value = self.read_input_from_hdf(subgrp=self.parproj_data,things_to_read = things_to_read)
-        return read_value
+        value_read = self.read_input_from_hdf(subgrp=self.parproj_data,things_to_read = things_to_read)
+        return value_read
 
 
 
@@ -254,9 +254,9 @@ class SumkLDATools(SumkLDA):
         assert hasattr(self,"Sigma_imp"), "Set Sigma First!!"
 
         #things_to_read = ['Dens_Mat_below','N_parproj','Proj_Mat_pc','rotmat_all']
-        #read_value = self.read_input_from_HDF(SubGrp=self.parproj_data, things_to_read=things_to_read)
-        read_value = self.read_parproj_input_from_hdf()
-        if not read_value: return read_value
+        #value_read = self.read_input_from_HDF(SubGrp=self.parproj_data, things_to_read=things_to_read)
+        value_read = self.read_parproj_input_from_hdf()
+        if not value_read: return value_read
         if self.symm_op: self.Symm_par = Symmetry(self.hdf_file,subgroup=self.symmpar_data)
 
         mu = self.chemical_potential
@@ -348,8 +348,8 @@ class SumkLDATools(SumkLDA):
 
         assert hasattr(self,"Sigma_imp"), "Set Sigma First!!"
         things_to_read = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_pc']
-        read_value = self.read_input_from_hdf(subgrp=self.bands_data,things_to_read=things_to_read)
-        if not read_value: return read_value
+        value_read = self.read_input_from_hdf(subgrp=self.bands_data,things_to_read=things_to_read)
+        if not value_read: return value_read
 
         if fermi_surface: ishell=None
 
@@ -515,9 +515,9 @@ class SumkLDATools(SumkLDA):
 
 
         #things_to_read = ['Dens_Mat_below','N_parproj','Proj_Mat_pc','rotmat_all']
-        #read_value = self.read_input_from_HDF(SubGrp=self.parproj_data,things_to_read=things_to_read)
-        read_value = self.read_parproj_input_from_hdf()
-        if not read_value: return read_value
+        #value_read = self.read_input_from_HDF(SubGrp=self.parproj_data,things_to_read=things_to_read)
+        value_read = self.read_parproj_input_from_hdf()
+        if not value_read: return value_read
         if self.symm_op: self.Symm_par = Symmetry(self.hdf_file,subgroup=self.symmpar_data)
 
         # Density matrix in the window
