@@ -21,12 +21,12 @@
 ################################################################################
 
 from types import *
-from symmetry import *
 import numpy
 import pytriqs.utility.dichotomy as dichotomy
 from pytriqs.gf.local import *
-from pytriqs.archive import *
 import pytriqs.utility.mpi as mpi
+from pytriqs.archive import *
+from symmetry import *
 
 class SumkLDA:
     """This class provides a general SumK method for combining ab-initio code and pytriqs."""

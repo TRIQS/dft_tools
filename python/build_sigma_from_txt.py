@@ -1,4 +1,11 @@
-    # FIXME MOVE OUT OF HERE! THIS IS TEXT FILE READING!
+    def read_fortran_file (filename):
+        """ Returns a generator that yields all numbers in the Fortran file as float, one by one"""
+        import os.path
+        if not(os.path.exists(filename)) : raise IOError, "File %s does not exist."%filename
+        for line in open(filename,'r') :
+            for x in line.replace('D','E').split() :
+                yield string.atof(x)
+
     def constr_Sigma_real_axis(self, filename, hdf=True, hdf_dataset='SigmaReFreq',n_om=0,orb=0, tol_mesh=1e-6):
         """Uses Data from files to construct Sigma (or GF)  on the real axis."""
 

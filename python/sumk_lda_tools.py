@@ -24,21 +24,9 @@ from types import *
 import numpy
 import pytriqs.utility.dichotomy as dichotomy
 from pytriqs.gf.local import *
-from pytriqs.operators import *
 import pytriqs.utility.mpi as mpi
-from datetime import datetime
 from symmetry import *
 from sumk_lda import SumkLDA
-import string
-
-def read_fortran_file (filename):
-    """ Returns a generator that yields all numbers in the Fortran file as float, one by one"""
-    import os.path
-    if not(os.path.exists(filename)) : raise IOError, "File %s does not exist."%filename
-    for line in open(filename,'r') :
-        for x in line.replace('D','E').split() :
-            yield string.atof(x)
-
 
 class SumkLDATools(SumkLDA):
     """Extends the SumkLDA class with some tools for analysing the data."""
@@ -539,11 +527,8 @@ class SumkLDATools(SumkLDA):
         for ish in xrange(self.n_shells): Gproj[ish].zero()
 
         ikarray=numpy.array(range(self.n_k))
-        #print mpi.rank, mpi.slice_array(ikarray)
-        #print "K-Sum starts on node",mpi.rank," at ",datetime.now()
 
         for ik in mpi.slice_array(ikarray):
-            #print mpi.rank, ik, datetime.now()
             S = self.lattice_gf_matsubara(ik=ik,mu=mu,beta=beta)
             S *= self.bz_weights[ik]
 
@@ -553,17 +538,14 @@ class SumkLDATools(SumkLDA):
                     for sig,gf in tmp: tmp[sig] << self.downfold_pc(ik,ir,ish,sig,S[sig],gf)
                     Gproj[ish] += tmp
 
-        #print "K-Sum done on node",mpi.rank," at ",datetime.now()
         #collect data from mpi:
         for ish in xrange(self.n_shells):
             Gproj[ish] << mpi.all_reduce(mpi.world,Gproj[ish],lambda x,y : x+y)
         mpi.barrier()
 
-        #print "Data collected on node",mpi.rank," at ",datetime.now()
 
         # Symmetrisation:
         if (self.symm_op!=0): Gproj = self.Symm_par.symmetrize(Gproj)
-        #print "Symmetrisation done on node",mpi.rank," at ",datetime.now()
 
         for ish in xrange(self.n_shells):
 

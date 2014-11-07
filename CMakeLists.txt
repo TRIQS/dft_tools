@@ -15,7 +15,7 @@ enable_testing()
 find_package(TRIQS REQUIRED)
 
 if (NOT ${TRIQS_WITH_PYTHON_SUPPORT})
- MESSAGE(FATAL_ERROR "Wien2TRIQS require Python support in TRIQS")
+ MESSAGE(FATAL_ERROR "dft_tools require Python support in TRIQS")
 endif()
 
 # Check that versions are compatible
