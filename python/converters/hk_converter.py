@@ -24,21 +24,10 @@ from types import *
 import numpy
 from pytriqs.archive import *
 import pytriqs.utility.mpi as mpi
-import string
 from math import sqrt
+from converter_tools import *
 
-
-def read_fortran_file (filename):
-    """ Returns a generator that yields all numbers in the Fortran file as float, one by one"""
-    import os.path
-    if not(os.path.exists(filename)) : raise IOError, "File %s does not exist."%filename
-    for line in open(filename,'r') :
-	for x in line.replace('D','E').replace('(',' ').replace(')',' ').replace(',',' ').split() : 
-	    yield string.atof(x)
-
-
-
-class HkConverter:
+class HkConverter(ConverterTools):
     """
     Conversion from general H(k) file to an hdf5 file that can be used as input for the SumK_LDA class.
     """
@@ -46,7 +35,6 @@ class HkConverter:
     def __init__(self, hk_file, hdf_file, lda_subgrp = 'lda_input', symmcorr_subgrp = 'lda_symmcorr_input', repacking = False):
         """
         Init of the class.
-        on. 
         """
 
         assert type(hk_file)==StringType,"hk_file must be a filename"
@@ -54,11 +42,12 @@ class HkConverter:
         self.lda_file = hk_file
         self.lda_subgrp = lda_subgrp
         self.symmcorr_subgrp = symmcorr_subgrp
+        self.fortran_to_replace = {'D':'E', '(':' ', ')':' ', ',':' '}
 
         # Checks if h5 file is there and repacks it if wanted:
         import os.path
         if (os.path.exists(self.hdf_file) and repacking):
-            self.__repack()
+            ConverterTools.__repack(self)
 
 
     def convert_dmft_input(self, first_real_part_matrix = True, only_upper_triangle = False, weights_in_file = False):
@@ -71,7 +60,7 @@ class HkConverter:
         mpi.report("Reading input from %s..."%self.lda_file)
 
         # R is a generator : each R.Next() will return the next number in the file
-        R = read_fortran_file(self.lda_file)
+        R = ConverterTools.read_fortran_file(self,self.lda_file,self.fortran_to_replace)
         try:
             energy_unit = 1.0                              # the energy conversion factor is 1.0, we assume eV in files
             n_k = int(R.next())                            # read the number of k points
@@ -93,7 +82,7 @@ class HkConverter:
             # now read the information about the shells:
             corr_shells = [ [ int(R.next()) for i in range(6) ] for icrsh in range(n_corr_shells) ]    # reads iatom, sort, l, dim, SO flag, irep
 
-            self.inequiv_shells(corr_shells)              # determine the number of inequivalent correlated shells, has to be known for further reading...
+            ConverterTools.inequiv_shells(self,corr_shells) # determine the number of inequivalent correlated shells, needed for further reading
 
             use_rotations = 0
             rot_mat = [numpy.identity(corr_shells[icrsh][3],numpy.complex_) for icrsh in xrange(n_corr_shells)]
@@ -210,53 +199,3 @@ class HkConverter:
                           'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping']
         for it in things_to_save: ar[self.lda_subgrp][it] = locals()[it]
         del ar             
-       
-
-        
-
-    def __repack(self):
-        """Calls the h5repack routine, in order to reduce the file size of the hdf5 archive.
-           Should only be used BEFORE the first invokation of HDFArchive in the program, otherwise
-           the hdf5 linking is broken!!!"""
-
-        import subprocess
-
-        if not (mpi.is_master_node()): return
-
-        mpi.report("Repacking the file %s"%self.hdf_file)
-
-        retcode = subprocess.call(["h5repack","-i%s"%self.hdf_file, "-otemphgfrt.h5"])
-        if (retcode!=0):
-            mpi.report("h5repack failed!")
-        else:
-            subprocess.call(["mv","-f","temphgfrt.h5","%s"%self.hdf_file])
-            
-
-
-    def inequiv_shells(self,lst):
-        """
-        The number of inequivalent shells is calculated from lst, and a mapping is given as
-        map(i_corr_shells) = i_inequiv_corr_shells
-        invmap(i_inequiv_corr_shells) = i_corr_shells
-        in order to put the Self energies to all equivalent shells, and for extracting Gloc
-        """
-
-        tmp = []
-        self.shellmap = [0 for i in range(len(lst))]
-        self.invshellmap = [0]
-        self.n_inequiv_corr_shells = 1
-        tmp.append( lst[0][1:3] )
-        
-        if (len(lst)>1):
-            for i in range(len(lst)-1):
-               
-                fnd = False
-                for j in range(self.n_inequiv_corr_shells):
-                    if (tmp[j]==lst[i+1][1:3]):
-                        fnd = True
-                        self.shellmap[i+1] = j
-                if (fnd==False):
-                    self.shellmap[i+1] = self.n_inequiv_corr_shells
-                    self.n_inequiv_corr_shells += 1
-                    tmp.append( lst[i+1][1:3] )
-                    self.invshellmap.append(i+1)

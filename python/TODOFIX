@@ -35,6 +35,8 @@ par_proj_data -> parproj_data
 symm_par_data -> symmpar_data
 
 **********
+* separated read_fortran_file, __repack, inequiv_shells into new converter_tools class from which hk and wien converters are derived
+
 
 * moved find_dc, find_mu_nonint, check_projectors, sorts_of_atoms, 
 number_of_atoms to end, not to be documented.
