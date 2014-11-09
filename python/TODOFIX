@@ -1,9 +1,7 @@
-* realfreq --> w?
-* matsubara --> iw?
+* remove inequiv_shells from sumk_lda, modify update_archive scripts
 
-
-Changed the following:
-
+==========================
+Substitutions:
 * <<= --> <<
 * retval -> read_value
 * Gupf -> G_upfold
@@ -16,7 +14,6 @@ Changed the following:
 SumK_LDA -> dft_input
 dft_band_input
 SymmCorr -> dft_symmcorr_input
-
 SumK_LDA_ParProj -> dft_parproj_input
 SymmPar -> dft_symmpar_input
 
@@ -37,6 +34,7 @@ symm_par_data -> symmpar_data
 **********
 * separated read_fortran_file, __repack, inequiv_shells into new converter_tools class from which hk and wien converters are derived
 
+* truncated write loops in calc_density_correction
 
 * moved find_dc, find_mu_nonint, check_projectors, sorts_of_atoms, 
 number_of_atoms to end, not to be documented.

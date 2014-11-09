@@ -120,6 +120,9 @@ class SumkLDA:
             things_to_save=['chemical_potential','dc_imp','dc_energ','h_field']
             self.save(things_to_save)
 
+################
+# HDF5 FUNCTIONS
+################
 
     def read_input_from_hdf(self, subgrp, things_to_read=[], optional_things=[]):
         """
@@ -165,7 +168,7 @@ class SumkLDA:
         subgroup_present = mpi.bcast(subgroup_present)
         value_read = mpi.bcast(value_read)
 
-        return (subgroup_present, value_read)
+        return subgroup_present, value_read
 
 
     def save(self,things_to_save):
@@ -181,6 +184,9 @@ class SumkLDA:
                 mpi.report("%s not found, and so not stored."%it)
         del ar
 
+################
+# CORE FUNCTIONS
+################
 
     def downfold(self,ik,icrsh,sig,gf_to_downfold,gf_inp):
         """Downfolding a block of the Greens function"""
@@ -189,8 +195,9 @@ class SumkLDA:
         isp = self.names_to_ind[self.SO][sig]       # get spin index for proj. matrices
         dim = self.corr_shells[icrsh][3]
         n_orb = self.n_orbitals[ik,isp]
+        projmat = self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb]
 
-        gf_downfolded.from_L_G_R(self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb],gf_to_downfold,self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb].conjugate().transpose())  # downfolding G
+        gf_downfolded.from_L_G_R(projmat,gf_to_downfold,projmat.conjugate().transpose())
 
         return gf_downfolded
 
@@ -199,12 +206,12 @@ class SumkLDA:
         """Upfolding a block of the Greens function"""
 
         gf_upfolded = gf_inp.copy()
-
         isp = self.names_to_ind[self.SO][sig]       # get spin index for proj. matrices
         dim = self.corr_shells[icrsh][3]
         n_orb = self.n_orbitals[ik,isp]
+        projmat = self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb]
 
-        gf_upfolded.from_L_G_R(self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb].conjugate().transpose(),gf_to_upfold,self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb])
+        gf_upfolded.from_L_G_R(projmat.conjugate().transpose(),gf_to_upfold,projmat)
 
         return gf_upfolded
 
@@ -216,6 +223,7 @@ class SumkLDA:
         assert ((direction=='toLocal')or(direction=='toGlobal')),"Give direction 'toLocal' or 'toGlobal' in rotloc!"
 
         gf_rotated = gf_to_rotate.copy()
+
         if (direction=='toGlobal'):
 
             if ((self.rot_mat_time_inv[icrsh]==1) and (self.SO)):
@@ -226,7 +234,7 @@ class SumkLDA:
 
         elif (direction=='toLocal'):
 
-            if ((self.rot_mat_time_inv[icrsh]==1)and(self.SO)):
+            if ((self.rot_mat_time_inv[icrsh]==1) and (self.SO)):
                 gf_rotated << gf_rotated.transpose()
                 gf_rotated.from_L_G_R(self.rot_mat[icrsh].transpose(),gf_rotated,self.rot_mat[icrsh].conjugate())
             else:
@@ -790,8 +798,10 @@ class SumkLDA:
 
 
     def find_mu(self, precision = 0.01):
-        """Searches for mu in order to give the desired charge
-        A desired precision can be specified in precision."""
+        """
+        Searches for mu in order to give the desired charge
+        A desired precision can be specified in precision.
+        """
 
         F = lambda mu : self.total_density(mu = mu)
 
@@ -809,7 +819,7 @@ class SumkLDA:
 
     def extract_G_loc(self, mu=None, with_Sigma = True):
         """
-        extracts the local downfolded Green function at the chemical potential of the class.
+        Extracts the local downfolded Green function at the chemical potential of the class.
         At the end, the local G is rotated from the global coordinate system to the local system.
         if with_Sigma = False: Sigma is not included => non-interacting local GF
         """
@@ -826,7 +836,6 @@ class SumkLDA:
 
             S = self.lattice_gf_matsubara(ik=ik,mu=mu,with_Sigma = with_Sigma, beta = beta)
             S *= self.bz_weights[ik]
-
 
             for icrsh in xrange(self.n_corr_shells):
                 tmp = Gloc[icrsh].copy()                  # init temporary storage
@@ -883,7 +892,6 @@ class SumkLDA:
     def calc_density_correction(self,filename = 'dens_mat.dat'):
         """ Calculates the density correction in order to feed it back to the DFT calculations."""
 
-
         assert (type(filename)==StringType), "filename has to be a string!"
 
         ntoi = self.names_to_ind[self.SO]
@@ -901,13 +909,10 @@ class SumkLDA:
             dens[ib] = 0.0
 
         for ik in mpi.slice_array(ikarray):
-
             S = self.lattice_gf_matsubara(ik=ik,mu=self.chemical_potential)
             for sig,g in S:
                 deltaN[sig][ik] = S[sig].density()
                 dens[sig] += self.bz_weights[ik] * S[sig].total_density()
-
-
 
         #put mpi Barrier:
         for sig in deltaN:
@@ -915,7 +920,6 @@ class SumkLDA:
                 deltaN[sig][ik] = mpi.all_reduce(mpi.world,deltaN[sig][ik],lambda x,y : x+y)
             dens[sig] = mpi.all_reduce(mpi.world,dens[sig],lambda x,y : x+y)
         mpi.barrier()
-
 
         # now save to file:
         if (mpi.is_master_node()):
@@ -930,7 +934,9 @@ class SumkLDA:
             # write beta in ryderg-1
             f.write("%.14f\n"%(S.mesh.beta*self.energy_unit))
             if (self.SP!=0): f1.write("%.14f\n"%(S.mesh.beta*self.energy_unit))
-            if (self.SP==0):
+
+            if (self.SP==0): # no spin-polarization
+
                 for ik in range(self.n_k):
                     f.write("%s\n"%self.n_orbitals[ik,0])
                     for inu in range(self.n_orbitals[ik,0]):
@@ -941,41 +947,22 @@ class SumkLDA:
                         f.write("\n")
                     f.write("\n")
                 f.close()
-            elif ((self.SP==1)and(self.SO==0)):
-                for ik in range(self.n_k):
-                    f.write("%s\n"%self.n_orbitals[ik,0])
-                    for inu in range(self.n_orbitals[ik,0]):
-                        for imu in range(self.n_orbitals[ik,0]):
-                            f.write("%.14f  %.14f "%(deltaN['up'][ik][inu,imu].real,deltaN['up'][ik][inu,imu].imag))
-                        f.write("\n")
-                    f.write("\n")
-                f.close()
-                for ik in range(self.n_k):
-                    f1.write("%s\n"%self.n_orbitals[ik,1])
-                    for inu in range(self.n_orbitals[ik,1]):
-                        for imu in range(self.n_orbitals[ik,1]):
-                            f1.write("%.14f  %.14f "%(deltaN['down'][ik][inu,imu].real,deltaN['down'][ik][inu,imu].imag))
-                        f1.write("\n")
-                    f1.write("\n")
-                f1.close()
-            else:
-                for ik in range(self.n_k):
-                    f.write("%s\n"%self.n_orbitals[ik,0])
-                    for inu in range(self.n_orbitals[ik,0]):
-                        for imu in range(self.n_orbitals[ik,0]):
-                            f.write("%.14f  %.14f "%(deltaN['ud'][ik][inu,imu].real,deltaN['ud'][ik][inu,imu].imag))
-                        f.write("\n")
-                    f.write("\n")
-                f.close()
-                for ik in range(self.n_k):
-                    f1.write("%s\n"%self.n_orbitals[ik,0])
-                    for inu in range(self.n_orbitals[ik,0]):
-                        for imu in range(self.n_orbitals[ik,0]):
-                            f1.write("%.14f  %.14f "%(deltaN['ud'][ik][inu,imu].real,deltaN['ud'][ik][inu,imu].imag))
-                        f1.write("\n")
-                    f1.write("\n")
-                f1.close()
 
+            elif (self.SP==1): # with spin-polarization
+
+                # dict of filename : (spin index, block_name)
+                if self.SO==0: to_write = {f: (0, 'up'), f1: (1, 'down')}
+                if self.SO==1: to_write = {f: (0, 'ud'), f1: (0, 'ud')}
+                for fout in to_write.iterkeys():
+                    isp, bn = to_write[fout]
+                    for ik in range(self.n_k):
+                        fout.write("%s\n"%self.n_orbitals[ik,isp])
+                        for inu in range(self.n_orbitals[ik,isp]):
+                            for imu in range(self.n_orbitals[ik,isp]):
+                                fout.write("%.14f  %.14f "%(deltaN[bn][ik][inu,imu].real,deltaN[bn][ik][inu,imu].imag))
+                            fout.write("\n")
+                        fout.write("\n")
+                    fout.close()
 
         return deltaN, dens
 
@@ -985,6 +972,7 @@ class SumkLDA:
 # FIXME LEAVE UNDOCUMENTED
 ################
 
+    # FIXME Merge with find_mu?
     def find_mu_nonint(self, dens_req, orb = None, beta = 40, precision = 0.01):
 
         def F(mu):
