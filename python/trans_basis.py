@@ -14,9 +14,9 @@ class TransBasis:
     def __init__(self, SK=None, hdf_datafile=None):
         '''Inits the class by reading the input.'''
 
-        if (SK==None):
+        if SK is None:
             # build our own SK instance
-            if (hdf_datafile==None):
+            if hdf_datafile is None:
                 mpi.report("Give SK instance or HDF filename!")
                 return 0
 

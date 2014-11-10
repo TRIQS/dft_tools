@@ -250,7 +250,7 @@ class SumkLDA:
 
         # Do we need to set up G_upfold?
         set_up_G_upfold = False # assume not
-        if self.G_upfold == None: # yes if not G_upfold provided
+        if self.G_upfold is None: # yes if not G_upfold provided
             set_up_G_upfold = True
         else: # yes if inconsistencies present in existing G_upfold
             GFsize = [ gf.N1 for sig,gf in self.G_upfold]
@@ -403,7 +403,7 @@ class SumkLDA:
     def analyse_BS(self, threshold = 0.00001, include_shells = None, dm = None):
         """ Determines the Green function block structure from simple point integration."""
 
-        if (dm==None): dm = self.simple_point_dens_mat()
+        if dm is None: dm = self.simple_point_dens_mat()
 
         dens_mat = [dm[self.invshellmap[ish]] for ish in xrange(self.n_inequiv_corr_shells) ]
 
