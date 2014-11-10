@@ -15,11 +15,11 @@ def U_matrix(l, radial_integrals=None, U_int=None, J_hund=None, basis="spherical
        T = transformation matrix from spherical to desired basis, if basis='other' (default None)"""
 
     # Check all necessary information is present and consistent
-    if radial_integrals == None and (U_int == None and J_hund == None):
+    if radial_integrals is None and (U_int is None and J_hund is None):
         raise ValueError("U_matrix: provide either the radial_integrals or U_int and J_hund.")
-    if radial_integrals == None and (U_int != None and J_hund != None):
+    if radial_integrals is None and (U_int is not None and J_hund is not None):
         radial_integrals = U_J_to_radial_integrals(l, U_int, J_hund)
-    if radial_integrals != None and (U_int != None and J_hund != None):
+    if radial_integrals is not None and (U_int is not None and J_hund is not None):
         if len(radial_integrals)-1 != l:
             raise ValueError("U_matrix: inconsistency in l and number of radial_integrals provided.")
         if (radial_integrals - U_J_to_radial_integrals(l, U_int, J_hund)).any() != 0.0:
@@ -38,9 +38,9 @@ def U_matrix(l, radial_integrals=None, U_int=None, J_hund=None, basis="spherical
 
     # Transform from spherical basis if needed
     if basis == "cubic": T = spherical_to_cubic(l)
-    if basis == "other" and T == None:
+    if basis == "other" and T is None:
         raise ValueError("U_matrix: provide T for other bases.")
-    if T != None: U_matrix = transform_U_matrix(U_matrix, T)
+    if T is not None: U_matrix = transform_U_matrix(U_matrix, T)
 
     return U_matrix
 
@@ -209,6 +209,6 @@ def clebsch_gordan(jm1, jm2, jm3):
 #  columns 0,1,2 and 3 for 3rd dim.
 #def subarray(a,idxlist,n=len(a.shape)-1) :
 def subarray(a,idxlist,n=None) :
-    if n == None: n = len(a.shape)-1
+    if n is None: n = len(a.shape)-1
     sa = a[tuple(slice(x) for x in a.shape[:n]) + (idxlist[n],)]
     return subarray(sa,idxlist, n-1) if n > 0 else sa
