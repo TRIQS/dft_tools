@@ -3,7 +3,7 @@ import sys
 import subprocess
 
 if len(sys.argv) < 2:
-  print "Usage: python clear_lda_output.py archive"
+  print "Usage: python clear_h5_output.py archive"
   sys.exit()
 
 print """
@@ -13,7 +13,8 @@ and to restore it to the original post-converter state.
 
 filename = sys.argv[1]
 A = h5py.File(filename)
-del(A["lda_output"])
+for group in ['lda_output','dmft_output']:
+    if group in A: del(A[group])
 A.close()
 
 # Repack to reclaim disk space
