@@ -30,10 +30,11 @@ move_to_output = ['gf_struct_solver','map_inv','map',
                   'chemical_potential','dc_imp','dc_energ','deg_shells',
                   'h_field']
 for obj in move_to_output:
-    if (obj in A['lda_input'].keys()) and (not 'lda_output' in A): A.create_group('lda_output')
-    print "Moving %s to lda_output ..."%obj
-    A.copy('lda_input/'+obj,'lda_output/'+obj)
-    del(A['lda_input'][obj])
+    if obj in A['lda_input'].keys():
+       if not 'lda_output' in A: A.create_group('lda_output')
+       print "Moving %s to lda_output ..."%obj
+       A.copy('lda_input/'+obj,'lda_output/'+obj)
+       del(A['lda_input'][obj])
 
 A.close()
 
