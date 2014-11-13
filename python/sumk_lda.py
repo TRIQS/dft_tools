@@ -153,7 +153,7 @@ class SumkLDA:
                         else:
                             value_read['%s'%it] = False
             else:
-                mpi.report("Loading failed: No %s subgroup in HDF5!"%subgrp)
+                if (len(things_to_read) != 0): mpi.report("Loading failed: No %s subgroup in HDF5!"%subgrp)
                 subgroup_present = False
                 value_read = False
 
@@ -415,7 +415,6 @@ class SumkLDA:
 
             a_list = [a for a,al in self.gf_struct_corr[self.invshellmap[ish]] ]
             for a in a_list:
-
                 dm = dens_mat[ish][a]
                 dmbool = (abs(dm) > threshold)          # gives an index list of entries larger that threshold
 
