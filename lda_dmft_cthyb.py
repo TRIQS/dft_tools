@@ -1,9 +1,5 @@
-import numpy as np
-import time
-import os
 import pytriqs.utility.mpi as mpi
 from itertools import *
-from pytriqs.parameters.parameters import Parameters
 from pytriqs.operators import *
 from pytriqs.archive import HDFArchive
 from pytriqs.applications.impurity_solvers.cthyb import *
@@ -40,11 +36,15 @@ mpi.barrier()
 previous_runs = 0
 previous_present = False
 if mpi.is_master_node():
-    ar = HDFArchive(lda_filename+'.h5','a')
-    if 'iterations' in ar:
-        previous_present = True
-        previous_runs = ar['iterations']
-    del ar
+    f = HDFArchive(lda_filename+'.h5','a')
+    if 'dmft_output' in f:
+        ar = f['dmft_output']
+        if 'iterations' in ar:
+            previous_present = True
+            previous_runs = ar['iterations']
+    else:
+        f.create_group('dmft_output')
+    del f
 previous_runs    = mpi.bcast(previous_runs)
 previous_present = mpi.bcast(previous_present)
 # if previous runs are present, no need for recalculating the bloc structure:
@@ -68,12 +68,11 @@ S = Solver(beta=beta, gf_struct=gf_struct)
 
 if (previous_present):
   if (mpi.is_master_node()):
-      ar = HDFArchive(lda_filename+'.h5','a')
-      S.Sigma_iw << ar['Sigma_iw']
-      del ar
+      S.Sigma_iw << HDFArchive(lda_filename+'.h5','a')['dmft_output']['Sigma_iw']
   S.Sigma_iw = mpi.bcast(S.Sigma_iw)
 
 for iteration_number in range(1,loops+1):
+      if mpi.is_master_node(): print "Iteration = ", i
 
       SK.symm_deg_gf(S.Sigma_iw,orb=0)                        # symmetrise Sigma
       SK.put_Sigma(Sigma_imp = [ S.Sigma_iw ])                # put Sigma into the SumK class
@@ -91,13 +90,13 @@ for iteration_number in range(1,loops+1):
       if (mpi.is_master_node()):
           # We can do a mixing of Delta in order to stabilize the DMFT iterations:
           S.G0_iw << S.Sigma_iw + inverse(S.G_iw)
-          ar = HDFArchive(lda_filename+'.h5','a')
+          ar = HDFArchive(lda_filename+'.h5','a')['dmft_output']
           if ((iteration_number>1) or (previous_present)):
               mpi.report("Mixing input Delta with factor %s"%delta_mix)
-              Delta = (delta_mix * S.G0_iw.delta()) + (1.0-delta_mix) * ar['Delta_iw']
-              S.G0_iw << S.G0_iw + S.G0_iw.delta() - Delta
+              Delta = (delta_mix * delta(S.G0_iw)) + (1.0-delta_mix) * ar['Delta_iw']
+              S.G0_iw << S.G0_iw + delta(S.G0_iw) - Delta
 
-          ar['Delta_iw'] = S.G0_iw.delta()
+          ar['Delta_iw'] = delta(S.G0_iw)
           S.G0_iw << inverse(S.G0_iw)
           del ar
 
@@ -112,7 +111,7 @@ for iteration_number in range(1,loops+1):
       # Now mix Sigma and G with factor sigma_mix, if wanted:
       if ((iteration_number>1) or (previous_present)):
           if (mpi.is_master_node()):
-              ar = HDFArchive(lda_filename+'.h5','a')
+              ar = HDFArchive(lda_filename+'.h5','a')['dmft_output']
               mpi.report("Mixing Sigma and G with factor %s"%sigma_mix)
               S.Sigma_iw << sigma_mix * S.Sigma_iw + (1.0-sigma_mix) * ar['Sigma_iw']
               S.G_iw << sigma_mix * S.G_iw + (1.0-sigma_mix) * ar['G_iw']
