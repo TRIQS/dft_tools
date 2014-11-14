@@ -7,6 +7,7 @@ Substitutions:
 * Gupf -> G_upfold
 * read_symmetry_input -> convert_symmetry_input
 * Symm_corr -> symmcorr
+* gf_struct_corr -> gf_struct_sumk
 
 internal substitutions:
 Symm_par --> symmpar

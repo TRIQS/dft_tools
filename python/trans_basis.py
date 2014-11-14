@@ -73,7 +73,7 @@ class TransBasis:
         '''Rotates a given GF into the new basis.'''
 
         # build a full GF
-        gfrotated = BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = gf_to_rot.mesh)) for block,inner in self.SK.gf_struct_corr[0] ], make_copies = False)
+        gfrotated = BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = gf_to_rot.mesh)) for block,inner in self.SK.gf_struct_sumk[0] ], make_copies = False)
 
         # transform the CTQMC blocks to the full matrix:
         s = self.SK.shellmap[0]    # s is the index of the inequivalent shell corresponding to icrsh

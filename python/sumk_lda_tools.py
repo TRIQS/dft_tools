@@ -166,9 +166,9 @@ class SumkLDATools(SumkLDA):
         # init:
         Gloc = []
         for icrsh in range(self.n_corr_shells):
-            b_list = [block for block,inner in self.gf_struct_corr[icrsh]]
-            #glist = lambda : [ GfReFreq(indices = inner, beta = beta, mesh_array = mesh) for block,inner in self.gf_struct_corr[icrsh]]
-            glist = lambda : [ GfReFreq(indices = inner, window = (om_min,om_max), n_points = n_om) for block,inner in self.gf_struct_corr[icrsh]]
+            b_list = [block for block,inner in self.gf_struct_sumk[icrsh]]
+            #glist = lambda : [ GfReFreq(indices = inner, beta = beta, mesh_array = mesh) for block,inner in self.gf_struct_sumk[icrsh]]
+            glist = lambda : [ GfReFreq(indices = inner, window = (om_min,om_max), n_points = n_om) for block,inner in self.gf_struct_sumk[icrsh]]
             Gloc.append(BlockGf(name_list = b_list, block_list = glist(),make_copies=False))
         for icrsh in xrange(self.n_corr_shells): Gloc[icrsh].zero()                        # initialize to zero
 

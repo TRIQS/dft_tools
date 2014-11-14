@@ -77,7 +77,7 @@ class SumkLDA:
 
             # GF structure used for the local things in the k sums
             # Most general form allowing for all hybridisation, i.e. largest blocks possible
-            self.gf_struct_corr = [ [ (b, range( self.corr_shells[i][3])) for b in self.spin_block_names[self.corr_shells[i][4]] ]
+            self.gf_struct_sumk = [ [ (b, range( self.corr_shells[i][3])) for b in self.spin_block_names[self.corr_shells[i][4]] ]
                                    for i in xrange(self.n_corr_shells) ]
 
             #-----
@@ -417,7 +417,7 @@ class SumkLDA:
             self.gf_struct_solver[ish] = {} 
             gf_struct_temp = []
 
-            block_ind_list = [block for block,inner in self.gf_struct_corr[self.invshellmap[ish]] ]
+            block_ind_list = [block for block,inner in self.gf_struct_sumk[self.invshellmap[ish]] ]
             for block in block_ind_list:
                 dm = dens_mat[ish][block]
                 dmbool = (abs(dm) > threshold)          # gives an index list of entries larger that threshold
@@ -573,8 +573,8 @@ class SumkLDA:
         self.dc_imp = [ {} for i in xrange(self.n_corr_shells)]
         for i in xrange(self.n_corr_shells):
             l = self.corr_shells[i][3]
-            for j in xrange(len(self.gf_struct_corr[i])):
-                self.dc_imp[i]['%s'%self.gf_struct_corr[i][j][0]] = numpy.zeros([l,l],numpy.float_)
+            for j in xrange(len(self.gf_struct_sumk[i])):
+                self.dc_imp[i]['%s'%self.gf_struct_sumk[i][j][0]] = numpy.zeros([l,l],numpy.float_)
         self.dc_energ = [0.0 for i in xrange(self.n_corr_shells)]
 
 
@@ -596,9 +596,9 @@ class SumkLDA:
                 Ncr = {}
                 l = self.corr_shells[icrsh][3] #*(1+self.corr_shells[icrsh][4])
 
-                for j in xrange(len(self.gf_struct_corr[icrsh])):
-                    self.dc_imp[icrsh]['%s'%self.gf_struct_corr[icrsh][j][0]] = numpy.identity(l,numpy.float_)
-                    blname = self.gf_struct_corr[icrsh][j][0]
+                for j in xrange(len(self.gf_struct_sumk[icrsh])):
+                    self.dc_imp[icrsh]['%s'%self.gf_struct_sumk[icrsh][j][0]] = numpy.identity(l,numpy.float_)
+                    blname = self.gf_struct_sumk[icrsh][j][0]
                     Ncr[blname] = 0.0
 
                 for block,inner in self.gf_struct_solver[iorb].iteritems():
@@ -608,7 +608,7 @@ class SumkLDA:
                 M = self.corr_shells[icrsh][3]
 
                 Ncrtot = 0.0
-                block_ind_list = [block for block,inner in self.gf_struct_corr[icrsh]]
+                block_ind_list = [block for block,inner in self.gf_struct_sumk[icrsh]]
                 for bl in block_ind_list:
                     Ncrtot += Ncr[bl]
 
@@ -654,7 +654,7 @@ class SumkLDA:
 
                 else:
 
-                    block_ind_list = [block for block,inner in self.gf_struct_corr[icrsh]]
+                    block_ind_list = [block for block,inner in self.gf_struct_sumk[icrsh]]
                     for bl in block_ind_list:
                         self.dc_imp[icrsh][bl] *= use_val
 
@@ -675,11 +675,11 @@ class SumkLDA:
         # init self.Sigma_imp:
         if all(type(gf) == GfImFreq for bname,gf in Sigma_imp[0]):
             # Imaginary frequency Sigma:
-            self.Sigma_imp = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = Sigma_imp[0].mesh)) for block,inner in self.gf_struct_corr[i] ],
+            self.Sigma_imp = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = Sigma_imp[0].mesh)) for block,inner in self.gf_struct_sumk[i] ],
                                   make_copies = False) for i in xrange(self.n_corr_shells) ]
         elif all(type(gf) == GfReFreq for bname,gf in Sigma_imp[0]):
             # Real frequency Sigma:
-            self.Sigma_imp = [ BlockGf( name_block_generator = [ (block,GfReFreq(indices = inner, mesh = Sigma_imp[0].mesh)) for block,inner in self.gf_struct_corr[i] ],
+            self.Sigma_imp = [ BlockGf( name_block_generator = [ (block,GfReFreq(indices = inner, mesh = Sigma_imp[0].mesh)) for block,inner in self.gf_struct_sumk[i] ],
                                   make_copies = False) for i in xrange(self.n_corr_shells) ]
         else:
             raise ValueError, "This type of Sigma is not handled."
