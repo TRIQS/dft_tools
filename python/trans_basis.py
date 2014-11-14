@@ -73,30 +73,29 @@ class TransBasis:
         '''Rotates a given GF into the new basis.'''
 
         # build a full GF
-        gfrotated = BlockGf( name_block_generator = [ (a,GfImFreq(indices = al, mesh = gf_to_rot.mesh)) for a,al in self.SK.gf_struct_corr[0] ], make_copies = False)
-
+        gfrotated = BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = gf_to_rot.mesh)) for block,inner in self.SK.gf_struct_corr[0] ], make_copies = False)
 
         # transform the CTQMC blocks to the full matrix:
         s = self.SK.shellmap[0]    # s is the index of the inequivalent shell corresponding to icrsh
-        for bl, orblist in self.gf_struct_solver[s].iteritems():
-            for i in range(len(orblist)):
-                for j in range(len(orblist)):
-                    ind1 = orblist[i]
-                    ind2 = orblist[j]
-                    gfrotated[self.SK.map_inv[s][bl]][ind1,ind2] << gf_to_rot[bl][ind1,ind2]
+        for block, inner in self.gf_struct_solver[s].iteritems():
+            for i in range(len(inner)):
+                for j in range(len(inner)):
+                    ind1 = inner[i]
+                    ind2 = inner[j]
+                    gfrotated[self.SK.map_inv[s][block]][ind1,ind2] << gf_to_rot[block][ind1,ind2]
 
         # Rotate using the matrix w
-        for sig,bn in gfrotated:
-            gfrotated[sig].from_L_G_R(self.w.transpose().conjugate(),gfrotated[sig],self.w)
+        for bname,gf in gfrotated:
+            gfrotated[bname].from_L_G_R(self.w.transpose().conjugate(),gfrotated[bname],self.w)
 
         gfreturn = gf_to_rot.copy()
         # Put back into CTQMC basis:
-        for bl, orblist in self.gf_struct_solver[s].iteritems():
-            for i in range(len(orblist)):
-                for j in range(len(orblist)):
-                    ind1 = orblist[i]
-                    ind2 = orblist[j]
-                    gfreturn[bl][ind1,ind2] << gfrotated[self.SK.map_inv[0][bl]][ind1,ind2]
+        for block, inner in self.gf_struct_solver[s].iteritems():
+            for i in range(len(inner)):
+                for j in range(len(inner)):
+                    ind1 = inner[i]
+                    ind2 = inner[j]
+                    gfreturn[block][ind1,ind2] << gfrotated[self.SK.map_inv[0][block]][ind1,ind2]
 
         return gfreturn
 

@@ -41,11 +41,11 @@ class SumkLDATools(SumkLDA):
                           symmpar_data=symmpar_data, bands_data=bands_data)
 
 
-    def downfold_pc(self,ik,ir,ish,sig,gf_to_downfold,gf_inp):
+    def downfold_pc(self,ik,ir,ish,bname,gf_to_downfold,gf_inp):
         """Downfolding a block of the Greens function"""
 
         gf_downfolded = gf_inp.copy()
-        isp = self.names_to_ind[self.SO][sig]       # get spin index for proj. matrices
+        isp = self.spin_names_to_ind[self.SO][bname]       # get spin index for proj. matrices
         dim = self.shells[ish][3]
         n_orb = self.n_orbitals[ik,isp]
         L=self.proj_mat_pc[ik,isp,ish,ir,0:dim,0:n_orb]
@@ -85,48 +85,48 @@ class SumkLDATools(SumkLDA):
         """Calculates the lattice Green function on the real frequency axis. If self energy is
            present and with_Sigma=True, the mesh is taken from Sigma. Otherwise, the mesh has to be given."""
 
-        ntoi = self.names_to_ind[self.SO]
-        bln = self.block_names[self.SO]
+        ntoi = self.spin_names_to_ind[self.SO]
+        bln = self.spin_block_names[self.SO]
 
         if (not hasattr(self,"Sigma_imp")): with_Sigma=False
         if (with_Sigma):
-            assert all(type(g) == GfReFreq for name,g in self.Sigma_imp[0]), "Real frequency Sigma needed for lattice_gf_realfreq!"
+            assert all(type(gf) == GfReFreq for bname,gf in self.Sigma_imp[0]), "Real frequency Sigma needed for lattice_gf_realfreq!"
             stmp = self.add_dc()
         else:
             assert (not (mesh is None)),"Without Sigma, give the mesh=(om_min,om_max,n_points) for lattice_gf_realfreq!"
 
         if (self.G_upfold_refreq is None):
             # first setting up of G_upfold_refreq
-            BS = [ range(self.n_orbitals[ik,ntoi[ib]]) for ib in bln ]
-            gf_struct = [ (bln[ib], BS[ib]) for ib in range(self.n_spin_blocks_gf[self.SO]) ]
-            a_list = [a for a,al in gf_struct]
+            block_structure = [ range(self.n_orbitals[ik,ntoi[b]]) for b in bln ]
+            gf_struct = [ (bln[ibl], block_structure[ibl]) for ibl in range(self.n_spin_blocks[self.SO]) ]
+            block_ind_list = [block for block,inner in gf_struct]
             if (with_Sigma):
-                glist = lambda : [ GfReFreq(indices = al, mesh =self.Sigma_imp[0].mesh) for a,al in gf_struct]
+                glist = lambda : [ GfReFreq(indices = inner, mesh =self.Sigma_imp[0].mesh) for block,inner in gf_struct]
             else:
-                glist = lambda : [ GfReFreq(indices = al, window=(mesh[0],mesh[1]),n_points=mesh[2]) for a,al in gf_struct]
-            self.G_upfold_refreq = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
+                glist = lambda : [ GfReFreq(indices = inner, window=(mesh[0],mesh[1]),n_points=mesh[2]) for block,inner in gf_struct]
+            self.G_upfold_refreq = BlockGf(name_list = block_ind_list, block_list = glist(),make_copies=False)
             self.G_upfold_refreq.zero()
 
-        GFsize = [ gf.N1 for sig,gf in self.G_upfold_refreq]
-        unchangedsize = all( [ self.n_orbitals[ik,ntoi[bln[ib]]]==GFsize[ib]
-                               for ib in range(self.n_spin_blocks_gf[self.SO]) ] )
+        GFsize = [ gf.N1 for bname,gf in self.G_upfold_refreq]
+        unchangedsize = all( [ self.n_orbitals[ik,ntoi[bln[ibl]]]==GFsize[ibl]
+                               for ibl in range(self.n_spin_blocks[self.SO]) ] )
 
         if (not unchangedsize):
-            BS = [ range(self.n_orbitals[ik,ntoi[ib]]) for ib in bln ]
-            gf_struct = [ (bln[ib], BS[ib]) for ib in range(self.n_spin_blocks_gf[self.SO]) ]
-            a_list = [a for a,al in gf_struct]
+            block_structure = [ range(self.n_orbitals[ik,ntoi[b]]) for b in bln ]
+            gf_struct = [ (bln[ibl], block_structure[ibl]) for ibl in range(self.n_spin_blocks[self.SO]) ]
+            block_ind_list = [block for block,inner in gf_struct]
             if (with_Sigma):
-                glist = lambda : [ GfReFreq(indices = al, mesh =self.Sigma_imp[0].mesh) for a,al in gf_struct]
+                glist = lambda : [ GfReFreq(indices = inner, mesh =self.Sigma_imp[0].mesh) for block,inner in gf_struct]
             else:
-                glist = lambda : [ GfReFreq(indices = al, window=(mesh[0],mesh[1]),n_points=mesh[2]) for a,al in gf_struct]
-            self.G_upfold_refreq = BlockGf(name_list = a_list, block_list = glist(),make_copies=False)
+                glist = lambda : [ GfReFreq(indices = inner, window=(mesh[0],mesh[1]),n_points=mesh[2]) for block,inner in gf_struct]
+            self.G_upfold_refreq = BlockGf(name_list = block_ind_list, block_list = glist(),make_copies=False)
             self.G_upfold_refreq.zero()
 
-        idmat = [numpy.identity(self.n_orbitals[ik,ntoi[bl]],numpy.complex_) for bl in bln]
+        idmat = [numpy.identity(self.n_orbitals[ik,ntoi[b]],numpy.complex_) for b in bln]
 
         self.G_upfold_refreq << Omega + 1j*broadening
         M = copy.deepcopy(idmat)
-        for ibl in range(self.n_spin_blocks_gf[self.SO]):
+        for ibl in range(self.n_spin_blocks[self.SO]):
             ind = ntoi[bln[ibl]]
             n_orb = self.n_orbitals[ik,ind]
             M[ibl] = self.hopping[ik,ind,0:n_orb,0:n_orb] - (idmat[ibl]*mu) - (idmat[ibl] * self.h_field * (1-2*ibl))
@@ -135,7 +135,7 @@ class SumkLDATools(SumkLDA):
         if (with_Sigma):
             tmp = self.G_upfold_refreq.copy()    # init temporary storage
             for icrsh in xrange(self.n_corr_shells):
-                for sig,gf in tmp: tmp[sig] << self.upfold(ik,icrsh,sig,stmp[icrsh][sig],gf)
+                for bname,gf in tmp: tmp[bname] << self.upfold(ik,icrsh,bname,stmp[icrsh][bname],gf)
                 self.G_upfold_refreq -= tmp      # adding to the upfolded GF
 
         self.G_upfold_refreq.invert()
@@ -152,13 +152,13 @@ class SumkLDATools(SumkLDA):
         for i in range(n_om): om_mesh[i] = om_min + delta_om * i
 
         DOS = {}
-        for bn in self.block_names[self.SO]:
+        for bn in self.spin_block_names[self.SO]:
             DOS[bn] = numpy.zeros([n_om],numpy.float_)
 
         DOSproj     = [ {} for icrsh in range(self.n_inequiv_corr_shells) ]
         DOSproj_orb = [ {} for icrsh in range(self.n_inequiv_corr_shells) ]
         for icrsh in range(self.n_inequiv_corr_shells):
-            for bn in self.block_names[self.corr_shells[self.invshellmap[icrsh]][4]]:
+            for bn in self.spin_block_names[self.corr_shells[self.invshellmap[icrsh]][4]]:
                 dl = self.corr_shells[self.invshellmap[icrsh]][3]
                 DOSproj[icrsh][bn] = numpy.zeros([n_om],numpy.float_)
                 DOSproj_orb[icrsh][bn] = numpy.zeros([n_om,dl,dl],numpy.float_)
@@ -166,9 +166,9 @@ class SumkLDATools(SumkLDA):
         # init:
         Gloc = []
         for icrsh in range(self.n_corr_shells):
-            b_list = [a for a,al in self.gf_struct_corr[icrsh]]
-            #glist = lambda : [ GfReFreq(indices = al, beta = beta, mesh_array = mesh) for a,al in self.gf_struct_corr[icrsh]]
-            glist = lambda : [ GfReFreq(indices = al, window = (om_min,om_max), n_points = n_om) for a,al in self.gf_struct_corr[icrsh]]
+            b_list = [block for block,inner in self.gf_struct_corr[icrsh]]
+            #glist = lambda : [ GfReFreq(indices = inner, beta = beta, mesh_array = mesh) for block,inner in self.gf_struct_corr[icrsh]]
+            glist = lambda : [ GfReFreq(indices = inner, window = (om_min,om_max), n_points = n_om) for block,inner in self.gf_struct_corr[icrsh]]
             Gloc.append(BlockGf(name_list = b_list, block_list = glist(),make_copies=False))
         for icrsh in xrange(self.n_corr_shells): Gloc[icrsh].zero()                        # initialize to zero
 
@@ -179,13 +179,13 @@ class SumkLDATools(SumkLDA):
 
             # non-projected DOS
             for iom in range(n_om):
-                for sig,gf in G_upfold:
+                for bname,gf in G_upfold:
                     asd = gf.data[iom,:,:].imag.trace()/(-3.1415926535)
-                    DOS[sig][iom] += asd
+                    DOS[bname][iom] += asd
 
             for icrsh in xrange(self.n_corr_shells):
                 tmp = Gloc[icrsh].copy()
-                for sig,gf in tmp: tmp[sig] << self.downfold(ik,icrsh,sig,G_upfold[sig],gf) # downfolding G
+                for bname,gf in tmp: tmp[bname] << self.downfold(ik,icrsh,bname,G_upfold[bname],gf) # downfolding G
                 Gloc[icrsh] += tmp
 
 
@@ -194,18 +194,18 @@ class SumkLDATools(SumkLDA):
 
         if (self.use_rotations):
             for icrsh in xrange(self.n_corr_shells):
-                for sig,gf in Gloc[icrsh]: Gloc[icrsh][sig] << self.rotloc(icrsh,gf,direction='toLocal')
+                for bname,gf in Gloc[icrsh]: Gloc[icrsh][bname] << self.rotloc(icrsh,gf,direction='toLocal')
 
         # Gloc can now also be used to look at orbitally resolved quantities
         for ish in range(self.n_inequiv_corr_shells):
-            for sig,gf in Gloc[self.invshellmap[ish]]: # loop over spins
-                for iom in range(n_om): DOSproj[ish][sig][iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
+            for bname,gf in Gloc[self.invshellmap[ish]]: # loop over spins
+                for iom in range(n_om): DOSproj[ish][bname][iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
 
-                DOSproj_orb[ish][sig][:,:,:] += gf.data[:,:,:].imag/(-3.1415926535)
+                DOSproj_orb[ish][bname][:,:,:] += gf.data[:,:,:].imag/(-3.1415926535)
 
         # output:
         if (mpi.is_master_node()):
-            for bn in self.block_names[self.SO]:
+            for bn in self.spin_block_names[self.SO]:
                 f=open('DOS%s.dat'%bn, 'w')
                 for i in range(n_om): f.write("%s    %s\n"%(om_mesh[i],DOS[bn][i]))
                 f.close()
@@ -241,16 +241,14 @@ class SumkLDATools(SumkLDA):
 
         assert hasattr(self,"Sigma_imp"), "Set Sigma First!!"
 
-        #things_to_read = ['Dens_Mat_below','N_parproj','Proj_Mat_pc','rotmat_all']
-        #value_read = self.read_input_from_HDF(SubGrp=self.parproj_data, things_to_read=things_to_read)
         value_read = self.read_parproj_input_from_hdf()
         if not value_read: return value_read
-        if self.symm_op: self.Symm_par = Symmetry(self.hdf_file,subgroup=self.symmpar_data)
+        if self.symm_op: self.symmpar = Symmetry(self.hdf_file,subgroup=self.symmpar_data)
 
         mu = self.chemical_potential
 
-        gf_struct_proj = [ [ (al, range(self.shells[i][3])) for al in self.block_names[self.SO] ]  for i in xrange(self.n_shells) ]
-        Gproj = [BlockGf(name_block_generator = [ (a,GfReFreq(indices = al, mesh = self.Sigma_imp[0].mesh)) for a,al in gf_struct_proj[ish] ], make_copies = False )
+        gf_struct_proj = [ [ (b, range(self.shells[i][3])) for b in self.spin_block_names[self.SO] ]  for i in xrange(self.n_shells) ]
+        Gproj = [BlockGf(name_block_generator = [ (block,GfReFreq(indices = inner, mesh = self.Sigma_imp[0].mesh)) for block,inner in gf_struct_proj[ish] ], make_copies = False )
                  for ish in xrange(self.n_shells)]
         for ish in range(self.n_shells): Gproj[ish].zero()
 
@@ -258,13 +256,13 @@ class SumkLDATools(SumkLDA):
         n_om = len(Msh)
 
         DOS = {}
-        for bn in self.block_names[self.SO]:
+        for bn in self.spin_block_names[self.SO]:
             DOS[bn] = numpy.zeros([n_om],numpy.float_)
 
         DOSproj     = [ {} for ish in range(self.n_shells) ]
         DOSproj_orb = [ {} for ish in range(self.n_shells) ]
         for ish in range(self.n_shells):
-            for bn in self.block_names[self.SO]:
+            for bn in self.spin_block_names[self.SO]:
                 dl = self.shells[ish][3]
                 DOSproj[ish][bn] = numpy.zeros([n_om],numpy.float_)
                 DOSproj_orb[ish][bn] = numpy.zeros([n_om,dl,dl],numpy.float_)
@@ -278,38 +276,38 @@ class SumkLDATools(SumkLDA):
 
             # non-projected DOS
             for iom in range(n_om):
-                for sig,gf in S: DOS[sig][iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
+                for bname,gf in S: DOS[bname][iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
 
             #projected DOS:
             for ish in xrange(self.n_shells):
                 tmp = Gproj[ish].copy()
                 for ir in xrange(self.n_parproj[ish]):
-                    for sig,gf in tmp: tmp[sig] << self.downfold_pc(ik,ir,ish,sig,S[sig],gf)
+                    for bname,gf in tmp: tmp[bname] << self.downfold_pc(ik,ir,ish,bname,S[bname],gf)
                     Gproj[ish] += tmp
 
         # collect data from mpi:
-        for sig in DOS:
-            DOS[sig] = mpi.all_reduce(mpi.world,DOS[sig],lambda x,y : x+y)
+        for bname in DOS:
+            DOS[bname] = mpi.all_reduce(mpi.world,DOS[bname],lambda x,y : x+y)
         for ish in xrange(self.n_shells):
             Gproj[ish] << mpi.all_reduce(mpi.world,Gproj[ish],lambda x,y : x+y)
         mpi.barrier()
 
-        if (self.symm_op!=0): Gproj = self.Symm_par.symmetrize(Gproj)
+        if (self.symm_op!=0): Gproj = self.symmpar.symmetrize(Gproj)
 
         # rotation to local coord. system:
         if (self.use_rotations):
             for ish in xrange(self.n_shells):
-                for sig,gf in Gproj[ish]: Gproj[ish][sig] << self.rotloc_all(ish,gf,direction='toLocal')
+                for bname,gf in Gproj[ish]: Gproj[ish][bname] << self.rotloc_all(ish,gf,direction='toLocal')
 
         for ish in range(self.n_shells):
-            for sig,gf in Gproj[ish]:
-                for iom in range(n_om): DOSproj[ish][sig][iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
-                DOSproj_orb[ish][sig][:,:,:] += gf.data[:,:,:].imag / (-3.1415926535)
+            for bname,gf in Gproj[ish]:
+                for iom in range(n_om): DOSproj[ish][bname][iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
+                DOSproj_orb[ish][bname][:,:,:] += gf.data[:,:,:].imag / (-3.1415926535)
 
 
         if (mpi.is_master_node()):
             # output to files
-            for bn in self.block_names[self.SO]:
+            for bn in self.spin_block_names[self.SO]:
                 f=open('./DOScorr%s.dat'%bn, 'w')
                 for i in range(n_om): f.write("%s    %s\n"%(Msh[i],DOS[bn][i]))
                 f.close()
@@ -369,7 +367,7 @@ class SumkLDATools(SumkLDA):
         # calculate A(k,w):
 
         mu = self.chemical_potential
-        bln = self.block_names[self.SO]
+        bln = self.spin_block_names[self.SO]
 
         # init DOS:
         M = [x.real for x in self.Sigma_imp[0].mesh]
@@ -384,20 +382,20 @@ class SumkLDATools(SumkLDA):
 
         if (ishell is None):
             Akw = {}
-            for ibn in bln: Akw[ibn] = numpy.zeros([self.n_k, n_om ],numpy.float_)
+            for b in bln: Akw[b] = numpy.zeros([self.n_k, n_om ],numpy.float_)
         else:
             Akw = {}
-            for ibn in bln: Akw[ibn] = numpy.zeros([self.shells[ishell][3],self.n_k, n_om ],numpy.float_)
+            for b in bln: Akw[b] = numpy.zeros([self.shells[ishell][3],self.n_k, n_om ],numpy.float_)
 
         if fermi_surface:
             om_minplot = -2.0*broadening
             om_maxplot =  2.0*broadening
             Akw = {}
-            for ibn in bln: Akw[ibn] = numpy.zeros([self.n_k,1],numpy.float_)
+            for b in bln: Akw[b] = numpy.zeros([self.n_k,1],numpy.float_)
 
         if not (ishell is None):
-            GFStruct_proj =  [ (al, range(self.shells[ishell][3])) for al in bln ]
-            Gproj = BlockGf(name_block_generator = [ (a,GfReFreq(indices = al, mesh = self.Sigma_imp[0].mesh)) for a,al in GFStruct_proj ], make_copies = False)
+            GFStruct_proj =  [ (b, range(self.shells[ishell][3])) for b in bln ]
+            Gproj = BlockGf(name_block_generator = [ (block,GfReFreq(indices = inner, mesh = self.Sigma_imp[0].mesh)) for block,inner in GFStruct_proj ], make_copies = False)
             Gproj.zero()
 
         for ik in xrange(self.n_k):
@@ -408,10 +406,10 @@ class SumkLDATools(SumkLDA):
                 for iom in range(n_om):
                     if (M[iom]>om_minplot) and (M[iom]<om_maxplot):
                         if fermi_surface:
-                            for sig,gf in S: Akw[sig][ik,0] += gf.data[iom,:,:].imag.trace()/(-3.1415926535) * (M[1]-M[0])
+                            for bname,gf in S: Akw[bname][ik,0] += gf.data[iom,:,:].imag.trace()/(-3.1415926535) * (M[1]-M[0])
                         else:
-                            for sig,gf in S: Akw[sig][ik,iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
-                            Akw[sig][ik,iom] += ik*shift                       # shift Akw for plotting in xmgrace -- REMOVE
+                            for bname,gf in S: Akw[bname][ik,iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
+                            Akw[bname][ik,iom] += ik*shift                       # shift Akw for plotting in xmgrace -- REMOVE
 
 
             else:
@@ -419,14 +417,14 @@ class SumkLDATools(SumkLDA):
                 Gproj.zero()
                 tmp = Gproj.copy()
                 for ir in xrange(self.n_parproj[ishell]):
-                    for sig,gf in tmp: tmp[sig] << self.downfold_pc(ik,ir,ishell,sig,S[sig],gf)
+                    for bname,gf in tmp: tmp[bname] << self.downfold_pc(ik,ir,ishell,bname,S[bname],gf)
                     Gproj += tmp
 
                 # FIXME NEED TO READ IN ROTMAT_ALL FROM PARPROJ SUBGROUP, REPLACE ROTLOC WITH ROTLOC_ALL
                 # TO BE FIXED:
                 # rotate to local frame
                 #if (self.use_rotations):
-                #    for sig,gf in Gproj: Gproj[sig] << self.rotloc(0,gf,direction='toLocal')
+                #    for bname,gf in Gproj: Gproj[bname] << self.rotloc(0,gf,direction='toLocal')
 
                 for iom in range(n_om):
                     if (M[iom]>om_minplot) and (M[iom]<om_maxplot):
@@ -501,27 +499,24 @@ class SumkLDATools(SumkLDA):
         """Calculates the orbitally-resolved density matrix for all the orbitals considered in the input.
            The theta-projectors are used, hence case.parproj data is necessary"""
 
-
-        #things_to_read = ['Dens_Mat_below','N_parproj','Proj_Mat_pc','rotmat_all']
-        #value_read = self.read_input_from_HDF(SubGrp=self.parproj_data,things_to_read=things_to_read)
         value_read = self.read_parproj_input_from_hdf()
         if not value_read: return value_read
-        if self.symm_op: self.Symm_par = Symmetry(self.hdf_file,subgroup=self.symmpar_data)
+        if self.symm_op: self.symmpar = Symmetry(self.hdf_file,subgroup=self.symmpar_data)
 
         # Density matrix in the window
-        bln = self.block_names[self.SO]
-        ntoi = self.names_to_ind[self.SO]
+        bln = self.spin_block_names[self.SO]
+        ntoi = self.spin_names_to_ind[self.SO]
         self.dens_mat_window = [ [numpy.zeros([self.shells[ish][3],self.shells[ish][3]],numpy.complex_) for ish in range(self.n_shells)]
                                  for isp in range(len(bln)) ]    # init the density matrix
 
         mu = self.chemical_potential
-        GFStruct_proj = [ [ (al, range(self.shells[i][3])) for al in bln ]  for i in xrange(self.n_shells) ]
+        GFStruct_proj = [ [ (b, range(self.shells[i][3])) for b in bln ]  for i in xrange(self.n_shells) ]
         if hasattr(self,"Sigma_imp"):
-            Gproj = [BlockGf(name_block_generator = [ (a,GfImFreq(indices = al, mesh = self.Sigma_imp[0].mesh)) for a,al in GFStruct_proj[ish] ], make_copies = False)
+            Gproj = [BlockGf(name_block_generator = [ (block,GfImFreq(indices = inner, mesh = self.Sigma_imp[0].mesh)) for block,inner in GFStruct_proj[ish] ], make_copies = False)
                      for ish in xrange(self.n_shells)]
             beta = self.Sigma_imp[0].mesh.beta
         else:
-            Gproj = [BlockGf(name_block_generator = [ (a,GfImFreq(indices = al, beta = beta)) for a,al in GFStruct_proj[ish] ], make_copies = False)
+            Gproj = [BlockGf(name_block_generator = [ (block,GfImFreq(indices = inner, beta = beta)) for block,inner in GFStruct_proj[ish] ], make_copies = False)
                      for ish in xrange(self.n_shells)]
 
         for ish in xrange(self.n_shells): Gproj[ish].zero()
@@ -535,7 +530,7 @@ class SumkLDATools(SumkLDA):
             for ish in xrange(self.n_shells):
                 tmp = Gproj[ish].copy()
                 for ir in xrange(self.n_parproj[ish]):
-                    for sig,gf in tmp: tmp[sig] << self.downfold_pc(ik,ir,ish,sig,S[sig],gf)
+                    for bname,gf in tmp: tmp[bname] << self.downfold_pc(ik,ir,ish,bname,S[bname],gf)
                     Gproj[ish] += tmp
 
         #collect data from mpi:
@@ -545,17 +540,17 @@ class SumkLDATools(SumkLDA):
 
 
         # Symmetrisation:
-        if (self.symm_op!=0): Gproj = self.Symm_par.symmetrize(Gproj)
+        if (self.symm_op!=0): Gproj = self.symmpar.symmetrize(Gproj)
 
         for ish in xrange(self.n_shells):
 
             # Rotation to local:
             if (self.use_rotations):
-                for sig,gf in Gproj[ish]: Gproj[ish][sig] << self.rotloc_all(ish,gf,direction='toLocal')
+                for bname,gf in Gproj[ish]: Gproj[ish][bname] << self.rotloc_all(ish,gf,direction='toLocal')
 
             isp = 0
-            for sig,gf in Gproj[ish]: #dmg.append(Gproj[ish].density()[sig])
-                self.dens_mat_window[isp][ish] = Gproj[ish].density()[sig]
+            for bname,gf in Gproj[ish]: #dmg.append(Gproj[ish].density()[bname])
+                self.dens_mat_window[isp][ish] = Gproj[ish].density()[bname]
                 isp+=1
 
         # add Density matrices to get the total:

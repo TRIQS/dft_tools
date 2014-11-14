@@ -8,6 +8,15 @@ Substitutions:
 * read_symmetry_input -> convert_symmetry_input
 * Symm_corr -> symmcorr
 
+internal substitutions:
+Symm_par --> symmpar
+sig -> bname
+names_to_ind -> spin_names_to_ind
+n_spin_blocks_gf -> n_spin_blocks
+block_names -> spin_block_names
+a_list -> block_ind_list
+a,al -> block,inner
+
 **********
 * changed default h5 subgroup names
 
