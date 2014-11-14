@@ -97,6 +97,13 @@ class SumkLDA:
                     for b in self.spin_block_names[self.corr_shells[self.invshellmap[i]][4]]:
                         self.map[i][b] = [b for j in range( self.corr_shells[self.invshellmap[i]][3] ) ]
                         self.map_inv[i][b] = b
+                # Set standard (identity) maps from gf_struct_sumk <-> gf_struct_solver
+                self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_corr_shells) ]
+                for ish in range(self.n_inequiv_corr_shells):
+                    for block,inner_list in self.gf_struct_sumk[self.invshellmap[ish]]:
+                        for inner in inner_list:
+                            self.sumk_to_solver[ish][(block,inner)] = (block,inner)
+                self.solver_to_sumk = self.sumk_to_solver
 
             if (not self.subgroup_present) or (not self.value_read['dc_imp']):
                 self.__init_dc() # initialise the double counting
@@ -109,10 +116,9 @@ class SumkLDA:
             #-----
 
             if self.symm_op:
-                #mpi.report("Do the init for symm:")
                 self.symmcorr = Symmetry(hdf_file,subgroup=self.symmcorr_data)
 
-            # Analyse the block structure and determine the smallest blocs, if desired
+            # Analyse the block structure and determine the smallest blocks, if desired
             if (use_lda_blocks): dm=self.analyse_block_structure()
 
             # Now save new things to HDF5: 
@@ -411,6 +417,9 @@ class SumkLDA:
 
         dens_mat = [dm[self.invshellmap[ish]] for ish in xrange(self.n_inequiv_corr_shells) ]
 
+        self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_corr_shells) ]
+        self.solver_to_sumk = [ {} for ish in range(self.n_inequiv_corr_shells) ]
+
         if include_shells is None: include_shells=range(self.n_inequiv_corr_shells)
         for ish in include_shells:
 
@@ -447,6 +456,16 @@ class SumkLDA:
                     self.gf_struct_solver[ish].update( [('%s_%s'%(block,i),range(len(blocs[i])))] )
                     gf_struct_temp.append( ('%s_%s'%(block,i),blocs[i]) )
 
+                # Construct sumk_to_solver taking (sumk_block, sumk_index) --> (solver_block, solver_inner)
+                #       and solver_to_sumk taking (solver_block, solver_inner) --> (sumk_block, sumk_index)
+                for i in range(NBlocs):
+                    for j in range(len(blocs[i])):
+                        block_sumk = block
+                        inner_sumk = blocs[i][j]
+                        block_solv = '%s_%s'%(block,i)
+                        inner_solv = j
+                        self.sumk_to_solver[ish][(block_sumk,inner_sumk)] = (block_solv,inner_solv)
+                        self.solver_to_sumk[ish][(block_solv,inner_solv)] = (block_sumk,inner_sumk)
 
                 # map is the mapping of the blocs from the SK blocs to the CTQMC blocs:
                 self.map[ish][block] = range(len(dmbool))
@@ -454,7 +473,6 @@ class SumkLDA:
                     for j in range(len(blocs[ibl])):
                         self.map[ish][block][blocs[ibl][j]] = '%s_%s'%(block,ibl)
                         self.map_inv[ish]['%s_%s'%(block,ibl)] = block
-
 
             # now calculate degeneracies of orbitals:
             dm = {}
