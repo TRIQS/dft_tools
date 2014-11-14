@@ -8,6 +8,7 @@ Substitutions:
 * read_symmetry_input -> convert_symmetry_input
 * Symm_corr -> symmcorr
 * gf_struct_corr -> gf_struct_sumk
+* n_s -> n_symm
 
 internal substitutions:
 Symm_par --> symmpar

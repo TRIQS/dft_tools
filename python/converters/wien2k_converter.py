@@ -374,26 +374,26 @@ class Wien2kConverter(ConverterTools):
         R = ConverterTools.read_fortran_file(self,symm_file,self.fortran_to_replace)
 
         try:
-            n_s = int(R.next())           # Number of symmetry operations
+            n_symm = int(R.next())           # Number of symmetry operations
             n_atoms = int(R.next())       # number of atoms involved
-            perm = [ [int(R.next()) for i in xrange(n_atoms)] for j in xrange(n_s) ]    # list of permutations of the atoms
+            perm = [ [int(R.next()) for i in xrange(n_atoms)] for j in xrange(n_symm) ]    # list of permutations of the atoms
             if SP: 
-                time_inv = [ int(R.next()) for j in xrange(n_s) ]           # timeinversion for SO xoupling
+                time_inv = [ int(R.next()) for j in xrange(n_symm) ]           # time inversion for SO coupling
             else:
-                time_inv = [ 0 for j in xrange(n_s) ] 
+                time_inv = [ 0 for j in xrange(n_symm) ]
 
             # Now read matrices:
             mat = []  
-            for in_s in xrange(n_s):
+            for i_symm in xrange(n_symm):
                 
                 mat.append( [ numpy.zeros([orbits[orb][3], orbits[orb][3]],numpy.complex_) for orb in xrange(n_orbits) ] )
                 for orb in range(n_orbits):
                     for i in xrange(orbits[orb][3]):
                         for j in xrange(orbits[orb][3]):
-                            mat[in_s][orb][i,j] = R.next()            # real part
+                            mat[i_symm][orb][i,j] = R.next()            # real part
                     for i in xrange(orbits[orb][3]):
                         for j in xrange(orbits[orb][3]):
-                            mat[in_s][orb][i,j] += 1j * R.next()      # imaginary part
+                            mat[i_symm][orb][i,j] += 1j * R.next()      # imaginary part
 
             mat_tinv = [numpy.identity(orbits[orb][3],numpy.complex_)
                         for orb in range(n_orbits)]
@@ -419,6 +419,6 @@ class Wien2kConverter(ConverterTools):
         # Save it to the HDF:
         ar=HDFArchive(self.hdf_file,'a')
         if not (symm_subgrp in ar): ar.create_group(symm_subgrp)
-        things_to_save = ['n_s','n_atoms','perm','orbits','SO','SP','time_inv','mat','mat_tinv']
+        things_to_save = ['n_symm','n_atoms','perm','orbits','SO','SP','time_inv','mat','mat_tinv']
         for it in things_to_save: ar[symm_subgrp][it] = locals()[it]
         del ar

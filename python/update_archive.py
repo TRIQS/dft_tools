@@ -17,6 +17,7 @@ If you encounter any problem please report it on github!
 filename = sys.argv[1]
 A = h5py.File(filename)
 
+# Rename groups
 old_to_new = {'SumK_LDA':'lda_input', 'SumK_LDA_ParProj':'lda_parproj_input', 
  'SymmCorr':'lda_symmcorr_input', 'SymmPar':'lda_symmpar_input', 'SumK_LDA_Bands':'lda_bands_input'}
 
@@ -26,6 +27,7 @@ for old, new in old_to_new.iteritems():
     A.copy(old,new)
     del(A[old])
 
+# Move output items from lda_input to lda_output
 move_to_output = ['gf_struct_solver','map_inv','map',
                   'chemical_potential','dc_imp','dc_energ','deg_shells',
                   'h_field']
@@ -35,6 +37,14 @@ for obj in move_to_output:
        print "Moving %s to lda_output ..."%obj
        A.copy('lda_input/'+obj,'lda_output/'+obj)
        del(A['lda_input'][obj])
+
+# Rename variables
+groups = ['lda_symmcorr_input','lda_symmpar_input']
+
+for group in groups:
+    if group not in A.keys(): continue
+    print "Changing n_s to n_symm ..."
+    A[group].move('n_s','n_symm')
 
 A.close()
 
