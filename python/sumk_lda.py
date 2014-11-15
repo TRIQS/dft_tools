@@ -82,6 +82,7 @@ class SumkLDA:
 
             #-----
             # If these quantities are not in HDF, set them up
+            # FIXME READ AND WRITE sumk_to_solver AND solver_to_sumk
             optional_things = ['gf_struct_solver','map_inv','map','chemical_potential','dc_imp','dc_energ','deg_shells']
             self.subgroup_present, self.value_read = self.read_input_from_hdf(subgrp = self.lda_output, things_to_read = [], 
                                                                               optional_things = optional_things)
@@ -99,11 +100,14 @@ class SumkLDA:
                         self.map_inv[i][b] = b
                 # Set standard (identity) maps from gf_struct_sumk <-> gf_struct_solver
                 self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_corr_shells) ]
+                self.solver_to_sumk = [ {} for ish in range(self.n_inequiv_corr_shells) ]
+                self.solver_to_sumk_block = [ {} for ish in range(self.n_inequiv_corr_shells) ]
                 for ish in range(self.n_inequiv_corr_shells):
                     for block,inner_list in self.gf_struct_sumk[self.invshellmap[ish]]:
+                        self.solver_to_sumk_block[ish][block] = block
                         for inner in inner_list:
                             self.sumk_to_solver[ish][(block,inner)] = (block,inner)
-                self.solver_to_sumk = self.sumk_to_solver
+                            self.solver_to_sumk[ish][(block,inner)] = (block,inner)
 
             if (not self.subgroup_present) or (not self.value_read['dc_imp']):
                 self.__init_dc() # initialise the double counting
@@ -419,6 +423,7 @@ class SumkLDA:
 
         self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_corr_shells) ]
         self.solver_to_sumk = [ {} for ish in range(self.n_inequiv_corr_shells) ]
+        self.solver_to_sumk_block = [ {} for ish in range(self.n_inequiv_corr_shells) ]
 
         if include_shells is None: include_shells=range(self.n_inequiv_corr_shells)
         for ish in include_shells:
@@ -466,6 +471,7 @@ class SumkLDA:
                         inner_solv = j
                         self.sumk_to_solver[ish][(block_sumk,inner_sumk)] = (block_solv,inner_solv)
                         self.solver_to_sumk[ish][(block_solv,inner_solv)] = (block_sumk,inner_sumk)
+                        self.solver_to_sumk_block[ish][block_solv] = block_sumk
 
                 # map is the mapping of the blocs from the SK blocs to the CTQMC blocs:
                 self.map[ish][block] = range(len(dmbool))
@@ -483,7 +489,8 @@ class SumkLDA:
                 dm[bln] = numpy.zeros([len(ind),len(ind)],numpy.complex_)
                 for i in range(len(ind)):
                     for j in range(len(ind)):
-                        dm[bln][i,j] = dens_mat[ish][self.map_inv[ish][bln]][ind[i],ind[j]]
+# TODELETE              dm[bln][i,j] = dens_mat[ish][self.map_inv[ish][bln]][ind[i],ind[j]]
+                        dm[bln][i,j] = dens_mat[ish][self.solver_to_sumk_block[ish][bln]][ind[i],ind[j]]
 
             for bl in gf_struct_temp:
                 for bl2 in gf_struct_temp:
@@ -620,8 +627,10 @@ class SumkLDA:
                     Ncr[blname] = 0.0
 
                 for block,inner in self.gf_struct_solver[iorb].iteritems():
-                    bl = self.map_inv[iorb][block]
+# TODELETE          bl = self.map_inv[iorb][block]
+                    bl = self.solver_to_sumk_block[iorb][block]
                     Ncr[bl] += dens_mat[block].real.trace()
+
 
                 M = self.corr_shells[icrsh][3]
 
@@ -704,29 +713,42 @@ class SumkLDA:
 
         # transform the CTQMC blocks to the full matrix:
         for icrsh in xrange(self.n_corr_shells):
-            s = self.shellmap[icrsh]    # s is the index of the inequivalent shell corresponding to icrsh
+            ish = self.shellmap[icrsh]    # ish is the index of the inequivalent shell corresponding to icrsh
 
-            # setting up the index map:
-            map_ind={}
-            cnt = {}
-            for blname in self.map[s]:
-                cnt[blname] = 0
+######## START TODELETE
+#            # setting up the index map:
+#            map_ind={}
+#            cnt = {}
+#            for blname in self.map[ish]:
+#                cnt[blname] = 0
+#
+#            for block,inner in self.gf_struct_solver[ish].iteritems():
+## TODELETE      blname = self.map_inv[ish][block]
+#                blname = self.solver_to_sumk_block[ish][block]
+#                map_ind[block] = range(len(inner))
+#                for i in inner:
+#                    map_ind[block][i] = cnt[blname]
+#                    cnt[blname]+=1
+#            print "map_ind =", map_ind #FIXME
+######## END TODELETE
 
-            for block,inner in self.gf_struct_solver[s].iteritems():
-                blname = self.map_inv[s][block]
-                map_ind[block] = range(len(inner))
-                for i in inner:
-                    map_ind[block][i] = cnt[blname]
-                    cnt[blname]+=1
-
-            for block,inner in self.gf_struct_solver[s].iteritems():
-                for i in range(len(inner)):
-                    for j in range(len(inner)):
-                        ind1 = inner[i]	
-                        ind2 = inner[j]	
-                        ind1_imp = map_ind[block][ind1]
-                        ind2_imp = map_ind[block][ind2]
-                        self.Sigma_imp[icrsh][self.map_inv[s][block]][ind1_imp,ind2_imp] << Sigma_imp[s][block][ind1,ind2]
+#            for block,inner in self.gf_struct_solver[ish].iteritems():
+#                for i in range(len(inner)):
+#                    for j in range(len(inner)):
+#                        ind1 = inner[i]	
+#                        ind2 = inner[j]	
+            for block,inner in self.gf_struct_solver[ish].iteritems():
+                for ind1 in inner:
+                    for ind2 in inner:
+#                       ind1 = inner[i]	
+#                       ind2 = inner[j]	
+# TODELETE              ind1_imp = map_ind[block][ind1]
+# TODELETE              ind2_imp = map_ind[block][ind2]
+                        block_imp,ind1_imp = self.solver_to_sumk[ish][(block,ind1)]
+                        block_imp,ind2_imp = self.solver_to_sumk[ish][(block,ind2)]
+# TODELETE              self.Sigma_imp[icrsh][self.map_inv[ish][block]][ind1_imp,ind2_imp] << Sigma_imp[ish][block][ind1,ind2]
+# TODELETE              self.Sigma_imp[icrsh][self.solver_to_sumk_block[ish][block]][ind1_imp,ind2_imp] << Sigma_imp[ish][block][ind1,ind2]
+                        self.Sigma_imp[icrsh][block_imp][ind1_imp,ind2_imp] << Sigma_imp[ish][block][ind1,ind2]
 
         # rotation from local to global coordinate system:
         if (self.use_rotations):
@@ -812,7 +834,7 @@ class SumkLDA:
         if (mu is None): mu = self.chemical_potential
 
         Gloc = [ self.Sigma_imp[icrsh].copy() for icrsh in xrange(self.n_corr_shells) ]   # this list will be returned
-        for icrsh in xrange(self.n_corr_shells): Gloc[icrsh].zero()                # initialize to zero
+        for icrsh in xrange(self.n_corr_shells): Gloc[icrsh].zero()                       # initialize to zero
         beta = Gloc[0].mesh.beta
 
         ikarray=numpy.array(range(self.n_k))
@@ -832,7 +854,6 @@ class SumkLDA:
             Gloc[icrsh] << mpi.all_reduce(mpi.world,Gloc[icrsh],lambda x,y : x+y)
         mpi.barrier()
 
-
         # Gloc[:] is now the sum over k projected to the local orbitals.
         # here comes the symmetrisation, if needed:
         if (self.symm_op!=0): Gloc = self.symmcorr.symmetrize(Gloc)
@@ -843,32 +864,38 @@ class SumkLDA:
                 for bname,gf in Gloc[icrsh]: Gloc[icrsh][bname] << self.rotloc(icrsh,gf,direction='toLocal')
 
         # transform to CTQMC blocks:
-        Glocret = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = Gloc[0].mesh)) for block,inner in self.gf_struct_solver[i].iteritems() ],
-                        make_copies = False) for i in xrange(self.n_inequiv_corr_shells)  ]
+        Glocret = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = Gloc[0].mesh)) for block,inner in self.gf_struct_solver[ish].iteritems() ],
+                        make_copies = False) for ish in xrange(self.n_inequiv_corr_shells)  ]
         for ish in xrange(self.n_inequiv_corr_shells):
 
-            # setting up the index map:
-            map_ind={}
-            cnt = {}
-            for blname in self.map[ish]:
-                cnt[blname] = 0
+#            # setting up the index map:
+#            map_ind={}
+#            cnt = {}
+#            for blname in self.map[ish]:
+#                cnt[blname] = 0
+#
+#            for block,inner in self.gf_struct_solver[ish].iteritems():
+## TODELETE      blname = self.map_inv[ish][block]
+#                blname = self.solver_to_sumk_block[ish][block]
+#                map_ind[block] = range(len(inner))
+#                for i in inner:
+#                    map_ind[block][i] = cnt[blname]
+#                    cnt[blname]+=1
 
             for block,inner in self.gf_struct_solver[ish].iteritems():
-                blname = self.map_inv[ish][block]
-                map_ind[block] = range(len(inner))
-                for i in inner:
-                    map_ind[block][i] = cnt[blname]
-                    cnt[blname]+=1
-
-            for block,inner in self.gf_struct_solver[ish].iteritems():
-                for i in range(len(inner)):
-                    for j in range(len(inner)):
-                        ind1 = inner[i]	
-                        ind2 = inner[j]	
-                        ind1_imp = map_ind[block][ind1]
-                        ind2_imp = map_ind[block][ind2]
-                        Glocret[ish][block][ind1,ind2] << Gloc[self.invshellmap[ish]][self.map_inv[ish][block]][ind1_imp,ind2_imp]
-
+#               for i in range(len(inner)):
+#                   for j in range(len(inner)):
+                for ind1 in inner:
+                    for ind2 in inner:
+#                       ind1 = inner[i]	
+#                       ind2 = inner[j]	
+#                       ind1_imp = map_ind[block][ind1]
+#                       ind2_imp = map_ind[block][ind2]
+                        block_imp,ind1_imp = self.solver_to_sumk[ish][(block,ind1)]
+                        block_imp,ind2_imp = self.solver_to_sumk[ish][(block,ind2)]
+# TODELETE              Glocret[ish][block][ind1,ind2] << Gloc[self.invshellmap[ish]][self.map_inv[ish][block]][ind1_imp,ind2_imp]
+#                       Glocret[ish][block][ind1,ind2] << Gloc[self.invshellmap[ish]][self.solver_to_sumk_block[ish][block]][ind1_imp,ind2_imp]
+                        Glocret[ish][block][ind1,ind2] << Gloc[self.invshellmap[ish]][block_imp][ind1_imp,ind2_imp]
 
         # return only the inequivalent shells:
         return Glocret
@@ -1071,8 +1098,8 @@ class SumkLDA:
     def inequiv_shells(self,lst):
         """
         The number of inequivalent shells is calculated from lst, and a mapping is given as
-        map(i_corr_shells) = i_inequiv_corr_shells
-        invmap(i_inequiv_corr_shells) = i_corr_shells
+        shellmap(i_corr_shells) = i_inequiv_corr_shells
+        invshellmap(i_inequiv_corr_shells) = i_corr_shells
         in order to put the Self energies to all equivalent shells, and for extracting Gloc
         """
 
