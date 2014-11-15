@@ -918,7 +918,7 @@ class SumkLDA:
 ################
 
     # FIXME Merge with find_mu?
-    def find_mu_nonint(self, dens_req, orb = None, beta = 40, precision = 0.01):
+    def find_mu_nonint(self, dens_req, orb = None, precision = 0.01):
 
         def F(mu):
             gnonint = self.extract_G_loc(mu=mu,with_Sigma=False)
@@ -940,7 +940,6 @@ class SumkLDA:
                                          verbosity = 3)[0]
 
         return self.chemical_potential
-
 
 
     def find_dc(self,orb,guess,dens_mat,dens_req=None,precision=0.01):
@@ -972,59 +971,49 @@ class SumkLDA:
         return dcnew
 
 
-# FIXME Check that dens matrix from projectors (DM=PPdagger) is correct (ie matches DFT)
+    # Check that the density matrix from projectors (DM = P Pdagger) is correct (ie matches DFT)
     def check_projectors(self):
 
-        dens_mat = [numpy.zeros([self.corr_shells[ish][3],self.corr_shells[ish][3]],numpy.complex_)
-                   for ish in range(self.n_corr_shells)]
+        dens_mat = [numpy.zeros([self.corr_shells[icrsh][3],self.corr_shells[icrsh][3]],numpy.complex_)
+                   for icrsh in range(self.n_corr_shells)]
 
         for ik in range(self.n_k):
-
-            for ish in range(self.n_corr_shells):
-                dim = self.corr_shells[ish][3]
+            for icrsh in range(self.n_corr_shells):
+                dim = self.corr_shells[icrsh][3]
                 n_orb = self.n_orbitals[ik,0]
-                projmat = self.proj_mat[ik,0,ish,0:dim,0:n_orb]
-                dens_mat[ish][:,:] += numpy.dot(projmat, projmat.transpose().conjugate()) * self.bz_weights[ik]
+                projmat = self.proj_mat[ik,0,icrsh,0:dim,0:n_orb]
+                dens_mat[icrsh][:,:] += numpy.dot(projmat, projmat.transpose().conjugate()) * self.bz_weights[ik]
 
-        if (self.symm_op!=0): dens_mat = self.symmcorr.symmetrize(dens_mat)
+        if self.symm_op != 0: dens_mat = self.symmcorr.symmetrize(dens_mat)
 
         # Rotate to local coordinate system:
-        if (self.use_rotations):
-            for icrsh in xrange(self.n_corr_shells):
-                if (self.rot_mat_time_inv[icrsh]==1): dens_mat[icrsh] = dens_mat[icrsh].conjugate()
+        if self.use_rotations:
+            for icrsh in range(self.n_corr_shells):
+                if self.rot_mat_time_inv[icrsh] == 1: dens_mat[icrsh] = dens_mat[icrsh].conjugate()
                 dens_mat[icrsh] = numpy.dot( numpy.dot(self.rot_mat[icrsh].conjugate().transpose(),dens_mat[icrsh]) ,
                                             self.rot_mat[icrsh] )
-
 
         return dens_mat
 
 
-# FIXME DETERMINE EQUIVALENCY OF SHELLS
+    # Determine the number of equivalent shells
     def sorts_of_atoms(self,lst):
         """
         This routine should determine the number of sorts in the double list lst
         """
-        sortlst = [ lst[i][1] for i in xrange(len(lst)) ]
-        sortlst.sort()
-        sorts = 1
-        for i in xrange(len(sortlst)-1):
-            if sortlst[i+1]>sortlst[i]: sorts += 1
-
+        sortlst = [ lst[i][1] for i in range(len(lst)) ]
+        sorts = len(set(sortlst))
         return sorts
 
 
+    # Determine the number of atoms
     def number_of_atoms(self,lst):
         """
         This routine should determine the number of atoms in the double list lst
         """
-        atomlst = [ lst[i][0] for i in xrange(len(lst)) ]
-        atomlst.sort()
-        atoms = 1
-        for i in xrange(len(atomlst)-1):
-            if atomlst[i+1]>atomlst[i]: atoms += 1
-
+        atomlst = [ lst[i][0] for i in range(len(lst)) ]
+        atoms = len(set(atomlst))
         return atoms
-
 
 ##############################
 # DUPLICATED, NEED TO REMOVE #
