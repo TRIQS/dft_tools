@@ -39,7 +39,7 @@ class SumkLDA:
         Initialises the class from data previously stored into an HDF5
         """
 
-        if not (type(hdf_file)==StringType):
+        if not type(hdf_file) == StringType:
             mpi.report("Give a string for the HDF5 filename to read the input!")
         else:
             self.hdf_file = hdf_file
@@ -59,8 +59,8 @@ class SumkLDA:
                               'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
             self.subgroup_present, self.value_read = self.read_input_from_hdf(subgrp = self.lda_data, things_to_read = things_to_read)
 
-            if (self.SO) and (abs(self.h_field)>0.000001):
-                self.h_field=0.0
+            if self.SO and (abs(self.h_field) > 0.000001):
+                self.h_field = 0.0
                 mpi.report("For SO, the external magnetic field is not implemented, setting it to 0!")
 
             self.spin_block_names = [ ['up','down'], ['ud'] ]
@@ -73,8 +73,8 @@ class SumkLDA:
 
             # GF structure used for the local things in the k sums
             # Most general form allowing for all hybridisation, i.e. largest blocks possible
-            self.gf_struct_sumk = [ [ (b, range( self.corr_shells[i][3])) for b in self.spin_block_names[self.corr_shells[i][4]] ]
-                                   for i in xrange(self.n_corr_shells) ]
+            self.gf_struct_sumk = [ [ (b, range( self.corr_shells[icrsh][3])) for b in self.spin_block_names[self.corr_shells[icrsh][4]] ]
+                                   for icrsh in range(self.n_corr_shells) ]
 
             #-----
             # If these quantities are not in HDF, set them up
@@ -83,9 +83,9 @@ class SumkLDA:
                                                                               optional_things = optional_things)
             if (not self.subgroup_present) or (not self.value_read['gf_struct_solver']):
                 # No gf_struct was stored in HDF, so first set a standard one:
-                self.gf_struct_solver = [ dict([ (b, range(self.corr_shells[self.inequiv_to_corr[i]][3]) )
-                                                        for b in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[i]][4]] ])
-                                          for i in range(self.n_inequiv_shells)
+                self.gf_struct_solver = [ dict([ (b, range(self.corr_shells[self.inequiv_to_corr[ish]][3]) )
+                                                        for b in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]][4]] ])
+                                          for ish in range(self.n_inequiv_shells)
                                         ]
                 # Set standard (identity) maps from gf_struct_sumk <-> gf_struct_solver
                 self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_shells) ]
@@ -105,18 +105,18 @@ class SumkLDA:
                 self.chemical_potential = mu
 
             if (not self.subgroup_present) or (not self.value_read['deg_shells']):
-                self.deg_shells = [ [] for i in range(self.n_inequiv_shells)]
+                self.deg_shells = [ [] for ish in range(self.n_inequiv_shells)]
             #-----
 
             if self.symm_op:
                 self.symmcorr = Symmetry(hdf_file,subgroup=self.symmcorr_data)
 
             # Analyse the block structure and determine the smallest blocks, if desired
-            if (use_lda_blocks): dm=self.analyse_block_structure()
+            if use_lda_blocks: dm = self.analyse_block_structure()
 
             # Now save new things to HDF5: 
             # FIXME WHAT HAPPENS TO h_field? INPUT TO __INIT__? ADD TO OPTIONAL_THINGS?
-            things_to_save=['chemical_potential','dc_imp','dc_energ','h_field']
+            things_to_save = ['chemical_potential','dc_imp','dc_energ','h_field']
             self.save(things_to_save)
 
 ################
@@ -134,7 +134,7 @@ class SumkLDA:
         for it in optional_things: setattr(self,it,0)
 
         if mpi.is_master_node():
-            ar=HDFArchive(self.hdf_file,'a')
+            ar = HDFArchive(self.hdf_file,'a')
             if subgrp in ar:
                 subgroup_present = True
                 # first read the necessary things:
@@ -145,7 +145,7 @@ class SumkLDA:
                         mpi.report("Loading %s failed!"%it)
                         value_read = False
 
-                if (value_read and (len(optional_things)>0)):
+                if value_read and (len(optional_things) > 0):
                     # if successfully read necessary items, read optional things:
                     value_read = {}
                     for it in optional_things:
@@ -175,7 +175,7 @@ class SumkLDA:
 
         if not (mpi.is_master_node()): return # do nothing on nodes
         ar = HDFArchive(self.hdf_file,'a')
-        if not (self.lda_output in ar): ar.create_group(self.lda_output)
+        if not self.lda_output in ar: ar.create_group(self.lda_output)
         for it in things_to_save: 
             try:
                 ar[self.lda_output][it] = getattr(self,it)
@@ -219,21 +219,21 @@ class SumkLDA:
         """Local <-> Global rotation of a GF block.
            direction: 'toLocal' / 'toGlobal' """
 
-        assert ((direction=='toLocal')or(direction=='toGlobal')),"Give direction 'toLocal' or 'toGlobal' in rotloc!"
+        assert ((direction == 'toLocal') or (direction == 'toGlobal')),"Give direction 'toLocal' or 'toGlobal' in rotloc!"
 
         gf_rotated = gf_to_rotate.copy()
 
-        if (direction=='toGlobal'):
+        if direction == 'toGlobal':
 
-            if ((self.rot_mat_time_inv[icrsh]==1) and (self.SO)):
+            if (self.rot_mat_time_inv[icrsh] == 1) and self.SO:
                 gf_rotated << gf_rotated.transpose()
                 gf_rotated.from_L_G_R(self.rot_mat[icrsh].conjugate(),gf_rotated,self.rot_mat[icrsh].transpose())
             else:
                 gf_rotated.from_L_G_R(self.rot_mat[icrsh],gf_rotated,self.rot_mat[icrsh].conjugate().transpose())
 
-        elif (direction=='toLocal'):
+        elif direction == 'toLocal':
 
-            if ((self.rot_mat_time_inv[icrsh]==1) and (self.SO)):
+            if (self.rot_mat_time_inv[icrsh] == 1) and self.SO:
                 gf_rotated << gf_rotated.transpose()
                 gf_rotated.from_L_G_R(self.rot_mat[icrsh].transpose(),gf_rotated,self.rot_mat[icrsh].conjugate())
             else:
@@ -249,9 +249,9 @@ class SumkLDA:
         ntoi = self.spin_names_to_ind[self.SO]
         bln = self.spin_block_names[self.SO]
 
-        if (not hasattr(self,"Sigma_imp")): with_Sigma=False
+        if not hasattr(self,"Sigma_imp"): with_Sigma = False
 
-        if (with_Sigma):
+        if with_Sigma:
             stmp = self.add_dc()
             beta = self.Sigma_imp[0].mesh.beta        # override beta if Sigma is present
 
@@ -261,20 +261,20 @@ class SumkLDA:
             set_up_G_upfold = True
         else: # yes if inconsistencies present in existing G_upfold
             GFsize = [ gf.N1 for bname,gf in self.G_upfold]
-            unchangedsize = all( [ self.n_orbitals[ik,ntoi[bln[ibl]]]==GFsize[ibl]
+            unchangedsize = all( [ self.n_orbitals[ik,ntoi[bln[ibl]]] == GFsize[ibl]
                                    for ibl in range(self.n_spin_blocks[self.SO]) ] )
-            if ( (not unchangedsize) or (self.G_upfold.mesh.beta != beta) ): set_up_G_upfold = True
+            if (not unchangedsize) or (self.G_upfold.mesh.beta != beta): set_up_G_upfold = True
 
         # Set up G_upfold
         if set_up_G_upfold:
             block_structure = [ range(self.n_orbitals[ik,ntoi[b]]) for b in bln ]
             gf_struct = [ (bln[ibl], block_structure[ibl]) for ibl in range(self.n_spin_blocks[self.SO]) ]
             block_ind_list = [block for block,inner in gf_struct]
-            if (with_Sigma):
+            if with_Sigma:
                 glist = lambda : [ GfImFreq(indices = inner, mesh = self.Sigma_imp[0].mesh) for block,inner in gf_struct]
             else:
                 glist = lambda : [ GfImFreq(indices = inner, beta = beta) for block,inner in gf_struct]
-            self.G_upfold = BlockGf(name_list = block_ind_list, block_list = glist(),make_copies=False)
+            self.G_upfold = BlockGf(name_list = block_ind_list, block_list = glist(), make_copies=False)
             self.G_upfold.zero()
 
         self.G_upfold << iOmega_n
@@ -286,8 +286,8 @@ class SumkLDA:
             M[ibl] = self.hopping[ik,ind,0:n_orb,0:n_orb] - (idmat[ibl]*mu) - (idmat[ibl] * self.h_field * (1-2*ibl))
         self.G_upfold -= M
 
-        if (with_Sigma):
-            for icrsh in xrange(self.n_corr_shells):
+        if with_Sigma:
+            for icrsh in range(self.n_corr_shells):
                 for bname,gf in self.G_upfold: gf -= self.upfold(ik,icrsh,bname,stmp[icrsh][bname],gf)
 
         self.G_upfold.invert()
@@ -295,39 +295,35 @@ class SumkLDA:
 	return self.G_upfold
 
 
-
-
     def simple_point_dens_mat(self):
-
 
         ntoi = self.spin_names_to_ind[self.SO]
         bln = self.spin_block_names[self.SO]
 
         MMat = [numpy.zeros( [self.n_orbitals[0,ntoi[bl]],self.n_orbitals[0,ntoi[bl]]], numpy.complex_) for bl in bln]
 
-        dens_mat = [ {} for icrsh in xrange(self.n_corr_shells)]
-        for icrsh in xrange(self.n_corr_shells):
+        dens_mat = [ {} for icrsh in range(self.n_corr_shells)]
+        for icrsh in range(self.n_corr_shells):
             for bl in self.spin_block_names[self.corr_shells[icrsh][4]]:
                 dens_mat[icrsh][bl] = numpy.zeros([self.corr_shells[icrsh][3],self.corr_shells[icrsh][3]], numpy.complex_)
 
-        ikarray=numpy.array(range(self.n_k))
+        ikarray = numpy.array(range(self.n_k))
 
         for ik in mpi.slice_array(ikarray):
 
-            unchangedsize = all( [ self.n_orbitals[ik,ntoi[bln[ibl]]]==len(MMat[ibl])
+            unchangedsize = all( [ self.n_orbitals[ik,ntoi[bln[ibl]]] == len(MMat[ibl])
                                    for ibl in range(self.n_spin_blocks[self.SO]) ] )
 
-            if (not unchangedsize):
+            if not unchangedsize:
                 MMat = [numpy.zeros( [self.n_orbitals[ik,ntoi[bl]],self.n_orbitals[ik,ntoi[bl]]], numpy.complex_) for bl in bln]
 
             for ibl, bl in enumerate(bln):
                 ind = ntoi[bl]
                 for inu in range(self.n_orbitals[ik,ind]):
-                    if ( (self.hopping[ik,ind,inu,inu]-self.h_field*(1-2*ibl)) < 0.0): # ONLY WORKS FOR DIAGONAL HOPPING MATRIX (TRUE IN WIEN2K)
+                    if (self.hopping[ik,ind,inu,inu] - self.h_field*(1-2*ibl)) < 0.0: # only works for diagonal hopping matrix (true in wien2k)
                         MMat[ibl][inu,inu] = 1.0
                     else:
                         MMat[ibl][inu,inu] = 0.0
-
 
             for icrsh in range(self.n_corr_shells):
                 for ibl, bn in enumerate(self.spin_block_names[self.corr_shells[icrsh][4]]):
@@ -341,31 +337,31 @@ class SumkLDA:
         # get data from nodes:
         for icrsh in range(self.n_corr_shells):
             for bname in dens_mat[icrsh]:
-                dens_mat[icrsh][bname] = mpi.all_reduce(mpi.world,dens_mat[icrsh][bname],lambda x,y : x+y)
+                dens_mat[icrsh][bname] = mpi.all_reduce(mpi.world, dens_mat[icrsh][bname], lambda x,y : x+y)
         mpi.barrier()
 
-        if (self.symm_op!=0): dens_mat = self.symmcorr.symmetrize(dens_mat)
+        if self.symm_op != 0: dens_mat = self.symmcorr.symmetrize(dens_mat)
 
         # Rotate to local coordinate system:
-        if (self.use_rotations):
-            for icrsh in xrange(self.n_corr_shells):
+        if self.use_rotations:
+            for icrsh in range(self.n_corr_shells):
                 for bn in dens_mat[icrsh]:
-                    if (self.rot_mat_time_inv[icrsh]==1): dens_mat[icrsh][bn] = dens_mat[icrsh][bn].conjugate()
+                    if self.rot_mat_time_inv[icrsh] == 1: dens_mat[icrsh][bn] = dens_mat[icrsh][bn].conjugate()
                     dens_mat[icrsh][bn] = numpy.dot( numpy.dot(self.rot_mat[icrsh].conjugate().transpose(),dens_mat[icrsh][bn]) ,
-                                                    self.rot_mat[icrsh])
+                                                    self.rot_mat[icrsh] )
 
         return dens_mat
 
-    # calculate upfolded gf, then density matrix -- no assumptions on structure (ie diagonal or not)
+    # Calculate upfolded gf, then density matrix. No assumption on the structure made here (ie diagonal or not).
     def density_gf(self,beta):
-        """Calculates the density without setting up Gloc. It is useful for Hubbard I, and very fast."""
+        """Calculates the density without setting up Gloc. It is useful for Hubbard I, and very quick."""
 
-        dens_mat = [ {} for icrsh in xrange(self.n_corr_shells)]
-        for icrsh in xrange(self.n_corr_shells):
+        dens_mat = [ {} for icrsh in range(self.n_corr_shells)]
+        for icrsh in range(self.n_corr_shells):
             for bl in self.spin_block_names[self.corr_shells[icrsh][4]]:
                 dens_mat[icrsh][bl] = numpy.zeros([self.corr_shells[icrsh][3],self.corr_shells[icrsh][3]], numpy.complex_)
 
-        ikarray=numpy.array(range(self.n_k))
+        ikarray = numpy.array(range(self.n_k))
 
         for ik in mpi.slice_array(ikarray):
 
@@ -386,16 +382,16 @@ class SumkLDA:
         # get data from nodes:
         for icrsh in range(self.n_corr_shells):
             for bname in dens_mat[icrsh]:
-                dens_mat[icrsh][bname] = mpi.all_reduce(mpi.world,dens_mat[icrsh][bname],lambda x,y : x+y)
+                dens_mat[icrsh][bname] = mpi.all_reduce(mpi.world, dens_mat[icrsh][bname], lambda x,y : x+y)
         mpi.barrier()
 
-        if (self.symm_op!=0): dens_mat = self.symmcorr.symmetrize(dens_mat)
+        if self.symm_op != 0: dens_mat = self.symmcorr.symmetrize(dens_mat)
 
         # Rotate to local coordinate system:
-        if (self.use_rotations):
-            for icrsh in xrange(self.n_corr_shells):
+        if self.use_rotations:
+            for icrsh in range(self.n_corr_shells):
                 for bn in dens_mat[icrsh]:
-                    if (self.rot_mat_time_inv[icrsh]==1): dens_mat[icrsh][bn] = dens_mat[icrsh][bn].conjugate()
+                    if self.rot_mat_time_inv[icrsh] == 1: dens_mat[icrsh][bn] = dens_mat[icrsh][bn].conjugate()
                     dens_mat[icrsh][bn] = numpy.dot( numpy.dot(self.rot_mat[icrsh].conjugate().transpose(),dens_mat[icrsh][bn]) ,
                                                     self.rot_mat[icrsh] )
 
@@ -406,53 +402,49 @@ class SumkLDA:
     def analyse_block_structure(self, threshold = 0.00001, include_shells = None, dm = None):
         """ Determines the Green function block structure from simple point integration."""
 
-        if dm is None: dm = self.simple_point_dens_mat()
-
-        dens_mat = [dm[self.inequiv_to_corr[ish]] for ish in xrange(self.n_inequiv_shells) ]
-
+        self.gf_struct_solver = [ {} for ish in range(self.n_inequiv_shells) ]
         self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_shells) ]
         self.solver_to_sumk = [ {} for ish in range(self.n_inequiv_shells) ]
         self.solver_to_sumk_block = [ {} for ish in range(self.n_inequiv_shells) ]
 
-        if include_shells is None: include_shells=range(self.n_inequiv_shells)
+        if dm is None: dm = self.simple_point_dens_mat()
+        dens_mat = [ dm[self.inequiv_to_corr[ish]] for ish in range(self.n_inequiv_shells) ]
+
+        if include_shells is None: include_shells = range(self.n_inequiv_shells)
         for ish in include_shells:
 
-            self.gf_struct_solver[ish] = {} 
-            gf_struct_temp = []
-
-            block_ind_list = [block for block,inner in self.gf_struct_sumk[self.inequiv_to_corr[ish]] ]
+            block_ind_list = [ block for block,inner in self.gf_struct_sumk[self.inequiv_to_corr[ish]] ]
             for block in block_ind_list:
                 dm = dens_mat[ish][block]
                 dmbool = (abs(dm) > threshold)          # gives an index list of entries larger that threshold
 
+                # Determine off-diagonal entries in upper triangular part of density matrix
                 offdiag = []
-                for i in xrange(len(dmbool)):
-                    for j in xrange(i,len(dmbool)):
-                        if ((dmbool[i,j])&(i!=j)): offdiag.append([i,j])
+                for i in range(len(dmbool)):
+                    for j in range(i+1,len(dmbool)):
+                        if dmbool[i,j]: offdiag.append([i,j])
 
-                NBlocs = len(dmbool)
-                blocs = [ [i] for i in range(NBlocs) ]
+                num_blocs = len(dmbool)
+                blocs = [ [i] for i in range(num_blocs) ]
 
                 for i in range(len(offdiag)):
-                    if (offdiag[i][0]!=offdiag[i][1]):
-                        for j in range(len(blocs[offdiag[i][1]])): blocs[offdiag[i][0]].append(blocs[offdiag[i][1]][j])
-                        del blocs[offdiag[i][1]]
-                        for j in range(i+1,len(offdiag)):
-                            if (offdiag[j][0]==offdiag[i][1]): offdiag[j][0]=offdiag[i][0]
-                            if (offdiag[j][1]==offdiag[i][1]): offdiag[j][1]=offdiag[i][0]
-                            if (offdiag[j][0]>offdiag[i][1]): offdiag[j][0] -= 1
-                            if (offdiag[j][1]>offdiag[i][1]): offdiag[j][1] -= 1
-                            offdiag[j].sort()
-                        NBlocs-=1
+                    for j in range(len(blocs[offdiag[i][1]])): blocs[offdiag[i][0]].append(blocs[offdiag[i][1]][j])
+                    del blocs[offdiag[i][1]]
+                    for j in range(i+1,len(offdiag)):
+                        if offdiag[j][0] == offdiag[i][1]: offdiag[j][0] = offdiag[i][0]
+                        if offdiag[j][1] == offdiag[i][1]: offdiag[j][1] = offdiag[i][0]
+                        if offdiag[j][0] > offdiag[i][1]: offdiag[j][0] -= 1
+                        if offdiag[j][1] > offdiag[i][1]: offdiag[j][1] -= 1
+                        offdiag[j].sort()
+                    num_blocs -= 1
 
-                for i in range(NBlocs):
+                for i in range(num_blocs):
                     blocs[i].sort()
                     self.gf_struct_solver[ish].update( [('%s_%s'%(block,i),range(len(blocs[i])))] )
-                    gf_struct_temp.append( ('%s_%s'%(block,i),blocs[i]) )
 
                 # Construct sumk_to_solver taking (sumk_block, sumk_index) --> (solver_block, solver_inner)
                 #       and solver_to_sumk taking (solver_block, solver_inner) --> (sumk_block, sumk_index)
-                for i in range(NBlocs):
+                for i in range(num_blocs):
                     for j in range(len(blocs[i])):
                         block_sumk = block
                         inner_sumk = blocs[i][j]
@@ -464,31 +456,31 @@ class SumkLDA:
 
             # now calculate degeneracies of orbitals:
             dm = {}
-            for bl in gf_struct_temp:
-                bln = bl[0]
-                ind = bl[1]
+            for block,inner in self.gf_struct_solver[ish].iteritems():
                 # get dm for the blocks:
-                dm[bln] = numpy.zeros([len(ind),len(ind)],numpy.complex_)
-                for i in range(len(ind)):
-                    for j in range(len(ind)):
-                        dm[bln][i,j] = dens_mat[ish][self.solver_to_sumk_block[ish][bln]][ind[i],ind[j]]
+                dm[block] = numpy.zeros([len(inner),len(inner)],numpy.complex_)
+                for ind1 in inner:
+                    for ind2 in inner:
+                        block_sumk,ind1_sumk = self.solver_to_sumk[ish][(block,ind1)]
+                        block_sumk,ind2_sumk = self.solver_to_sumk[ish][(block,ind2)]
+                        dm[block][ind1,ind2] = dens_mat[ish][block_sumk][ind1_sumk,ind2_sumk]
 
-            for bl in gf_struct_temp:
-                for bl2 in gf_struct_temp:
-                    if (dm[bl[0]].shape==dm[bl2[0]].shape) :
-                        if ( ( (abs(dm[bl[0]]-dm[bl2[0]])<threshold).all() ) and (bl[0]!=bl2[0]) ):
+            for block1 in self.gf_struct_solver[ish].iterkeys():
+                for block2 in self.gf_struct_solver[ish].iterkeys(): 
+                    if dm[block1].shape == dm[block2].shape:
+                        if ( (abs(dm[block1] - dm[block2]) < threshold).all() ) and (block1 != block2):
                             # check if it was already there:
-                            ind1=-1
-                            ind2=-2
+                            ind1 = -1
+                            ind2 = -2
                             for n,ind in enumerate(self.deg_shells[ish]):
-                                if (bl[0] in ind): ind1 = n
-                                if (bl2[0] in ind): ind2 = n
-                            if ((ind1 < 0) and (ind2 >= 0)):
-                                self.deg_shells[ish][ind2].append(bl[0])
-                            elif ((ind1 >= 0) and (ind2 < 0)):
-                                self.deg_shells[ish][ind1].append(bl2[0])
-                            elif ((ind1 < 0) and (ind2 < 0)):
-                                self.deg_shells[ish].append([bl[0],bl2[0]])
+                                if block1 in ind: ind1 = n
+                                if block2 in ind: ind2 = n
+                            if (ind1 < 0) and (ind2 >= 0):
+                                self.deg_shells[ish][ind2].append(block1)
+                            elif (ind1 >= 0) and (ind2 < 0):
+                                self.deg_shells[ish][ind1].append(block2)
+                            elif (ind1 < 0) and (ind2 < 0):
+                                self.deg_shells[ish].append([block1,block2])
 
         things_to_save = ['gf_struct_solver','sumk_to_solver','solver_to_sumk','solver_to_sumk_block','deg_shells']
         self.save(things_to_save)
@@ -518,19 +510,18 @@ class SumkLDA:
                 eff_atlevels[ish][bn] = numpy.identity(self.corr_shells[self.inequiv_to_corr[ish]][3], numpy.complex_)
 
         # Chemical Potential:
-        for ish in xrange(self.n_inequiv_shells):
+        for ish in range(self.n_inequiv_shells):
             for ii in eff_atlevels[ish]: eff_atlevels[ish][ii] *= -self.chemical_potential
 
         # double counting term:
-        #if hasattr(self,"dc_imp"):
-        for ish in xrange(self.n_inequiv_shells):
+        for ish in range(self.n_inequiv_shells):
             for ii in eff_atlevels[ish]:
                 eff_atlevels[ish][ii] -= self.dc_imp[self.inequiv_to_corr[ish]][ii]
 
         # sum over k:
         if not hasattr(self,"Hsumk"):
             # calculate the sum over k. Does not depend on mu, so do it only once:
-            self.Hsumk = [ {} for ish in range(self.n_corr_shells) ]
+            self.Hsumk = [ {} for icrsh in range(self.n_corr_shells) ]
             for icrsh in range(self.n_corr_shells):
                 for bn in self.spin_block_names[self.corr_shells[icrsh][4]]:
                     dim = self.corr_shells[icrsh][3]  #*(1+self.corr_shells[icrsh][4])
@@ -540,7 +531,7 @@ class SumkLDA:
                 dim = self.corr_shells[icrsh][3]
                 for ibl, bn in enumerate(self.spin_block_names[self.corr_shells[icrsh][4]]):
                     isp = self.spin_names_to_ind[self.corr_shells[icrsh][4]][bn]
-                    for ik in xrange(self.n_k):
+                    for ik in range(self.n_k):
                         n_orb = self.n_orbitals[ik,isp]
                         MMat = numpy.identity(n_orb, numpy.complex_)
                         MMat = self.hopping[ik,isp,0:n_orb,0:n_orb] - (1-2*ibl) * self.h_field * MMat
@@ -549,21 +540,19 @@ class SumkLDA:
                                                                                   projmat.conjugate().transpose() )
 
             # symmetrisation:
-            if (self.symm_op!=0): self.Hsumk = self.symmcorr.symmetrize(self.Hsumk)
+            if self.symm_op != 0: self.Hsumk = self.symmcorr.symmetrize(self.Hsumk)
 
             # Rotate to local coordinate system:
-            if (self.use_rotations):
-                for icrsh in xrange(self.n_corr_shells):
+            if self.use_rotations:
+                for icrsh in range(self.n_corr_shells):
                     for bn in self.Hsumk[icrsh]:
 
-                        if (self.rot_mat_time_inv[icrsh]==1): self.Hsumk[icrsh][bn] = self.Hsumk[icrsh][bn].conjugate()
-                        #if (self.corr_shells[icrsh][4]==0): self.Hsumk[icrsh][bn] = self.Hsumk[icrsh][bn].conjugate()
-
+                        if self.rot_mat_time_inv[icrsh] == 1: self.Hsumk[icrsh][bn] = self.Hsumk[icrsh][bn].conjugate()
                         self.Hsumk[icrsh][bn] = numpy.dot( numpy.dot(self.rot_mat[icrsh].conjugate().transpose(),self.Hsumk[icrsh][bn]) ,
                                                            self.rot_mat[icrsh] )
 
         # add to matrix:
-        for ish in xrange(self.n_inequiv_shells):
+        for ish in range(self.n_inequiv_shells):
             for bn in eff_atlevels[ish]:
                 eff_atlevels[ish][bn] += self.Hsumk[self.inequiv_to_corr[ish]][bn]
 
@@ -575,13 +564,12 @@ class SumkLDA:
     def __init_dc(self):
 
         # construct the density matrix dm_imp and double counting arrays
-        #self.dm_imp = [ {} for i in xrange(self.n_corr_shells)]
-        self.dc_imp = [ {} for i in xrange(self.n_corr_shells)]
-        for i in xrange(self.n_corr_shells):
-            l = self.corr_shells[i][3]
-            for j in xrange(len(self.gf_struct_sumk[i])):
-                self.dc_imp[i]['%s'%self.gf_struct_sumk[i][j][0]] = numpy.zeros([l,l],numpy.float_)
-        self.dc_energ = [0.0 for i in xrange(self.n_corr_shells)]
+        self.dc_imp = [ {} for icrsh in range(self.n_corr_shells)]
+        for icrsh in range(self.n_corr_shells):
+            dim = self.corr_shells[icrsh][3]
+            for j in range(len(self.gf_struct_sumk[icrsh])):
+                self.dc_imp[icrsh]['%s'%self.gf_struct_sumk[icrsh][j][0]] = numpy.zeros([dim,dim],numpy.float_)
+        self.dc_energ = [0.0 for icrsh in range(self.n_corr_shells)]
 
 
 
@@ -593,83 +581,80 @@ class SumkLDA:
            Be sure that you are using the correct interaction Hamiltonian!"""
 
 
-        for icrsh in xrange(self.n_corr_shells):
+        for icrsh in range(self.n_corr_shells):
 
             iorb = self.corr_to_inequiv[icrsh]    # iorb is the index of the inequivalent shell corresponding to icrsh
 
-            if (iorb==orb):
-                # do this orbital
-                Ncr = {}
-                l = self.corr_shells[icrsh][3] #*(1+self.corr_shells[icrsh][4])
+            if iorb != orb: continue # ignore this orbital
 
-                for j in xrange(len(self.gf_struct_sumk[icrsh])):
-                    self.dc_imp[icrsh]['%s'%self.gf_struct_sumk[icrsh][j][0]] = numpy.identity(l,numpy.float_)
-                    blname = self.gf_struct_sumk[icrsh][j][0]
-                    Ncr[blname] = 0.0
+            Ncr = {}
+            dim = self.corr_shells[icrsh][3] #*(1+self.corr_shells[icrsh][4])
 
-                for block,inner in self.gf_struct_solver[iorb].iteritems():
-                    bl = self.solver_to_sumk_block[iorb][block]
-                    Ncr[bl] += dens_mat[block].real.trace()
+            for j in range(len(self.gf_struct_sumk[icrsh])):
+                self.dc_imp[icrsh]['%s'%self.gf_struct_sumk[icrsh][j][0]] = numpy.identity(dim,numpy.float_)
+                blname = self.gf_struct_sumk[icrsh][j][0]
+                Ncr[blname] = 0.0
 
+            for block,inner in self.gf_struct_solver[iorb].iteritems():
+                bl = self.solver_to_sumk_block[iorb][block]
+                Ncr[bl] += dens_mat[block].real.trace()
 
-                M = self.corr_shells[icrsh][3]
+            Ncrtot = 0.0
+            block_ind_list = [block for block,inner in self.gf_struct_sumk[icrsh]]
+            for bl in block_ind_list:
+                Ncrtot += Ncr[bl]
 
-                Ncrtot = 0.0
+            # average the densities if there is no SP:
+            if self.SP == 0:
+                for bl in block_ind_list:
+                    Ncr[bl] = Ncrtot / len(block_ind_list)
+            # correction for SO: we have only one block in this case, but in DC we need N/2
+            elif self.SP == 1 and self.SO == 1:
+                for bl in block_ind_list:
+                    Ncr[bl] = Ncrtot / 2.0
+
+            if use_val is None:
+
+                if use_dc_formula == 0: # FLL
+
+                    self.dc_energ[icrsh] = U_interact / 2.0 * Ncrtot * (Ncrtot-1.0)
+                    for bl in block_ind_list:
+                        Uav = U_interact*(Ncrtot-0.5) - J_hund*(Ncr[bl] - 0.5)
+                        self.dc_imp[icrsh][bl] *= Uav
+                        self.dc_energ[icrsh]  -= J_hund / 2.0 * (Ncr[bl]) * (Ncr[bl]-1.0)
+                        mpi.report("DC for shell %(icrsh)i and block %(bl)s = %(Uav)f"%locals())
+
+                elif use_dc_formula == 1: # Held's formula, with U_interact the interorbital onsite interaction
+
+                    self.dc_energ[icrsh] = (U_interact + (dim-1)*(U_interact-2.0*J_hund) + (dim-1)*(U_interact-3.0*J_hund))/(2*dim-1) / 2.0 * Ncrtot * (Ncrtot-1.0)
+                    for bl in block_ind_list:
+                        Uav =(U_interact + (dim-1)*(U_interact-2.0*J_hund) + (dim-1)*(U_interact-3.0*J_hund))/(2*dim-1) * (Ncrtot-0.5)
+                        self.dc_imp[icrsh][bl] *= Uav
+                        mpi.report("DC for shell %(icrsh)i and block %(bl)s = %(Uav)f"%locals())
+
+                elif use_dc_formula == 2: # AMF
+
+                    self.dc_energ[icrsh] = 0.5 * U_interact * Ncrtot * Ncrtot
+                    for bl in block_ind_list:
+                        Uav = U_interact*(Ncrtot - Ncr[bl]/dim) - J_hund * (Ncr[bl] - Ncr[bl]/dim)
+                        self.dc_imp[icrsh][bl] *= Uav
+                        self.dc_energ[icrsh] -= (U_interact + (dim-1)*J_hund)/dim * 0.5 * Ncr[bl] * Ncr[bl]
+                        mpi.report("DC for shell %(icrsh)i and block %(bl)s = %(Uav)f"%locals())
+
+                # output:
+                mpi.report("DC energy for shell %s = %s"%(icrsh,self.dc_energ[icrsh]))
+
+            else:
+
                 block_ind_list = [block for block,inner in self.gf_struct_sumk[icrsh]]
                 for bl in block_ind_list:
-                    Ncrtot += Ncr[bl]
+                    self.dc_imp[icrsh][bl] *= use_val
 
-                # average the densities if there is no SP:
-                if (self.SP==0):
-                    for bl in block_ind_list:
-                        Ncr[bl] = Ncrtot / len(block_ind_list)
-                # correction for SO: we have only one block in this case, but in DC we need N/2
-                elif (self.SP==1 and self.SO==1):
-                    for bl in block_ind_list:
-                        Ncr[bl] = Ncrtot / 2.0
+                self.dc_energ[icrsh] = use_val * Ncrtot
 
-                if (use_val is None):
-
-                    if (use_dc_formula==0): # FLL
-
-                        self.dc_energ[icrsh] = U_interact / 2.0 * Ncrtot * (Ncrtot-1.0)
-                        for bl in block_ind_list:
-                            Uav = U_interact*(Ncrtot-0.5) - J_hund*(Ncr[bl] - 0.5)
-                            self.dc_imp[icrsh][bl] *= Uav
-                            self.dc_energ[icrsh]  -= J_hund / 2.0 * (Ncr[bl]) * (Ncr[bl]-1.0)
-                            mpi.report("DC for shell %(icrsh)i and block %(bl)s = %(Uav)f"%locals())
-
-                    elif (use_dc_formula==1): # Held's formula, with U_interact the interorbital onsite interaction
-
-                        self.dc_energ[icrsh] = (U_interact + (M-1)*(U_interact-2.0*J_hund) + (M-1)*(U_interact-3.0*J_hund))/(2*M-1) / 2.0 * Ncrtot * (Ncrtot-1.0)
-                        for bl in block_ind_list:
-                            Uav =(U_interact + (M-1)*(U_interact-2.0*J_hund) + (M-1)*(U_interact-3.0*J_hund))/(2*M-1) * (Ncrtot-0.5)
-                            self.dc_imp[icrsh][bl] *= Uav
-                            mpi.report("DC for shell %(icrsh)i and block %(bl)s = %(Uav)f"%locals())
-
-                    elif (use_dc_formula==2): # AMF
-
-                        self.dc_energ[icrsh] = 0.5 * U_interact * Ncrtot * Ncrtot
-                        for bl in block_ind_list:
-                            Uav = U_interact*(Ncrtot - Ncr[bl]/M) - J_hund * (Ncr[bl] - Ncr[bl]/M)
-                            self.dc_imp[icrsh][bl] *= Uav
-                            self.dc_energ[icrsh] -= (U_interact + (M-1)*J_hund)/M * 0.5 * Ncr[bl] * Ncr[bl]
-                            mpi.report("DC for shell %(icrsh)i and block %(bl)s = %(Uav)f"%locals())
-
-                    # output:
-                    mpi.report("DC energy for shell %s = %s"%(icrsh,self.dc_energ[icrsh]))
-
-                else:
-
-                    block_ind_list = [block for block,inner in self.gf_struct_sumk[icrsh]]
-                    for bl in block_ind_list:
-                        self.dc_imp[icrsh][bl] *= use_val
-
-                    self.dc_energ[icrsh] = use_val * Ncrtot
-
-                    # output:
-                    mpi.report("DC for shell %(icrsh)i = %(use_val)f"%locals())
-                    mpi.report("DC energy = %s"%self.dc_energ[icrsh])
+                # output:
+                mpi.report("DC for shell %(icrsh)i = %(use_val)f"%locals())
+                mpi.report("DC energy = %s"%self.dc_energ[icrsh])
 
 
 
@@ -677,34 +662,34 @@ class SumkLDA:
         """Puts the impurity self energies for inequivalent atoms into the class, respects the multiplicity of the atoms."""
 
         assert isinstance(Sigma_imp,list), "Sigma_imp has to be a list of Sigmas for the correlated shells, even if it is of length 1!"
-        assert len(Sigma_imp)==self.n_inequiv_shells, "give exactly one Sigma for each inequivalent corr. shell!"
+        assert len(Sigma_imp) == self.n_inequiv_shells, "give exactly one Sigma for each inequivalent corr. shell!"
 
         # init self.Sigma_imp:
         if all(type(gf) == GfImFreq for bname,gf in Sigma_imp[0]):
             # Imaginary frequency Sigma:
-            self.Sigma_imp = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = Sigma_imp[0].mesh)) for block,inner in self.gf_struct_sumk[i] ],
-                                  make_copies = False) for i in xrange(self.n_corr_shells) ]
+            self.Sigma_imp = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = Sigma_imp[0].mesh)) for block,inner in self.gf_struct_sumk[icrsh] ],
+                                  make_copies = False) for icrsh in range(self.n_corr_shells) ]
         elif all(type(gf) == GfReFreq for bname,gf in Sigma_imp[0]):
             # Real frequency Sigma:
-            self.Sigma_imp = [ BlockGf( name_block_generator = [ (block,GfReFreq(indices = inner, mesh = Sigma_imp[0].mesh)) for block,inner in self.gf_struct_sumk[i] ],
-                                  make_copies = False) for i in xrange(self.n_corr_shells) ]
+            self.Sigma_imp = [ BlockGf( name_block_generator = [ (block,GfReFreq(indices = inner, mesh = Sigma_imp[0].mesh)) for block,inner in self.gf_struct_sumk[icrsh] ],
+                                  make_copies = False) for icrsh in range(self.n_corr_shells) ]
         else:
             raise ValueError, "This type of Sigma is not handled."
 
         # transform the CTQMC blocks to the full matrix:
-        for icrsh in xrange(self.n_corr_shells):
+        for icrsh in range(self.n_corr_shells):
             ish = self.corr_to_inequiv[icrsh]    # ish is the index of the inequivalent shell corresponding to icrsh
 
             for block,inner in self.gf_struct_solver[ish].iteritems():
                 for ind1 in inner:
                     for ind2 in inner:
-                        block_imp,ind1_imp = self.solver_to_sumk[ish][(block,ind1)]
-                        block_imp,ind2_imp = self.solver_to_sumk[ish][(block,ind2)]
-                        self.Sigma_imp[icrsh][block_imp][ind1_imp,ind2_imp] << Sigma_imp[ish][block][ind1,ind2]
+                        block_sumk,ind1_sumk = self.solver_to_sumk[ish][(block,ind1)]
+                        block_sumk,ind2_sumk = self.solver_to_sumk[ish][(block,ind2)]
+                        self.Sigma_imp[icrsh][block_sumk][ind1_sumk,ind2_sumk] << Sigma_imp[ish][block][ind1,ind2]
 
         # rotation from local to global coordinate system:
-        if (self.use_rotations):
-            for icrsh in xrange(self.n_corr_shells):
+        if self.use_rotations:
+            for icrsh in range(self.n_corr_shells):
                 for bname,gf in self.Sigma_imp[icrsh]: self.Sigma_imp[icrsh][bname] << self.rotloc(icrsh,gf,direction='toGlobal')
 
 
@@ -714,7 +699,7 @@ class SumkLDA:
 
         # Be careful: Sigma_imp is already in the global coordinate system!!
         sres = [s.copy() for s in self.Sigma_imp]
-        for icrsh in xrange(self.n_corr_shells):
+        for icrsh in range(self.n_corr_shells):
             for bname,gf in sres[icrsh]:
                 # Transform dc_imp to global coordinate system
                 dccont = numpy.dot(self.rot_mat[icrsh],numpy.dot(self.dc_imp[icrsh][bname],self.rot_mat[icrsh].conjugate().transpose()))
@@ -732,11 +717,9 @@ class SumkLDA:
 
     def total_density(self, mu):
         """
-        Calculates the total charge for the energy window for a given mu. Since in general n_orbitals depends on k,
-        the calculation is done in the following order:
+        Calculates the total charge for the energy window for a given chemical potential mu. 
+        Since in general n_orbitals depends on k, the calculation is done in the following order:
         G_aa'(k,iw) -> n(k) = Tr G_aa'(k,iw) -> sum_k n_k
-
-        mu: chemical potential
 
         The calculation is done in the global coordinate system, if distinction is made between local/global!
         """
@@ -750,7 +733,7 @@ class SumkLDA:
             dens += self.bz_weights[ik] * S.total_density()
 
         # collect data from mpi:
-        dens = mpi.all_reduce(mpi.world,dens,lambda x,y : x+y)
+        dens = mpi.all_reduce(mpi.world, dens, lambda x,y : x+y)
         mpi.barrier()
 
         return dens
@@ -765,7 +748,6 @@ class SumkLDA:
         F = lambda mu : self.total_density(mu = mu)
 
         density = self.density_required - self.charge_below
-
 
         self.chemical_potential = dichotomy.dichotomy(function = F,
                                          x_init = self.chemical_potential, y_value = density,
@@ -783,10 +765,10 @@ class SumkLDA:
         if with_Sigma = False: Sigma is not included => non-interacting local GF
         """
 
-        if (mu is None): mu = self.chemical_potential
+        if mu is None: mu = self.chemical_potential
 
-        Gloc = [ self.Sigma_imp[icrsh].copy() for icrsh in xrange(self.n_corr_shells) ]   # this list will be returned
-        for icrsh in xrange(self.n_corr_shells): Gloc[icrsh].zero()                       # initialize to zero
+        Gloc = [ self.Sigma_imp[icrsh].copy() for icrsh in range(self.n_corr_shells) ]   # this list will be returned
+        for icrsh in range(self.n_corr_shells): Gloc[icrsh].zero()                       # initialize to zero
         beta = Gloc[0].mesh.beta
 
         ikarray=numpy.array(range(self.n_k))
@@ -796,36 +778,36 @@ class SumkLDA:
             S = self.lattice_gf_matsubara(ik=ik,mu=mu,with_Sigma = with_Sigma, beta = beta)
             S *= self.bz_weights[ik]
 
-            for icrsh in xrange(self.n_corr_shells):
+            for icrsh in range(self.n_corr_shells):
                 tmp = Gloc[icrsh].copy()                  # init temporary storage
                 for bname,gf in tmp: tmp[bname] << self.downfold(ik,icrsh,bname,S[bname],gf)
                 Gloc[icrsh] += tmp
 
         #collect data from mpi:
-        for icrsh in xrange(self.n_corr_shells):
-            Gloc[icrsh] << mpi.all_reduce(mpi.world,Gloc[icrsh],lambda x,y : x+y)
+        for icrsh in range(self.n_corr_shells):
+            Gloc[icrsh] << mpi.all_reduce(mpi.world, Gloc[icrsh], lambda x,y : x+y)
         mpi.barrier()
 
         # Gloc[:] is now the sum over k projected to the local orbitals.
         # here comes the symmetrisation, if needed:
-        if (self.symm_op!=0): Gloc = self.symmcorr.symmetrize(Gloc)
+        if self.symm_op != 0: Gloc = self.symmcorr.symmetrize(Gloc)
 
         # Gloc is rotated to the local coordinate system:
-        if (self.use_rotations):
-            for icrsh in xrange(self.n_corr_shells):
+        if self.use_rotations:
+            for icrsh in range(self.n_corr_shells):
                 for bname,gf in Gloc[icrsh]: Gloc[icrsh][bname] << self.rotloc(icrsh,gf,direction='toLocal')
 
         # transform to CTQMC blocks:
         Glocret = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = Gloc[0].mesh)) for block,inner in self.gf_struct_solver[ish].iteritems() ],
-                        make_copies = False) for ish in xrange(self.n_inequiv_shells)  ]
-        for ish in xrange(self.n_inequiv_shells):
+                        make_copies = False) for ish in range(self.n_inequiv_shells)  ]
+        for ish in range(self.n_inequiv_shells):
 
             for block,inner in self.gf_struct_solver[ish].iteritems():
                 for ind1 in inner:
                     for ind2 in inner:
-                        block_imp,ind1_imp = self.solver_to_sumk[ish][(block,ind1)]
-                        block_imp,ind2_imp = self.solver_to_sumk[ish][(block,ind2)]
-                        Glocret[ish][block][ind1,ind2] << Gloc[self.inequiv_to_corr[ish]][block_imp][ind1_imp,ind2_imp]
+                        block_sumk,ind1_sumk = self.solver_to_sumk[ish][(block,ind1)]
+                        block_sumk,ind2_sumk = self.solver_to_sumk[ish][(block,ind2)]
+                        Glocret[ish][block][ind1,ind2] << Gloc[self.inequiv_to_corr[ish]][block_sumk][ind1_sumk,ind2_sumk]
 
         # return only the inequivalent shells:
         return Glocret
@@ -834,7 +816,7 @@ class SumkLDA:
     def calc_density_correction(self,filename = 'dens_mat.dat'):
         """ Calculates the density correction in order to feed it back to the DFT calculations."""
 
-        assert (type(filename)==StringType), "filename has to be a string!"
+        assert type(filename) == StringType, "filename has to be a string!"
 
         ntoi = self.spin_names_to_ind[self.SO]
         bln = self.spin_block_names[self.SO]
@@ -859,25 +841,25 @@ class SumkLDA:
         #put mpi Barrier:
         for bname in deltaN:
             for ik in range(self.n_k):
-                deltaN[bname][ik] = mpi.all_reduce(mpi.world,deltaN[bname][ik],lambda x,y : x+y)
-            dens[bname] = mpi.all_reduce(mpi.world,dens[bname],lambda x,y : x+y)
+                deltaN[bname][ik] = mpi.all_reduce(mpi.world, deltaN[bname][ik], lambda x,y : x+y)
+            dens[bname] = mpi.all_reduce(mpi.world, dens[bname], lambda x,y : x+y)
         mpi.barrier()
 
         # now save to file:
-        if (mpi.is_master_node()):
-            if (self.SP==0):
+        if mpi.is_master_node():
+            if self.SP == 0:
                 f=open(filename,'w')
             else:
                 f=open(filename+'up','w')
                 f1=open(filename+'dn','w')
             # write chemical potential (in Rydberg):
             f.write("%.14f\n"%(self.chemical_potential/self.energy_unit))
-            if (self.SP!=0): f1.write("%.14f\n"%(self.chemical_potential/self.energy_unit))
+            if self.SP != 0: f1.write("%.14f\n"%(self.chemical_potential/self.energy_unit))
             # write beta in ryderg-1
             f.write("%.14f\n"%(S.mesh.beta*self.energy_unit))
-            if (self.SP!=0): f1.write("%.14f\n"%(S.mesh.beta*self.energy_unit))
+            if self.SP != 0: f1.write("%.14f\n"%(S.mesh.beta*self.energy_unit))
 
-            if (self.SP==0): # no spin-polarization
+            if self.SP == 0: # no spin-polarization
 
                 for ik in range(self.n_k):
                     f.write("%s\n"%self.n_orbitals[ik,0])
@@ -890,11 +872,11 @@ class SumkLDA:
                     f.write("\n")
                 f.close()
 
-            elif (self.SP==1): # with spin-polarization
+            elif self.SP == 1: # with spin-polarization
 
-                # dict of filename : (spin index, block_name)
-                if self.SO==0: to_write = {f: (0, 'up'), f1: (1, 'down')}
-                if self.SO==1: to_write = {f: (0, 'ud'), f1: (0, 'ud')}
+                # dict of filename: (spin index, block_name)
+                if self.SO == 0: to_write = {f: (0, 'up'), f1: (1, 'down')}
+                if self.SO == 1: to_write = {f: (0, 'ud'), f1: (0, 'ud')}
                 for fout in to_write.iterkeys():
                     isp, bn = to_write[fout]
                     for ik in range(self.n_k):
@@ -919,7 +901,7 @@ class SumkLDA:
         def F(mu):
             gnonint = self.extract_G_loc(mu=mu,with_Sigma=False)
 
-            if (orb is None):
+            if orb is None:
                 dens = 0.0
                 for ish in range(self.n_inequiv_shells):
                     dens += gnonint[ish].total_density()
@@ -947,13 +929,13 @@ class SumkLDA:
 
         def F(dc):
             self.set_dc(dens_mat=dens_mat,U_interact=0,J_hund=0,orb=orb,use_val=dc)
-            if (dens_req is None):
+            if dens_req is None:
                 return self.total_density(mu=mu)
             else:
                 return self.extract_G_loc()[orb].total_density()
 
 
-        if (dens_req is None):
+        if dens_req is None:
             density = self.density_required - self.charge_below
         else:
             density = dens_req
