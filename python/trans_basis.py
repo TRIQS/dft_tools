@@ -82,7 +82,6 @@ class TransBasis:
                 for j in range(len(inner)):
                     ind1 = inner[i]
                     ind2 = inner[j]
-# TODELETE          gfrotated[self.SK.map_inv[s][block]][ind1,ind2] << gf_to_rot[block][ind1,ind2]
                     gfrotated[self.SK.solver_to_sumk_block[s][block]][ind1,ind2] << gf_to_rot[block][ind1,ind2]
 
         # Rotate using the matrix w
@@ -96,7 +95,6 @@ class TransBasis:
                 for j in range(len(inner)):
                     ind1 = inner[i]
                     ind2 = inner[j]
-# TODELETE          gfreturn[block][ind1,ind2] << gfrotated[self.SK.map_inv[0][block]][ind1,ind2]
                     gfreturn[block][ind1,ind2] << gfrotated[self.SK.solver_to_sumk_block[0][block]][ind1,ind2]
 
         return gfreturn
