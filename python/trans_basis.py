@@ -2,14 +2,13 @@ from pytriqs.applications.dft.sumk_lda import *
 from pytriqs.applications.dft.converters import Wien2kConverter
 from pytriqs.gf.local.block_gf import BlockGf
 from pytriqs.gf.local.gf_imfreq import GfImFreq
-import numpy
 from pytriqs.archive import *
-import copy
 import pytriqs.utility.mpi as mpi
+import numpy
+import copy
 
 class TransBasis:
     '''Computates rotations into a new basis in order to make certain quantities diagonal.'''
-
 
     def __init__(self, SK=None, hdf_datafile=None):
         '''Inits the class by reading the input.'''
@@ -17,7 +16,7 @@ class TransBasis:
         if SK is None:
             # build our own SK instance
             if hdf_datafile is None:
-                mpi.report("Give SK instance or HDF filename!")
+                mpi.report("trans_basis: give SK instance or HDF filename!")
                 return 0
 
             Converter = Wien2kConverter(filename=hdf_datafile,repacking=False)
@@ -32,37 +31,25 @@ class TransBasis:
         self.w = numpy.identity(SK.corr_shells[0][3])
 
 
-
     def __call__(self, prop_to_be_diagonal = 'eal'):
         '''Calculates the diagonalisation.'''
 
-        if (prop_to_be_diagonal=='eal'):
-            eal = self.SK.eff_atomic_levels()[0]
-        elif (prop_to_be_diagonal=='dm'):
-            eal = self.SK.simple_point_dens_mat()[0]
+        if prop_to_be_diagonal == 'eal':
+            prop = self.SK.eff_atomic_levels()[0]
+        elif prop_to_be_diagonal == 'dm':
+            prop = self.SK.simple_point_dens_mat()[0]
         else:
-            mpi.report("Not a valid quantitiy to be diagonal! Choices are 'eal' or 'dm'")
+            mpi.report("trans_basis: not a valid quantitiy to be diagonal. Choices are 'eal' or 'dm'.")
             return 0
 
-        if (self.SK.SO==0):
-            self.eig,self.w = numpy.linalg.eigh(eal['up'])
-
-            # now calculate new Transformation matrix
+        if self.SK.SO == 0:
+            self.eig,self.w = numpy.linalg.eigh(prop['up'])
+            # calculate new Transformation matrix
             self.T = numpy.dot(self.T.transpose().conjugate(),self.w).conjugate().transpose()
-
-
-            #return numpy.dot(self.w.transpose().conjugate(),numpy.dot(eal['up'],self.w))
-
         else:
-
-            self.eig,self.w = numpy.linalg.eigh(eal['ud'])
-
-            # now calculate new Transformation matrix
+            self.eig,self.w = numpy.linalg.eigh(prop['ud'])
+            # calculate new Transformation matrix
             self.T = numpy.dot(self.T.transpose().conjugate(),self.w).conjugate().transpose()
-
-
-            #MPI.report("SO not implemented yet!")
-            #return 0
 
         # measure for the 'unity' of the transformation:
         wsqr = sum(abs(self.w.diagonal())**2)/self.w.diagonal().size
@@ -76,13 +63,11 @@ class TransBasis:
         gfrotated = BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = gf_to_rot.mesh)) for block,inner in self.SK.gf_struct_sumk[0] ], make_copies = False)
 
         # transform the CTQMC blocks to the full matrix:
-        s = self.SK.shellmap[0]    # s is the index of the inequivalent shell corresponding to icrsh
-        for block, inner in self.gf_struct_solver[s].iteritems():
-            for i in range(len(inner)):
-                for j in range(len(inner)):
-                    ind1 = inner[i]
-                    ind2 = inner[j]
-                    gfrotated[self.SK.solver_to_sumk_block[s][block]][ind1,ind2] << gf_to_rot[block][ind1,ind2]
+        ish = self.SK.shellmap[0]    # ish is the index of the inequivalent shell corresponding to icrsh
+        for block, inner in self.gf_struct_solver[ish].iteritems():
+            for ind1 in inner:
+                for ind2 in inner:
+                    gfrotated[self.SK.solver_to_sumk_block[ish][block]][ind1,ind2] << gf_to_rot[block][ind1,ind2]
 
         # Rotate using the matrix w
         for bname,gf in gfrotated:
@@ -90,11 +75,9 @@ class TransBasis:
 
         gfreturn = gf_to_rot.copy()
         # Put back into CTQMC basis:
-        for block, inner in self.gf_struct_solver[s].iteritems():
-            for i in range(len(inner)):
-                for j in range(len(inner)):
-                    ind1 = inner[i]
-                    ind2 = inner[j]
+        for block, inner in self.gf_struct_solver[ish].iteritems():
+            for ind1 in inner:
+                for ind2 in inner:
                     gfreturn[block][ind1,ind2] << gfrotated[self.SK.solver_to_sumk_block[0][block]][ind1,ind2]
 
         return gfreturn
@@ -103,55 +86,52 @@ class TransBasis:
     def write_trans_file(self, filename):
         '''Writes the new transformation into a file readable by dmftproj.'''
 
-        f=open(filename,'w')
-
+        f = open(filename,'w')
         Tnew = self.T.conjugate()
-        N = self.SK.corr_shells[0][3]
+        dim = self.SK.corr_shells[0][3]
 
-        if (self.SK.SO==0):
+        if self.SK.SO == 0:
 
-           for i in range(N):
+           for i in range(dim):
                st = ''
-               for k in range(N):
+               for k in range(dim):
                    st += " %9.6f"%(Tnew[i,k].real)
                    st += " %9.6f"%(Tnew[i,k].imag)
-               for k in range(2*N):
+               for k in range(2*dim):
                    st += " 0.0"
 
-               if (i<(N-1)):
+               if i < (dim-1):
                    f.write("%s\n"%(st))
                else:
-                   st1=st.replace(' ','*',1)
+                   st1 = st.replace(' ','*',1)
                    f.write("%s\n"%(st1))
 
-
-           for i in range(N):
+           for i in range(dim):
                st = ''
-               for k in range(2*N):
+               for k in range(2*dim):
                    st += " 0.0"
-               for k in range(N):
+               for k in range(dim):
                    st += " %9.6f"%(Tnew[i,k].real)
                    st += " %9.6f"%(Tnew[i,k].imag)
 
-               if (i<(N-1)):
+               if i < (dim-1):
                    f.write("%s\n"%(st))
                else:
-                   st1=st.replace(' ','*',1)
+                   st1 = st.replace(' ','*',1)
                    f.write("%s\n"%(st1))
 
         else:
 
-            for i in range(N):
+            for i in range(dim):
                st = ''
-               for k in range(N):
+               for k in range(dim):
                    st += " %9.6f"%(Tnew[i,k].real)
                    st += " %9.6f"%(Tnew[i,k].imag)
 
-               if (i<(N-1)):
+               if i < (dim-1):
                    f.write("%s\n"%(st))
                else:
-                   st1=st.replace(' ','*',1)
+                   st1 = st.replace(' ','*',1)
                    f.write("%s\n"%(st1))
-            #MPI.report("SO not implemented!")
 
         f.close()
