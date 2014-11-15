@@ -55,17 +55,13 @@ class SumkLDA:
             # read input from HDF:
             things_to_read = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                               'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
-                              'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping']
+                              'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
+                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
             self.subgroup_present, self.value_read = self.read_input_from_hdf(subgrp = self.lda_data, things_to_read = things_to_read)
 
             if (self.SO) and (abs(self.h_field)>0.000001):
                 self.h_field=0.0
                 mpi.report("For SO, the external magnetic field is not implemented, setting it to 0!")
-
-            # FIXME -- REMOVE THIS, WRITE DATA IN CONVERTER
-            # determine the number of inequivalent correlated shells (self.n_inequiv_corr_shells)
-            # and related maps (self.shellmap, self.invshellmap)
-            self.inequiv_shells(self.corr_shells)
 
             self.spin_block_names = [ ['up','down'], ['ud'] ]
             self.n_spin_blocks = [2,1]
@@ -87,16 +83,16 @@ class SumkLDA:
                                                                               optional_things = optional_things)
             if (not self.subgroup_present) or (not self.value_read['gf_struct_solver']):
                 # No gf_struct was stored in HDF, so first set a standard one:
-                self.gf_struct_solver = [ dict([ (b, range(self.corr_shells[self.invshellmap[i]][3]) )
-                                                        for b in self.spin_block_names[self.corr_shells[self.invshellmap[i]][4]] ])
-                                          for i in range(self.n_inequiv_corr_shells)
+                self.gf_struct_solver = [ dict([ (b, range(self.corr_shells[self.inequiv_to_corr[i]][3]) )
+                                                        for b in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[i]][4]] ])
+                                          for i in range(self.n_inequiv_shells)
                                         ]
                 # Set standard (identity) maps from gf_struct_sumk <-> gf_struct_solver
-                self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_corr_shells) ]
-                self.solver_to_sumk = [ {} for ish in range(self.n_inequiv_corr_shells) ]
-                self.solver_to_sumk_block = [ {} for ish in range(self.n_inequiv_corr_shells) ]
-                for ish in range(self.n_inequiv_corr_shells):
-                    for block,inner_list in self.gf_struct_sumk[self.invshellmap[ish]]:
+                self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_shells) ]
+                self.solver_to_sumk = [ {} for ish in range(self.n_inequiv_shells) ]
+                self.solver_to_sumk_block = [ {} for ish in range(self.n_inequiv_shells) ]
+                for ish in range(self.n_inequiv_shells):
+                    for block,inner_list in self.gf_struct_sumk[self.inequiv_to_corr[ish]]:
                         self.solver_to_sumk_block[ish][block] = block
                         for inner in inner_list:
                             self.sumk_to_solver[ish][(block,inner)] = (block,inner)
@@ -109,7 +105,7 @@ class SumkLDA:
                 self.chemical_potential = mu
 
             if (not self.subgroup_present) or (not self.value_read['deg_shells']):
-                self.deg_shells = [ [] for i in range(self.n_inequiv_corr_shells)]
+                self.deg_shells = [ [] for i in range(self.n_inequiv_shells)]
             #-----
 
             if self.symm_op:
@@ -412,19 +408,19 @@ class SumkLDA:
 
         if dm is None: dm = self.simple_point_dens_mat()
 
-        dens_mat = [dm[self.invshellmap[ish]] for ish in xrange(self.n_inequiv_corr_shells) ]
+        dens_mat = [dm[self.inequiv_to_corr[ish]] for ish in xrange(self.n_inequiv_shells) ]
 
-        self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_corr_shells) ]
-        self.solver_to_sumk = [ {} for ish in range(self.n_inequiv_corr_shells) ]
-        self.solver_to_sumk_block = [ {} for ish in range(self.n_inequiv_corr_shells) ]
+        self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_shells) ]
+        self.solver_to_sumk = [ {} for ish in range(self.n_inequiv_shells) ]
+        self.solver_to_sumk_block = [ {} for ish in range(self.n_inequiv_shells) ]
 
-        if include_shells is None: include_shells=range(self.n_inequiv_corr_shells)
+        if include_shells is None: include_shells=range(self.n_inequiv_shells)
         for ish in include_shells:
 
             self.gf_struct_solver[ish] = {} 
             gf_struct_temp = []
 
-            block_ind_list = [block for block,inner in self.gf_struct_sumk[self.invshellmap[ish]] ]
+            block_ind_list = [block for block,inner in self.gf_struct_sumk[self.inequiv_to_corr[ish]] ]
             for block in block_ind_list:
                 dm = dens_mat[ish][block]
                 dmbool = (abs(dm) > threshold)          # gives an index list of entries larger that threshold
@@ -511,25 +507,25 @@ class SumkLDA:
             for bl in degsh: ss += gf_to_symm[bl] / (1.0*Ndeg)
             for bl in degsh: gf_to_symm[bl] << ss
 
-# for simply dft input, get crystal field splittings. 
+# for simple dft input, get crystal field splittings. 
     def eff_atomic_levels(self):
         """Calculates the effective atomic levels needed as input for the Hubbard I Solver."""
 
         # define matrices for inequivalent shells:
-        eff_atlevels = [ {} for ish in range(self.n_inequiv_corr_shells) ]
-        for ish in range(self.n_inequiv_corr_shells):
-            for bn in self.spin_block_names[self.corr_shells[self.invshellmap[ish]][4]]:
-                eff_atlevels[ish][bn] = numpy.identity(self.corr_shells[self.invshellmap[ish]][3], numpy.complex_)
+        eff_atlevels = [ {} for ish in range(self.n_inequiv_shells) ]
+        for ish in range(self.n_inequiv_shells):
+            for bn in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]][4]]:
+                eff_atlevels[ish][bn] = numpy.identity(self.corr_shells[self.inequiv_to_corr[ish]][3], numpy.complex_)
 
         # Chemical Potential:
-        for ish in xrange(self.n_inequiv_corr_shells):
+        for ish in xrange(self.n_inequiv_shells):
             for ii in eff_atlevels[ish]: eff_atlevels[ish][ii] *= -self.chemical_potential
 
         # double counting term:
         #if hasattr(self,"dc_imp"):
-        for ish in xrange(self.n_inequiv_corr_shells):
+        for ish in xrange(self.n_inequiv_shells):
             for ii in eff_atlevels[ish]:
-                eff_atlevels[ish][ii] -= self.dc_imp[self.invshellmap[ish]][ii]
+                eff_atlevels[ish][ii] -= self.dc_imp[self.inequiv_to_corr[ish]][ii]
 
         # sum over k:
         if not hasattr(self,"Hsumk"):
@@ -567,9 +563,9 @@ class SumkLDA:
                                                            self.rot_mat[icrsh] )
 
         # add to matrix:
-        for ish in xrange(self.n_inequiv_corr_shells):
+        for ish in xrange(self.n_inequiv_shells):
             for bn in eff_atlevels[ish]:
-                eff_atlevels[ish][bn] += self.Hsumk[self.invshellmap[ish]][bn]
+                eff_atlevels[ish][bn] += self.Hsumk[self.inequiv_to_corr[ish]][bn]
 
 
         return eff_atlevels
@@ -599,7 +595,7 @@ class SumkLDA:
 
         for icrsh in xrange(self.n_corr_shells):
 
-            iorb = self.shellmap[icrsh]    # iorb is the index of the inequivalent shell corresponding to icrsh
+            iorb = self.corr_to_inequiv[icrsh]    # iorb is the index of the inequivalent shell corresponding to icrsh
 
             if (iorb==orb):
                 # do this orbital
@@ -681,7 +677,7 @@ class SumkLDA:
         """Puts the impurity self energies for inequivalent atoms into the class, respects the multiplicity of the atoms."""
 
         assert isinstance(Sigma_imp,list), "Sigma_imp has to be a list of Sigmas for the correlated shells, even if it is of length 1!"
-        assert len(Sigma_imp)==self.n_inequiv_corr_shells, "give exactly one Sigma for each inequivalent corr. shell!"
+        assert len(Sigma_imp)==self.n_inequiv_shells, "give exactly one Sigma for each inequivalent corr. shell!"
 
         # init self.Sigma_imp:
         if all(type(gf) == GfImFreq for bname,gf in Sigma_imp[0]):
@@ -697,7 +693,7 @@ class SumkLDA:
 
         # transform the CTQMC blocks to the full matrix:
         for icrsh in xrange(self.n_corr_shells):
-            ish = self.shellmap[icrsh]    # ish is the index of the inequivalent shell corresponding to icrsh
+            ish = self.corr_to_inequiv[icrsh]    # ish is the index of the inequivalent shell corresponding to icrsh
 
             for block,inner in self.gf_struct_solver[ish].iteritems():
                 for ind1 in inner:
@@ -821,15 +817,15 @@ class SumkLDA:
 
         # transform to CTQMC blocks:
         Glocret = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = Gloc[0].mesh)) for block,inner in self.gf_struct_solver[ish].iteritems() ],
-                        make_copies = False) for ish in xrange(self.n_inequiv_corr_shells)  ]
-        for ish in xrange(self.n_inequiv_corr_shells):
+                        make_copies = False) for ish in xrange(self.n_inequiv_shells)  ]
+        for ish in xrange(self.n_inequiv_shells):
 
             for block,inner in self.gf_struct_solver[ish].iteritems():
                 for ind1 in inner:
                     for ind2 in inner:
                         block_imp,ind1_imp = self.solver_to_sumk[ish][(block,ind1)]
                         block_imp,ind2_imp = self.solver_to_sumk[ish][(block,ind2)]
-                        Glocret[ish][block][ind1,ind2] << Gloc[self.invshellmap[ish]][block_imp][ind1_imp,ind2_imp]
+                        Glocret[ish][block][ind1,ind2] << Gloc[self.inequiv_to_corr[ish]][block_imp][ind1_imp,ind2_imp]
 
         # return only the inequivalent shells:
         return Glocret
@@ -925,7 +921,7 @@ class SumkLDA:
 
             if (orb is None):
                 dens = 0.0
-                for ish in range(self.n_inequiv_corr_shells):
+                for ish in range(self.n_inequiv_shells):
                     dens += gnonint[ish].total_density()
             else:
                 dens = gnonint[orb].total_density()
@@ -1014,34 +1010,3 @@ class SumkLDA:
         atomlst = [ lst[i][0] for i in range(len(lst)) ]
         atoms = len(set(atomlst))
         return atoms
-
-##############################
-# DUPLICATED, NEED TO REMOVE #
-##############################
-    def inequiv_shells(self,lst):
-        """
-        The number of inequivalent shells is calculated from lst, and a mapping is given as
-        shellmap(i_corr_shells) = i_inequiv_corr_shells
-        invshellmap(i_inequiv_corr_shells) = i_corr_shells
-        in order to put the Self energies to all equivalent shells, and for extracting Gloc
-        """
-
-        tmp = []
-        self.shellmap = [0 for i in range(len(lst))]
-        self.invshellmap = [0]
-        self.n_inequiv_corr_shells = 1
-        tmp.append( lst[0][1:3] )
-
-        if (len(lst)>1):
-            for i in range(len(lst)-1):
-
-                fnd = False
-                for j in range(self.n_inequiv_corr_shells):
-                    if (tmp[j]==lst[i+1][1:3]):
-                        fnd = True
-                        self.shellmap[i+1] = j
-                if (fnd==False):
-                    self.shellmap[i+1] = self.n_inequiv_corr_shells
-                    self.n_inequiv_corr_shells += 1
-                    tmp.append( lst[i+1][1:3] )
-                    self.invshellmap.append(i+1)

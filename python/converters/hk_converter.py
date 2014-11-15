@@ -82,24 +82,25 @@ class HkConverter(ConverterTools):
             # now read the information about the shells:
             corr_shells = [ [ int(R.next()) for i in range(6) ] for icrsh in range(n_corr_shells) ]    # reads iatom, sort, l, dim, SO flag, irep
 
-            ConverterTools.inequiv_shells(self,corr_shells) # determine the number of inequivalent correlated shells, needed for further reading
+            # determine the number of inequivalent correlated shells and maps, needed for further reading
+            [n_inequiv_shells, corr_to_inequiv, inequiv_to_corr] = ConverterTools.det_shell_equivalence(self,corr_shells)
 
             use_rotations = 0
             rot_mat = [numpy.identity(corr_shells[icrsh][3],numpy.complex_) for icrsh in xrange(n_corr_shells)]
             rot_mat_time_inv = [0 for i in range(n_corr_shells)]
             
             # Representative representations are read from file
-            n_reps = [1 for i in range(self.n_inequiv_corr_shells)]
-            dim_reps = [0 for i in range(self.n_inequiv_corr_shells)]
+            n_reps = [1 for i in range(n_inequiv_shells)]
+            dim_reps = [0 for i in range(n_inequiv_shells)]
             T = []
-            for icrsh in range(self.n_inequiv_corr_shells):
+            for icrsh in range(n_inequiv_shells):
                 n_reps[icrsh] = int(R.next())   # number of representatives ("subsets"), e.g. t2g and eg
                 dim_reps[icrsh] = [int(R.next()) for i in range(n_reps[icrsh])]   # dimensions of the subsets
             
                 # The transformation matrix:
                 # is of dimension 2l+1, it is taken to be standard d (as in Wien2k)
-                ll = 2*corr_shells[self.invshellmap[icrsh]][2]+1
-                lmax = ll * (corr_shells[self.invshellmap[icrsh]][4] + 1)
+                ll = 2*corr_shells[inequiv_to_corr[icrsh]][2]+1
+                lmax = ll * (corr_shells[inequiv_to_corr[icrsh]][4] + 1)
                 T.append(numpy.zeros([lmax,lmax],numpy.complex_))
                 
                 T[icrsh] = numpy.array([[0.0, 0.0, 1.0, 0.0, 0.0],
@@ -196,6 +197,7 @@ class HkConverter(ConverterTools):
         if not (self.lda_subgrp in ar): ar.create_group(self.lda_subgrp) 
         things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
-                          'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping']
+                          'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
+                          'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
         for it in things_to_save: ar[self.lda_subgrp][it] = locals()[it]
         del ar             

@@ -1,3 +1,4 @@
+from pytriqs.archive import HDFArchive
 import h5py
 import sys
 import numpy
@@ -13,6 +14,27 @@ Please keep a copy of your old archive as this script is
 ** not guaranteed ** to work for your archive.
 If you encounter any problem please report it on github!
 """
+
+def det_shell_equivalence(lst):
+    corr_to_inequiv = [0 for i in range(len(lst))]
+    inequiv_to_corr = [0]
+    n_inequiv_shells = 1
+    tmp = [ lst[0][1:3] ]
+    if (len(lst)>1):
+        for i in range(len(lst)-1):
+            fnd = False
+            for j in range(n_inequiv_shells):
+                if (tmp[j]==lst[i+1][1:3]):
+                    fnd = True
+                    corr_to_inequiv[i+1] = j
+            if (fnd==False):
+                corr_to_inequiv[i+1] = n_inequiv_shells
+                n_inequiv_shells += 1
+                tmp.append( lst[i+1][1:3] )
+                inequiv_to_corr.append(i+1)
+    return [n_inequiv_shells, corr_to_inequiv, inequiv_to_corr]
+
+### Main ###
 
 filename = sys.argv[1]
 A = h5py.File(filename)
@@ -37,6 +59,14 @@ for obj in move_to_output:
        print "Moving %s to lda_output ..."%obj
        A.copy('lda_input/'+obj,'lda_output/'+obj)
        del(A['lda_input'][obj])
+
+# Add shell equivalency quantities
+B = A['lda_input']
+corr_shells = HDFArchive(filename,'r')['lda_input']['corr_shells']
+equiv_shell_info = det_shell_equivalence(corr_shells)
+B['n_inequiv_shells'] = equiv_shell_info[0]
+B['corr_to_inequiv'] = equiv_shell_info[1]
+B['inequiv_to_corr'] = equiv_shell_info[2]
 
 # Rename variables
 groups = ['lda_symmcorr_input','lda_symmpar_input']

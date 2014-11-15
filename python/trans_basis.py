@@ -63,7 +63,7 @@ class TransBasis:
         gfrotated = BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = gf_to_rot.mesh)) for block,inner in self.SK.gf_struct_sumk[0] ], make_copies = False)
 
         # transform the CTQMC blocks to the full matrix:
-        ish = self.SK.shellmap[0]    # ish is the index of the inequivalent shell corresponding to icrsh
+        ish = self.SK.corr_to_inequiv[0]    # ish is the index of the inequivalent shell corresponding to icrsh
         for block, inner in self.gf_struct_solver[ish].iteritems():
             for ind1 in inner:
                 for ind2 in inner:

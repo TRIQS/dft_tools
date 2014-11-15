@@ -155,11 +155,11 @@ class SumkLDATools(SumkLDA):
         for bn in self.spin_block_names[self.SO]:
             DOS[bn] = numpy.zeros([n_om],numpy.float_)
 
-        DOSproj     = [ {} for icrsh in range(self.n_inequiv_corr_shells) ]
-        DOSproj_orb = [ {} for icrsh in range(self.n_inequiv_corr_shells) ]
-        for icrsh in range(self.n_inequiv_corr_shells):
-            for bn in self.spin_block_names[self.corr_shells[self.invshellmap[icrsh]][4]]:
-                dl = self.corr_shells[self.invshellmap[icrsh]][3]
+        DOSproj     = [ {} for icrsh in range(self.n_inequiv_shells) ]
+        DOSproj_orb = [ {} for icrsh in range(self.n_inequiv_shells) ]
+        for icrsh in range(self.n_inequiv_shells):
+            for bn in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[icrsh]][4]]:
+                dl = self.corr_shells[self.inequiv_to_corr[icrsh]][3]
                 DOSproj[icrsh][bn] = numpy.zeros([n_om],numpy.float_)
                 DOSproj_orb[icrsh][bn] = numpy.zeros([n_om,dl,dl],numpy.float_)
 
@@ -197,8 +197,8 @@ class SumkLDATools(SumkLDA):
                 for bname,gf in Gloc[icrsh]: Gloc[icrsh][bname] << self.rotloc(icrsh,gf,direction='toLocal')
 
         # Gloc can now also be used to look at orbitally resolved quantities
-        for ish in range(self.n_inequiv_corr_shells):
-            for bname,gf in Gloc[self.invshellmap[ish]]: # loop over spins
+        for ish in range(self.n_inequiv_shells):
+            for bname,gf in Gloc[self.inequiv_to_corr[ish]]: # loop over spins
                 for iom in range(n_om): DOSproj[ish][bname][iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
 
                 DOSproj_orb[ish][bname][:,:,:] += gf.data[:,:,:].imag/(-3.1415926535)
@@ -210,13 +210,13 @@ class SumkLDATools(SumkLDA):
                 for i in range(n_om): f.write("%s    %s\n"%(om_mesh[i],DOS[bn][i]))
                 f.close()
 
-                for ish in range(self.n_inequiv_corr_shells):
+                for ish in range(self.n_inequiv_shells):
                     f=open('DOS%s_proj%s.dat'%(bn,ish),'w')
                     for i in range(n_om): f.write("%s    %s\n"%(om_mesh[i],DOSproj[ish][bn][i]))
                     f.close()
 
-                    for i in range(self.corr_shells[self.invshellmap[ish]][3]):
-                        for j in range(i,self.corr_shells[self.invshellmap[ish]][3]):
+                    for i in range(self.corr_shells[self.inequiv_to_corr[ish]][3]):
+                        for j in range(i,self.corr_shells[self.inequiv_to_corr[ish]][3]):
                             Fname = 'DOS'+bn+'_proj'+str(ish)+'_'+str(i)+'_'+str(j)+'.dat'
                             f=open(Fname,'w')
                             for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj_orb[ish][bn][iom,i,j]))

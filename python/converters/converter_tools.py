@@ -49,30 +49,29 @@ class ConverterTools:
             subprocess.call(["mv","-f","temphgfrt.h5","%s"%self.hdf_file])
             
 
-    def inequiv_shells(self,lst):
+    def det_shell_equivalence(self,lst):
         """
-        The number of inequivalent shells is calculated from lst, and a mapping is given as
-        map(i_corr_shells) = i_inequiv_corr_shells
-        invmap(i_inequiv_corr_shells) = i_corr_shells
+        The number of inequivalent shells is determined from lst, and a mapping is given as
+        corr_to_inequiv(i_corr_shells) = i_inequiv_corr_shells
+        inequiv_to_corr(i_inequiv_corr_shells) = i_corr_shells
         in order to put the self energies to all equivalent shells, and for extracting Gloc
         """
 
-        tmp = []
-        self.shellmap = [0 for i in range(len(lst))]
-        self.invshellmap = [0]
-        self.n_inequiv_corr_shells = 1
-        tmp.append( lst[0][1:3] )
-        
+        corr_to_inequiv = [0 for i in range(len(lst))]
+        inequiv_to_corr = [0]
+        n_inequiv_shells = 1
+        tmp = [ lst[0][1:3] ]
         if (len(lst)>1):
             for i in range(len(lst)-1):
-               
                 fnd = False
-                for j in range(self.n_inequiv_corr_shells):
+                for j in range(n_inequiv_shells):
                     if (tmp[j]==lst[i+1][1:3]):
                         fnd = True
-                        self.shellmap[i+1] = j
+                        corr_to_inequiv[i+1] = j
                 if (fnd==False):
-                    self.shellmap[i+1] = self.n_inequiv_corr_shells
-                    self.n_inequiv_corr_shells += 1
+                    corr_to_inequiv[i+1] = n_inequiv_shells
+                    n_inequiv_shells += 1
                     tmp.append( lst[i+1][1:3] )
-                    self.invshellmap.append(i+1)
+                    inequiv_to_corr.append(i+1)
+
+        return [n_inequiv_shells, corr_to_inequiv, inequiv_to_corr]

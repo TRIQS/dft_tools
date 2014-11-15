@@ -18,7 +18,9 @@ n_spin_blocks_gf -> n_spin_blocks
 block_names -> spin_block_names
 a_list -> block_ind_list
 a,al -> block,inner
-
+shellmap -> corr_to_inequiv
+invshellmap -> inequiv_to_corr
+n_inequiv_corr_shells -> n_inequiv_shells
 **********
 * changed default h5 subgroup names
 
