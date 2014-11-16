@@ -37,7 +37,7 @@ class TransBasis:
         if prop_to_be_diagonal == 'eal':
             prop = self.SK.eff_atomic_levels()[0]
         elif prop_to_be_diagonal == 'dm':
-            prop = self.SK.simple_point_dens_mat()[0]
+            prop = self.SK.density_matrix(method = 'using_point_integration')[0]
         else:
             mpi.report("trans_basis: not a valid quantitiy to be diagonal. Choices are 'eal' or 'dm'.")
             return 0

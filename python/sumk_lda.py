@@ -295,35 +295,46 @@ class SumkLDA:
 	return self.G_upfold
 
 
-    def simple_point_dens_mat(self):
-
-        ntoi = self.spin_names_to_ind[self.SO]
-        bln = self.spin_block_names[self.SO]
-
-        MMat = [numpy.zeros( [self.n_orbitals[0,ntoi[bl]],self.n_orbitals[0,ntoi[bl]]], numpy.complex_) for bl in bln]
-
+    def density_matrix(self, method = 'using_gf', beta=40.0):
+        """Calculate density matrices in one of two ways:
+            if 'using_gf': First get upfolded gf (g_loc is not set up), then density matrix.
+                              It is useful for Hubbard I, and very quick.
+                              No assumption on the hopping structure is made (ie diagonal or not).
+            if 'using_point_integration': Only works for diagonal hopping matrix (true in wien2k).
+        """
         dens_mat = [ {} for icrsh in range(self.n_corr_shells)]
         for icrsh in range(self.n_corr_shells):
             for bl in self.spin_block_names[self.corr_shells[icrsh][4]]:
                 dens_mat[icrsh][bl] = numpy.zeros([self.corr_shells[icrsh][3],self.corr_shells[icrsh][3]], numpy.complex_)
 
         ikarray = numpy.array(range(self.n_k))
-
         for ik in mpi.slice_array(ikarray):
 
-            unchangedsize = all( [ self.n_orbitals[ik,ntoi[bln[ibl]]] == len(MMat[ibl])
-                                   for ibl in range(self.n_spin_blocks[self.SO]) ] )
+            if method == "using_gf":
 
-            if not unchangedsize:
-                MMat = [numpy.zeros( [self.n_orbitals[ik,ntoi[bl]],self.n_orbitals[ik,ntoi[bl]]], numpy.complex_) for bl in bln]
+                G_upfold = self.lattice_gf_matsubara(ik=ik, beta=beta, mu=self.chemical_potential)
+                G_upfold *= self.bz_weights[ik]
+                dm = G_upfold.density()
+                MMat = [dm[bl] for bl in self.spin_block_names[self.SO]]
 
-            for ibl, bl in enumerate(bln):
-                ind = ntoi[bl]
-                for inu in range(self.n_orbitals[ik,ind]):
-                    if (self.hopping[ik,ind,inu,inu] - self.h_field*(1-2*ibl)) < 0.0: # only works for diagonal hopping matrix (true in wien2k)
-                        MMat[ibl][inu,inu] = 1.0
-                    else:
-                        MMat[ibl][inu,inu] = 0.0
+            elif method == "using_point_integration":
+
+                ntoi = self.spin_names_to_ind[self.SO]
+                bln = self.spin_block_names[self.SO]
+                unchangedsize = all( [self.n_orbitals[ik,ntoi[bl]] == self.n_orbitals[0,ntoi[bl]] for bl in bln] )
+                if unchangedsize:
+                    dim = self.n_orbitals[0,ntoi[bl]]
+                else:
+                    dim = self.n_orbitals[ik,ntoi[bl]]
+                MMat = [numpy.zeros( [dim,dim], numpy.complex_) for bl in bln]
+
+                for ibl, bl in enumerate(bln):
+                    ind = ntoi[bl]
+                    for inu in range(self.n_orbitals[ik,ind]):
+                        if (self.hopping[ik,ind,inu,inu] - self.h_field*(1-2*ibl)) < 0.0: # only works for diagonal hopping matrix (true in wien2k)
+                            MMat[ibl][inu,inu] = 1.0
+                        else:
+                            MMat[ibl][inu,inu] = 0.0
 
             for icrsh in range(self.n_corr_shells):
                 for ibl, bn in enumerate(self.spin_block_names[self.corr_shells[icrsh][4]]):
@@ -331,8 +342,12 @@ class SumkLDA:
                     dim = self.corr_shells[icrsh][3]
                     n_orb = self.n_orbitals[ik,isp]
                     projmat = self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb]
-                    dens_mat[icrsh][bn] += self.bz_weights[ik] * numpy.dot( numpy.dot(projmat,MMat[ibl]) ,
-                                                                           projmat.transpose().conjugate() )
+                    if method == "using_gf":
+                        dens_mat[icrsh][bn] += numpy.dot( numpy.dot(projmat,MMat[ibl]),
+                                                          projmat.transpose().conjugate() )
+                    elif method == "using_point_integration":
+                        dens_mat[icrsh][bn] += self.bz_weights[ik] * numpy.dot( numpy.dot(projmat,MMat[ibl]) ,
+                                                                                projmat.transpose().conjugate() )
 
         # get data from nodes:
         for icrsh in range(self.n_corr_shells):
@@ -347,56 +362,10 @@ class SumkLDA:
             for icrsh in range(self.n_corr_shells):
                 for bn in dens_mat[icrsh]:
                     if self.rot_mat_time_inv[icrsh] == 1: dens_mat[icrsh][bn] = dens_mat[icrsh][bn].conjugate()
-                    dens_mat[icrsh][bn] = numpy.dot( numpy.dot(self.rot_mat[icrsh].conjugate().transpose(),dens_mat[icrsh][bn]) ,
+                    dens_mat[icrsh][bn] = numpy.dot( numpy.dot(self.rot_mat[icrsh].conjugate().transpose(),dens_mat[icrsh][bn]),
                                                     self.rot_mat[icrsh] )
 
         return dens_mat
-
-    # Calculate upfolded gf, then density matrix. No assumption on the structure made here (ie diagonal or not).
-    def density_gf(self,beta):
-        """Calculates the density without setting up Gloc. It is useful for Hubbard I, and very quick."""
-
-        dens_mat = [ {} for icrsh in range(self.n_corr_shells)]
-        for icrsh in range(self.n_corr_shells):
-            for bl in self.spin_block_names[self.corr_shells[icrsh][4]]:
-                dens_mat[icrsh][bl] = numpy.zeros([self.corr_shells[icrsh][3],self.corr_shells[icrsh][3]], numpy.complex_)
-
-        ikarray = numpy.array(range(self.n_k))
-
-        for ik in mpi.slice_array(ikarray):
-
-            G_upfold = self.lattice_gf_matsubara(ik=ik, beta=beta, mu=self.chemical_potential)
-            G_upfold *= self.bz_weights[ik]
-            dm = G_upfold.density()
-            MMat = [dm[bl] for bl in self.spin_block_names[self.SO]]
-
-            for icrsh in range(self.n_corr_shells):
-                for ibl, bn in enumerate(self.spin_block_names[self.corr_shells[icrsh][4]]):
-                    isp = self.spin_names_to_ind[self.corr_shells[icrsh][4]][bn]
-                    dim = self.corr_shells[icrsh][3]
-                    n_orb = self.n_orbitals[ik,isp]
-                    projmat = self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb]
-                    dens_mat[icrsh][bn] += numpy.dot( numpy.dot(projmat,MMat[ibl]),
-                                                      projmat.transpose().conjugate() )
-
-        # get data from nodes:
-        for icrsh in range(self.n_corr_shells):
-            for bname in dens_mat[icrsh]:
-                dens_mat[icrsh][bname] = mpi.all_reduce(mpi.world, dens_mat[icrsh][bname], lambda x,y : x+y)
-        mpi.barrier()
-
-        if self.symm_op != 0: dens_mat = self.symmcorr.symmetrize(dens_mat)
-
-        # Rotate to local coordinate system:
-        if self.use_rotations:
-            for icrsh in range(self.n_corr_shells):
-                for bn in dens_mat[icrsh]:
-                    if self.rot_mat_time_inv[icrsh] == 1: dens_mat[icrsh][bn] = dens_mat[icrsh][bn].conjugate()
-                    dens_mat[icrsh][bn] = numpy.dot( numpy.dot(self.rot_mat[icrsh].conjugate().transpose(),dens_mat[icrsh][bn]) ,
-                                                    self.rot_mat[icrsh] )
-
-        return dens_mat
-
 
 
     def analyse_block_structure(self, threshold = 0.00001, include_shells = None, dm = None):
@@ -407,7 +376,7 @@ class SumkLDA:
         self.solver_to_sumk = [ {} for ish in range(self.n_inequiv_shells) ]
         self.solver_to_sumk_block = [ {} for ish in range(self.n_inequiv_shells) ]
 
-        if dm is None: dm = self.simple_point_dens_mat()
+        if dm is None: dm = self.density_matrix(method = 'using_point_integration')
         dens_mat = [ dm[self.inequiv_to_corr[ish]] for ish in range(self.n_inequiv_shells) ]
 
         if include_shells is None: include_shells = range(self.n_inequiv_shells)
@@ -499,7 +468,7 @@ class SumkLDA:
             for bl in degsh: ss += gf_to_symm[bl] / (1.0*Ndeg)
             for bl in degsh: gf_to_symm[bl] << ss
 
-# for simple dft input, get crystal field splittings. 
+    # For simple dft input, get crystal field splittings.
     def eff_atomic_levels(self):
         """Calculates the effective atomic levels needed as input for the Hubbard I Solver."""
 

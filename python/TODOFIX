@@ -58,3 +58,4 @@ setattr(self,it,mpi.bcast(getattr(self,it))
 * replaced long archive saves in converters by setattr construction
 * removed G_upfolded_id -- looked redundant
 * write corr_to_inequiv, inequiv_to_corr, n_inequiv_shells (shellmap, invshellmap, n_inequiv_corr_shells) in converter
+* merge simple_point_dens_mat and density_gf into a single function density_matrix
