@@ -28,24 +28,24 @@ from converter_tools import *
 
 class Wien2kConverter(ConverterTools):
     """
-    Conversion from Wien2k output to an hdf5 file that can be used as input for the SumkLDA class.
+    Conversion from Wien2k output to an hdf5 file that can be used as input for the SumkDFT class.
     """
 
-    def __init__(self, filename, lda_subgrp = 'lda_input', symmcorr_subgrp = 'lda_symmcorr_input', 
-                                 parproj_subgrp='lda_parproj_input', symmpar_subgrp='lda_symmpar_input', 
-                                 bands_subgrp = 'lda_bands_input', repacking = False):
+    def __init__(self, filename, dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input', 
+                                 parproj_subgrp='dft_parproj_input', symmpar_subgrp='dft_symmpar_input', 
+                                 bands_subgrp = 'dft_bands_input', repacking = False):
         """
         Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so on. 
         """
 
-        assert type(filename)==StringType, "Please provide the LDA files' base name as a string."
+        assert type(filename)==StringType, "Please provide the DFT files' base name as a string."
         self.hdf_file = filename+'.h5'
-        self.lda_file = filename+'.ctqmcout'
+        self.dft_file = filename+'.ctqmcout'
         self.symmcorr_file = filename+'.symqmc'
         self.parproj_file = filename+'.parproj'
         self.symmpar_file = filename+'.sympar'
         self.band_file = filename+'.outband'
-        self.lda_subgrp = lda_subgrp
+        self.dft_subgrp = dft_subgrp
         self.symmcorr_subgrp = symmcorr_subgrp
         self.parproj_subgrp = parproj_subgrp
         self.symmpar_subgrp = symmpar_subgrp
@@ -66,10 +66,10 @@ class Wien2kConverter(ConverterTools):
         
         # Read and write only on the master node
         if not (mpi.is_master_node()): return
-        mpi.report("Reading input from %s..."%self.lda_file)
+        mpi.report("Reading input from %s..."%self.dft_file)
 
         # R is a generator : each R.Next() will return the next number in the file
-        R = ConverterTools.read_fortran_file(self,self.lda_file,self.fortran_to_replace)
+        R = ConverterTools.read_fortran_file(self,self.dft_file,self.fortran_to_replace)
         try:
             energy_unit = R.next()                         # read the energy convertion factor
             n_k = int(R.next())                            # read the number of k points
@@ -182,20 +182,20 @@ class Wien2kConverter(ConverterTools):
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
             for it in things_to_set: setattr(self,it,locals()[it])
         except StopIteration : # a more explicit error if the file is corrupted.
-            raise "Wien2k_converter : reading file lda_file failed!"
+            raise "Wien2k_converter : reading file %s failed!"%filename
 
         R.close()
         # Reading done!
         
         # Save it to the HDF:
         ar = HDFArchive(self.hdf_file,'a')
-        if not (self.lda_subgrp in ar): ar.create_group(self.lda_subgrp) 
+        if not (self.dft_subgrp in ar): ar.create_group(self.dft_subgrp) 
         # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
         things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                           'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
                           'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
-        for it in things_to_save: ar[self.lda_subgrp][it] = locals()[it]
+        for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
         del ar
 
         # Symmetries are used, so now convert symmetry information for *correlated* orbitals:

@@ -29,18 +29,18 @@ from converter_tools import *
 
 class HkConverter(ConverterTools):
     """
-    Conversion from general H(k) file to an hdf5 file that can be used as input for the SumK_LDA class.
+    Conversion from general H(k) file to an hdf5 file that can be used as input for the SumKDFT class.
     """
 
-    def __init__(self, hk_file, hdf_file, lda_subgrp = 'lda_input', symmcorr_subgrp = 'lda_symmcorr_input', repacking = False):
+    def __init__(self, hk_file, hdf_file, dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input', repacking = False):
         """
         Init of the class.
         """
 
         assert type(hk_file)==StringType,"hk_file must be a filename"
         self.hdf_file = hdf_file
-        self.lda_file = hk_file
-        self.lda_subgrp = lda_subgrp
+        self.dft_file = hk_file
+        self.dft_subgrp = dft_subgrp
         self.symmcorr_subgrp = symmcorr_subgrp
         self.fortran_to_replace = {'D':'E', '(':' ', ')':' ', ',':' '}
 
@@ -57,10 +57,10 @@ class HkConverter(ConverterTools):
                    
         # Read and write only on the master node
         if not (mpi.is_master_node()): return
-        mpi.report("Reading input from %s..."%self.lda_file)
+        mpi.report("Reading input from %s..."%self.dft_file)
 
         # R is a generator : each R.Next() will return the next number in the file
-        R = ConverterTools.read_fortran_file(self,self.lda_file,self.fortran_to_replace)
+        R = ConverterTools.read_fortran_file(self,self.dft_file,self.fortran_to_replace)
         try:
             energy_unit = 1.0                              # the energy conversion factor is 1.0, we assume eV in files
             n_k = int(R.next())                            # read the number of k points
@@ -188,16 +188,16 @@ class HkConverter(ConverterTools):
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit']
             for it in things_to_set: setattr(self,it,locals()[it])
         except StopIteration : # a more explicit error if the file is corrupted.
-            raise "HK Converter : reading file lda_file failed!"
+            raise "HK Converter : reading file dft_file failed!"
 
         R.close()
 
         # Save to the HDF5:
         ar = HDFArchive(self.hdf_file,'a')
-        if not (self.lda_subgrp in ar): ar.create_group(self.lda_subgrp) 
+        if not (self.dft_subgrp in ar): ar.create_group(self.dft_subgrp) 
         things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                           'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
                           'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
-        for it in things_to_save: ar[self.lda_subgrp][it] = locals()[it]
+        for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
         del ar             

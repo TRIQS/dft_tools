@@ -1,27 +1,27 @@
-from pytriqs.applications.dft.sumk_lda_tools import *
+from pytriqs.applications.dft.sumk_dft_tools import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
 from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
 # Creates the data directory, cd into it:
 #Prepare_Run_Directory(DirectoryName = "Ce-Gamma") 
-lda_filename = 'Ce-gamma'
+dft_filename = 'Ce-gamma'
 Beta =  40
 U_int = 6.00
 J_hund = 0.70
 DC_type = 0                      # 0...FLL, 1...Held, 2... AMF, 3...Lichtenstein
 load_previous = True              # load previous results
-useBlocs = False                 # use bloc structure from LDA input
+useBlocs = False                 # use bloc structure from DFT input
 useMatrix = True                 # use the U matrix calculated from Slater coefficients instead of (U+2J, U, U-J)
 ommin=-4.0
 ommax=6.0
 N_om=2001
 broadening = 0.02
 
-HDFfilename = lda_filename+'.h5'
+HDFfilename = dft_filename+'.h5'
 
 # Convert DMFT input:
 # Can be commented after the first run
-Converter = Wien2kConverter(filename=lda_filename,repacking=True)
+Converter = Wien2kConverter(filename=dft_filename,repacking=True)
 Converter.convert_dmft_input()
 Converter.convert_parproj_input()
 
@@ -48,7 +48,7 @@ previous_present = mpi.bcast(previous_present)
 # from a converted h5 archive.
 
 # Init the SumK class
-SK = SumkLDATools(hdf_file=lda_filename+'.h5',use_lda_blocks=False)
+SK = SumkDFTTools(hdf_file=dft_filename+'.h5',use_dft_blocks=False)
 
 
 if (mpi.is_master_node()):

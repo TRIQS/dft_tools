@@ -4,11 +4,11 @@ from pytriqs.operators import *
 from pytriqs.archive import HDFArchive
 from pytriqs.applications.impurity_solvers.cthyb import *
 from pytriqs.gf.local import *
-from pytriqs.applications.dft.sumk_lda import *
+from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
 from pytriqs.applications.dft.solver_multiband import *
 
-lda_filename='Gd_fcc'
+dft_filename='Gd_fcc'
 U = 9.6
 J = 0.8
 beta = 40
@@ -16,7 +16,7 @@ loops =  10                      # Number of DMFT sc-loops
 sigma_mix = 1.0                  # Mixing factor of Sigma after solution of the AIM
 delta_mix = 1.0                  # Mixing factor of Delta as input for the AIM
 dc_type = 0                      # DC type: 0 FLL, 1 Held, 2 AMF
-use_blocks = True                # use bloc structure from LDA input
+use_blocks = True                # use bloc structure from DFT input
 prec_mu = 0.0001
 
 # Solver parameters
@@ -29,14 +29,14 @@ p["length_cycle"] = 50
 p["n_warmup_cycles"] = 50
 p["n_cycles"] = 5000
 
-Converter = Wien2kConverter(filename=lda_filename, repacking=True)
+Converter = Wien2kConverter(filename=dft_filename, repacking=True)
 Converter.convert_dmft_input()
 mpi.barrier()
 
 previous_runs = 0
 previous_present = False
 if mpi.is_master_node():
-    f = HDFArchive(lda_filename+'.h5','a')
+    f = HDFArchive(dft_filename+'.h5','a')
     if 'dmft_output' in f:
         ar = f['dmft_output']
         if 'iterations' in ar:
@@ -50,7 +50,7 @@ previous_present = mpi.bcast(previous_present)
 # if previous runs are present, no need for recalculating the bloc structure:
 calc_blocs = use_blocks and (not previous_present)
 
-SK=SumkLDA(hdf_file=lda_filename+'.h5',use_lda_blocks=calc_blocs)
+SK=SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=calc_blocs)
 
 n_orb = SK.corr_shells[0][3]
 l = SK.corr_shells[0][2]
@@ -68,7 +68,7 @@ S = Solver(beta=beta, gf_struct=gf_struct)
 
 if (previous_present):
   if (mpi.is_master_node()):
-      S.Sigma_iw << HDFArchive(lda_filename+'.h5','a')['dmft_output']['Sigma_iw']
+      S.Sigma_iw << HDFArchive(dft_filename+'.h5','a')['dmft_output']['Sigma_iw']
   S.Sigma_iw = mpi.bcast(S.Sigma_iw)
 
 for iteration_number in range(1,loops+1):
@@ -90,7 +90,7 @@ for iteration_number in range(1,loops+1):
       if (mpi.is_master_node()):
           # We can do a mixing of Delta in order to stabilize the DMFT iterations:
           S.G0_iw << S.Sigma_iw + inverse(S.G_iw)
-          ar = HDFArchive(lda_filename+'.h5','a')['dmft_output']
+          ar = HDFArchive(dft_filename+'.h5','a')['dmft_output']
           if ((iteration_number>1) or (previous_present)):
               mpi.report("Mixing input Delta with factor %s"%delta_mix)
               Delta = (delta_mix * delta(S.G0_iw)) + (1.0-delta_mix) * ar['Delta_iw']
@@ -111,7 +111,7 @@ for iteration_number in range(1,loops+1):
       # Now mix Sigma and G with factor sigma_mix, if wanted:
       if ((iteration_number>1) or (previous_present)):
           if (mpi.is_master_node()):
-              ar = HDFArchive(lda_filename+'.h5','a')['dmft_output']
+              ar = HDFArchive(dft_filename+'.h5','a')['dmft_output']
               mpi.report("Mixing Sigma and G with factor %s"%sigma_mix)
               S.Sigma_iw << sigma_mix * S.Sigma_iw + (1.0-sigma_mix) * ar['Sigma_iw']
               S.G_iw << sigma_mix * S.G_iw + (1.0-sigma_mix) * ar['G_iw']
@@ -121,7 +121,7 @@ for iteration_number in range(1,loops+1):
 
       # Write the final Sigma and G to the hdf5 archive:
       if (mpi.is_master_node()):
-          ar = HDFArchive(lda_filename+'.h5','a')
+          ar = HDFArchive(dft_filename+'.h5','a')
           ar['iterations'] = previous_runs + iteration_number
           ar['Sigma_iw'] = S.Sigma_iw
           ar['G_iw'] = S.G_iw
@@ -135,6 +135,6 @@ for iteration_number in range(1,loops+1):
       SK.save()
 
 if mpi.is_master_node():
-    ar = HDFArchive("ldadmft.h5",'w')
+    ar = HDFArchive("dftdmft.h5",'w')
     ar["G_iw"] = S.G_iw
     ar["Sigma_iw"] = S.Sigma_iw

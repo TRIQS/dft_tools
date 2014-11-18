@@ -1,5 +1,5 @@
 
-SumK_LDA
+SumK_DFT
 ========
 
 .. toctree::

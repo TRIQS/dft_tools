@@ -7,13 +7,13 @@ if len(sys.argv) < 2:
   sys.exit()
 
 print """
-This script is to remove any SumkLDA generated output from the h5 archive
+This script is to remove any SumkDFT generated output from the h5 archive
 and to restore it to the original post-converter state.
 """
 
 filename = sys.argv[1]
 A = h5py.File(filename)
-for group in ['lda_output','dmft_output']:
+for group in ['dft_output','dmft_output']:
     if group in A: del(A[group])
 A.close()
 

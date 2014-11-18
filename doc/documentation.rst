@@ -13,7 +13,7 @@ A (not so) quick tour
    :maxdepth: 1
 
    interface
-   LDADMFTmain
+   DFTDMFTmain
    advanced
    analysis
    selfcons
@@ -45,6 +45,6 @@ This is the reference manual for the python routines.
    :maxdepth: 2
 
    reference/h5structure
-   reference/sumk_lda
+   reference/sumk_dft
 
 

@@ -20,13 +20,13 @@
 #
 ################################################################################
 
-from sumk_lda import SumkLDA
+from sumk_dft import SumkDFT
 from symmetry import Symmetry
-from sumk_lda_tools import SumkLDATools
+from sumk_dft_tools import SumkDFTTools
 from U_matrix import *
 from converters import *
 
-__all__=['SumkLDA','Symmetry','SumkLDATools','Wien2kConverter','HkConverter',
+__all__=['SumkDFT','Symmetry','SumkDFTTools','Wien2kConverter','HkConverter',
 'U_J_to_radial_integrals', 'U_matrix', 'U_matrix_kanamori',
 'angular_matrix_element', 'clebsch_gordan', 'cubic_names', 'eg_submatrix',
 'reduce_4index_to_2index', 'spherical_to_cubic', 't2g_submatrix',

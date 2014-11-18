@@ -1,4 +1,4 @@
-* remove inequiv_shells from sumk_lda, modify update_archive scripts
+* remove inequiv_shells from sumk_dft, modify update_archive scripts
 
 ==========================
 Substitutions:
@@ -30,9 +30,9 @@ SymmCorr -> dft_symmcorr_input
 SumK_LDA_ParProj -> dft_parproj_input
 SymmPar -> dft_symmpar_input
 
-def __init__(self, filename, lda_subgrp = 'SumK_LDA', symm_subgrp = 'SymmCorr', repacking = False):
+def __init__(self, filename, dft_subgrp = 'SumK_LDA', symm_subgrp = 'SymmCorr', repacking = False):
 -->
-def __init__(self, filename, lda_subgrp = 'dft_input', symm_subgrp = 'dft_symm_input', repacking = False):
+def __init__(self, filename, dft_subgrp = 'dft_input', symm_subgrp = 'dft_symm_input', repacking = False):
 
 declare all groupnames in init
 

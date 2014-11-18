@@ -1,4 +1,4 @@
-from pytriqs.applications.dft.sumk_lda import *
+from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.converters import Wien2kConverter
 from pytriqs.gf.local.block_gf import BlockGf
 from pytriqs.gf.local.gf_imfreq import GfImFreq
@@ -23,7 +23,7 @@ class TransBasis:
             Converter.convert_dmft_input()
             del Converter
 
-            self.SK = SumkLDA(hdf_file=hdf_datafile+'.h5',use_lda_blocks=False)
+            self.SK = SumkDFT(hdf_file=hdf_datafile+'.h5',use_dft_blocks=False)
         else:
             self.SK = SK
 

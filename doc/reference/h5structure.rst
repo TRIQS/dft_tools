@@ -11,7 +11,7 @@ hdf5 data format
 
 In order to be used with the DMFT routines, the following data needs to be provided in the hdf5 file. It contains a lot of information in order to perform DMFT calculations for all kinds of situations, e.g. d-p Hamiltonians, more than one correlated atomic shell, or using symmetry operations for the k-summation. We store all data in subgroups of the hdf5 arxive:
 
-:program:`Main data`: There needs to be one subgroup for the main data of the calculation. The default name of this group is `lda_input`. Its contents are
+:program:`Main data`: There needs to be one subgroup for the main data of the calculation. The default name of this group is `dft_input`. Its contents are
 
   * `energy_unit`, numpy.float. The unit of energy used for the calculation
 

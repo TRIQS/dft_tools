@@ -20,7 +20,7 @@
 ################################################################################
 
 from pytriqs.archive import *
-from pytriqs.applications.dft.sumk_lda import *
+from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
 from pytriqs.applications.impurity_solvers.cthyb import *
 from pytriqs.operators.hamiltonians import set_operator_structure
@@ -29,7 +29,7 @@ from pytriqs.operators.hamiltonians import set_operator_structure
 beta = 40
 
 # Init the SumK class
-SK=SumkLDA(hdf_file='SrVO3.h5',use_lda_blocks=True)
+SK=SumkDFT(hdf_file='SrVO3.h5',use_dft_blocks=True)
 
 num_orbitals = SK.corr_shells[0][3]
 l = SK.corr_shells[0][2]

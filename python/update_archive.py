@@ -40,8 +40,8 @@ filename = sys.argv[1]
 A = h5py.File(filename)
 
 # Rename groups
-old_to_new = {'SumK_LDA':'lda_input', 'SumK_LDA_ParProj':'lda_parproj_input', 
- 'SymmCorr':'lda_symmcorr_input', 'SymmPar':'lda_symmpar_input', 'SumK_LDA_Bands':'lda_bands_input'}
+old_to_new = {'SumK_LDA':'dft_input', 'SumK_LDA_ParProj':'dft_parproj_input', 
+ 'SymmCorr':'dft_symmcorr_input', 'SymmPar':'dft_symmpar_input', 'SumK_LDA_Bands':'dft_bands_input'}
 
 for old, new in old_to_new.iteritems():
     if old not in A.keys(): continue
@@ -49,27 +49,27 @@ for old, new in old_to_new.iteritems():
     A.copy(old,new)
     del(A[old])
 
-# Move output items from lda_input to lda_output
+# Move output items from dft_input to dft_output
 move_to_output = ['gf_struct_solver','map_inv','map',
                   'chemical_potential','dc_imp','dc_energ','deg_shells',
                   'h_field']
 for obj in move_to_output:
-    if obj in A['lda_input'].keys():
-       if not 'lda_output' in A: A.create_group('lda_output')
-       print "Moving %s to lda_output ..."%obj
-       A.copy('lda_input/'+obj,'lda_output/'+obj)
-       del(A['lda_input'][obj])
+    if obj in A['dft_input'].keys():
+       if not 'dft_output' in A: A.create_group('dft_output')
+       print "Moving %s to dft_output ..."%obj
+       A.copy('dft_input/'+obj,'dft_output/'+obj)
+       del(A['dft_input'][obj])
 
 # Add shell equivalency quantities
-B = A['lda_input']
-corr_shells = HDFArchive(filename,'r')['lda_input']['corr_shells']
+B = A['dft_input']
+corr_shells = HDFArchive(filename,'r')['dft_input']['corr_shells']
 equiv_shell_info = det_shell_equivalence(corr_shells)
 B['n_inequiv_shells'] = equiv_shell_info[0]
 B['corr_to_inequiv'] = equiv_shell_info[1]
 B['inequiv_to_corr'] = equiv_shell_info[2]
 
 # Rename variables
-groups = ['lda_symmcorr_input','lda_symmpar_input']
+groups = ['dft_symmcorr_input','dft_symmpar_input']
 
 for group in groups:
     if group not in A.keys(): continue

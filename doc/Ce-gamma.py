@@ -1,8 +1,8 @@
-from pytriqs.applications.dft.sumk_lda import *
+from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
 from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
-lda_filename = 'Ce-gamma'
+dft_filename = 'Ce-gamma'
 beta = 40
 U_int = 6.00
 J_hund = 0.70
@@ -10,17 +10,17 @@ Loops =  2                       # Number of DMFT sc-loops
 Mix = 0.7                        # Mixing factor in QMC
                                  # 1.0 ... all from imp; 0.0 ... all from Gloc
 DC_type = 0                      # 0...FLL, 1...Held, 2... AMF, 3...Lichtenstein
-useBlocs = False                 # use bloc structure from LDA input
+useBlocs = False                 # use bloc structure from DFT input
 useMatrix = True                 # use the U matrix calculated from Slater coefficients instead of (U+2J, U, U-J)
 Natomic = 1
 
-HDFfilename = lda_filename+'.h5'
+HDFfilename = dft_filename+'.h5'
 
 use_val= U_int * (Natomic - 0.5) - J_hund * (Natomic * 0.5 - 0.5)
 
 # Convert DMFT input:
 # Can be commented after the first run
-Converter = Wien2kConverter(filename=lda_filename)
+Converter = Wien2kConverter(filename=dft_filename)
 Converter.convert_dmft_input()
 
 #check if there are previous runs:
@@ -42,7 +42,7 @@ previous_runs    = mpi.bcast(previous_runs)
 previous_present = mpi.bcast(previous_present)
 
 # Init the SumK class
-SK=SumkLDA(hdf_file=lda_filename+'.h5',use_lda_blocks=False)
+SK=SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=False)
 
 Norb = SK.corr_shells[0][3]
 l    = SK.corr_shells[0][2]
@@ -154,7 +154,7 @@ for Iteration_Number in range(1,Loops+1):
 # find exact chemical potential
 if (SK.density_required):
     SK.chemical_potential = SK.find_mu( precision = 0.000001 )
-dN,d = SK.calc_density_correction(filename = lda_filename+'.qdmft')
+dN,d = SK.calc_density_correction(filename = dft_filename+'.qdmft')
 
 mpi.report("Trace of Density Matrix: %s"%d)
 
@@ -166,6 +166,6 @@ if (mpi.is_master_node()):
     DCenerg = ar['DCenerg%s'%itn]
     del ar
     correnerg -= DCenerg[0]
-    f=open(lda_filename+'.qdmft','a')
+    f=open(dft_filename+'.qdmft','a')
     f.write("%.16f\n"%correnerg)
     f.close()

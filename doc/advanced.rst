@@ -7,7 +7,7 @@ Normally, one wants to adjust some more parameters in order to make the calculat
 will see a more advanced example, which is also suited for parallel execution. 
 First, we load the necessary modules::
 
-  from pytriqs.applications.dft.sumk_lda import *
+  from pytriqs.applications.dft.sumk_dft import *
   from pytriqs.applications.dft.converters.wien2k_converter import *
   from pytriqs.applications.dft.solver_multiband import *
   from pytriqs.gf.local import *
@@ -15,7 +15,7 @@ First, we load the necessary modules::
 
 Then we define some parameters::
 
-  lda_filename='srvo3'
+  dft_filename='srvo3'
   U = 2.7
   J = 0.65
   beta = 40
@@ -23,7 +23,7 @@ Then we define some parameters::
   mix = 0.8                        # Mixing factor of Sigma after solution of the AIM
   Delta_mix = 1.0                  # Mixing factor of Delta as input for the AIM
   dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
-  use_blocks = True                # use bloc structure from LDA input
+  use_blocks = True                # use bloc structure from DFT input
   use_matrix = False               # True: Slater parameters, False: Kanamori parameters U+2J, U, U-J
   use_spinflip = False             # use the full rotational invariant interaction?
   prec_mu = 0.0001
@@ -32,10 +32,10 @@ Then we define some parameters::
   warming_iterations = 2000
 
 
-Most of these parameters are self-explaining. The first, `lda_filename`, gives the filename of the input files. 
+Most of these parameters are self-explaining. The first, `dft_filename`, gives the filename of the input files. 
 The next step, as described in the previous section, is to convert the input files::
 
-  Converter = Wien2kConverter(filename=lda_filename, repacking=True)
+  Converter = Wien2kConverter(filename=dft_filename, repacking=True)
   Converter.convert_dmft_input()
   mpi.barrier()
 
@@ -46,7 +46,7 @@ from scratch::
   previous_runs = 0
   previous_present = False
   if mpi.is_master_node():
-      ar = HDFArchive(lda_filename+'.h5','a')
+      ar = HDFArchive(dft_filename+'.h5','a')
       if 'iterations' in ar:
           previous_present = True
           previous_runs = ar['iterations']
@@ -56,18 +56,18 @@ from scratch::
   # if previous runs are present, no need for recalculating the bloc structure:
   calc_blocs = use_blocks and (not previous_present)
 
-Now we can use all this information to initialise the :class:`SumkLDA` class::
+Now we can use all this information to initialise the :class:`SumkDFT` class::
 
-  SK=SumkLDA(hdf_file=lda_filename+'.h5',use_lda_blocks=calc_blocs)
+  SK=SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=calc_blocs)
 
-If there was a previous run, we know already about the block structure, and therefore `UseLDABlocs` is set to `False`.
+If there was a previous run, we know already about the block structure, and therefore `UseDFTBlocs` is set to `False`.
 The next step is to initialise the Solver::
 
   Norb = SK.corr_shells[0][3]
   l = SK.corr_shells[0][2]
   S = SolverMultiBand(beta=beta,n_orb=Norb,gf_struct=SK.gf_struct_solver[0],map=SK.map[0])
 
-As we can see, many options of the solver are set by properties of the :class:`SumkLDA` class, so we don't have
+As we can see, many options of the solver are set by properties of the :class:`SumkDFT` class, so we don't have
 to set them manually. 
 
 If there are previous runs stored in the hdf5 archive, we can now load the self energy
@@ -75,7 +75,7 @@ of the last iteration::
 
   if (previous_present):
     if (mpi.is_master_node()):
-        ar = HDFArchive(lda_filename+'.h5','a')
+        ar = HDFArchive(dft_filename+'.h5','a')
         S.Sigma << ar['SigmaImFreq']
         del ar
     S.Sigma = mpi.bcast(S.Sigma)
@@ -123,7 +123,7 @@ previous section, with some additional refinement::
         # Now mix Sigma and G with factor Mix, if wanted:
         if ((iteration_number>1) or (previous_present)):
             if (mpi.is_master_node()):
-                ar = HDFArchive(lda_filename+'.h5','a')
+                ar = HDFArchive(dft_filename+'.h5','a')
                 mpi.report("Mixing Sigma and G with factor %s"%mix)
                 S.Sigma << mix * S.Sigma + (1.0-mix) * ar['Sigma']
                 S.G << mix * S.G + (1.0-mix) * ar['GF']
@@ -133,7 +133,7 @@ previous section, with some additional refinement::
   
         # Write the final Sigma and G to the hdf5 archive:
         if (mpi.is_master_node()):
-            ar = HDFArchive(lda_filename+'.h5','a')
+            ar = HDFArchive(dft_filename+'.h5','a')
             ar['iterations'] = previous_runs + iteration_number
             ar['Sigma'] = S.Sigma
             ar['GF'] = S.G
@@ -146,7 +146,7 @@ previous section, with some additional refinement::
         #Save stuff:
         SK.save()
                                 
-This is all we need for the LDA+DMFT calculation. At the end, all results are stored in the hdf5 output file.
+This is all we need for the DFT+DMFT calculation. At the end, all results are stored in the hdf5 output file.
 
 
 

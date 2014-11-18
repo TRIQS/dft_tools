@@ -28,13 +28,13 @@ import pytriqs.utility.mpi as mpi
 from pytriqs.archive import *
 from symmetry import *
 
-class SumkLDA:
+class SumkDFT:
     """This class provides a general SumK method for combining ab-initio code and pytriqs."""
 
 
-    def __init__(self, hdf_file, mu = 0.0, h_field = 0.0, use_lda_blocks = False, 
-	         lda_data = 'lda_input', symmcorr_data = 'lda_symmcorr_input', parproj_data = 'lda_parproj_input', 
-                 symmpar_data = 'lda_symmpar_input', bands_data = 'lda_bands_input', lda_output = 'lda_output'):
+    def __init__(self, hdf_file, mu = 0.0, h_field = 0.0, use_dft_blocks = False, 
+	         dft_data = 'dft_input', symmcorr_data = 'dft_symmcorr_input', parproj_data = 'dft_parproj_input', 
+                 symmpar_data = 'dft_symmpar_input', bands_data = 'dft_bands_input', dft_output = 'dft_output'):
         """
         Initialises the class from data previously stored into an HDF5
         """
@@ -43,12 +43,12 @@ class SumkLDA:
             mpi.report("Give a string for the HDF5 filename to read the input!")
         else:
             self.hdf_file = hdf_file
-            self.lda_data = lda_data
+            self.dft_data = dft_data
             self.symmcorr_data = symmcorr_data
             self.parproj_data = parproj_data
             self.symmpar_data = symmpar_data
             self.bands_data = bands_data
-            self.lda_output = lda_output
+            self.dft_output = dft_output
             self.G_upfold = None
             self.h_field = h_field
 
@@ -57,7 +57,7 @@ class SumkLDA:
                               'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                               'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
                               'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
-            self.subgroup_present, self.value_read = self.read_input_from_hdf(subgrp = self.lda_data, things_to_read = things_to_read)
+            self.subgroup_present, self.value_read = self.read_input_from_hdf(subgrp = self.dft_data, things_to_read = things_to_read)
 
             if self.SO and (abs(self.h_field) > 0.000001):
                 self.h_field = 0.0
@@ -79,7 +79,7 @@ class SumkLDA:
             #-----
             # If these quantities are not in HDF, set them up
             optional_things = ['gf_struct_solver','sumk_to_solver','solver_to_sumk','solver_to_sumk_block','chemical_potential','dc_imp','dc_energ','deg_shells']
-            self.subgroup_present, self.value_read = self.read_input_from_hdf(subgrp = self.lda_output, things_to_read = [], 
+            self.subgroup_present, self.value_read = self.read_input_from_hdf(subgrp = self.dft_output, things_to_read = [], 
                                                                               optional_things = optional_things)
             if (not self.subgroup_present) or (not self.value_read['gf_struct_solver']):
                 # No gf_struct was stored in HDF, so first set a standard one:
@@ -112,7 +112,7 @@ class SumkLDA:
                 self.symmcorr = Symmetry(hdf_file,subgroup=self.symmcorr_data)
 
             # Analyse the block structure and determine the smallest blocks, if desired
-            if use_lda_blocks: dm = self.analyse_block_structure()
+            if use_dft_blocks: dm = self.analyse_block_structure()
 
             # Now save new things to HDF5: 
             # FIXME WHAT HAPPENS TO h_field? INPUT TO __INIT__? ADD TO OPTIONAL_THINGS?
@@ -175,10 +175,10 @@ class SumkLDA:
 
         if not (mpi.is_master_node()): return # do nothing on nodes
         ar = HDFArchive(self.hdf_file,'a')
-        if not self.lda_output in ar: ar.create_group(self.lda_output)
+        if not self.dft_output in ar: ar.create_group(self.dft_output)
         for it in things_to_save: 
             try:
-                ar[self.lda_output][it] = getattr(self,it)
+                ar[self.dft_output][it] = getattr(self,it)
             except:
                 mpi.report("%s not found, and so not stored."%it)
         del ar
@@ -243,7 +243,7 @@ class SumkLDA:
 
 
     def lattice_gf_matsubara(self,ik,mu,beta=40,with_Sigma=True):
-        """Calculates the lattice Green function from the LDA hopping and the self energy at k-point number ik
+        """Calculates the lattice Green function from the DFT hopping and the self energy at k-point number ik
            and chemical potential mu."""
 
         ntoi = self.spin_names_to_ind[self.SO]
@@ -617,9 +617,9 @@ class SumkLDA:
 
     def set_dc(self,dens_mat,U_interact,J_hund,orb=0,use_dc_formula=0,use_val=None):
         """Sets the double counting term for inequiv orbital orb:
-           use_dc_formula = 0: LDA+U FLL double counting,
+           use_dc_formula = 0: fully-localised limit (FLL),
            use_dc_formula = 1: Held's formula,
-           use_dc_formula = 2: AMF.
+           use_dc_formula = 2: around mean-field (AMF).
            Be sure that you are using the correct interaction Hamiltonian!"""
 
         for icrsh in range(self.n_corr_shells):

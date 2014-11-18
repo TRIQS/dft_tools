@@ -12,15 +12,15 @@ changes in the charge density due to correlation effects. In the following, we d
 :program:`TRIQS` tools in combination with the :program:`Wien2k` program, although an extension to other 
 codes is also possible.
 
-We can use the DMFT script as introduced in sections :ref:`LDADMFTmain` and :ref:`advanced`, with a few simple 
+We can use the DMFT script as introduced in sections :ref:`DFTDMFTmain` and :ref:`advanced`, with a few simple 
 modifications. First, in order to be compatible with the :program:`Wien2k` standards, the DMFT script has to be 
 named ``case.py``, where `case` is the name of the :program:`Wien2k` calculation, see the section 
-:ref:`interfacetowien` for details. We can then set the variable `lda_filename` dynamically::
+:ref:`interfacetowien` for details. We can then set the variable `dft_filename` dynamically::
 
   import os
-  lda_filename = os.getcwd().rpartition('/')[2]
+  dft_filename = os.getcwd().rpartition('/')[2]
 
-This sets the `lda_filename` to the name of the current directory. The remainder of the script is identical to 
+This sets the `dft_filename` to the name of the current directory. The remainder of the script is identical to 
 that for one-shot calculations. Only at the very end do we have to calculate the modified charge density,
 and store it in a format such that :program:`Wien2k` can read it. Therefore, after the DMFT loop that we saw in the 
 previous section, we symmetrise the self energy, and recalculate the impurity Green function::
@@ -35,12 +35,12 @@ Now we calculate the modified charge density::
   # find exact chemical potential
   SK.put_Sigma(Sigma_imp = [ S.Sigma ])
   chemical_potential = SK.find_mu( precision = 0.000001 )
-  dN, d = SK.calc_density_correction(filename = lda_filename+'.qdmft')
+  dN, d = SK.calc_density_correction(filename = dft_filename+'.qdmft')
   SK.save()
 
 First we find the chemical potential with high precision, and after that the routine 
 ``SK.calc_density_correction(filename)`` calculates the density matrix including correlation effects. The result
-is stored in the file `lda_filename.qdmft`, which is later read by the :program:`Wien2k` program. The last statement saves 
+is stored in the file `dft_filename.qdmft`, which is later read by the :program:`Wien2k` program. The last statement saves 
 the chemical potential into the hdf5 archive.
 We need also the correlation energy, which we evaluate by the Migdal formula::
 
@@ -53,7 +53,7 @@ From this value, we substract the double counting energy::
 and save this value too::
 
   if (mpi.is_master_node()):
-    f=open(lda_filename+'.qdmft','a')
+    f=open(dft_filename+'.qdmft','a')
     f.write("%.16f\n"%correnerg)
     f.close()
 
@@ -83,5 +83,5 @@ For practical purposes, you keep the number of DMFT loops within one DFT cycle l
 unstable convergence, you have to adjust the parameters such as
 `loops`, `mix`, or `Delta_mix` to improve the convergence.
 
-In the next section, :ref:`LDADMFTtutorial`, we will see in a detailed
+In the next section, :ref:`DFTDMFTtutorial`, we will see in a detailed
 example how such a self consistent calculation is performed.

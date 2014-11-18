@@ -33,11 +33,11 @@ an hdf5 arxive, named :file:`material_of_interest.h5`, where all the data is sto
 
 There are three optional parameters to the Constructor:
 
-  * `lda_subgrp`: We store all data in subgroups of the hdf5 arxive. For the main data
+  * `dft_subgrp`: We store all data in subgroups of the hdf5 arxive. For the main data
     that is needed for the DMFT loop, we use the subgroup specified by this optional parameter.
-    The default value `lda_input` is used as the subgroup name.
+    The default value `dft_input` is used as the subgroup name.
   * `symmcorr_subgrp`: In this subgroup we store all the data for applying the symmetry 
-    operations in the DMFT loop. The default value is `lda_symmcorr_input`.
+    operations in the DMFT loop. The default value is `dft_symmcorr_input`.
   * `repacking`: If true, and the hdf5 file already exists, the system command :program:`h5repack` 
     is invoked. This command ensures a minimal file size of the hdf5
     file. The default value is `False`. If you wish to use this, ensure
@@ -48,13 +48,13 @@ hdf5 arxive by::
 
   Converter.convert_dmft_input()
 
-This reads all the data, and stores it in the subgroup `lda_subgrp`, as discussed above. 
+This reads all the data, and stores it in the subgroup `dft_subgrp`, as discussed above. 
 In this step, the files :file:`material_of_interest.ctqmcout` and :file:`material_of_interest.symqmc`
 have to be present in the working directory.
 
 After this step, all the necessary information for the DMFT loop is stored in the hdf5 arxive, where
 the string variable `Converter.hdf_file` gives the file name of the arxive.
-You can now proceed with :ref:`LDADMFTmain`.
+You can now proceed with :ref:`DFTDMFTmain`.
 
 
 Data for post-processing
@@ -70,8 +70,8 @@ of :program:`Wien2k`, you have to use::
 This reads the files :file:`material_of_interest.parproj` and :file:`material_of_interest.sympar`.
 Again, there are two optional parameters
 
-  * `parproj_subgrp`: The subgroup for partial projectors data. The default value is `lda_parproj_input`.
-  * `symmpar_subgrp`: The subgroup for symmetry operations data. The default value is `lda_symmpar_input`.
+  * `parproj_subgrp`: The subgroup for partial projectors data. The default value is `dft_parproj_input`.
+  * `symmpar_subgrp`: The subgroup for symmetry operations data. The default value is `dft_symmpar_input`.
 
 Another routine of the class allows to read the input for plotting the momentum-resolved
 spectral function. It is done by::
@@ -79,7 +79,7 @@ spectral function. It is done by::
   Converter.convert_bands_input()
 
 The optional parameter that controls where the data is stored is `bands_subgrp`, 
-with the default value `lda_bands_input`.
+with the default value `dft_bands_input`.
 
 After having converted this input, you can further proceed with the :ref:`analysis`.
 
@@ -87,7 +87,7 @@ MPI issues
 ----------
 
 The interface package is written such that all the operations are done only on the master node.
-The broadcasting to the nodes has to be done by hand. The :class:`SumkLDA`, described in the
+The broadcasting to the nodes has to be done by hand. The :class:`SumkDFT`, described in the
 following section, takes care of this automatically.
 
 Interfaces to other packages

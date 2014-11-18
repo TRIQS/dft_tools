@@ -1,33 +1,33 @@
-.. index:: LDA+DMFT calculation
+.. index:: DFT+DMFT calculation
 
-.. _LDADMFTmain:
+.. _DFTDMFTmain:
 
-The LDA+DMFT calculation
+The DFT+DMFT calculation
 ========================
 
-After having set up the hdf5 arxive, we can now do our LDA+DMFT calculation. It consists of
+After having set up the hdf5 arxive, we can now do our DFT+DMFT calculation. It consists of
 initialisation steps, and the actual DMFT self consistency loop.
 
-.. index:: initialisation of LDA+DMFT
+.. index:: initialisation of DFT+DMFT
 
 Initialisation of the calculation
 ---------------------------------
 
 Before doing the calculation, we have to intialize all the objects that we will need. The first thing is the 
-:class:`SumkLDA` class. It contains all basic routines that are necessary to perform a summation in k-space 
+:class:`SumkDFT` class. It contains all basic routines that are necessary to perform a summation in k-space 
 to get the local quantities used in DMFT. It is initialized by::
 
-  from pytriqs.applications.dft.sumk_lda import *
-  SK = SumkLDA(hdf_file = filename)
+  from pytriqs.applications.dft.sumk_dft import *
+  SK = SumkDFT(hdf_file = filename)
 
 The only necessary parameter is the filename of the hdf5 archive. In addition, there are some optional parameters:
 
   * `mu`: The chemical potential at initialization. This value is only used if no other value is found in the hdf5 arxive. The default value is 0.0.
   * `h_field`: External magnetic field. The default value is 0.0.
-  * `use_lda_blocks`: If true, the structure of the density matrix is analysed at initialisation, and non-zero matrix elements 
+  * `use_dft_blocks`: If true, the structure of the density matrix is analysed at initialisation, and non-zero matrix elements 
     are identified. The DMFT calculation is then restricted to these matrix elements, yielding a more efficient solution of the 
     local interaction problem. Degeneracies in orbital and spin space are also identified and stored for later use. The default value is `False`. 
-  * `lda_data`, `symmcorr_data`, `parproj_data`, `symmpar_data`, `bands_data`: These string variables define the subgroups in the hdf5 arxive,
+  * `dft_data`, `symmcorr_data`, `parproj_data`, `symmpar_data`, `bands_data`: These string variables define the subgroups in the hdf5 arxive,
     where the corresponding information is stored. The default values are consistent with those in :ref:`interfacetowien`.
 
 At initialisation, the necessary data is read from the hdf5 file. If a calculation is restarted based on a previous hdf5 file, information on
@@ -47,7 +47,7 @@ The necessary parameters are the inverse temperature `beta`, the Coulomb interac
 and the number of orbitals `n_orb`. There are again several optional parameters that allow the tailoring of the local Hamiltonian to
 specific needs. They are:
 
-  * `gf_struct`: The block structure of the local density matrix given in the format calculated by :class:`SumkLDA`.
+  * `gf_struct`: The block structure of the local density matrix given in the format calculated by :class:`SumkDFT`.
   * `map`: If `gf_struct` is given as parameter, `map` also must be given. This is the mapping from the block structure to a general 
     up/down structure.
 
@@ -76,11 +76,11 @@ parameters for which default values are set. Generally, they should be reset for
   * `length_cycle`: Number of CTQMC moves per one cycle.
   * `n_warmup_cycles`: Number of initial CTQMC cycles before measurements start. Usually of order of 10000, sometimes needs to be increased significantly.
 
-Most of above parameters can be taken directly from the :class:`SumkLDA` class, without defining them by hand. We will see a specific example 
+Most of above parameters can be taken directly from the :class:`SumkDFT` class, without defining them by hand. We will see a specific example 
 at the end of this tutorial.
 
 
-.. index:: LDA+DMFT loop, one-shot calculation
+.. index:: DFT+DMFT loop, one-shot calculation
 
 Doing the DMFT loop
 -------------------
@@ -104,7 +104,7 @@ set up the loop over DMFT iterations and the self-consistency condition::
           SK.set_dc( dm, U_interact = U, J_hund = J, use_dc_formula = 0)     # Set the double counting term
           SK.save()                                  # save everything to the hdf5 arxive
 
-These basic steps are enough to set up the basic DMFT Loop. For a detailed description of the :class:`SumkLDA` routines,
+These basic steps are enough to set up the basic DMFT Loop. For a detailed description of the :class:`SumkDFT` routines,
 see the reference manual. After the self-consistency steps, the solution of the Anderson impurity problem is calculation by CTQMC. 
 Different to model calculations, we have to do a few more steps after this, because of the double-counting correction. We first 
 calculate the density of the impurity problem. Then, the routine `set_dc` takes as parameters this density matrix, the 
@@ -119,11 +119,11 @@ At the end of the calculation, we can save the Greens function and self energy i
   from pytriqs.archive import HDFArchive
   import pytriqs.utility.mpi as mpi
   if mpi.is_master_node():
-      ar = HDFArchive("YourLDADMFTcalculation.h5",'w')
+      ar = HDFArchive("YourDFTDMFTcalculation.h5",'w')
       ar["G"] = S.G
       ar["Sigma"] = S.Sigma
 
 This is it! 
 
-These are the essential steps to do a one-shot LDA+DMFT calculation. For full charge-self consistent calculations, there are some more things
+These are the essential steps to do a one-shot DFT+DMFT calculation. For full charge-self consistent calculations, there are some more things
 to consider, which we will see later on.

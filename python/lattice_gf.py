@@ -1,5 +1,5 @@
     def lattice_gf(self, ik, mu, iw_or_w="iw", beta=40, broadening, mesh=None, with_Sigma=True, with_dc=True): 
-        """Calculates the lattice Green function from the LDA hopping and the self energy at k-point number ik
+        """Calculates the lattice Green function from the DFT hopping and the self energy at k-point number ik
            and chemical potential mu."""
 
         ntoi = self.spin_names_to_ind[self.SO]

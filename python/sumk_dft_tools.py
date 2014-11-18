@@ -26,18 +26,18 @@ import pytriqs.utility.dichotomy as dichotomy
 from pytriqs.gf.local import *
 import pytriqs.utility.mpi as mpi
 from symmetry import *
-from sumk_lda import SumkLDA
+from sumk_dft import SumkDFT
 
-class SumkLDATools(SumkLDA):
-    """Extends the SumkLDA class with some tools for analysing the data."""
+class SumkDFTTools(SumkDFT):
+    """Extends the SumkDFT class with some tools for analysing the data."""
 
 
-    def __init__(self, hdf_file, mu = 0.0, h_field = 0.0, use_lda_blocks = False, lda_data = 'lda_input', symmcorr_data = 'lda_symmcorr_input',
-                 parproj_data = 'lda_parproj_input', symmpar_data = 'lda_symmpar_input', bands_data = 'lda_bands_input'):
+    def __init__(self, hdf_file, mu = 0.0, h_field = 0.0, use_dft_blocks = False, dft_data = 'dft_input', symmcorr_data = 'dft_symmcorr_input',
+                 parproj_data = 'dft_parproj_input', symmpar_data = 'dft_symmpar_input', bands_data = 'dft_bands_input'):
 
         self.G_upfold_refreq = None
-        SumkLDA.__init__(self, hdf_file=hdf_file, mu=mu, h_field=h_field, use_lda_blocks=use_lda_blocks,
-                          lda_data=lda_data, symmcorr_data=symmcorr_data, parproj_data=parproj_data, 
+        SumkDFT.__init__(self, hdf_file=hdf_file, mu=mu, h_field=h_field, use_dft_blocks=use_dft_blocks,
+                          dft_data=dft_data, symmcorr_data=symmcorr_data, parproj_data=parproj_data, 
                           symmpar_data=symmpar_data, bands_data=bands_data)
 
 

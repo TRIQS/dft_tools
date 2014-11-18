@@ -11,10 +11,10 @@ This section explains how to use some tools of the package in order to analyse t
   There are methods included e.g. in the :program:`ALPS` package, which can be used for these purposes. But
   be careful: All these methods have to be used very carefully!
 
-The tools for analysis can be found in an extension of the :class:`SumkLDA` class and are
-loaded by importing the module :class:`SumkLDATools`::
+The tools for analysis can be found in an extension of the :class:`SumkDFT` class and are
+loaded by importing the module :class:`SumkDFTTools`::
 
-  from pytriqs.applications.dft.sumk_lda_tools import *
+  from pytriqs.applications.dft.sumk_dft_tools import *
 
 There are two practical tools for which you do not need a self energy on the real axis, namely the:
 
@@ -26,12 +26,12 @@ The self energy on the real frequency axis is necessary in computing the:
   * momentum-integrated spectral function including self-energy effects,
   * momentum-resolved spectral function (i.e. ARPES).
 
-The initialisation of the class is equivalent to that of the :class:`SumkLDA` 
+The initialisation of the class is equivalent to that of the :class:`SumkDFT` 
 class::
 
-  SK = SumkLDATools(hdf_file = filename)
+  SK = SumkDFTTools(hdf_file = filename)
 
-Note that all routines available in :class:`SumkLDA` are also available here. 
+Note that all routines available in :class:`SumkDFT` are also available here. 
 
 Routines without real-frequency self energy
 -------------------------------------------
@@ -72,7 +72,7 @@ Most conveniently, it is stored as a real frequency :class:`BlockGf` object in t
 
 You may also store it in text files. If all blocks of your self energy are of dimension 1x1, you store them in `fname_(block)0.dat` files. Here `(block)` is a block name (`up`, `down`, or combined `ud`). In the case when you have matrix blocks, you store them in `(i)_(j).dat` files, where `(i)` and `(j)` are the orbital indices, in the `fname_(block)` directory.
 
-This self energy is loaded and put into the :class:`SumkLDA` class by the function:: 
+This self energy is loaded and put into the :class:`SumkDFT` class by the function:: 
 
   SK.constr_Sigma_real_axis(filename, hdf=True, hdf_dataset='SigmaReFreq',n_om=0)
 

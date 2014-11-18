@@ -1,11 +1,11 @@
 .. index:: tutorial on Ce within Hub.-I approximation
 
-.. _LDADMFTtutorial:
+.. _DFTDMFTtutorial:
 
-LDA+DMFT tutorial: Ce with Hubbard-I approximation
+DFT+DMFT tutorial: Ce with Hubbard-I approximation
 ==================================================
 
-In this tutorial we will perform LDA+DMFT :program:`Wien2k` calculations of the high-temperature :math:`\gamma`-phase of Ce employing the 
+In this tutorial we will perform DFT+DMFT :program:`Wien2k` calculations of the high-temperature :math:`\gamma`-phase of Ce employing the 
 Hubbard-I approximation for its localized *4f* shell.
 First we create the Wien2k :file:`Ce-gamma.struct` file as described in `Wien2k manual <http://www.wien2k.at/reg_user/textbooks/usersguide.pdf>`_  
 for the :math:`\gamma`-Ce fcc structure with lattice parameter of 9.75 a.u.
@@ -61,7 +61,7 @@ This program produces the following files:
 
  * :file:`Ce-gamma.ctqmcout` and :file:`Ce-gamma.symqmc` containing projector operators and symmetry operations for orthonormalized Wannier orbitals, respectively.
  * :file:`Ce-gamma.parproj` and :file:`Ce-gamma.sympar` containing projector operators and symmetry operations for uncorrelated states, respectively. These files are needed for projected density-of-states or spectral-function calculations.
- * :file:`Ce-gamma.oubwin` needed for the charge desity recalculation in the case of fully self-consistent LDA+DMFT run (see below).
+ * :file:`Ce-gamma.oubwin` needed for the charge desity recalculation in the case of fully self-consistent DFT+DMFT run (see below).
 
 Now we have all necessary input from :program:`Wien2k` for running DMFT calculations. 
 
@@ -73,18 +73,18 @@ Now we have all necessary input from :program:`Wien2k` for running DMFT calculat
 Hubbard-I calculations in TRIQS
 -------------------------------
 
-In order to run LDA+DMFT calculations within Hubbard-I we need the corresponding python script, :ref:`Ce-gamma-script`. 
+In order to run DFT+DMFT calculations within Hubbard-I we need the corresponding python script, :ref:`Ce-gamma-script`. 
 It is generally similar to the script for the case of DMFT calculations with the CT-QMC solver (see :ref:`advanced`), 
 however there are also some differences. First, instead of *pytriqs.applications.dft.solver_multiband* we import Hubbard-I solver ::
 
    from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
-The Hubbard-I solver is very fast and we do not need to take into account the LDA blocking structure or use any approximation for the *U*-matrix ::
+The Hubbard-I solver is very fast and we do not need to take into account the DFT blocking structure or use any approximation for the *U*-matrix ::
 
-   use_blocks = False                 # use bloc structure from LDA input
+   use_blocks = False                 # use bloc structure from DFT input
    use_matrix = True                  # use the U matrix calculated from Slater coefficients instead of (U+2J, U, U-J)
 
-We load and convert the :program:`dmftproj` output and initialize the *SumkLDA* class as described in :ref:`LDADMFTmain` and :ref:`advanced` and then set up the Hubbard-I solver ::
+We load and convert the :program:`dmftproj` output and initialize the *SumkDFT* class as described in :ref:`DFTDMFTmain` and :ref:`advanced` and then set up the Hubbard-I solver ::
 
  
    S = Solver(beta = beta, l = l)
@@ -96,7 +96,7 @@ The Hubbard-I initialization `Solver` has also optional parameters one may use:
 
   * `n_msb`: the number of Matsubara frequencies used. The default is `n_msb=1025`.
   * `use_spin_orbit`: if set 'True' the solver is run with spin-orbit coupling
-included. To perform actual LDA+DMFT calculations with spin-orbit one should
+included. To perform actual DFT+DMFT calculations with spin-orbit one should
 also run   :program:`Wien2k` and :program:`dmftproj` in spin-polarized mode and
 with spin-orbit included. By default, `use_spin_orbit=False`.
 
@@ -127,11 +127,11 @@ Green's function and then save them in the hdf5 file .
 Then the double counting is recalculated and the correlation energy is computed with the Migdal formula and stored in hdf5.
 
 Finally, we compute the modified charge density and save it as well as correlational correction to the total energy in 
-:file:`Ce-gamma.qdmft` file, which is then read by :program:`lapw2` in the case of self-consistent LDA+DMFT calculations.
+:file:`Ce-gamma.qdmft` file, which is then read by :program:`lapw2` in the case of self-consistent DFT+DMFT calculations.
 
-.. index:: running LDA+DMFT calculations
+.. index:: running DFT+DMFT calculations
 
-Running LDA+DMFT calculations
+Running DFT+DMFT calculations
 -----------------------------
 
 After having prepared the script one may run one-shot DMFT calculations by
@@ -148,12 +148,12 @@ enables MPI. The exact form of this command will, of course, depend on
 mpi-launcher installed in your system.
 
 Instead of doing one-shot run one may also  perform fully self-consistent
-LDA+DMFT calculations, as we will do in this tutorial. We launch these
+DFT+DMFT calculations, as we will do in this tutorial. We launch these
 calculations as follows ::
 
    run_triqs -qdmft
 
-where `-qdmft` flag turns on LDA+DMFT calculations with :program:`Wien2k`. We
+where `-qdmft` flag turns on DFT+DMFT calculations with :program:`Wien2k`. We
 use here the default convergence criterion in :program:`Wien2k` (convergence to
 0.1 mRy in energy). 
 
@@ -193,9 +193,9 @@ The corresponding script :ref:`Ce-gamma_DOS-script` contains several new paramet
    N_om=2001     # number of points on the real-energy axis mesh
    broadening = 0.02 # broadening (the imaginary shift of the real-energy mesh)
 
-Then one needs to load projectors needed for calculations of corresponding projected densities of states, as well as corresponding symmetries. To get access to analysing tools we initialize the `SumkLDATools` class ::
+Then one needs to load projectors needed for calculations of corresponding projected densities of states, as well as corresponding symmetries. To get access to analysing tools we initialize the `SumkDFTTools` class ::
 
-   SK = SumkLDATools(hdf_file=lda_filename+'.h5', use_lda_blocks=False)
+   SK = SumkDFTTools(hdf_file=dft_filename+'.h5', use_dft_blocks=False)
 
 Then after the solver initialization and setting up atomic levels we compute atomic Green's function and self-energy on the real axis::
 

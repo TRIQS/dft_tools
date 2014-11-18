@@ -28,7 +28,7 @@
                     sk = R.next()
 
             except StopIteration : # a more explicit error if the file is corrupted.
-                raise "SumkLDA.read_Sigma_ME : reading mesh failed!"
+                raise "SumkDFT.read_Sigma_ME : reading mesh failed!"
             R.close()
 
             # check whether the mesh is uniform
@@ -58,7 +58,7 @@
                                 isig = R.next()
                                 g.data[iom,iL,iR]=rsig+1j*isig
                         except StopIteration : # a more explicit error if the file is corrupted.
-                            raise "SumkLDA.read_Sigma_ME : reading Sigma from file failed!"
+                            raise "SumkDFT.read_Sigma_ME : reading Sigma from file failed!"
                         R.close()
 
 
