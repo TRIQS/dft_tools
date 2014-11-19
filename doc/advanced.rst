@@ -144,7 +144,7 @@ previous section, with some additional refinement::
         SK.set_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
   
         #Save stuff:
-        SK.save()
+        SK.save(['chemical_potential','dc_imp','dc_energ'])
                                 
 This is all we need for the DFT+DMFT calculation. At the end, all results are stored in the hdf5 output file.
 

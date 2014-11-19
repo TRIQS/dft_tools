@@ -36,7 +36,7 @@ Now we calculate the modified charge density::
   SK.put_Sigma(Sigma_imp = [ S.Sigma ])
   chemical_potential = SK.find_mu( precision = 0.000001 )
   dN, d = SK.calc_density_correction(filename = dft_filename+'.qdmft')
-  SK.save()
+  SK.save(['chemical_potential','dc_imp','dc_energ'])
 
 First we find the chemical potential with high precision, and after that the routine 
 ``SK.calc_density_correction(filename)`` calculates the density matrix including correlation effects. The result

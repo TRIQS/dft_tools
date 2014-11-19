@@ -131,8 +131,8 @@ for iteration_number in range(1,loops+1):
       # Set the double counting
       SK.set_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
 
-      # Save stuff into the hdf5 archive:
-      SK.save()
+      # Save stuff into the dft_output group of hdf5 archive in case of rerun:
+      SK.save(['chemical_potential','dc_imp','dc_energ'])
 
 if mpi.is_master_node():
     ar = HDFArchive("dftdmft.h5",'w')

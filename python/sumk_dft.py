@@ -114,11 +114,6 @@ class SumkDFT:
             # Analyse the block structure and determine the smallest blocks, if desired
             if use_dft_blocks: dm = self.analyse_block_structure()
 
-            # Now save new things to HDF5: 
-            # FIXME WHAT HAPPENS TO h_field? INPUT TO __INIT__? ADD TO OPTIONAL_THINGS?
-            things_to_save = ['chemical_potential','dc_imp','dc_energ','h_field']
-            self.save(things_to_save)
-
 ################
 # HDF5 FUNCTIONS
 ################
@@ -171,7 +166,7 @@ class SumkDFT:
 
 
     def save(self,things_to_save):
-        """Saves some quantities into an HDF5 archive"""
+        """Saves given quantities into the 'dft_output' subgroup of the HDF5 archive"""
 
         if not (mpi.is_master_node()): return # do nothing on nodes
         ar = HDFArchive(self.hdf_file,'a')

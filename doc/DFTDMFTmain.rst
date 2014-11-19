@@ -100,9 +100,9 @@ set up the loop over DMFT iterations and the self-consistency condition::
                            l=2,T=None, dim_reps=None, irep=None, n_cycles =10000,
                            length_cycle=200,n_warmup_cycles=1000)
 
-	  dm = S.G.density()                         # density matrix of the impurity problem  
+	  dm = S.G.density()                                                 # Density matrix of the impurity problem  
           SK.set_dc( dm, U_interact = U, J_hund = J, use_dc_formula = 0)     # Set the double counting term
-          SK.save()                                  # save everything to the hdf5 arxive
+          SK.save(['chemical_potential','dc_imp','dc_energ'])                # Save data in the hdf5 archive
 
 These basic steps are enough to set up the basic DMFT Loop. For a detailed description of the :class:`SumkDFT` routines,
 see the reference manual. After the self-consistency steps, the solution of the Anderson impurity problem is calculation by CTQMC. 

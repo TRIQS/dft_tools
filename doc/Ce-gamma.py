@@ -130,7 +130,7 @@ for Iteration_Number in range(1,Loops+1):
 
 
         #Save stuff:
-        SK.save()
+        SK.save(['chemical_potential','dc_imp','dc_energ'])
         if (mpi.is_master_node()):
             print 'DC after solver: ',SK.dc_imp[SK.invshellmap[0]]
 
