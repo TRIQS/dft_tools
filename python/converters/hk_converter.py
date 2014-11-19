@@ -47,7 +47,7 @@ class HkConverter(ConverterTools):
         # Checks if h5 file is there and repacks it if wanted:
         import os.path
         if (os.path.exists(self.hdf_file) and repacking):
-            ConverterTools.__repack(self)
+            ConverterTools.repack(self)
 
 
     def convert_dmft_input(self, first_real_part_matrix = True, only_upper_triangle = False, weights_in_file = False):
