@@ -31,15 +31,17 @@ class Wien2kConverter(ConverterTools):
     Conversion from Wien2k output to an hdf5 file that can be used as input for the SumkDFT class.
     """
 
-    def __init__(self, filename, dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input', 
-                                 parproj_subgrp='dft_parproj_input', symmpar_subgrp='dft_symmpar_input', 
-                                 bands_subgrp = 'dft_bands_input', repacking = False):
+    def __init__(self, filename, hdf_filename = None,
+                       dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input',
+                       parproj_subgrp='dft_parproj_input', symmpar_subgrp='dft_symmpar_input',
+                       bands_subgrp = 'dft_bands_input', repacking = False):
         """
         Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so on. 
         """
 
         assert type(filename)==StringType, "Please provide the DFT files' base name as a string."
-        self.hdf_file = filename+'.h5'
+        if hdf_filename is None: hdf_filename = filename
+        self.hdf_file = hdf_filename+'.h5'
         self.dft_file = filename+'.ctqmcout'
         self.symmcorr_file = filename+'.symqmc'
         self.parproj_file = filename+'.parproj'
@@ -56,7 +58,6 @@ class Wien2kConverter(ConverterTools):
         import os.path
         if (os.path.exists(self.hdf_file) and repacking):
             ConverterTools.__repack(self)
-        
         
 
     def convert_dmft_input(self):
@@ -332,9 +333,7 @@ class Wien2kConverter(ConverterTools):
             # Initialise P, here a double list of matrices:
             proj_mat_pc = numpy.zeros([n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max(numpy.array(self.shells)[:,3]),max(n_orbitals)],numpy.complex_)
 
-
             for ish in range(self.n_shells):
-               
                 for ik in xrange(n_k):
                     for ir in range(n_parproj[ish]):
                         for isp in range(self.n_spin_blocs):
@@ -360,7 +359,6 @@ class Wien2kConverter(ConverterTools):
         things_to_save = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_pc']
         for it in things_to_save: ar[self.bands_subgrp][it] = locals()[it]
         del ar
-   
 
 
     def convert_symmetry_input(self, orbits, symm_file, symm_subgrp, SO, SP):

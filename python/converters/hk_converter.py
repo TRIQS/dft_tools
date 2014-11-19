@@ -32,14 +32,14 @@ class HkConverter(ConverterTools):
     Conversion from general H(k) file to an hdf5 file that can be used as input for the SumKDFT class.
     """
 
-    def __init__(self, hk_file, hdf_file, dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input', repacking = False):
+    def __init__(self, hk_filename, hdf_filename, dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input', repacking = False):
         """
         Init of the class.
         """
 
-        assert type(hk_file)==StringType,"hk_file must be a filename"
-        self.hdf_file = hdf_file
-        self.dft_file = hk_file
+        assert type(hk_filename)==StringType,"HkConverter: hk_filename must be a filename."
+        self.hdf_file = hdf_filename
+        self.dft_file = hk_filename
         self.dft_subgrp = dft_subgrp
         self.symmcorr_subgrp = symmcorr_subgrp
         self.fortran_to_replace = {'D':'E', '(':' ', ')':' ', ',':' '}
@@ -152,8 +152,8 @@ class HkConverter(ConverterTools):
             for isp in range(n_spin_blocs):
                 for ik in xrange(n_k) :
                     no = n_orbitals[ik,isp]
-            # IF TRUE, FIRST READ ALL REAL COMPONENTS OF ONE kPOINT, OTHERWISE TUPLE OF real,im        
-                    if (first_real_part_matrix):
+
+                    if (first_real_part_matrix): # first read all real components for given k, then read imaginary parts
                         
                         for i in xrange(no):
                             if (only_upper_triangle):
@@ -172,7 +172,7 @@ class HkConverter(ConverterTools):
                                 hopping[ik,isp,i,j] += R.next() * 1j
                                 if ((only_upper_triangle)and(i!=j)): hopping[ik,isp,j,i] = hopping[ik,isp,i,j].conjugate()
                 
-                    else:
+                    else: # read (real,im) tuple
                     
                         for i in xrange(no):
                             if (only_upper_triangle):
@@ -200,4 +200,4 @@ class HkConverter(ConverterTools):
                           'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
                           'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
         for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
-        del ar             
+        del ar

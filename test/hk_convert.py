@@ -24,6 +24,6 @@
 from pytriqs.applications.dft.converters import *
 from pytriqs.archive import *
 
-Converter = HkConverter(hk_file='hk_convert_hamiltonian.hk',hdf_file='hk_convert.output.h5')
+Converter = HkConverter(hk_filename='hk_convert_hamiltonian.hk',hdf_filename='hk_convert.output.h5')
 
 Converter.convert_dmft_input()
