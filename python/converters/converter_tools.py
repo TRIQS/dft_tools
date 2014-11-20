@@ -20,7 +20,8 @@
 #
 ################################################################################
 from pytriqs.cmake_info import hdf5_command_path
-        
+import pytriqs.utility.mpi as mpi
+
 class ConverterTools:
 
     def read_fortran_file(self,filename,to_replace):

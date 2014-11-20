@@ -23,7 +23,6 @@
 from types import *
 import numpy
 from pytriqs.archive import *
-import pytriqs.utility.mpi as mpi
 from converter_tools import *
 
 class Wien2kConverter(ConverterTools):
