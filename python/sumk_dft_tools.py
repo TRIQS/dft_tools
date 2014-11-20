@@ -38,7 +38,7 @@ class SumkDFTTools(SumkDFT):
         self.G_upfold_refreq = None
         SumkDFT.__init__(self, hdf_file=hdf_file, h_field=h_field, use_dft_blocks=use_dft_blocks,
                           dft_data=dft_data, symmcorr_data=symmcorr_data, parproj_data=parproj_data, 
-                          symmpar_data=symmpar_data, bands_data=bands_data)
+                          symmpar_data=symmpar_data, bands_data=bands_data, transp_data=transp_data)
 
 
     def downfold_pc(self,ik,ir,ish,bname,gf_to_downfold,gf_inp):
@@ -557,3 +557,284 @@ class SumkDFTTools(SumkDFT):
                      for isp in range(len(spn)) ]
 
         return dens_mat
+
+
+    def read_transport_input_from_hdf(self):
+        """
+        Reads the data for transport calculations from the HDF file
+        """
+
+        thingstoread = ['bandwin','bandwin_opt','kp','latticeangles','latticeconstants','latticetype','nsymm','symmcartesian','vk']
+        retval = self.read_input_from_hdf(subgrp=self.transp_data,things_to_read = thingstoread)
+        return retval
+    
+    
+    def cellvolume(self, latticetype, latticeconstants, latticeangle):
+        """
+        Calculate cell volume: volumecc conventional cell, volumepc, primitive cell.
+        """
+        a = latticeconstants[0]
+        b = latticeconstants[1]
+        c = latticeconstants[2]
+        c_al = numpy.cos(latticeangle[0])
+        c_be = numpy.cos(latticeangle[1])
+        c_ga = numpy.cos(latticeangle[2])
+        volumecc = a * b * c * numpy.sqrt(1 + 2 * c_al * c_be * c_ga - c_al ** 2 - c_be * 82 - c_ga ** 2)
+      
+        det = {"P":1, "F":4, "B":2, "R":3, "H":1, "CXY":2, "CYZ":2, "CXZ":2}
+        volumepc = volumecc / det[latticetype]
+      
+        return volumecc, volumepc
+
+
+    def fermidis(self, x):
+        return 1.0/(numpy.exp(x)+1)
+    
+    def transport_distribution(self, dir_list=[(0,0)], broadening=0.01, energywindow=None, Om_mesh=[0.0], beta=40, DFT_only=False, n_om=None, res_subgrp='transp_output'):
+        """calculate Tr A(k,w) v(k) A(k, w+q) v(k) and optics.
+        energywindow: regime for omega integral
+        Om_mesh: contains the frequencies of the optic conductivitity. Om_mesh is repinned to the self-energy mesh
+        (hence exact values might be different from those given in Om_mesh)
+        dir_list: list to defines the indices of directions. xx,yy,zz,xy,yz,zx. 
+        ((0, 0) --> xx, (1, 1) --> yy, (0, 2) --> xz, default: (0, 0))
+        DFT_only: Use Sigma = 0 (Issue to solve: code still needs self-energy for mesh) 
+        """
+       
+        # Check if wien converter was called
+        if mpi.is_master_node():
+            ar = HDFArchive(self.hdf_file, 'a')
+            if not (self.transp_data in ar): raise IOError, "No %s subgroup in hdf file found! Call convert_transp_input first." %self.transp_data
+        
+        self.dir_list = dir_list
+        
+        self.read_transport_input_from_hdf()
+        velocities = self.vk
+        self.n_spin_blocks_input = self.SP + 1 - self.SO
+        
+            
+        # calculate A(k,w)
+        #######################################
+        
+        # use k-dependent-projections.
+        assert self.k_dep_projection == 1, "Not implemented!"
+
+        # Define mesh for Greens function and the used energy range
+        if (DFT_only == False):
+            self.omega = numpy.array([round(x.real,12) for x in self.Sigma_imp[0].mesh])
+            mu = self.chemical_potential
+            n_om = len(self.omega)
+            print "Using omega mesh provided by Sigma."
+
+            if energywindow is not None:
+                # Find according window in Sigma mesh
+                ioffset = numpy.sum(self.omega < energywindow[0])
+                self.omega = self.omega[numpy.logical_and(self.omega >= energywindow[0], self.omega <= energywindow[1])]
+                n_om = len(self.omega)
+                
+                # Truncate Sigma to given omega window
+                for icrsh in range(self.n_corr_shells):
+                    Sigma_save = self.Sigma_imp[icrsh].copy()
+                    spn = self.spin_block_names[self.corr_shells[icrsh][4]]
+                    glist = lambda : [ GfReFreq(indices = inner, window=(self.omega[0], self.omega[-1]),n_points=n_om) for block, inner in self.gf_struct_sumk[icrsh]]
+                    self.Sigma_imp[icrsh] = BlockGf(name_list = spn, block_list = glist(),make_copies=False)
+                    for i,g in self.Sigma_imp[icrsh]:
+                        for iL in g.indices:
+                            for iR in g.indices:
+                                for iom in xrange(n_om):
+                                    g.data[iom,iL,iR]= Sigma_save[i].data[ioffset+iom,iL,iR]
+            
+        else:
+            assert n_om is not None, "Number of omega points (n_om) needed!"
+            assert energywindow is not None, "Energy window needed!" 
+            self.omega = numpy.linspace(energywindow[0],energywindow[1],n_om)
+            mu = 0.0
+
+        if (abs(self.fermidis(self.omega[0]*beta)*self.fermidis(-self.omega[0]*beta)) > 1e-5
+            or abs(self.fermidis(self.omega[-1]*beta)*self.fermidis(-self.omega[-1]*beta)) > 1e-5):
+                print "\n##########################################"
+                print "WARNING: Energywindow might be too narrow!"
+                print "##########################################\n"
+
+        d_omega = round(numpy.abs(self.omega[0] - self.omega[1]), 12)
+
+        # define exact mesh for optic conductivity
+        Om_mesh_ex = numpy.array([int(x / d_omega) for x in Om_mesh])
+        self.Om_meshr= Om_mesh_ex*d_omega
+
+        if mpi.is_master_node():
+            print "Chemical potential: ", mu
+            print "Using n_om = %s points in the energywindow [%s,%s]"%(n_om, self.omega[0], self.omega[-1])
+            print "omega vector is:"
+            print self.omega
+            print "Omega mesh interval  ", d_omega
+            print "Provided Om_mesh   ", numpy.array(Om_mesh)
+            print "Pinnend Om_mesh to  ", self.Om_meshr
+        
+        # output P(\omega)_xy should have the same dimension as defined in mshape.
+        self.Pw_optic = numpy.zeros((len(dir_list), len(Om_mesh_ex), n_om), dtype=numpy.float_)
+    
+        ik = 0
+        
+        bln = self.spin_block_names[self.SO]
+        ntoi = self.spin_names_to_ind[self.SO]
+          
+        S = BlockGf(name_block_generator=[(bln[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]), window=(self.omega[0], self.omega[-1]), n_points = n_om)) 
+                for isp in range(self.n_spin_blocks_input) ], make_copies=False)
+        mupat = [numpy.identity(self.n_orbitals[ik][isp], numpy.complex_) * mu for isp in range(self.n_spin_blocks_input)] # construct mupat
+        Annkw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_) for isp in range(self.n_spin_blocks_input)]
+        
+        ikarray = numpy.array(range(self.n_k))
+        for ik in mpi.slice_array(ikarray):
+            unchangesize = all([ self.n_orbitals[ik][isp] == mupat[isp].shape[0] for isp in range(self.n_spin_blocks_input)])
+            if (not unchangesize):
+               # recontruct green functions.
+               S = BlockGf(name_block_generator=[(bln[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]), window = (self.omega[0], self.omega[-1]), n_points = n_om)) 
+                       for isp in range(self.n_spin_blocks_input) ], make_copies=False)
+               # construct mupat
+               mupat = [numpy.identity(self.n_orbitals[ik][isp], numpy.complex_) * mu for isp in range(self.n_spin_blocks_input)]
+               #set a temporary array storing spectral functions with band index. Note, usually we should have spin index
+               Annkw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_) for isp in range(self.n_spin_blocks_input)]
+               # get lattice green function
+            
+            S <<= 1*Omega + 1j*broadening
+            
+            MS = copy.deepcopy(mupat)
+            for ibl in range(self.n_spin_blocks_input):
+                ind = ntoi[bln[ibl]]
+                n_orb = self.n_orbitals[ik][ibl]
+                MS[ibl] = self.hopping[ik,ind,0:n_orb,0:n_orb].real - mupat[ibl]
+            S -= MS
+            
+            if (DFT_only == False):
+                tmp = S.copy()    # init temporary storage
+                # form self energy from impurity self energy and double counting term.
+                stmp = self.add_dc()
+                ## substract self energy
+                for icrsh in xrange(self.n_corr_shells):
+                    for sig, gf in tmp: tmp[sig] <<= self.upfold(ik, icrsh, sig, stmp[icrsh][sig], gf)
+                    S -= tmp
+
+            S.invert()
+
+            for isp in range(self.n_spin_blocks_input):
+                Annkw[isp].real = -copy.deepcopy(S[self.spin_block_names[self.SO][isp]].data.swapaxes(0,1).swapaxes(1,2)).imag / numpy.pi
+            
+            for isp in range(self.n_spin_blocks_input):
+                if(ik%100==0):
+                  print "ik,isp", ik, isp
+                kvel = velocities[isp][ik]
+                Pwtem = numpy.zeros((len(dir_list), len(Om_mesh_ex), n_om), dtype=numpy.float_)
+                
+                bmin = max(self.bandwin[isp][ik, 0], self.bandwin_opt[isp][ik, 0])
+                bmax = min(self.bandwin[isp][ik, 1], self.bandwin_opt[isp][ik, 1])
+                Astart = bmin - self.bandwin[isp][ik, 0]
+                Aend = bmax - self.bandwin[isp][ik, 0] + 1
+                vstart = bmin - self.bandwin_opt[isp][ik, 0]
+                vend = bmax - self.bandwin_opt[isp][ik, 0] + 1
+
+                #symmetry loop
+                for Rmat in self.symmcartesian:
+                    # get new velocity.
+                    Rkvel = copy.deepcopy(kvel)
+                    for vnb1 in xrange(self.bandwin_opt[isp][ik, 1] - self.bandwin_opt[isp][ik, 0] + 1):
+                        for vnb2 in xrange(self.bandwin_opt[isp][ik, 1] - self.bandwin_opt[isp][ik, 0] + 1):
+                            Rkvel[vnb1][vnb2][:] = numpy.dot(Rmat, Rkvel[vnb1][vnb2][:])
+                    ipw = 0
+                    for (ir, ic) in dir_list:
+                        for iw in xrange(n_om):
+                            for iq in range(len(Om_mesh_ex)):
+                                if(iw + Om_mesh_ex[iq] >= n_om):
+                                    continue
+                                 
+                                # construct matrix for A and velocity.
+                                Annkwl = Annkw[isp][Astart:Aend, Astart:Aend, iw]
+                                Annkwr = Annkw[isp][Astart:Aend, Astart:Aend, iw + Om_mesh_ex[iq]]
+                                Rkveltr = Rkvel[vstart:vend, vstart:vend, ir]
+                                Rkveltc = Rkvel[vstart:vend, vstart:vend, ic]
+                                # print Annkwl.shape, Annkwr.shape, Rkveltr.shape, Rkveltc.shape
+                                Pwtem[ipw, iq, iw] += numpy.dot(numpy.dot(numpy.dot(Rkveltr, Annkwl), Rkveltc), Annkwr).trace().real
+                        ipw += 1
+                        
+                # k sum and spin sum.
+                self.Pw_optic += Pwtem * self.bz_weights[ik] / self.nsymm
+        
+        self.Pw_optic = mpi.all_reduce(mpi.world, self.Pw_optic, lambda x, y : x + y)
+        self.Pw_optic *= (2 - self.SP)
+        
+        # put data to h5
+        # If res_sugrp exists data will be overwritten!
+        if mpi.is_master_node():
+            if not (res_subgrp in ar): ar.create_group(res_subgrp)   
+            things_to_save = ['Pw_optic', 'Om_meshr', 'omega', 'dir_list']
+            for it in things_to_save: ar[res_subgrp][it] = getattr(self, it)
+            del ar
+
+    def conductivity_and_seebeck(self, beta=40, read_hdf=True, res_subgrp='transp_output'):
+        """ #return 1/T*A0, that is Conductivity in unit 1/V
+        calculate, save and return Conductivity
+        """
+
+        if mpi.is_master_node():
+           if read_hdf:
+                things_to_read1 = ['Pw_optic','Om_meshr','omega','dir_list']
+                things_to_read2 = ['latticetype', 'latticeconstants', 'latticeangles']
+                read_value1 = self.read_input_from_hdf(subgrp = res_subgrp, things_to_read = things_to_read1)
+                read_value2 = self.read_input_from_hdf(subgrp = self.transp_data, things_to_read = things_to_read2)
+                if not read_value1 and read_value2: return read_value
+           else:
+                assert not hasattr(self,'Pw_optic'), "Run transport_distribution first or set read_hdf = True"
+
+           volcc, volpc  = self.cellvolume(self.latticetype, self.latticeconstants, self.latticeangles)
+
+           L1,L2,L3= self.Pw_optic.shape 
+           omegaT = self.omega * beta
+           A0 = numpy.empty((L1,L2), dtype=numpy.float_)
+           q_0 = False
+           Seebeck = numpy.zeros((L1, 1), dtype=numpy.float_)
+           Seebeck[:] = numpy.NAN
+
+           d_omega = self.omega[1] - self.omega[0]
+           for iq in xrange(L2):
+               # treat q = 0,  caclulate conductivity and seebeck
+               if (self.Om_meshr[iq] == 0.0):
+                   # if Om_meshr contains multiple entries with w=0, A1 is overwritten!
+                   q_0 = True
+                   A1 = numpy.zeros((L1, 1), dtype=numpy.float_)
+                   for im in xrange(L1):
+                       for iw in xrange(L3):
+                           A0[im, iq] += beta * self.Pw_optic[im, iq, iw] * self.fermidis(omegaT[iw]) * self.fermidis(-omegaT[iw])
+                           A1[im] += beta * self.Pw_optic[im, iq, iw] *  self.fermidis(omegaT[iw]) * self.fermidis(-omegaT[iw]) * numpy.float(omegaT[iw])
+                       Seebeck[im] = -A1[im] / A0[im, iq]
+                       print "A0", A0[im, iq] *d_omega/beta
+                       print "A1", A1[im, iq] *d_omega/beta
+               # treat q ~= 0, calculate optical conductivity
+               else:
+                   for im in xrange(L1):
+                       for iw in xrange(L3):
+                           A0[im, iq] += self.Pw_optic[im, iq, iw] * (self.fermidis(omegaT[iw]) - self.fermidis(omegaT[iw] + self.Om_meshr[iq] * beta)) / self.Om_meshr[iq]
+
+           A0 *= d_omega
+           #cond = beta * self.tdintegral(beta, 0)[index]
+           print "V in bohr^3          ", volpc
+           # transform to standard unit as in resistivity
+           OpticCon = A0 * 10700.0 / volpc
+           Seebeck *= 86.17
+
+           # print
+           for im in xrange(L1):
+               for iq in xrange(L2):
+                   print "Conductivity in direction %s for Om_mesh %d       %.4f  x 10^4 Ohm^-1 cm^-1" % (self.dir_list[im], iq, OpticCon[im, iq])
+                   print "Resistivity in dircection %s for Om_mesh %d       %.4f  x 10^-4 Ohm cm" % (self.dir_list[im], iq, 1.0 / OpticCon[im, iq])
+               if q_0:
+                   print "Seebeck in direction %s  for q = 0              %.4f  x 10^(-6) V/K" % (self.dir_list[im], Seebeck[im])
+           
+
+           ar = HDFArchive(self.hdf_file, 'a')
+           if not (res_subgrp in ar): ar.create_group(res_subgrp)
+           things_to_save = ['Seebeck', 'OpticCon']
+           for it in things_to_save: ar[res_subgrp][it] = locals()[it]
+           ar[res_subgrp]['Seebeck'] = Seebeck
+           ar[res_subgrp]['OpticCon'] = OpticCon
+           del ar
+           
+           return OpticCon, Seebeck

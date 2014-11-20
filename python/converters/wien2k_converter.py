@@ -24,6 +24,7 @@ from types import *
 import numpy, os.path
 from pytriqs.archive import *
 from converter_tools import *
+import os.path
 
 class Wien2kConverter(ConverterTools):
     """
@@ -61,7 +62,7 @@ class Wien2kConverter(ConverterTools):
         # Checks if h5 file is there and repacks it if wanted:
         if (os.path.exists(self.hdf_file) and repacking):
             ConverterTools.repack(self)
-        
+
 
     def convert_dft_input(self):
         """
@@ -378,10 +379,10 @@ class Wien2kConverter(ConverterTools):
         
         # Check if SP, SO and n_k are already in h5
         ar = HDFArchive(self.hdf_file, 'a')
-        if not (self.lda_subgrp in ar): raise IOError, "No SumK_LDA subgroup in hdf file found! Call convert_dmft_input first."
-        SP = ar[self.lda_subgrp]['SP']
-        SO = ar[self.lda_subgrp]['SO']
-        n_k = ar[self.lda_subgrp]['n_k']
+        if not (self.dft_subgrp in ar): raise IOError, "No %s subgroup in hdf file found! Call convert_dmft_input first." %self.dft_subgrp
+        SP = ar[self.dft_subgrp]['SP']
+        SO = ar[self.dft_subgrp]['SO']
+        n_k = ar[self.dft_subgrp]['n_k']
         del ar
 
         # Read relevant data from .pmat file
@@ -512,15 +513,15 @@ class Wien2kConverter(ConverterTools):
             if(SP == 0 or SO == 1):        
                 if not (os.path.exists(self.oubwin_file)) : raise IOError, "File %s does not exist" %self.oubwin_file
                 print "Reading input from %s..."%self.oubwin_file
-                f = read_fortran_file(self.oubwin_file)
+                f = ConverterTools.read_fortran_file(self, self.oubwin_file, self.fortran_to_replace)
             elif (SP == 1 and isp == 0):
                 if not (os.path.exists(self.oubwin_file+'up')) : raise IOError, "File %s does not exist" %self.oubwin_file+'up'
                 print "Reading input from %s..."%self.oubwin_file+'up'
-                f = read_fortran_file(self.oubwin_file+'up')
+                f = ConverterTools.read_fortran_file(self, self.oubwin_file+'up', self.fortran_to_replace)
             elif (SP == 1 and isp ==1):
                 if not (os.path.exists(self.oubwin_file+'dn')) : raise IOError, "File %s does not exist" %self.oubwin_file+'dn'    
                 print "Reading input from %s..."%self.oubwin_file+'dn'
-                f = read_fortran_file(self.oubwin_file+'dn')
+                f = ConverterTools.read_fortran_file(self, self.oubwin_file+'dn', self.fortran_to_replace)
             else:
                 assert 0, "Reding oubwin error! Check SP and SO!"
             assert int(f.next()) == n_k, "Number of k-points is unconsistent in oubwin file!"
