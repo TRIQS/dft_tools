@@ -127,6 +127,7 @@ class SumkDFT:
         # initialise variables on all nodes to ensure mpi broadcast works at the end
         for it in things_to_read: setattr(self,it,0)
         for it in optional_things: setattr(self,it,0)
+        subgroup_present = 0
 
         if mpi.is_master_node():
             ar = HDFArchive(self.hdf_file,'a')
@@ -155,7 +156,6 @@ class SumkDFT:
                 value_read = False
 
             del ar
-
         # now do the broadcasting:
         for it in things_to_read: setattr(self,it,mpi.bcast(getattr(self,it)))
         for it in optional_things: setattr(self,it,mpi.bcast(getattr(self,it)))
