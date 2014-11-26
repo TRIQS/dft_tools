@@ -44,8 +44,8 @@ previous_present = mpi.bcast(previous_present)
 # Init the SumK class
 SK=SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=False)
 
-Norb = SK.corr_shells[0][3]
-l    = SK.corr_shells[0][2]
+Norb = SK.corr_shells[0]['dim']
+l    = SK.corr_shells[0]['l']
 
 # Init the Solver:
 S = Solver(beta = beta, l = l)

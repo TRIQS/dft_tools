@@ -28,7 +28,7 @@ class TransBasis:
             self.SK = SK
 
         self.T = copy.deepcopy(self.SK.T[0])
-        self.w = numpy.identity(SK.corr_shells[0][3])
+        self.w = numpy.identity(SK.corr_shells[0]['dim'])
 
 
     def __call__(self, prop_to_be_diagonal = 'eal'):
@@ -88,7 +88,7 @@ class TransBasis:
 
         f = open(filename,'w')
         Tnew = self.T.conjugate()
-        dim = self.SK.corr_shells[0][3]
+        dim = self.SK.corr_shells[0]['dim']
 
         if self.SK.SO == 0:
 

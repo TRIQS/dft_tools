@@ -73,7 +73,7 @@ class SumkDFT:
 
             # GF structure used for the local things in the k sums
             # Most general form allowing for all hybridisation, i.e. largest blocks possible
-            self.gf_struct_sumk = [ [ (sp, range( self.corr_shells[icrsh][3])) for sp in self.spin_block_names[self.corr_shells[icrsh][4]] ]
+            self.gf_struct_sumk = [ [ (sp, range( self.corr_shells[icrsh]['dim'])) for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']] ]
                                    for icrsh in range(self.n_corr_shells) ]
 
             #-----
@@ -83,8 +83,8 @@ class SumkDFT:
                                                                               optional_things = optional_things)
             if (not self.subgroup_present) or (not self.value_read['gf_struct_solver']):
                 # No gf_struct was stored in HDF, so first set a standard one:
-                self.gf_struct_solver = [ dict([ (sp, range(self.corr_shells[self.inequiv_to_corr[ish]][3]) )
-                                                        for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]][4]] ])
+                self.gf_struct_solver = [ dict([ (sp, range(self.corr_shells[self.inequiv_to_corr[ish]]['dim']) )
+                                                        for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']] ])
                                           for ish in range(self.n_inequiv_shells)
                                         ]
                 # Set standard (identity) maps from gf_struct_sumk <-> gf_struct_solver
@@ -187,7 +187,7 @@ class SumkDFT:
 
         gf_downfolded = gf_inp.copy()
         isp = self.spin_names_to_ind[self.SO][bname]       # get spin index for proj. matrices
-        dim = self.corr_shells[icrsh][3]
+        dim = self.corr_shells[icrsh]['dim']
         n_orb = self.n_orbitals[ik,isp]
         projmat = self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb]
 
@@ -201,7 +201,7 @@ class SumkDFT:
 
         gf_upfolded = gf_inp.copy()
         isp = self.spin_names_to_ind[self.SO][bname]       # get spin index for proj. matrices
-        dim = self.corr_shells[icrsh][3]
+        dim = self.corr_shells[icrsh]['dim']
         n_orb = self.n_orbitals[ik,isp]
         projmat = self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb]
 
@@ -391,7 +391,7 @@ class SumkDFT:
         for ish in include_shells:
 
 
-            for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]][4]]:
+            for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]:
                 dmbool = (abs(dens_mat[ish][sp]) > threshold)  # gives an index list of entries larger that threshold
 
                 # Determine off-diagonal entries in upper triangular part of density matrix
@@ -474,8 +474,8 @@ class SumkDFT:
         """
         dens_mat = [ {} for icrsh in range(self.n_corr_shells)]
         for icrsh in range(self.n_corr_shells):
-            for sp in self.spin_block_names[self.corr_shells[icrsh][4]]:
-                dens_mat[icrsh][sp] = numpy.zeros([self.corr_shells[icrsh][3],self.corr_shells[icrsh][3]], numpy.complex_)
+            for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]:
+                dens_mat[icrsh][sp] = numpy.zeros([self.corr_shells[icrsh]['dim'],self.corr_shells[icrsh]['dim']], numpy.complex_)
 
         ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):
@@ -507,9 +507,9 @@ class SumkDFT:
                             MMat[isp][inu,inu] = 0.0
 
             for icrsh in range(self.n_corr_shells):
-                for isp, sp in enumerate(self.spin_block_names[self.corr_shells[icrsh][4]]):
-                    isp = self.spin_names_to_ind[self.corr_shells[icrsh][4]][sp]
-                    dim = self.corr_shells[icrsh][3]
+                for isp, sp in enumerate(self.spin_block_names[self.corr_shells[icrsh]['SO']]):
+                    isp = self.spin_names_to_ind[self.corr_shells[icrsh]['SO']][sp]
+                    dim = self.corr_shells[icrsh]['dim']
                     n_orb = self.n_orbitals[ik,isp]
                     projmat = self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb]
                     if method == "using_gf":
@@ -545,8 +545,8 @@ class SumkDFT:
         # define matrices for inequivalent shells:
         eff_atlevels = [ {} for ish in range(self.n_inequiv_shells) ]
         for ish in range(self.n_inequiv_shells):
-            for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]][4]]:
-                eff_atlevels[ish][sp] = numpy.identity(self.corr_shells[self.inequiv_to_corr[ish]][3], numpy.complex_)
+            for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]:
+                eff_atlevels[ish][sp] = numpy.identity(self.corr_shells[self.inequiv_to_corr[ish]]['dim'], numpy.complex_)
 
         # Chemical Potential:
         for ish in range(self.n_inequiv_shells):
@@ -562,14 +562,14 @@ class SumkDFT:
             # calculate the sum over k. Does not depend on mu, so do it only once:
             self.Hsumk = [ {} for icrsh in range(self.n_corr_shells) ]
             for icrsh in range(self.n_corr_shells):
-                for sp in self.spin_block_names[self.corr_shells[icrsh][4]]:
-                    dim = self.corr_shells[icrsh][3]  #*(1+self.corr_shells[icrsh][4])
+                for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]:
+                    dim = self.corr_shells[icrsh]['dim']  #*(1+self.corr_shells[icrsh]['SO'])
                     self.Hsumk[icrsh][sp] = numpy.zeros([dim,dim],numpy.complex_)
 
             for icrsh in range(self.n_corr_shells):
-                dim = self.corr_shells[icrsh][3]
-                for isp, sp in enumerate(self.spin_block_names[self.corr_shells[icrsh][4]]):
-                    isp = self.spin_names_to_ind[self.corr_shells[icrsh][4]][sp]
+                dim = self.corr_shells[icrsh]['dim']
+                for isp, sp in enumerate(self.spin_block_names[self.corr_shells[icrsh]['SO']]):
+                    isp = self.spin_names_to_ind[self.corr_shells[icrsh]['SO']][sp]
                     for ik in range(self.n_k):
                         n_orb = self.n_orbitals[ik,isp]
                         MMat = numpy.identity(n_orb, numpy.complex_)
@@ -604,8 +604,8 @@ class SumkDFT:
         # construct the density matrix dm_imp and double counting arrays
         self.dc_imp = [ {} for icrsh in range(self.n_corr_shells)]
         for icrsh in range(self.n_corr_shells):
-            dim = self.corr_shells[icrsh][3]
-            spn = self.spin_block_names[self.corr_shells[icrsh][4]]
+            dim = self.corr_shells[icrsh]['dim']
+            spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
             for sp in spn: self.dc_imp[icrsh][sp] = numpy.zeros([dim,dim],numpy.float_)
         self.dc_energ = [0.0 for icrsh in range(self.n_corr_shells)]
 
@@ -624,9 +624,9 @@ class SumkDFT:
             if iorb != orb: continue # ignore this orbital
 
             Ncr = {}
-            dim = self.corr_shells[icrsh][3] #*(1+self.corr_shells[icrsh][4])
+            dim = self.corr_shells[icrsh]['dim'] #*(1+self.corr_shells[icrsh]['SO'])
 
-            spn = self.spin_block_names[self.corr_shells[icrsh][4]]
+            spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
             for sp in spn:
                 self.dc_imp[icrsh][sp] = numpy.identity(dim,numpy.float_)
                 Ncr[sp] = 0.0
@@ -637,7 +637,7 @@ class SumkDFT:
 
             Ncrtot = 0.0
 
-            spn = self.spin_block_names[self.corr_shells[icrsh][4]]
+            spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
             for sp in spn: 
                 Ncrtot += Ncr[sp]
 
@@ -897,12 +897,12 @@ class SumkDFT:
     # Check that the density matrix from projectors (DM = P Pdagger) is correct (ie matches DFT)
     def check_projectors(self):
 
-        dens_mat = [numpy.zeros([self.corr_shells[icrsh][3],self.corr_shells[icrsh][3]],numpy.complex_)
+        dens_mat = [numpy.zeros([self.corr_shells[icrsh]['dim'],self.corr_shells[icrsh]['dim']],numpy.complex_)
                    for icrsh in range(self.n_corr_shells)]
 
         for ik in range(self.n_k):
             for icrsh in range(self.n_corr_shells):
-                dim = self.corr_shells[icrsh][3]
+                dim = self.corr_shells[icrsh]['dim']
                 n_orb = self.n_orbitals[ik,0]
                 projmat = self.proj_mat[ik,0,icrsh,0:dim,0:n_orb]
                 dens_mat[icrsh][:,:] += numpy.dot(projmat, projmat.transpose().conjugate()) * self.bz_weights[ik]

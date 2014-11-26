@@ -31,11 +31,11 @@ In order to be used with the DMFT routines, the following data needs to be provi
 
   * `n_shells`, numpy.int. Number of atomic shells for which post processing is possible. This is `not` the number of correlated orbitals! If you have two correlated atoms in the unit cell that are equivalent, `n_shells` is 2!
  
-  * `shells`, double list of numpy.int. First dimension: `n_shells`, second dimension: 4. Information about the atomic shells. For each shell, we give a list of 4 numbers: [index, sort, l, dim]. index is the atom index, sort defines the equivalency of the atoms. For instance, with two equivalent atoms in the unit cell, index runs from 0 to 1, but sort can take only one value 0. l is the angular quantum number, and dim the dimension of the atomic shell.
+  * `shells`, list of dictionaries {string:int}. List dimension: `n_shells`, dictionary dimension: 4. Information about the atomic shells. For each shell, we give a dict with keys ['atom', 'sort', 'l', 'dim']. atom is the atom index, sort defines the equivalency of the atoms. For instance, with two equivalent atoms in the unit cell, atom runs from 0 to 1, but sort can take only one value 0. l is the angular quantum number, and dim the dimension of the atomic shell.
 
   * `n_corr_shells`, numpy.int. Number of correlated atomic shells, for which correlations are included. This includes atoms which are equivalent by symmetry. If you have two correlated atoms in the unit cell that are equivalent, `n_corr_shells` is 2! 
 
-  * `corr_shells`, double list of numpy.int. First dimension: `n_corr_shells`, second dimension: 6. Information about the correlated orbitals. For each correlated shell, we give a list of 6 numbers: [index, sort, l, dim, SO, irep]. Similar as for `shells`, index is the atom index, sort defines the equivalency of the atoms. For instance, with two equivalent atoms in the unit cell, index runs from 0 to 1, but sort can take only one value 0. l is the angular quantum number, and dim the dimension of the atomic shell. If spin-orbit is included in the calculation, SO is 1, otherwise 0. irep is a dummy integer, set to 0.
+  * `corr_shells`, list of dictionaries {string:int}. List dimension: `n_corr_shells`, dictionary dimension: 6. Information about the correlated orbitals. For each correlated shell, we give a dict with keys ['atom', 'sort', 'l', 'dim', 'SO', 'irep']. As for `shells`, atom is the atom index, sort defines the equivalency of the atoms. For instance, with two equivalent atoms in the unit cell, atom runs from 0 to 1, but sort can take only one value 0. l is the angular quantum number, and dim the dimension of the atomic shell. If spin-orbit is included in the calculation, SO is 1, otherwise 0. irep is a dummy integer, set to 0.
 
   * `use_rotations`, numpy.int. If local and global coordinate systems are used, this falg is set to 1. Otherwise set to 0.
 
@@ -81,11 +81,11 @@ The above described converter of the Wien2k input is quite involved, since Wien2
 
   1                <- n_shells
 
-  1 1 2 3          <- shells, as above: iatom, isort, l, dim
+  1 1 2 3          <- shells, as above: atom, sort, l, dim
 
   1                <- n_corr_shells
 
-  1 1 2 3 0 0      <- corr_shells, as above: iatom, isort, l, dim, SO, dummy
+  1 1 2 3 0 0      <- corr_shells, as above: atom, sort, l, dim, SO, dummy
 
   2 2 3            <- n_reps, dim_reps (length 2, because eg/t2g splitting)
 

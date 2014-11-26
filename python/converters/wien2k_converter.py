@@ -71,8 +71,8 @@ class Wien2kConverter(ConverterTools):
         # R is a generator : each R.Next() will return the next number in the file
         R = ConverterTools.read_fortran_file(self,self.dft_file,self.fortran_to_replace)
         try:
-            energy_unit = R.next()                         # read the energy convertion factor
-            n_k = int(R.next())                            # read the number of k points
+            energy_unit = R.next()                        # read the energy convertion factor
+            n_k = int(R.next())                           # read the number of k points
             k_dep_projection = 1                          
             SP = int(R.next())                            # flag for spin-polarised calculation
             SO = int(R.next())                            # flag for spin-orbit calculation
@@ -82,29 +82,32 @@ class Wien2kConverter(ConverterTools):
 
             # the information on the non-correlated shells is not important here, maybe skip:
             n_shells = int(R.next())                      # number of shells (e.g. Fe d, As p, O p) in the unit cell, 
-                                                               # corresponds to index R in formulas
-            shells = [ [ int(R.next()) for i in range(4) ] for icrsh in range(n_shells) ]    # reads iatom, sort, l, dim
+                                                          # corresponds to index R in formulas
+            # now read the information about the shells (atom, sort, l, dim):
+            shell_entries = ['atom', 'sort', 'l', 'dim']
+            shells = [ {name: int(val) for name, val in zip(shell_entries, R)} for ish in range(n_shells) ]
 
             n_corr_shells = int(R.next())                 # number of corr. shells (e.g. Fe d, Ce f) in the unit cell, 
                                                           # corresponds to index R in formulas
-            # now read the information about the shells:
-            corr_shells = [ [ int(R.next()) for i in range(6) ] for icrsh in range(n_corr_shells) ]    # reads iatom, sort, l, dim, SO flag, irep
+            # now read the information about the shells (atom, sort, l, dim, SO flag, irep):
+            corr_shell_entries = ['atom', 'sort', 'l', 'dim', 'SO', 'irep']
+            corr_shells = [ {name: int(val) for name, val in zip(corr_shell_entries, R)} for icrsh in range(n_corr_shells) ]
 
             # determine the number of inequivalent correlated shells and maps, needed for further reading
-            [n_inequiv_shells, corr_to_inequiv, inequiv_to_corr] = ConverterTools.det_shell_equivalence(self,corr_shells)
+            n_inequiv_shells, corr_to_inequiv, inequiv_to_corr = ConverterTools.det_shell_equivalence(self,corr_shells)
 
             use_rotations = 1
-            rot_mat = [numpy.identity(corr_shells[icrsh][3],numpy.complex_) for icrsh in xrange(n_corr_shells)]
+            rot_mat = [numpy.identity(corr_shells[icrsh]['dim'],numpy.complex_) for icrsh in range(n_corr_shells)]
            
             # read the matrices
             rot_mat_time_inv = [0 for i in range(n_corr_shells)]
 
-            for icrsh in xrange(n_corr_shells):
-                for i in xrange(corr_shells[icrsh][3]):    # read real part:
-                    for j in xrange(corr_shells[icrsh][3]):
+            for icrsh in range(n_corr_shells):
+                for i in range(corr_shells[icrsh]['dim']):    # read real part:
+                    for j in range(corr_shells[icrsh]['dim']):
                         rot_mat[icrsh][i,j] = R.next()
-                for i in xrange(corr_shells[icrsh][3]):    # read imaginary part:
-                    for j in xrange(corr_shells[icrsh][3]):
+                for i in range(corr_shells[icrsh]['dim']):    # read imaginary part:
+                    for j in range(corr_shells[icrsh]['dim']):
                         rot_mat[icrsh][i,j] += 1j * R.next()
 
                 if (SP==1):             # read time inversion flag:
@@ -114,23 +117,23 @@ class Wien2kConverter(ConverterTools):
             n_reps = [1 for i in range(n_inequiv_shells)]
             dim_reps = [0 for i in range(n_inequiv_shells)]
             T = []
-            for icrsh in range(n_inequiv_shells):
-                n_reps[icrsh] = int(R.next())   # number of representatives ("subsets"), e.g. t2g and eg
-                dim_reps[icrsh] = [int(R.next()) for i in range(n_reps[icrsh])]   # dimensions of the subsets
+            for ish in range(n_inequiv_shells):
+                n_reps[ish] = int(R.next())   # number of representatives ("subsets"), e.g. t2g and eg
+                dim_reps[ish] = [int(R.next()) for i in range(n_reps[ish])]   # dimensions of the subsets
             
                 # The transformation matrix:
                 # is of dimension 2l+1 without SO, and 2*(2l+1) with SO!
-                ll = 2*corr_shells[inequiv_to_corr[icrsh]][2]+1
-                lmax = ll * (corr_shells[inequiv_to_corr[icrsh]][4] + 1)
+                ll = 2*corr_shells[inequiv_to_corr[ish]]['l']+1
+                lmax = ll * (corr_shells[inequiv_to_corr[ish]]['SO'] + 1)
                 T.append(numpy.zeros([lmax,lmax],numpy.complex_))
                 
                 # now read it from file:
-                for i in xrange(lmax):
-                    for j in xrange(lmax):
-                        T[icrsh][i,j] = R.next()
-                for i in xrange(lmax):
-                    for j in xrange(lmax):
-                        T[icrsh][i,j] += 1j * R.next()
+                for i in range(lmax):
+                    for j in range(lmax):
+                        T[ish][i,j] = R.next()
+                for i in range(lmax):
+                    for j in range(lmax):
+                        T[ish][i,j] += 1j * R.next()
     
             # Spin blocks to be read:
             n_spin_blocs = SP + 1 - SO   
@@ -138,25 +141,25 @@ class Wien2kConverter(ConverterTools):
             # read the list of n_orbitals for all k points
             n_orbitals = numpy.zeros([n_k,n_spin_blocs],numpy.int)
             for isp in range(n_spin_blocs):
-                for ik in xrange(n_k):
+                for ik in range(n_k):
                     n_orbitals[ik,isp] = int(R.next())
             
             # Initialise the projectors:
-            proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max(numpy.array(corr_shells)[:,3]),max(n_orbitals)],numpy.complex_)
+            proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max([crsh['dim'] for crsh in corr_shells]),max(n_orbitals)],numpy.complex_)
 
             # Read the projectors from the file:
-            for ik in xrange(n_k):
+            for ik in range(n_k):
                 for icrsh in range(n_corr_shells):
-                    no = corr_shells[icrsh][3]
+                    n_orb = corr_shells[icrsh]['dim']
                     # first Real part for BOTH spins, due to conventions in dmftproj:
                     for isp in range(n_spin_blocs):
-                        for i in xrange(no):
-                            for j in xrange(n_orbitals[ik][isp]):
+                        for i in range(n_orb):
+                            for j in range(n_orbitals[ik][isp]):
                                 proj_mat[ik,isp,icrsh,i,j] = R.next()
                     # now Imag part:
                     for isp in range(n_spin_blocs):
-                        for i in xrange(no):
-                            for j in xrange(n_orbitals[ik][isp]):
+                        for i in range(n_orb):
+                            for j in range(n_orbitals[ik][isp]):
                                 proj_mat[ik,isp,icrsh,i,j] += 1j * R.next()
           
             # now define the arrays for weights and hopping ...
@@ -164,7 +167,7 @@ class Wien2kConverter(ConverterTools):
             hopping = numpy.zeros([n_k,n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
 
             # weights in the file
-            for ik in xrange(n_k) : bz_weights[ik] = R.next()         
+            for ik in range(n_k) : bz_weights[ik] = R.next()         
                 
             # if the sum over spins is in the weights, take it out again!!
             sm = sum(bz_weights)
@@ -173,9 +176,9 @@ class Wien2kConverter(ConverterTools):
             # Grab the H
             # we use now the convention of a DIAGONAL Hamiltonian -- convention for Wien2K.
             for isp in range(n_spin_blocs):
-                for ik in xrange(n_k) :
-                    no = n_orbitals[ik,isp]
-                    for i in xrange(no):
+                for ik in range(n_k) :
+                    n_orb = n_orbitals[ik,isp]
+                    for i in range(n_orb):
                         hopping[ik,isp,i,i] = R.next() * energy_unit
             
             # keep some things that we need for reading parproj:
@@ -211,7 +214,7 @@ class Wien2kConverter(ConverterTools):
         if not (mpi.is_master_node()): return
         mpi.report("Reading parproj input from %s..."%self.parproj_file)
 
-        dens_mat_below = [ [numpy.zeros([self.shells[ish][3],self.shells[ish][3]],numpy.complex_) for ish in range(self.n_shells)] 
+        dens_mat_below = [ [numpy.zeros([self.shells[ish]['dim'],self.shells[ish]['dim']],numpy.complex_) for ish in range(self.n_shells)] 
                            for isp in range(self.n_spin_blocs) ]
 
         R = ConverterTools.read_fortran_file(self,self.parproj_file,self.fortran_to_replace)
@@ -220,44 +223,44 @@ class Wien2kConverter(ConverterTools):
         n_parproj = numpy.array(n_parproj)
                 
         # Initialise P, here a double list of matrices:
-        proj_mat_pc = numpy.zeros([self.n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max(numpy.array(self.shells)[:,3]),max(self.n_orbitals)],numpy.complex_)
+        proj_mat_pc = numpy.zeros([self.n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max([sh['dim'] for sh in self.shells]),max(self.n_orbitals)],numpy.complex_)
         
-        rot_mat_all = [numpy.identity(self.shells[ish][3],numpy.complex_) for ish in xrange(self.n_shells)]
+        rot_mat_all = [numpy.identity(self.shells[ish]['dim'],numpy.complex_) for ish in range(self.n_shells)]
         rot_mat_all_time_inv = [0 for i in range(self.n_shells)]
 
         for ish in range(self.n_shells):
             # read first the projectors for this orbital:
-            for ik in xrange(self.n_k):
+            for ik in range(self.n_k):
                 for ir in range(n_parproj[ish]):
 
                     for isp in range(self.n_spin_blocs):
-                        for i in xrange(self.shells[ish][3]):    # read real part:
-                            for j in xrange(self.n_orbitals[ik][isp]):
+                        for i in range(self.shells[ish]['dim']):    # read real part:
+                            for j in range(self.n_orbitals[ik][isp]):
                                 proj_mat_pc[ik,isp,ish,ir,i,j] = R.next()
                             
                     for isp in range(self.n_spin_blocs):
-                        for i in xrange(self.shells[ish][3]):    # read imaginary part:
-                            for j in xrange(self.n_orbitals[ik][isp]):
+                        for i in range(self.shells[ish]['dim']):    # read imaginary part:
+                            for j in range(self.n_orbitals[ik][isp]):
                                 proj_mat_pc[ik,isp,ish,ir,i,j] += 1j * R.next()
                                         
                     
             # now read the Density Matrix for this orbital below the energy window:
             for isp in range(self.n_spin_blocs):
-                for i in xrange(self.shells[ish][3]):    # read real part:
-                    for j in xrange(self.shells[ish][3]):
+                for i in range(self.shells[ish]['dim']):    # read real part:
+                    for j in range(self.shells[ish]['dim']):
                         dens_mat_below[isp][ish][i,j] = R.next()
             for isp in range(self.n_spin_blocs):
-                for i in xrange(self.shells[ish][3]):    # read imaginary part:
-                    for j in xrange(self.shells[ish][3]):
+                for i in range(self.shells[ish]['dim']):    # read imaginary part:
+                    for j in range(self.shells[ish]['dim']):
                         dens_mat_below[isp][ish][i,j] += 1j * R.next()
                 if (self.SP==0): dens_mat_below[isp][ish] /= 2.0
 
             # Global -> local rotation matrix for this shell:
-            for i in xrange(self.shells[ish][3]):    # read real part:
-                for j in xrange(self.shells[ish][3]):
+            for i in range(self.shells[ish]['dim']):    # read real part:
+                for j in range(self.shells[ish]['dim']):
                     rot_mat_all[ish][i,j] = R.next()
-            for i in xrange(self.shells[ish][3]):    # read imaginary part:
-                for j in xrange(self.shells[ish][3]):
+            for i in range(self.shells[ish]['dim']):    # read imaginary part:
+                for j in range(self.shells[ish]['dim']):
                     rot_mat_all[ish][i,j] += 1j * R.next()
                     
             if (self.SP):
@@ -294,25 +297,25 @@ class Wien2kConverter(ConverterTools):
             # read the list of n_orbitals for all k points
             n_orbitals = numpy.zeros([n_k,self.n_spin_blocs],numpy.int)
             for isp in range(self.n_spin_blocs):
-                for ik in xrange(n_k):
+                for ik in range(n_k):
                     n_orbitals[ik,isp] = int(R.next())
 
             # Initialise the projectors:
-            proj_mat = numpy.zeros([n_k,self.n_spin_blocs,self.n_corr_shells,max(numpy.array(self.corr_shells)[:,3]),max(n_orbitals)],numpy.complex_)
+            proj_mat = numpy.zeros([n_k,self.n_spin_blocs,self.n_corr_shells,max([crsh['dim'] for crsh in corr_shells]),max(n_orbitals)],numpy.complex_)
 
             # Read the projectors from the file:
-            for ik in xrange(n_k):
+            for ik in range(n_k):
                 for icrsh in range(self.n_corr_shells):
-                    no = self.corr_shells[icrsh][3]
+                    n_orb = self.corr_shells[icrsh]['dim']
                     # first Real part for BOTH spins, due to conventions in dmftproj:
                     for isp in range(self.n_spin_blocs):
-                        for i in xrange(no):
-                            for j in xrange(n_orbitals[ik,isp]):
+                        for i in range(n_orb):
+                            for j in range(n_orbitals[ik,isp]):
                                 proj_mat[ik,isp,icrsh,i,j] = R.next()
                     # now Imag part:
                     for isp in range(self.n_spin_blocs):
-                        for i in xrange(no):
-                            for j in xrange(n_orbitals[ik,isp]):
+                        for i in range(n_orb):
+                            for j in range(n_orbitals[ik,isp]):
                                 proj_mat[ik,isp,icrsh,i,j] += 1j * R.next()
 
             hopping = numpy.zeros([n_k,self.n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
@@ -320,9 +323,9 @@ class Wien2kConverter(ConverterTools):
             # Grab the H
             # we use now the convention of a DIAGONAL Hamiltonian!!!!
             for isp in range(self.n_spin_blocs):
-                for ik in xrange(n_k) :
-                    no = n_orbitals[ik,isp]
-                    for i in xrange(no):
+                for ik in range(n_k) :
+                    n_orb = n_orbitals[ik,isp]
+                    for i in range(n_orb):
                         hopping[ik,isp,i,i] = R.next() * self.energy_unit
 
             # now read the partial projectors:
@@ -330,19 +333,19 @@ class Wien2kConverter(ConverterTools):
             n_parproj = numpy.array(n_parproj)
             
             # Initialise P, here a double list of matrices:
-            proj_mat_pc = numpy.zeros([n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max(numpy.array(self.shells)[:,3]),max(n_orbitals)],numpy.complex_)
+            proj_mat_pc = numpy.zeros([n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max([sh['dim'] for sh in self.shells]),max(n_orbitals)],numpy.complex_)
 
             for ish in range(self.n_shells):
-                for ik in xrange(n_k):
+                for ik in range(n_k):
                     for ir in range(n_parproj[ish]):
                         for isp in range(self.n_spin_blocs):
                                     
-                            for i in xrange(self.shells[ish][3]):    # read real part:
-                                for j in xrange(n_orbitals[ik,isp]):
+                            for i in range(self.shells[ish]['dim']):    # read real part:
+                                for j in range(n_orbitals[ik,isp]):
                                     proj_mat_pc[ik,isp,ish,ir,i,j] = R.next()
                             
-                            for i in xrange(self.shells[ish][3]):    # read imaginary part:
-                                for j in xrange(n_orbitals[ik,isp]):
+                            for i in range(self.shells[ish]['dim']):    # read imaginary part:
+                                for j in range(n_orbitals[ik,isp]):
                                     proj_mat_pc[ik,isp,ish,ir,i,j] += 1j * R.next()
 
         except StopIteration : # a more explicit error if the file is corrupted.
@@ -375,36 +378,36 @@ class Wien2kConverter(ConverterTools):
         try:
             n_symm = int(R.next())           # Number of symmetry operations
             n_atoms = int(R.next())       # number of atoms involved
-            perm = [ [int(R.next()) for i in xrange(n_atoms)] for j in xrange(n_symm) ]    # list of permutations of the atoms
+            perm = [ [int(R.next()) for i in range(n_atoms)] for j in range(n_symm) ]    # list of permutations of the atoms
             if SP: 
-                time_inv = [ int(R.next()) for j in xrange(n_symm) ]           # time inversion for SO coupling
+                time_inv = [ int(R.next()) for j in range(n_symm) ]           # time inversion for SO coupling
             else:
-                time_inv = [ 0 for j in xrange(n_symm) ]
+                time_inv = [ 0 for j in range(n_symm) ]
 
             # Now read matrices:
             mat = []  
-            for i_symm in xrange(n_symm):
+            for i_symm in range(n_symm):
                 
-                mat.append( [ numpy.zeros([orbits[orb][3], orbits[orb][3]],numpy.complex_) for orb in xrange(n_orbits) ] )
+                mat.append( [ numpy.zeros([orbits[orb]['dim'], orbits[orb]['dim']],numpy.complex_) for orb in range(n_orbits) ] )
                 for orb in range(n_orbits):
-                    for i in xrange(orbits[orb][3]):
-                        for j in xrange(orbits[orb][3]):
+                    for i in range(orbits[orb]['dim']):
+                        for j in range(orbits[orb]['dim']):
                             mat[i_symm][orb][i,j] = R.next()            # real part
-                    for i in xrange(orbits[orb][3]):
-                        for j in xrange(orbits[orb][3]):
+                    for i in range(orbits[orb]['dim']):
+                        for j in range(orbits[orb]['dim']):
                             mat[i_symm][orb][i,j] += 1j * R.next()      # imaginary part
 
-            mat_tinv = [numpy.identity(orbits[orb][3],numpy.complex_)
+            mat_tinv = [numpy.identity(orbits[orb]['dim'],numpy.complex_)
                         for orb in range(n_orbits)]
 
             if ((SO==0) and (SP==0)):
                 # here we need an additional time inversion operation, so read it:
                 for orb in range(n_orbits):
-                    for i in xrange(orbits[orb][3]):
-                        for j in xrange(orbits[orb][3]):
+                    for i in range(orbits[orb]['dim']):
+                        for j in range(orbits[orb]['dim']):
                             mat_tinv[orb][i,j] = R.next()            # real part
-                    for i in xrange(orbits[orb][3]):
-                        for j in xrange(orbits[orb][3]):
+                    for i in range(orbits[orb]['dim']):
+                        for j in range(orbits[orb]['dim']):
                             mat_tinv[orb][i,j] += 1j * R.next()      # imaginary part
                 
 

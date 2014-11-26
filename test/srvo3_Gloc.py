@@ -31,10 +31,10 @@ beta = 40
 # Init the SumK class
 SK=SumkDFT(hdf_file='SrVO3.h5',use_dft_blocks=True)
 
-num_orbitals = SK.corr_shells[0][3]
-l = SK.corr_shells[0][2]
-spin_names = ["up","down"]
-orb_names = ["%s"%i for i in range(num_orbitals)]
+num_orbitals = SK.corr_shells[0]['dim']
+l = SK.corr_shells[0]['l']
+spin_names = ['up','down']
+orb_names = ['%s'%i for i in range(num_orbitals)]
 orb_hybridized = False
 
 S = Solver(beta=beta, gf_struct=set_operator_structure(spin_names,orb_names,orb_hybridized))

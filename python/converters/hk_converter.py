@@ -74,36 +74,38 @@ class HkConverter(ConverterTools):
             # the information on the non-correlated shells is needed for defining dimension of matrices:
             n_shells = int(R.next())                      # number of shells considered in the Wanniers
                                                           # corresponds to index R in formulas
-            # now read the information about the shells:
-            shells = [ [ int(R.next()) for i in range(4) ] for icrsh in range(n_shells) ]    # reads iatom, sort, l, dim
+            # now read the information about the shells (atom, sort, l, dim):
+            shell_entries = ['atom', 'sort', 'l', 'dim']
+            shells = [ {name: int(val) for name, val in zip(shell_entries, R)} for ish in range(n_shells) ]
 
             n_corr_shells = int(R.next())                 # number of corr. shells (e.g. Fe d, Ce f) in the unit cell, 
                                                           # corresponds to index R in formulas
-            # now read the information about the shells:
-            corr_shells = [ [ int(R.next()) for i in range(6) ] for icrsh in range(n_corr_shells) ]    # reads iatom, sort, l, dim, SO flag, irep
+            # now read the information about the shells (atom, sort, l, dim, SO flag, irep):
+            corr_shell_entries = ['atom', 'sort', 'l', 'dim', 'SO', 'irep']
+            corr_shells = [ {name: int(val) for name, val in zip(corr_shell_entries, R)} for icrsh in range(n_corr_shells) ]
 
             # determine the number of inequivalent correlated shells and maps, needed for further reading
             [n_inequiv_shells, corr_to_inequiv, inequiv_to_corr] = ConverterTools.det_shell_equivalence(self,corr_shells)
 
             use_rotations = 0
-            rot_mat = [numpy.identity(corr_shells[icrsh][3],numpy.complex_) for icrsh in xrange(n_corr_shells)]
+            rot_mat = [numpy.identity(corr_shells[icrsh]['dim'],numpy.complex_) for icrsh in range(n_corr_shells)]
             rot_mat_time_inv = [0 for i in range(n_corr_shells)]
             
             # Representative representations are read from file
             n_reps = [1 for i in range(n_inequiv_shells)]
             dim_reps = [0 for i in range(n_inequiv_shells)]
             T = []
-            for icrsh in range(n_inequiv_shells):
-                n_reps[icrsh] = int(R.next())   # number of representatives ("subsets"), e.g. t2g and eg
-                dim_reps[icrsh] = [int(R.next()) for i in range(n_reps[icrsh])]   # dimensions of the subsets
+            for ish in range(n_inequiv_shells):
+                n_reps[ish] = int(R.next())   # number of representatives ("subsets"), e.g. t2g and eg
+                dim_reps[ish] = [int(R.next()) for i in range(n_reps[ish])]   # dimensions of the subsets
             
                 # The transformation matrix:
                 # is of dimension 2l+1, it is taken to be standard d (as in Wien2k)
-                ll = 2*corr_shells[inequiv_to_corr[icrsh]][2]+1
-                lmax = ll * (corr_shells[inequiv_to_corr[icrsh]][4] + 1)
+                ll = 2*corr_shells[inequiv_to_corr[ish]]['l']+1
+                lmax = ll * (corr_shells[inequiv_to_corr[ish]]['SO'] + 1)
                 T.append(numpy.zeros([lmax,lmax],numpy.complex_))
                 
-                T[icrsh] = numpy.array([[0.0, 0.0, 1.0, 0.0, 0.0],
+                T[ish] = numpy.array([[0.0, 0.0, 1.0, 0.0, 0.0],
                                        [1.0/sqrt(2.0), 0.0, 0.0, 0.0, 1.0/sqrt(2.0)],
                                        [-1.0/sqrt(2.0), 0.0, 0.0, 0.0, 1.0/sqrt(2.0)],
                                        [0.0, 1.0/sqrt(2.0), 0.0, -1.0/sqrt(2.0), 0.0],
@@ -113,28 +115,27 @@ class HkConverter(ConverterTools):
             n_spin_blocs = SP + 1 - SO   # number of spins to read for Norbs and Ham, NOT Projectors
         
             # define the number of n_orbitals for all k points: it is the number of total bands and independent of k!
-            n_orb = sum([ shells[ish][3] for ish in range(n_shells) ])
-            n_orbitals = numpy.ones([n_k,n_spin_blocs],numpy.int) * n_orb
+            n_orbitals = numpy.ones([n_k,n_spin_blocs],numpy.int) * sum([ sh['dim'] for sh in shells ])
 
             # Initialise the projectors:
-            proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max(numpy.array(corr_shells)[:,3]),max(n_orbitals)],numpy.complex_)
+            proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max([crsh['dim'] for crsh in corr_shells]),max(n_orbitals)],numpy.complex_)
 
             # Read the projectors from the file:
-            for ik in xrange(n_k):
+            for ik in range(n_k):
                 for icrsh in range(n_corr_shells):
                     for isp in range(n_spin_blocs):
 
                         # calculate the offset:
                         offset = 0
-                        no = 0
-                        for i in range(n_shells):
-                            if (no==0):
-                                if ((shells[i][0]==corr_shells[icrsh][0]) and (shells[i][1]==corr_shells[icrsh][1])):
-                                    no = corr_shells[icrsh][3]
+                        n_orb = 0
+                        for ish in range(n_shells):
+                            if (n_orb==0):
+                                if (shells[ish]['atom']==corr_shells[icrsh]['atom']) and (shells[ish]['sort']==corr_shells[icrsh]['sort']):
+                                    n_orb = corr_shells[icrsh]['dim']
                                 else:
-                                    offset += shells[i][3]
+                                    offset += shells[ish]['dim']
 
-                        proj_mat[ik,isp,icrsh,0:no,offset:offset+no] = numpy.identity(no)
+                        proj_mat[ik,isp,icrsh,0:n_orb,offset:offset+n_orb] = numpy.identity(n_orb)
                     
             # now define the arrays for weights and hopping ...
             bz_weights = numpy.ones([n_k],numpy.float_)/ float(n_k)  # w(k_index),  default normalisation 
@@ -142,7 +143,7 @@ class HkConverter(ConverterTools):
 
             if (weights_in_file):
                 # weights in the file
-                for ik in xrange(n_k) : bz_weights[ik] = R.next()
+                for ik in range(n_k) : bz_weights[ik] = R.next()
                 
             # if the sum over spins is in the weights, take it out again!!
             sm = sum(bz_weights)
@@ -150,36 +151,36 @@ class HkConverter(ConverterTools):
 
             # Grab the H
             for isp in range(n_spin_blocs):
-                for ik in xrange(n_k) :
-                    no = n_orbitals[ik,isp]
+                for ik in range(n_k) :
+                    n_orb = n_orbitals[ik,isp]
 
                     if (first_real_part_matrix): # first read all real components for given k, then read imaginary parts
                         
-                        for i in xrange(no):
+                        for i in range(n_orb):
                             if (only_upper_triangle):
                                 istart = i
                             else:
                                 istart = 0
-                            for j in xrange(istart,no):
+                            for j in range(istart,n_orb):
                                 hopping[ik,isp,i,j] = R.next()
                 
-                        for i in xrange(no):
+                        for i in range(n_orb):
                             if (only_upper_triangle):
                                 istart = i
                             else:
                                 istart = 0
-                            for j in xrange(istart,no):
+                            for j in range(istart,n_orb):
                                 hopping[ik,isp,i,j] += R.next() * 1j
                                 if ((only_upper_triangle)and(i!=j)): hopping[ik,isp,j,i] = hopping[ik,isp,i,j].conjugate()
                 
                     else: # read (real,im) tuple
                     
-                        for i in xrange(no):
+                        for i in range(n_orb):
                             if (only_upper_triangle):
                                 istart = i
                             else:
                                 istart = 0
-                            for j in xrange(istart,no):
+                            for j in range(istart,n_orb):
                                 hopping[ik,isp,i,j] = R.next()
                                 hopping[ik,isp,i,j] += R.next() * 1j
                             

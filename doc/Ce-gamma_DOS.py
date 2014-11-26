@@ -54,8 +54,8 @@ SK = SumkDFTTools(hdf_file=dft_filename+'.h5',use_dft_blocks=False)
 if (mpi.is_master_node()):
     print 'DC after reading SK: ',SK.dc_imp[SK.invshellmap[0]]
 
-N = SK.corr_shells[0][3]
-l = SK.corr_shells[0][2]
+N = SK.corr_shells[0]['dim']
+l = SK.corr_shells[0]['l']
 
 # Init the Solver:
 S = Solver(beta = Beta, l = l)

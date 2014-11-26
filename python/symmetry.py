@@ -67,7 +67,7 @@ class Symmetry:
         for i_symm in range(self.n_symm):
             for iorb in range(self.n_orbits):
                 srch = copy.deepcopy(self.orbits[iorb])
-                srch[0] = self.perm[i_symm][self.orbits[iorb][0]-1]
+                srch['atom'] = self.perm[i_symm][self.orbits[iorb]['atom']-1]
                 self.orb_map[i_symm][iorb] = self.orbits.index(srch)
 
 
@@ -90,8 +90,8 @@ class Symmetry:
 
         for i_symm in range(self.n_symm):
             for iorb in range(self.n_orbits):
-                l = self.orbits[iorb][2]         # s, p, d, or f
-                dim = self.orbits[iorb][3]
+                l = self.orbits[iorb]['l']         # s, p, d, or f
+                dim = self.orbits[iorb]['dim']
                 jorb = self.orb_map[i_symm][iorb]
 
                 if isinstance(obj[0],BlockGf):

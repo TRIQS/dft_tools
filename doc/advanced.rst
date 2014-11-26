@@ -63,8 +63,8 @@ Now we can use all this information to initialise the :class:`SumkDFT` class::
 If there was a previous run, we know already about the block structure, and therefore `UseDFTBlocs` is set to `False`.
 The next step is to initialise the Solver::
 
-  Norb = SK.corr_shells[0][3]
-  l = SK.corr_shells[0][2]
+  Norb = SK.corr_shells[0]['dim']
+  l = SK.corr_shells[0]['l']
   S = SolverMultiBand(beta=beta,n_orb=Norb,gf_struct=SK.gf_struct_solver[0],map=SK.map[0])
 
 As we can see, many options of the solver are set by properties of the :class:`SumkDFT` class, so we don't have

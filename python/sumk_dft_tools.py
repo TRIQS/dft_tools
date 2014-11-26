@@ -46,7 +46,7 @@ class SumkDFTTools(SumkDFT):
 
         gf_downfolded = gf_inp.copy()
         isp = self.spin_names_to_ind[self.SO][bname]       # get spin index for proj. matrices
-        dim = self.shells[ish][3]
+        dim = self.shells[ish]['dim']
         n_orb = self.n_orbitals[ik,isp]
         L=self.proj_mat_pc[ik,isp,ish,ir,0:dim,0:n_orb]
         R=self.proj_mat_pc[ik,isp,ish,ir,0:dim,0:n_orb].conjugate().transpose()
@@ -158,15 +158,15 @@ class SumkDFTTools(SumkDFT):
         DOSproj     = [ {} for ish in range(self.n_inequiv_shells) ]
         DOSproj_orb = [ {} for ish in range(self.n_inequiv_shells) ]
         for ish in range(self.n_inequiv_shells):
-            for bn in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]][4]]:
-                dim = self.corr_shells[self.inequiv_to_corr[ish]][3]
+            for bn in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]:
+                dim = self.corr_shells[self.inequiv_to_corr[ish]]['dim']
                 DOSproj[ish][bn] = numpy.zeros([n_om],numpy.float_)
                 DOSproj_orb[ish][bn] = numpy.zeros([n_om,dim,dim],numpy.float_)
 
         # init:
         Gloc = []
         for icrsh in range(self.n_corr_shells):
-            spn = self.spin_block_names[self.corr_shells[icrsh][4]]
+            spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
             glist = lambda : [ GfReFreq(indices = inner, window = (om_min,om_max), n_points = n_om) for block,inner in self.gf_struct_sumk[icrsh]]
             Gloc.append(BlockGf(name_list = spn, block_list = glist(),make_copies=False))
         for icrsh in range(self.n_corr_shells): Gloc[icrsh].zero()                        # initialize to zero
@@ -214,8 +214,8 @@ class SumkDFTTools(SumkDFT):
                     for i in range(n_om): f.write("%s    %s\n"%(om_mesh[i],DOSproj[ish][bn][i]))
                     f.close()
 
-                    for i in range(self.corr_shells[self.inequiv_to_corr[ish]][3]):
-                        for j in range(i,self.corr_shells[self.inequiv_to_corr[ish]][3]):
+                    for i in range(self.corr_shells[self.inequiv_to_corr[ish]]['dim']):
+                        for j in range(i,self.corr_shells[self.inequiv_to_corr[ish]]['dim']):
                             Fname = 'DOS'+bn+'_proj'+str(ish)+'_'+str(i)+'_'+str(j)+'.dat'
                             f=open(Fname,'w')
                             for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj_orb[ish][bn][iom,i,j]))
@@ -246,7 +246,7 @@ class SumkDFTTools(SumkDFT):
 
         mu = self.chemical_potential
 
-        gf_struct_proj = [ [ (sp, range(self.shells[i][3])) for sp in self.spin_block_names[self.SO] ]  for i in range(self.n_shells) ]
+        gf_struct_proj = [ [ (sp, range(self.shells[i]['dim'])) for sp in self.spin_block_names[self.SO] ]  for i in range(self.n_shells) ]
         Gproj = [BlockGf(name_block_generator = [ (block,GfReFreq(indices = inner, mesh = self.Sigma_imp[0].mesh)) for block,inner in gf_struct_proj[ish] ], make_copies = False )
                  for ish in range(self.n_shells)]
         for ish in range(self.n_shells): Gproj[ish].zero()
@@ -262,7 +262,7 @@ class SumkDFTTools(SumkDFT):
         DOSproj_orb = [ {} for ish in range(self.n_shells) ]
         for ish in range(self.n_shells):
             for bn in self.spin_block_names[self.SO]:
-                dim = self.shells[ish][3]
+                dim = self.shells[ish]['dim']
                 DOSproj[ish][bn] = numpy.zeros([n_om],numpy.float_)
                 DOSproj_orb[ish][bn] = numpy.zeros([n_om,dim,dim],numpy.float_)
 
@@ -317,8 +317,8 @@ class SumkDFTTools(SumkDFT):
                     for i in range(n_om): f.write("%s    %s\n"%(Msh[i],DOSproj[ish][bn][i]))
                     f.close()
 
-                    for i in range(self.shells[ish][3]):
-                        for j in range(i,self.shells[ish][3]):
+                    for i in range(self.shells[ish]['dim']):
+                        for j in range(i,self.shells[ish]['dim']):
                             Fname = './DOScorr'+bn+'_proj'+str(ish)+'_'+str(i)+'_'+str(j)+'.dat'
                             f=open(Fname,'w')
                             for iom in range(n_om): f.write("%s    %s\n"%(Msh[iom],DOSproj_orb[ish][bn][iom,i,j]))
@@ -384,7 +384,7 @@ class SumkDFTTools(SumkDFT):
             for sp in spn: Akw[sp] = numpy.zeros([self.n_k, n_om ],numpy.float_)
         else:
             Akw = {}
-            for sp in spn: Akw[sp] = numpy.zeros([self.shells[ishell][3],self.n_k, n_om ],numpy.float_)
+            for sp in spn: Akw[sp] = numpy.zeros([self.shells[ishell]['dim'],self.n_k, n_om ],numpy.float_)
 
         if fermi_surface:
             om_minplot = -2.0*broadening
@@ -393,7 +393,7 @@ class SumkDFTTools(SumkDFT):
             for sp in spn: Akw[sp] = numpy.zeros([self.n_k,1],numpy.float_)
 
         if not ishell is None:
-            GFStruct_proj =  [ (sp, range(self.shells[ishell][3])) for sp in spn ]
+            GFStruct_proj =  [ (sp, range(self.shells[ishell]['dim'])) for sp in spn ]
             Gproj = BlockGf(name_block_generator = [ (block,GfReFreq(indices = inner, mesh = self.Sigma_imp[0].mesh)) for block,inner in GFStruct_proj ], make_copies = False)
             Gproj.zero()
 
@@ -427,7 +427,7 @@ class SumkDFTTools(SumkDFT):
 
                 for iom in range(n_om):
                     if (M[iom] > om_minplot) and (M[iom] < om_maxplot):
-                        for ish in range(self.shells[ishell][3]):
+                        for ish in range(self.shells[ishell]['dim']):
                             for ibn in spn:
                                 Akw[ibn][ish,ik,iom] = Gproj[ibn].data[iom,ish,ish].imag/(-3.1415926535)
 
@@ -471,7 +471,7 @@ class SumkDFTTools(SumkDFT):
 
             else:
                 for ibn in spn:
-                    for ish in range(self.shells[ishell][3]):
+                    for ish in range(self.shells[ishell]['dim']):
 
                         if invert_Akw:
                             maxAkw=Akw[ibn][ish,:,:].max()
@@ -505,11 +505,11 @@ class SumkDFTTools(SumkDFT):
         # Density matrix in the window
         spn = self.spin_block_names[self.SO]
         ntoi = self.spin_names_to_ind[self.SO]
-        self.dens_mat_window = [ [numpy.zeros([self.shells[ish][3],self.shells[ish][3]],numpy.complex_) for ish in range(self.n_shells)]
+        self.dens_mat_window = [ [numpy.zeros([self.shells[ish]['dim'],self.shells[ish]['dim']],numpy.complex_) for ish in range(self.n_shells)]
                                  for isp in range(len(spn)) ]    # init the density matrix
 
         mu = self.chemical_potential
-        GFStruct_proj = [ [ (sp, range(self.shells[i][3])) for sp in spn ]  for i in range(self.n_shells) ]
+        GFStruct_proj = [ [ (sp, range(self.shells[i]['dim'])) for sp in spn ]  for i in range(self.n_shells) ]
         if hasattr(self,"Sigma_imp"):
             Gproj = [BlockGf(name_block_generator = [ (block,GfImFreq(indices = inner, mesh = self.Sigma_imp[0].mesh)) for block,inner in GFStruct_proj[ish] ], make_copies = False)
                      for ish in range(self.n_shells)]

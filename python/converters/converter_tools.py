@@ -51,29 +51,32 @@ class ConverterTools:
             subprocess.call(["mv","-f","temphgfrt.h5","%s"%self.hdf_file])
             
 
-    def det_shell_equivalence(self,lst):
+    def det_shell_equivalence(self,corr_shells):
         """
-        The number of inequivalent shells is determined from lst, and a mapping is given as
-        corr_to_inequiv(i_corr_shells) = i_inequiv_corr_shells
-        inequiv_to_corr(i_inequiv_corr_shells) = i_corr_shells
+        The number of inequivalent shells is determined from corr_shells, and a mapping is given as
+        corr_to_inequiv(i_corr_shells) = i_inequiv_shells
+        inequiv_to_corr(i_inequiv_shells) = i_corr_shells
         in order to put the self energies to all equivalent shells, and for extracting Gloc
         """
 
-        corr_to_inequiv = [0 for i in range(len(lst))]
+        corr_to_inequiv = [0 for i in range(len(corr_shells))]
         inequiv_to_corr = [0]
         n_inequiv_shells = 1
-        tmp = [ lst[0][1:3] ]
-        if (len(lst)>1):
-            for i in range(len(lst)-1):
-                fnd = False
+
+        if len(corr_shells) > 1:
+            inequiv_sort = [ corr_shells[0]['sort'] ]
+            inequiv_l = [ corr_shells[0]['l'] ]
+            for i in range(len(corr_shells)-1):
+                is_equiv = False
                 for j in range(n_inequiv_shells):
-                    if (tmp[j]==lst[i+1][1:3]):
-                        fnd = True
+                    if (inequiv_sort[j]==corr_shells[i+1]['sort']) and (inequiv_l[j]==corr_shells[i+1]['l']):
+                        is_equiv = True
                         corr_to_inequiv[i+1] = j
-                if (fnd==False):
+                if is_equiv==False:
                     corr_to_inequiv[i+1] = n_inequiv_shells
                     n_inequiv_shells += 1
-                    tmp.append( lst[i+1][1:3] )
-                    inequiv_to_corr.append(i+1)
+                    inequiv_sort.append( corr_shells[i+1]['sort'] )
+                    inequiv_l.append( corr_shells[i+1]['l'] )
+                    inequiv_to_corr.append( i+1 )
 
-        return [n_inequiv_shells, corr_to_inequiv, inequiv_to_corr]
+        return n_inequiv_shells, corr_to_inequiv, inequiv_to_corr
