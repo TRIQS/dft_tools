@@ -1,18 +1,16 @@
 import pytriqs.utility.mpi as mpi
-from itertools import *
-from pytriqs.operators import *
+from pytriqs.operators.hamiltonians import *
 from pytriqs.archive import HDFArchive
 from pytriqs.applications.impurity_solvers.cthyb import *
 from pytriqs.gf.local import *
 from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
-from pytriqs.applications.dft.solver_multiband import *
 
 dft_filename='Gd_fcc'
 U = 9.6
 J = 0.8
 beta = 40
-loops =  10                      # Number of DMFT sc-loops
+loops = 10                       # Number of DMFT sc-loops
 sigma_mix = 1.0                  # Mixing factor of Sigma after solution of the AIM
 delta_mix = 1.0                  # Mixing factor of Delta as input for the AIM
 dc_type = 0                      # DC type: 0 FLL, 1 Held, 2 AMF
@@ -24,7 +22,6 @@ p = {}
 p["max_time"] = -1
 p["random_name"] = ""
 p["random_seed"] = 123 * mpi.rank + 567
-p["verbosity"] = 3
 p["length_cycle"] = 50
 p["n_warmup_cycles"] = 50
 p["n_cycles"] = 5000
@@ -52,8 +49,8 @@ calc_blocs = use_blocks and (not previous_present)
 
 SK=SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=calc_blocs)
 
-n_orb = SK.corr_shells[0][3]
-l = SK.corr_shells[0][2]
+n_orb = SK.corr_shells[0]['dim']
+l = SK.corr_shells[0]['l']
 spin_names = ["up","down"]
 orb_names = ["%s"%i for i in range(num_orbitals)]
 orb_hybridized = False
