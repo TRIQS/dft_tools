@@ -590,7 +590,7 @@ class SumkDFTTools(SumkDFT):
     def fermidis(self, x):
         return 1.0/(numpy.exp(x)+1)
     
-    def transport_distribution(self, dir_list=[(0,0)], broadening=0.01, energywindow=None, Om_mesh=[0.0], beta=40, DFT_only=False, n_om=None, res_subgrp='transp_output'):
+    def transport_distribution(self, dir_list=[(0,0)], broadening=0.01, energywindow=None, Om_mesh=[0.0], beta=40, DFT_only=False, n_om=None, save_hdf=True,  res_subgrp='transp_output'):
         """calculate Tr A(k,w) v(k) A(k, w+q) v(k) and optics.
         energywindow: regime for omega integral
         Om_mesh: contains the frequencies of the optic conductivitity. Om_mesh is repinned to the self-energy mesh
@@ -696,7 +696,7 @@ class SumkDFTTools(SumkDFT):
                Annkw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_) for isp in range(self.n_spin_blocks_input)]
                # get lattice green function
             
-            S <<= 1*Omega + 1j*broadening
+            S << 1*Omega + 1j*broadening
             
             MS = copy.deepcopy(mupat)
             for ibl in range(self.n_spin_blocks_input):
@@ -711,7 +711,7 @@ class SumkDFTTools(SumkDFT):
                 stmp = self.add_dc()
                 ## substract self energy
                 for icrsh in xrange(self.n_corr_shells):
-                    for sig, gf in tmp: tmp[sig] <<= self.upfold(ik, icrsh, sig, stmp[icrsh][sig], gf)
+                    for sig, gf in tmp: tmp[sig] << self.upfold(ik, icrsh, sig, stmp[icrsh][sig], gf)
                     S -= tmp
 
             S.invert()
@@ -764,9 +764,10 @@ class SumkDFTTools(SumkDFT):
         # put data to h5
         # If res_sugrp exists data will be overwritten!
         if mpi.is_master_node():
-            if not (res_subgrp in ar): ar.create_group(res_subgrp)   
-            things_to_save = ['Pw_optic', 'Om_meshr', 'omega', 'dir_list']
-            for it in things_to_save: ar[res_subgrp][it] = getattr(self, it)
+            if save_hdf:
+                if not (res_subgrp in ar): ar.create_group(res_subgrp)   
+                things_to_save = ['Pw_optic', 'Om_meshr', 'omega', 'dir_list']
+                for it in things_to_save: ar[res_subgrp][it] = getattr(self, it)
             del ar
 
     def conductivity_and_seebeck(self, beta=40, read_hdf=True, res_subgrp='transp_output'):
@@ -782,7 +783,7 @@ class SumkDFTTools(SumkDFT):
                 read_value2 = self.read_input_from_hdf(subgrp = self.transp_data, things_to_read = things_to_read2)
                 if not read_value1 and read_value2: return read_value
            else:
-                assert not hasattr(self,'Pw_optic'), "Run transport_distribution first or set read_hdf = True"
+                assert hasattr(self,'Pw_optic'), "Run transport_distribution first or set read_hdf = True"
 
            volcc, volpc  = self.cellvolume(self.latticetype, self.latticeconstants, self.latticeangles)
 
