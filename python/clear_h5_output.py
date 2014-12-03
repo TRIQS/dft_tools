@@ -13,7 +13,7 @@ and to restore it to the original post-converter state.
 
 filename = sys.argv[1]
 A = h5py.File(filename)
-for group in ['dft_output','dmft_output']:
+for group in ['dft_output','user_data']:
     if group in A: del(A[group])
 A.close()
 

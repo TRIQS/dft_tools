@@ -70,7 +70,7 @@ for Iteration_Number in range(1,Loops+1):
 
         # Compute the SumK, possibly fixing mu by dichotomy
         if SK.density_required and (Iteration_Number > 0):
-            Chemical_potential = SK.find_mu( precision = 0.01 )
+            Chemical_potential = SK.calc_mu( precision = 0.01 )
         else:
             mpi.report("No adjustment of chemical potential\nTotal density  = %.3f"%SK.total_density(mu=Chemical_potential))
 
@@ -80,7 +80,7 @@ for Iteration_Number in range(1,Loops+1):
         dm = S.G.density()
 
         if ((Iteration_Number==1)and(previous_present==False)):
-	    SK.set_dc( dens_mat=dm, U_interact = U_int, J_hund = J_hund, orb = 0, use_dc_formula = DC_type, use_val=use_val)
+	    SK.calc_dc( dens_mat=dm, U_interact = U_int, J_hund = J_hund, orb = 0, use_dc_formula = DC_type, use_val=use_val)
 
         # set atomic levels:
         eal = SK.eff_atomic_levels()[0]
@@ -119,7 +119,7 @@ for Iteration_Number in range(1,Loops+1):
         
         # after the Solver has finished, set new double counting: 
         dm = S.G.density()
-        SK.set_dc( dm, U_interact = U_int, J_hund = J_hund, orb = 0, use_dc_formula = DC_type , use_val=use_val)
+        SK.calc_dc( dm, U_interact = U_int, J_hund = J_hund, orb = 0, use_dc_formula = DC_type , use_val=use_val)
         # correlation energy calculations:
         correnerg = 0.5 * (S.G * S.Sigma).total_density()
         mpi.report("Corr. energy = %s"%correnerg)
@@ -153,7 +153,7 @@ for Iteration_Number in range(1,Loops+1):
 
 # find exact chemical potential
 if (SK.density_required):
-    SK.chemical_potential = SK.find_mu( precision = 0.000001 )
+    SK.chemical_potential = SK.calc_mu( precision = 0.000001 )
 dN,d = SK.calc_density_correction(filename = dft_filename+'.qdmft')
 
 mpi.report("Trace of Density Matrix: %s"%d)

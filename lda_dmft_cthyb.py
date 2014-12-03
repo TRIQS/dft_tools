@@ -73,14 +73,14 @@ for iteration_number in range(1,loops+1):
 
       SK.symm_deg_gf(S.Sigma_iw,orb=0)                        # symmetrise Sigma
       SK.put_Sigma(Sigma_imp = [ S.Sigma_iw ])                # put Sigma into the SumK class
-      chemical_potential = SK.find_mu( precision = prec_mu )  # find the chemical potential for the given density
+      chemical_potential = SK.calc_mu( precision = prec_mu )  # find the chemical potential for the given density
       S.G_iw << SK.extract_G_loc()[0]                           # extract the local Green function
       mpi.report("Total charge of Gloc : %.6f"%S.G_iw.total_density())
 
       if ((iteration_number==1)and(previous_present==False)):
           # Init the DC term and the real part of Sigma, if no previous run was found:
           dm = S.G_iw.density()
-          SK.set_dc(dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
+          SK.calc_dc(dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
           S.Sigma_iw << SK.dc_imp[0]['up'][0,0]
 
       # now calculate new G0_iw to input into the solver:
@@ -126,7 +126,7 @@ for iteration_number in range(1,loops+1):
 
       dm = S.G_iw.density() # compute the density matrix of the impurity problem
       # Set the double counting
-      SK.set_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
+      SK.calc_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
 
       # Save stuff into the dft_output group of hdf5 archive in case of rerun:
       SK.save(['chemical_potential','dc_imp','dc_energ'])

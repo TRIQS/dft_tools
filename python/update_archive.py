@@ -62,15 +62,18 @@ for old, new in old_to_new.iteritems():
     A.copy(old,new)
     del(A[old])
 
-# Move output items from dft_input to dft_output
-move_to_output = ['gf_struct_solver','map_inv','map',
-                  'chemical_potential','dc_imp','dc_energ','deg_shells',
-                  'h_field']
+# Move output items from dft_input to user_data
+move_to_output = ['chemical_potential','dc_imp','dc_energ']
 for obj in move_to_output:
     if obj in A['dft_input'].keys():
-       if not 'dft_output' in A: A.create_group('dft_output')
-       print "Moving %s to dft_output ..."%obj
-       A.copy('dft_input/'+obj,'dft_output/'+obj)
+       if 'user_data' not in A: A.create_group('user_data')
+       print "Moving %s to user_data ..."%obj
+       A.copy('dft_input/'+obj,'user_data/'+obj)
+       del(A['dft_input'][obj])
+# Delete obsolete quantities
+to_delete = ['gf_struct_solver','map_inv','map','deg_shells','h_field']
+for obj in to_delete:
+    if obj in A['dft_input'].keys():
        del(A['dft_input'][obj])
 
 # Update shells and corr_shells to list of dicts
@@ -87,16 +90,18 @@ HDFArchive(filename,'a')['dft_input']['corr_shells'] = corr_shells
 A = h5py.File(filename)
 
 # Add shell equivalency quantities
-equiv_shell_info = det_shell_equivalence(corr_shells)
-A['dft_input']['n_inequiv_shells'] = equiv_shell_info[0]
-A['dft_input']['corr_to_inequiv'] = equiv_shell_info[1]
-A['dft_input']['inequiv_to_corr'] = equiv_shell_info[2]
+if 'n_inequiv_shells' not in A['dft_input']:
+    equiv_shell_info = det_shell_equivalence(corr_shells)
+    A['dft_input']['n_inequiv_shells'] = equiv_shell_info[0]
+    A['dft_input']['corr_to_inequiv'] = equiv_shell_info[1]
+    A['dft_input']['inequiv_to_corr'] = equiv_shell_info[2]
 
 # Rename variables
 groups = ['dft_symmcorr_input','dft_symmpar_input']
 
 for group in groups:
     if group not in A.keys(): continue
+    if 'n_s' not in group: continue
     print "Changing n_s to n_symm ..."
     A[group].move('n_s','n_symm')
     # Convert orbits to list of dicts

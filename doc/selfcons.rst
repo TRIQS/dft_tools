@@ -34,7 +34,7 @@ Now we calculate the modified charge density::
 
   # find exact chemical potential
   SK.put_Sigma(Sigma_imp = [ S.Sigma ])
-  chemical_potential = SK.find_mu( precision = 0.000001 )
+  chemical_potential = SK.calc_mu( precision = 0.000001 )
   dN, d = SK.calc_density_correction(filename = dft_filename+'.qdmft')
   SK.save(['chemical_potential','dc_imp','dc_energ'])
 

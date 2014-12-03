@@ -3,7 +3,6 @@ from scipy.misc import factorial as fact
 from itertools import product
 import numpy as np
 
-
 # The interaction matrix in desired basis
 # U^{spherical}_{m1 m2 m3 m4} = \sum_{k=0}^{2l} F_k angular_matrix_element(l, k, m1, m2, m3, m4)
 def U_matrix(l, radial_integrals=None, U_int=None, J_hund=None, basis="spherical", T=None):
@@ -207,7 +206,6 @@ def clebsch_gordan(jm1, jm2, jm3):
 #  column 0 for 1st dim,
 #  columns 2 and 3 for 2nd dim,
 #  columns 0,1,2 and 3 for 3rd dim.
-#def subarray(a,idxlist,n=len(a.shape)-1) :
 def subarray(a,idxlist,n=None) :
     if n is None: n = len(a.shape)-1
     sa = a[tuple(slice(x) for x in a.shape[:n]) + (idxlist[n],)]

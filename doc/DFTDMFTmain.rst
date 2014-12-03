@@ -92,22 +92,22 @@ set up the loop over DMFT iterations and the self-consistency condition::
   for iteration_number in range(n_loops) :            # start the DMFT loop
 
           SK.put_Sigma(Sigma_imp = [ S.Sigma ])      # Put self energy to the SumK class
-          chemical_potential = SK.find_mu()          # find the chemical potential for the given density
-          S.G << SK.extract_G_loc()[0]              # extract the local Green function
-          S.G0 << inverse(S.Sigma + inverse(S.G))   # finally get G0, the input for the Solver
+          chemical_potential = SK.calc_mu()          # calculate the chemical potential for the given density
+          S.G << SK.extract_G_loc()[0]               # extract the local Green function
+          S.G0 << inverse(S.Sigma + inverse(S.G))    # finally get G0, the input for the Solver
 
           S.solve(U_interact,J_hund,use_spinflip=False,use_matrix=True,     # now solve the impurity problem
                            l=2,T=None, dim_reps=None, irep=None, n_cycles =10000,
                            length_cycle=200,n_warmup_cycles=1000)
 
 	  dm = S.G.density()                                                 # Density matrix of the impurity problem  
-          SK.set_dc( dm, U_interact = U, J_hund = J, use_dc_formula = 0)     # Set the double counting term
+          SK.calc_dc( dm, U_interact = U, J_hund = J, use_dc_formula = 0)     # Set the double counting term
           SK.save(['chemical_potential','dc_imp','dc_energ'])                # Save data in the hdf5 archive
 
 These basic steps are enough to set up the basic DMFT Loop. For a detailed description of the :class:`SumkDFT` routines,
 see the reference manual. After the self-consistency steps, the solution of the Anderson impurity problem is calculation by CTQMC. 
 Different to model calculations, we have to do a few more steps after this, because of the double-counting correction. We first 
-calculate the density of the impurity problem. Then, the routine `set_dc` takes as parameters this density matrix, the 
+calculate the density of the impurity problem. Then, the routine `calc_dc` takes as parameters this density matrix, the 
 Coulomb interaction, Hund's rule coupling, and the type of double-counting that should be used. Possible values for `use_dc_formula` are:
 
   * `0`: Full-localised limit

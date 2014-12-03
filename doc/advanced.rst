@@ -89,14 +89,14 @@ previous section, with some additional refinement::
         SK.symm_deg_gf(S.Sigma,orb=0)                           # symmetrise Sigma
         SK.put_Sigma(Sigma_imp = [ S.Sigma ])                   # put Sigma into the SumK class:
   
-        chemical_potential = SK.find_mu( precision = prec_mu )  # find the chemical potential
+        chemical_potential = SK.calc_mu( precision = prec_mu )  # find the chemical potential
         S.G << SK.extract_G_loc()[0]                           # calculation of the local Green function
         mpi.report("Total charge of Gloc : %.6f"%S.G.total_density())
   
         if ((iteration_number==1)and(previous_present==False)):
             # Init the DC term and the real part of Sigma, if no previous run was found:
             dm = S.G.density()
-            SK.set_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
+            SK.calc_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
             S.Sigma << SK.dc_imp[0]['up'][0,0]
   
         S.G0 << inverse(S.Sigma + inverse(S.G))
@@ -141,7 +141,7 @@ previous section, with some additional refinement::
 
         # Now set new double counting:
         dm = S.G.density()
-        SK.set_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
+        SK.calc_dc( dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
   
         #Save stuff:
         SK.save(['chemical_potential','dc_imp','dc_energ'])

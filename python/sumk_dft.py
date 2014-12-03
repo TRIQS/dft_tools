@@ -32,9 +32,9 @@ class SumkDFT:
     """This class provides a general SumK method for combining ab-initio code and pytriqs."""
 
 
-    def __init__(self, hdf_file, mu = 0.0, h_field = 0.0, use_dft_blocks = False, 
+    def __init__(self, hdf_file, h_field = 0.0, use_dft_blocks = False, 
 	         dft_data = 'dft_input', symmcorr_data = 'dft_symmcorr_input', parproj_data = 'dft_parproj_input', 
-                 symmpar_data = 'dft_symmpar_input', bands_data = 'dft_bands_input', dft_output = 'dft_output'):
+                 symmpar_data = 'dft_symmpar_input', bands_data = 'dft_bands_input'):
         """
         Initialises the class from data previously stored into an HDF5
         """
@@ -48,16 +48,16 @@ class SumkDFT:
             self.parproj_data = parproj_data
             self.symmpar_data = symmpar_data
             self.bands_data = bands_data
-            self.dft_output = dft_output
             self.G_upfold = None
             self.h_field = h_field
 
-            # read input from HDF:
+            # Read input from HDF:
             things_to_read = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                               'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                               'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
                               'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
             self.subgroup_present, self.value_read = self.read_input_from_hdf(subgrp = self.dft_data, things_to_read = things_to_read)
+            if self.symm_op: self.symmcorr = Symmetry(hdf_file,subgroup=self.symmcorr_data)
 
             if self.SO and (abs(self.h_field) > 0.000001):
                 self.h_field = 0.0
@@ -65,7 +65,7 @@ class SumkDFT:
 
             self.spin_block_names = [ ['up','down'], ['ud'] ]
             self.n_spin_blocks = [2,1]
-            # convert spin_block_names to indices -- if spin polarized, differentiate up and down blocks 
+            # Convert spin_block_names to indices -- if spin polarized, differentiate up and down blocks 
             self.spin_names_to_ind = [{}, {}]
             for iso in range(2): # SO = 0 or 1
                 for isp in range(self.n_spin_blocks[iso]):
@@ -75,50 +75,33 @@ class SumkDFT:
             # Most general form allowing for all hybridisation, i.e. largest blocks possible
             self.gf_struct_sumk = [ [ (sp, range( self.corr_shells[icrsh]['dim'])) for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']] ]
                                    for icrsh in range(self.n_corr_shells) ]
+            # First set a standard gf_struct solver:
+            self.gf_struct_solver = [ dict([ (sp, range(self.corr_shells[self.inequiv_to_corr[ish]]['dim']) )
+                                                    for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']] ])
+                                      for ish in range(self.n_inequiv_shells) ]
+            # Set standard (identity) maps from gf_struct_sumk <-> gf_struct_solver
+            self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_shells) ]
+            self.solver_to_sumk = [ {} for ish in range(self.n_inequiv_shells) ]
+            self.solver_to_sumk_block = [ {} for ish in range(self.n_inequiv_shells) ]
+            for ish in range(self.n_inequiv_shells):
+                for block,inner_list in self.gf_struct_sumk[self.inequiv_to_corr[ish]]:
+                    self.solver_to_sumk_block[ish][block] = block
+                    for inner in inner_list:
+                        self.sumk_to_solver[ish][(block,inner)] = (block,inner)
+                        self.solver_to_sumk[ish][(block,inner)] = (block,inner)
+            self.deg_shells = [ [] for ish in range(self.n_inequiv_shells) ] # assume no shells are degenerate
 
-            #-----
-            # If these quantities are not in HDF, set them up
-            optional_things = ['gf_struct_solver','sumk_to_solver','solver_to_sumk','solver_to_sumk_block','chemical_potential','dc_imp','dc_energ','deg_shells']
-            self.subgroup_present, self.value_read = self.read_input_from_hdf(subgrp = self.dft_output, things_to_read = [], 
-                                                                              optional_things = optional_things)
-            if (not self.subgroup_present) or (not self.value_read['gf_struct_solver']):
-                # No gf_struct was stored in HDF, so first set a standard one:
-                self.gf_struct_solver = [ dict([ (sp, range(self.corr_shells[self.inequiv_to_corr[ish]]['dim']) )
-                                                        for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']] ])
-                                          for ish in range(self.n_inequiv_shells)
-                                        ]
-                # Set standard (identity) maps from gf_struct_sumk <-> gf_struct_solver
-                self.sumk_to_solver = [ {} for ish in range(self.n_inequiv_shells) ]
-                self.solver_to_sumk = [ {} for ish in range(self.n_inequiv_shells) ]
-                self.solver_to_sumk_block = [ {} for ish in range(self.n_inequiv_shells) ]
-                for ish in range(self.n_inequiv_shells):
-                    for block,inner_list in self.gf_struct_sumk[self.inequiv_to_corr[ish]]:
-                        self.solver_to_sumk_block[ish][block] = block
-                        for inner in inner_list:
-                            self.sumk_to_solver[ish][(block,inner)] = (block,inner)
-                            self.solver_to_sumk[ish][(block,inner)] = (block,inner)
+            self.chemical_potential = 0.0 # initialise mu
+            self.init_dc() # initialise the double counting
 
-            if (not self.subgroup_present) or (not self.value_read['dc_imp']):
-                self.__init_dc() # initialise the double counting
-
-            if (not self.subgroup_present) or (not self.value_read['chemical_potential']):
-                self.chemical_potential = mu
-
-            if (not self.subgroup_present) or (not self.value_read['deg_shells']):
-                self.deg_shells = [ [] for ish in range(self.n_inequiv_shells)]
-            #-----
-
-            if self.symm_op:
-                self.symmcorr = Symmetry(hdf_file,subgroup=self.symmcorr_data)
-
-            # Analyse the block structure and determine the smallest blocks, if desired
-            if use_dft_blocks: dm = self.analyse_block_structure()
+            # Analyse the block structure and determine the smallest gf_struct blocks and maps, if desired
+            if use_dft_blocks: self.analyse_block_structure()
 
 ################
 # HDF5 FUNCTIONS
 ################
 
-    def read_input_from_hdf(self, subgrp, things_to_read=[], optional_things=[]):
+    def read_input_from_hdf(self, subgrp, things_to_read):
         """
         Reads data from the HDF file
         """
@@ -126,7 +109,6 @@ class SumkDFT:
         value_read = True
         # initialise variables on all nodes to ensure mpi broadcast works at the end
         for it in things_to_read: setattr(self,it,0)
-        for it in optional_things: setattr(self,it,0)
         subgroup_present = 0
 
         if mpi.is_master_node():
@@ -140,16 +122,6 @@ class SumkDFT:
                     else:
                         mpi.report("Loading %s failed!"%it)
                         value_read = False
-
-                if value_read and (len(optional_things) > 0):
-                    # if successfully read necessary items, read optional things:
-                    value_read = {}
-                    for it in optional_things:
-                        if it in ar[subgrp]:
-                            setattr(self,it,ar[subgrp][it])
-                            value_read['%s'%it] = True
-                        else:
-                            value_read['%s'%it] = False
             else:
                 if (len(things_to_read) != 0): mpi.report("Loading failed: No %s subgroup in HDF5!"%subgrp)
                 subgroup_present = False
@@ -158,25 +130,40 @@ class SumkDFT:
             del ar
         # now do the broadcasting:
         for it in things_to_read: setattr(self,it,mpi.bcast(getattr(self,it)))
-        for it in optional_things: setattr(self,it,mpi.bcast(getattr(self,it)))
         subgroup_present = mpi.bcast(subgroup_present)
         value_read = mpi.bcast(value_read)
 
         return subgroup_present, value_read
 
 
-    def save(self,things_to_save):
-        """Saves given quantities into the 'dft_output' subgroup of the HDF5 archive"""
+    def save(self, things_to_save, subgrp='user_data'):
+        """Saves given quantities into the subgroup ('user_data' by default) of the HDF5 archive"""
 
         if not (mpi.is_master_node()): return # do nothing on nodes
         ar = HDFArchive(self.hdf_file,'a')
-        if not self.dft_output in ar: ar.create_group(self.dft_output)
+        if not subgrp in ar: ar.create_group(subgrp)
         for it in things_to_save: 
             try:
-                ar[self.dft_output][it] = getattr(self,it)
+                ar[subgrp][it] = getattr(self,it)
             except:
-                mpi.report("%s not found, and so not stored."%it)
+                mpi.report("%s not found, and so not saved."%it)
         del ar
+
+
+    def load(self, things_to_load, subgrp='user_data'):
+        """Loads given quantities from the subgroup ('user_data' by default) of the HDF5 archive"""
+
+        if not (mpi.is_master_node()): return # do nothing on nodes
+        ar = HDFArchive(self.hdf_file,'a')
+        if not subgrp in ar: mpi.report("Loading %s failed!"%subgrp)
+        list_to_return = []
+        for it in things_to_load: 
+            try:
+                list_to_return.append(ar[subgrp][it])
+            except:
+                raise ValueError, "%s not found, and so not loaded."%it 
+        del ar
+        return list_to_return
 
 ################
 # CORE FUNCTIONS
@@ -431,7 +418,7 @@ class SumkDFT:
                         self.solver_to_sumk[ish][(block_solv,inner_solv)] = (block_sumk,inner_sumk)
                         self.solver_to_sumk_block[ish][block_solv] = block_sumk
 
-            # now calculate degeneracies of orbitals:
+            # Now calculate degeneracies of orbitals
             dm = {}
             for block,inner in self.gf_struct_solver[ish].iteritems():
                 # get dm for the blocks:
@@ -446,9 +433,9 @@ class SumkDFT:
                 for block2 in self.gf_struct_solver[ish].iterkeys(): 
                     if dm[block1].shape == dm[block2].shape:
                         if ( (abs(dm[block1] - dm[block2]) < threshold).all() ) and (block1 != block2):
-                            # check if it was already there:
                             ind1 = -1
                             ind2 = -2
+                            # check if it was already there:
                             for n,ind in enumerate(self.deg_shells[ish]):
                                 if block1 in ind: ind1 = n
                                 if block2 in ind: ind2 = n
@@ -458,11 +445,6 @@ class SumkDFT:
                                 self.deg_shells[ish][ind1].append(block2)
                             elif (ind1 < 0) and (ind2 < 0):
                                 self.deg_shells[ish].append([block1,block2])
-
-        things_to_save = ['gf_struct_solver','sumk_to_solver','solver_to_sumk','solver_to_sumk_block','deg_shells']
-        self.save(things_to_save)
-
-        return dens_mat
 
 
     def density_matrix(self, method = 'using_gf', beta = 40.0):
@@ -505,6 +487,8 @@ class SumkDFT:
                             MMat[isp][inu,inu] = 1.0
                         else:
                             MMat[isp][inu,inu] = 0.0
+
+            else: raise ValueError, "density_matrix: the method '%s' is not supported."%method
 
             for icrsh in range(self.n_corr_shells):
                 for isp, sp in enumerate(self.spin_block_names[self.corr_shells[icrsh]['SO']]):
@@ -550,7 +534,8 @@ class SumkDFT:
 
         # Chemical Potential:
         for ish in range(self.n_inequiv_shells):
-            for ii in eff_atlevels[ish]: eff_atlevels[ish][ii] *= -self.chemical_potential
+            for ii in eff_atlevels[ish]: 
+                eff_atlevels[ish][ii] *= -self.chemical_potential
 
         # double counting term:
         for ish in range(self.n_inequiv_shells):
@@ -599,9 +584,8 @@ class SumkDFT:
         return eff_atlevels
 
 
-    def __init_dc(self):
-
-        # construct the density matrix dm_imp and double counting arrays
+    def init_dc(self):
+        """ Initialise the double counting terms to have the correct shape."""
         self.dc_imp = [ {} for icrsh in range(self.n_corr_shells)]
         for icrsh in range(self.n_corr_shells):
             dim = self.corr_shells[icrsh]['dim']
@@ -610,45 +594,44 @@ class SumkDFT:
         self.dc_energ = [0.0 for icrsh in range(self.n_corr_shells)]
 
 
-    def set_dc(self,dens_mat,U_interact,J_hund,orb=0,use_dc_formula=0,use_val=None):
-        """Sets the double counting term for inequiv orbital orb:
+    def set_dc(self,dc_imp,dc_energ):
+        """Sets double counting terms dc_imp and dc_energ to known values."""
+
+        self.dc_imp = dc_imp
+        self.dc_energ = dc_energ
+
+
+    def calc_dc(self,dens_mat,orb=0,U_interact=None,J_hund=None,use_dc_formula=0,use_dc_value=None):
+        """Sets the double counting corrections in the correct form for inequiv orbital orb:
+           1) either using U_interact, J_hund and 
            use_dc_formula = 0: fully-localised limit (FLL),
            use_dc_formula = 1: Held's formula,
            use_dc_formula = 2: around mean-field (AMF).
+           2) or using a given dc value in use_dc_value.
            Be sure that you are using the correct interaction Hamiltonian!"""
 
         for icrsh in range(self.n_corr_shells):
 
-            iorb = self.corr_to_inequiv[icrsh]    # iorb is the index of the inequivalent shell corresponding to icrsh
-
-            if iorb != orb: continue # ignore this orbital
-
-            Ncr = {}
+            ish = self.corr_to_inequiv[icrsh]    # ish is the index of the inequivalent shell corresponding to icrsh
+            if ish != orb: continue # ignore this orbital
             dim = self.corr_shells[icrsh]['dim'] #*(1+self.corr_shells[icrsh]['SO'])
-
             spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
-            for sp in spn:
-                self.dc_imp[icrsh][sp] = numpy.identity(dim,numpy.float_)
-                Ncr[sp] = 0.0
 
-            for block,inner in self.gf_struct_solver[iorb].iteritems():
-                bl = self.solver_to_sumk_block[iorb][block]
+            Ncr = { sp: 0.0 for sp in spn }
+            for block,inner in self.gf_struct_solver[ish].iteritems():
+                bl = self.solver_to_sumk_block[ish][block]
                 Ncr[bl] += dens_mat[block].real.trace()
-
-            Ncrtot = 0.0
-
-            spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
+            Ncrtot = sum(Ncr.itervalues())
             for sp in spn: 
-                Ncrtot += Ncr[sp]
-
-            # average the densities if there is no SP:
-            if self.SP == 0:
-                for sp in spn: Ncr[sp] = Ncrtot / len(spn)
-            # correction for SO: we have only one block in this case, but in DC we need N/2
-            elif self.SP == 1 and self.SO == 1:
-                for sp in spn: Ncr[sp] = Ncrtot / 2.0
+                self.dc_imp[icrsh][sp] = numpy.identity(dim,numpy.float_)
+                if self.SP == 0: # average the densities if there is no SP:
+                    Ncr[sp] = Ncrtot / len(spn)
+                elif self.SP == 1 and self.SO == 1: # correction for SO: we have only one block in this case, but in DC we need N/2
+                    Ncr[sp] = Ncrtot / 2.0
 
             if use_val is None:
+
+                if U_interact is None and J_hund is None: raise ValueError, "set_dc: either provide U_interact and J_hund or set use_val to dc value."
 
                 if use_dc_formula == 0: # FLL
 
@@ -676,16 +659,13 @@ class SumkDFT:
                         self.dc_energ[icrsh] -= (U_interact + (dim-1)*J_hund)/dim * 0.5 * Ncr[sp] * Ncr[sp]
                         mpi.report("DC for shell %(icrsh)i and block %(sp)s = %(Uav)f"%locals())
 
-                # output:
                 mpi.report("DC energy for shell %s = %s"%(icrsh,self.dc_energ[icrsh]))
 
-            else:
+            else: # use value provided for user to determine dc_energ and dc_imp
 
                 self.dc_energ[icrsh] = use_val * Ncrtot
-                for sp in spn:
-                    self.dc_imp[icrsh][sp] *= use_val
+                for sp in spn: self.dc_imp[icrsh][sp] *= use_val
 
-                # output:
                 mpi.report("DC for shell %(icrsh)i = %(use_val)f"%locals())
                 mpi.report("DC energy = %s"%self.dc_energ[icrsh])
 
@@ -745,7 +725,7 @@ class SumkDFT:
         self.chemical_potential = mu
 
 
-    def find_mu(self, precision = 0.01):
+    def calc_mu(self, precision = 0.01):
         """
         Searches for mu in order to give the desired charge
         A desired precision can be specified in precision.
@@ -840,8 +820,8 @@ class SumkDFT:
 # FIXME LEAVE UNDOCUMENTED
 ################
 
-    # FIXME Merge with find_mu?
-    def find_mu_nonint(self, dens_req, orb = None, precision = 0.01):
+    # FIXME Merge with calc_mu?
+    def calc_mu_nonint(self, dens_req, orb = None, precision = 0.01):
 
         def F(mu):
             gnonint = self.extract_G_loc(mu = mu, with_Sigma = False)
@@ -873,7 +853,7 @@ class SumkDFT:
         mu = self.chemical_potential
 
         def F(dc):
-            self.set_dc(dens_mat = dens_mat, U_interact = 0, J_hund = 0, orb = orb, use_val = dc)
+            self.calc_dc(dens_mat = dens_mat, U_interact = 0, J_hund = 0, orb = orb, use_val = dc)
             if dens_req is None:
                 return self.total_density(mu = mu)
             else:
