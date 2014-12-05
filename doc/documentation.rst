@@ -28,7 +28,6 @@ User guide
    guide/full_tutorial
    guide/transport
 
-
 Reference manual
 ----------------
 
