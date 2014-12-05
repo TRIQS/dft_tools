@@ -21,8 +21,9 @@
 ################################################################################
 
 from wien2k_converter import Wien2kConverter
+from fleur_converter import FleurConverter
 from hk_converter import HkConverter
 
-__all__ =['Wien2kConverter','HkConverter']
+__all__ =['Wien2kConverter','FleurConverter','HkConverter']
 
 
