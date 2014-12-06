@@ -39,7 +39,7 @@ class Symmetry:
            SP: Flag for spin polarisation.
            """
 
-        assert type(hdf_file) == StringType, "hdf_file must be a filename"
+        assert type(hdf_file) == StringType, "Symmetry: hdf_file must be a filename."
         self.hdf_file = hdf_file
         things_to_read = ['n_symm','n_atoms','perm','orbits','SO','SP','time_inv','mat','mat_tinv']
         for it in things_to_read: setattr(self,it,0)
@@ -73,8 +73,8 @@ class Symmetry:
 
     def symmetrize(self,obj):
 
-        assert isinstance(obj,list), "symmetry: obj has to be a list of objects."
-        assert len(obj) == self.n_orbits, "symmetry: obj has to be a list of the same length as defined in the init."
+        assert isinstance(obj,list), "symmetrize: obj has to be a list of objects."
+        assert len(obj) == self.n_orbits, "symmetrize: obj has to be a list of the same length as defined in the init."
 
         if isinstance(obj[0],BlockGf):
             symm_obj = [ obj[i].copy() for i in range(len(obj)) ]        # here the result is stored, it is a BlockGf!
