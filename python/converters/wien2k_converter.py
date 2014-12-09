@@ -21,7 +21,7 @@
 ################################################################################
 
 from types import *
-import numpy, os.path
+import numpy
 from pytriqs.archive import *
 from converter_tools import *
 import os.path
@@ -388,48 +388,43 @@ class Wien2kConverter(ConverterTools):
         # Read relevant data from .pmat file
         ############################################
        
-        vk = []
-        kp = []
+        vk = [[] for sp in spinbl]
+        kp = [[] for sp in spinbl]
         bandwin_opt = []
         
-        for ispinbl in spinbl:
-            vks = []
-            kps = []
-            bandwins_opt = []
-            if not (os.path.exists(self.vel_file + ispinbl)) : raise IOError, "File %s does not exist" %self.vel_file+ispinbl
-            print "Reading input from %s..."%self.vel_file+ispinbl
+        for isp, sp in enumerate(spinbl):
+            bandwin_opt_isp = []
+            if not (os.path.exists(self.vel_file + sp)) : raise IOError, "File %s does not exist" %self.vel_file+sp
+            print "Reading input from %s..."%self.vel_file+sp
 
-            with  open(self.vel_file + ispinbl) as f:
-                    while 1:
-                        try:
-                            s = f.readline()
-                            if (s == ''):
-                                break
-                        except:
+            with open(self.vel_file + sp) as f:
+                while 1:
+                    try:
+                        s = f.readline()
+                        if (s == ''):
                             break
-                        try:
-                           [k, nu1, nu2] = [int(x) for x in s.strip().split()]
-                           bandwins_opt.append((nu1,nu2))
-                           dim = nu2 - nu1 +1
-                           v_xyz = numpy.zeros((dim,dim,3), dtype = complex)
-                           # kp.append(f.readline().strip().split())
-                           temp = f.readline().strip().split()
-                           kps.append(numpy.array([float(t) for t in temp[0:3]]))
-                           for nu_i in xrange(dim):
-                               for nu_j in xrange(nu_i, dim):
-                                   for i in xrange(3):
-                                       s = f.readline().strip("\n ()").split(',')
-                                       v_xyz[nu_i][nu_j][i] = float(s[0]) + float(s[1])*1j
-                                       if (nu_i != nu_j):
-                                            v_xyz[nu_j][nu_i][i] = v_xyz[nu_i][nu_j][i].conjugate()
+                    except:
+                        break
+                    try:
+                       [k, nu1, nu2] = [int(x) for x in s.strip().split()]
+                       bandwin_opt_isp.append((nu1,nu2))
+                       dim = nu2 - nu1 +1
+                       v_xyz = numpy.zeros((dim,dim,3), dtype = complex)
+                       temp = f.readline().strip().split()
+                       kp[isp].append(numpy.array([float(t) for t in temp[0:3]]))
+                       for nu_i in xrange(dim):
+                           for nu_j in xrange(nu_i, dim):
+                               for i in xrange(3):
+                                   s = f.readline().strip("\n ()").split(',')
+                                   v_xyz[nu_i][nu_j][i] = float(s[0]) + float(s[1])*1j
+                                   if (nu_i != nu_j):
+                                        v_xyz[nu_j][nu_i][i] = v_xyz[nu_i][nu_j][i].conjugate()
 
-                           vks.append(v_xyz)
+                       vk[isp].append(v_xyz)
         
-                        except IOError:
-                            raise "Wien2k_converter : reading file %s failed" %self.vel_file
-            vk.append(vks)
-            kp.append(kps)
-            bandwin_opt.append(numpy.array(bandwins_opt))
+                    except IOError:
+                        raise "Wien2k_converter : reading file %s failed" %self.vel_file
+            bandwin_opt.append(numpy.array(bandwin_opt_isp))
 
         print "Read in %s file done!" %self.vel_file
 
@@ -440,24 +435,22 @@ class Wien2kConverter(ConverterTools):
         print "Reading input from %s..."%self.struct_file
         
         with open(self.struct_file) as f:
-                try:
-                    f.readline() #title
-                    temp = f.readline() #lattice
-                    #latticetype = temp[0:10].split()[0]
-                    latticetype = temp.split()[0]
+            try:
+                f.readline() #title
+                temp = f.readline() #lattice
+                #latticetype = temp[0:10].split()[0]
+                latticetype = temp.split()[0]
+                f.readline()
+                temp = f.readline().strip().split() # lattice constants
+                latticeconstants = numpy.array([float(t) for t in temp[0:3]])
+                latticeangles = numpy.array([float(t) for t in temp[3:6]])
+                latticeangles *= numpy.pi/180.0
+                print 'Lattice: ', latticetype
+                print 'Lattice constants: ', latticeconstants
+                print 'Lattice angles: ', latticeangles
 
-                    print 'Lattice: ', latticetype
- 
-                    f.readline()
-                    temp = f.readline().strip().split() # lattice constants
-                    latticeconstants = numpy.array([float(t) for t in temp[0:3]])
-                    latticeangles = numpy.array([float(t) for t in temp[3:6]])
-                    latticeangles *= numpy.pi/180.0
-                    print 'Lattice constants: ', latticeconstants
-                    print 'Lattice angles: ', latticeangles
-
-                except IOError:
-                    raise "Wien2k_converter : reading file %s failed" %self.struct_file
+            except IOError:
+                raise "Wien2k_converter : reading file %s failed" %self.struct_file
 
         print "Read in %s file done!" %self.struct_file
 
@@ -471,33 +464,33 @@ class Wien2kConverter(ConverterTools):
         taucartesian = []
 
         with open(self.outputs_file) as f:
-                try:
+            try:
+                while 1:
+                    temp = f.readline().strip(' ').split()
+                    if (temp[0] =='PGBSYM:'):
+                         nsymm = int(temp[-1])
+                         break
+                for i in range(nsymm):
                     while 1:
-                        temp = f.readline().strip(' ').split()
-                        if (temp[0] =='PGBSYM:'):
-                             nsymm = int(temp[-1])
-                             break
-                    for i in range(nsymm):
-                        while 1:
-                            temp = f.readline().strip().split()
-                            if (temp[0] == 'Symmetry'):
-                                break
-
-                        # read cartesian symmetries
-                        symmt = numpy.zeros((3, 3), dtype = float)
-                        taut = numpy.zeros(3, dtype = float)
-                        for ir in range(3):
-                            temp = f.readline().strip().split()
-                            for ic in range(3):
-                                symmt[ir, ic] = float(temp[ic])
                         temp = f.readline().strip().split()
-                        for ir in range(3):
-                            taut[ir] = float(temp[ir])
+                        if (temp[0] == 'Symmetry'):
+                            break
 
-                        symmcartesian.append(symmt)
-                        taucartesian.append(taut)
-                except IOError:
-                     raise "Wien2k_converter : reading file %s failed" %self.outputs_file
+                    # read cartesian symmetries
+                    symmt = numpy.zeros((3, 3), dtype = float)
+                    taut = numpy.zeros(3, dtype = float)
+                    for ir in range(3):
+                        temp = f.readline().strip().split()
+                        for ic in range(3):
+                            symmt[ir, ic] = float(temp[ic])
+                    temp = f.readline().strip().split()
+                    for ir in range(3):
+                        taut[ir] = float(temp[ir])
+
+                    symmcartesian.append(symmt)
+                    taucartesian.append(taut)
+            except IOError:
+                 raise "Wien2k_converter: reading file %s failed" %self.outputs_file
      
         print "Read in %s file done!" %self.outputs_file
 
@@ -505,33 +498,26 @@ class Wien2kConverter(ConverterTools):
         # Read relevant data from .oubwin/up/down files
         ############################################
         
-        # convert_dmft_inputar = HDFArchive(self.hdf_file, 'a')
-
+        if (SP == 0 or SO == 1):        
+            files = [self.oubwin_file]
+        elif SP == 1:
+            files = [self.oubwin_file+'up', self.oubwin_file+'dn']
+        else: # SO and SP can't both be 1
+            assert 0, "Reding oubwin error! Check SP and SO!"
         bandwin = [numpy.zeros((n_k, 2), dtype=int) for isp in range(SP + 1 - SO)]
 
-        for isp in range(SP + 1 - SO):
-            if(SP == 0 or SO == 1):        
-                if not (os.path.exists(self.oubwin_file)) : raise IOError, "File %s does not exist" %self.oubwin_file
-                print "Reading input from %s..."%self.oubwin_file
-                f = ConverterTools.read_fortran_file(self, self.oubwin_file, self.fortran_to_replace)
-            elif (SP == 1 and isp == 0):
-                if not (os.path.exists(self.oubwin_file+'up')) : raise IOError, "File %s does not exist" %self.oubwin_file+'up'
-                print "Reading input from %s..."%self.oubwin_file+'up'
-                f = ConverterTools.read_fortran_file(self, self.oubwin_file+'up', self.fortran_to_replace)
-            elif (SP == 1 and isp ==1):
-                if not (os.path.exists(self.oubwin_file+'dn')) : raise IOError, "File %s does not exist" %self.oubwin_file+'dn'    
-                print "Reading input from %s..."%self.oubwin_file+'dn'
-                f = ConverterTools.read_fortran_file(self, self.oubwin_file+'dn', self.fortran_to_replace)
-            else:
-                assert 0, "Reding oubwin error! Check SP and SO!"
-            assert int(f.next()) == n_k, "Number of k-points is unconsistent in oubwin file!"
-            assert int(f.next()) == SO, "SO is unconsistent in oubwin file!"
+        for isp, f in enumerate(files):
+            if not os.path.exists(f): raise IOError, "File %s does not exist" %f
+            print "Reading input from %s..."%f
+            R = ConverterTools.read_fortran_file(self, f, self.fortran_to_replace)
+            assert int(R.next()) == n_k, "Wien2k_converter: Number of k-points is inconsistent in oubwin file!"
+            assert int(R.next()) == SO, "Wien2k_converter: SO is inconsistent in oubwin file!"
 
-            for i in xrange(n_k):
-                f.next()
-                bandwin[isp][i, 0] = f.next()
-                bandwin[isp][i, 1] = f.next()
-                f.next()
+            for ik in xrange(n_k):
+                R.next()
+                bandwin[isp][ik,0] = R.next()
+                bandwin[isp][ik,1] = R.next()
+                R.next()
 
         print "Read in %s files done!" %self.oubwin_file
 
