@@ -27,7 +27,7 @@ from pytriqs.applications.dft.sumk_dft_tools import *
 beta = 40
 
 Converter = Wien2kConverter(filename='SrVO3', repacking=True)
-Converter.convert_dmft_input()
+Converter.convert_dft_input()
 Converter.convert_transport_input()
 Converter.convert_parproj_input()
 

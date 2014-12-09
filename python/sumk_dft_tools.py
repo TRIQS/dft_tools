@@ -33,7 +33,8 @@ class SumkDFTTools(SumkDFT):
 
 
     def __init__(self, hdf_file, h_field = 0.0, use_dft_blocks = False, dft_data = 'dft_input', symmcorr_data = 'dft_symmcorr_input',
-                 parproj_data = 'dft_parproj_input', symmpar_data = 'dft_symmpar_input', bands_data = 'dft_bands_input'):
+                 parproj_data = 'dft_parproj_input', symmpar_data = 'dft_symmpar_input', bands_data = 'dft_bands_input', 
+                 transp_data = 'dft_transp_input'):
 
         self.G_upfold_refreq = None
         SumkDFT.__init__(self, hdf_file=hdf_file, h_field=h_field, use_dft_blocks=use_dft_blocks,
@@ -634,7 +635,7 @@ class SumkDFTTools(SumkDFT):
                 # Truncate Sigma to given omega window
                 for icrsh in range(self.n_corr_shells):
                     Sigma_save = self.Sigma_imp[icrsh].copy()
-                    spn = self.spin_block_names[self.corr_shells[icrsh][4]]
+                    spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
                     glist = lambda : [ GfReFreq(indices = inner, window=(self.omega[0], self.omega[-1]),n_points=n_om) for block, inner in self.gf_struct_sumk[icrsh]]
                     self.Sigma_imp[icrsh] = BlockGf(name_list = spn, block_list = glist(),make_copies=False)
                     for i,g in self.Sigma_imp[icrsh]:
