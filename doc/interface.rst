@@ -46,7 +46,7 @@ There are three optional parameters to the Constructor:
 After initialising the interface module, we can now convert the input text files into the
 hdf5 arxive by::
 
-  Converter.convert_dmft_input()
+  Converter.convert_dft_input()
 
 This reads all the data, and stores it in the subgroup `dft_subgrp`, as discussed above. 
 In this step, the files :file:`material_of_interest.ctqmcout` and :file:`material_of_interest.symqmc`

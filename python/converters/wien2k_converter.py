@@ -59,7 +59,7 @@ class Wien2kConverter(ConverterTools):
             ConverterTools.repack(self)
         
 
-    def convert_dmft_input(self):
+    def convert_dft_input(self):
         """
         Reads the input files, and stores the data in the HDFfile
         """

@@ -27,7 +27,7 @@ p["n_warmup_cycles"] = 50
 p["n_cycles"] = 5000
 
 Converter = Wien2kConverter(filename=dft_filename, repacking=True)
-Converter.convert_dmft_input()
+Converter.convert_dft_input()
 mpi.barrier()
 
 previous_runs = 0

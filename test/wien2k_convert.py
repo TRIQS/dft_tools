@@ -26,7 +26,7 @@ from pytriqs.applications.dft.converters import Wien2kConverter
 
 Converter = Wien2kConverter(filename='SrVO3')
 Converter.hdf_file = 'wien2k_convert.output.h5'
-Converter.convert_dmft_input()
+Converter.convert_dft_input()
 
 Converter.convert_parproj_input()
 

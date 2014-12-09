@@ -20,7 +20,7 @@ class TransBasis:
                 return 0
 
             Converter = Wien2kConverter(filename=hdf_datafile,repacking=False)
-            Converter.convert_dmft_input()
+            Converter.convert_dft_input()
             del Converter
 
             self.SK = SumkDFT(hdf_file=hdf_datafile+'.h5',use_dft_blocks=False)

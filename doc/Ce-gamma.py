@@ -21,7 +21,7 @@ use_val= U_int * (Natomic - 0.5) - J_hund * (Natomic * 0.5 - 0.5)
 # Convert DMFT input:
 # Can be commented after the first run
 Converter = Wien2kConverter(filename=dft_filename)
-Converter.convert_dmft_input()
+Converter.convert_dft_input()
 
 #check if there are previous runs:
 previous_runs = 0

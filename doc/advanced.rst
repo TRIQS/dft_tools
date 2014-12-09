@@ -36,7 +36,7 @@ Most of these parameters are self-explaining. The first, `dft_filename`, gives t
 The next step, as described in the previous section, is to convert the input files::
 
   Converter = Wien2kConverter(filename=dft_filename, repacking=True)
-  Converter.convert_dmft_input()
+  Converter.convert_dft_input()
   mpi.barrier()
 
 The command ``mpi.barrier()`` ensures that all nodes wait until the conversion of the input is finished on the master

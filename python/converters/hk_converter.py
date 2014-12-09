@@ -50,7 +50,7 @@ class HkConverter(ConverterTools):
             ConverterTools.repack(self)
 
 
-    def convert_dmft_input(self, first_real_part_matrix = True, only_upper_triangle = False, weights_in_file = False):
+    def convert_dft_input(self, first_real_part_matrix = True, only_upper_triangle = False, weights_in_file = False):
         """
         Reads the input files, and stores the data in the HDFfile
         """

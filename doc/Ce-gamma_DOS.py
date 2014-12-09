@@ -22,7 +22,7 @@ HDFfilename = dft_filename+'.h5'
 # Convert DMFT input:
 # Can be commented after the first run
 Converter = Wien2kConverter(filename=dft_filename,repacking=True)
-Converter.convert_dmft_input()
+Converter.convert_dft_input()
 Converter.convert_parproj_input()
 
 #check if there are previous runs:
