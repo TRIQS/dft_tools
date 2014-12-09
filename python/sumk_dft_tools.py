@@ -330,7 +330,7 @@ class SumkDFTTools(SumkDFT):
 
     def spaghettis(self,broadening,shift=0.0,plot_range=None, ishell=None, invert_Akw=False, fermi_surface=False):
         """ Calculates the correlated band structure with a real-frequency self energy.
-            ATTENTION: Many things from the original input file are are overwritten!!!"""
+            ATTENTION: Many things from the original input file are overwritten!!!"""
 
         assert hasattr(self,"Sigma_imp"), "Set Sigma First!!"
         things_to_read = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_pc']
