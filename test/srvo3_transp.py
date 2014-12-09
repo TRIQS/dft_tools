@@ -38,6 +38,6 @@ Sigma = ar['dmft_transp_output']['Sigma']
 SK.put_Sigma(Sigma_imp = [Sigma])
 del ar
 
-SK.transport_distribution(dir_list=[(0,0)], broadening=0.0, energywindow=[-0.3,0.3], Om_mesh=[0.00, 0.02] , beta=beta, DFT_only=False, save_hdf=False)
+SK.transport_distribution(dir_list=[(0,0)], broadening=0.0, energywindow=[-0.3,0.3], Om_mesh=[0.00, 0.02] , beta=beta, with_Sigma=False, save_hdf=False)
 SK.hdf_file = 'srvo3_transp.output.h5'
 SK.conductivity_and_seebeck(beta=beta, read_hdf=False, res_subgrp='results')

@@ -559,6 +559,7 @@ class SumkDFTTools(SumkDFT):
 
         return dens_mat
 
+# ----------------- transport -----------------------
 
     def read_transport_input_from_hdf(self):
         """
@@ -588,17 +589,14 @@ class SumkDFTTools(SumkDFT):
         return volumecc, volumepc
 
 
-    def fermidis(self, x):
-        return 1.0/(numpy.exp(x)+1)
-    
-    def transport_distribution(self, dir_list=[(0,0)], broadening=0.01, energywindow=None, Om_mesh=[0.0], beta=40, DFT_only=False, n_om=None, save_hdf=True,  res_subgrp='transp_output'):
+    def transport_distribution(self, dir_list=[(0,0)], broadening=0.01, energywindow=None, Om_mesh=[0.0], beta=40, with_Sigma=False, n_om=None, save_hdf=True, res_subgrp='transp_output'):
         """calculate Tr A(k,w) v(k) A(k, w+q) v(k) and optics.
         energywindow: regime for omega integral
         Om_mesh: contains the frequencies of the optic conductivitity. Om_mesh is repinned to the self-energy mesh
         (hence exact values might be different from those given in Om_mesh)
         dir_list: list to defines the indices of directions. xx,yy,zz,xy,yz,zx. 
         ((0, 0) --> xx, (1, 1) --> yy, (0, 2) --> xz, default: (0, 0))
-        DFT_only: Use Sigma = 0 (Issue to solve: code still needs self-energy for mesh) 
+        with_Sigma: Use Sigma = 0 if False
         """
        
         # Check if wien converter was called
@@ -610,7 +608,7 @@ class SumkDFTTools(SumkDFT):
         
         self.read_transport_input_from_hdf()
         velocities = self.vk
-        self.n_spin_blocks_input = self.SP + 1 - self.SO
+        n_inequiv_spin_blocks = self.SP + 1 - self.SO  # up and down are equivalent if SP = 0
         
             
         # calculate A(k,w)
@@ -620,7 +618,7 @@ class SumkDFTTools(SumkDFT):
         assert self.k_dep_projection == 1, "Not implemented!"
 
         # Define mesh for Greens function and the used energy range
-        if (DFT_only == False):
+        if (with_Sigma == False):
             self.omega = numpy.array([round(x.real,12) for x in self.Sigma_imp[0].mesh])
             mu = self.chemical_potential
             n_om = len(self.omega)
@@ -650,8 +648,8 @@ class SumkDFTTools(SumkDFT):
             self.omega = numpy.linspace(energywindow[0],energywindow[1],n_om)
             mu = 0.0
 
-        if (abs(self.fermidis(self.omega[0]*beta)*self.fermidis(-self.omega[0]*beta)) > 1e-5
-            or abs(self.fermidis(self.omega[-1]*beta)*self.fermidis(-self.omega[-1]*beta)) > 1e-5):
+        if (abs(self.fermi_dis(self.omega[0]*beta)*self.fermi_dis(-self.omega[0]*beta)) > 1e-5
+            or abs(self.fermi_dis(self.omega[-1]*beta)*self.fermi_dis(-self.omega[-1]*beta)) > 1e-5):
                 print "\n##########################################"
                 print "WARNING: Energywindow might be too narrow!"
                 print "##########################################\n"
@@ -680,33 +678,33 @@ class SumkDFTTools(SumkDFT):
         ntoi = self.spin_names_to_ind[self.SO]
           
         S = BlockGf(name_block_generator=[(bln[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]), window=(self.omega[0], self.omega[-1]), n_points = n_om)) 
-                for isp in range(self.n_spin_blocks_input) ], make_copies=False)
-        mupat = [numpy.identity(self.n_orbitals[ik][isp], numpy.complex_) * mu for isp in range(self.n_spin_blocks_input)] # construct mupat
-        Annkw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_) for isp in range(self.n_spin_blocks_input)]
+                for isp in range(n_inequiv_spin_blocks) ], make_copies=False)
+        mupat = [numpy.identity(self.n_orbitals[ik][isp], numpy.complex_) * mu for isp in range(n_inequiv_spin_blocks)] # construct mupat
+        Annkw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_) for isp in range(n_inequiv_spin_blocks)]
         
         ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):
-            unchangesize = all([ self.n_orbitals[ik][isp] == mupat[isp].shape[0] for isp in range(self.n_spin_blocks_input)])
+            unchangesize = all([ self.n_orbitals[ik][isp] == mupat[isp].shape[0] for isp in range(n_inequiv_spin_blocks)])
             if (not unchangesize):
                # recontruct green functions.
                S = BlockGf(name_block_generator=[(bln[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]), window = (self.omega[0], self.omega[-1]), n_points = n_om)) 
-                       for isp in range(self.n_spin_blocks_input) ], make_copies=False)
+                       for isp in range(n_inequiv_spin_blocks) ], make_copies=False)
                # construct mupat
-               mupat = [numpy.identity(self.n_orbitals[ik][isp], numpy.complex_) * mu for isp in range(self.n_spin_blocks_input)]
+               mupat = [numpy.identity(self.n_orbitals[ik][isp], numpy.complex_) * mu for isp in range(n_inequiv_spin_blocks)]
                #set a temporary array storing spectral functions with band index. Note, usually we should have spin index
-               Annkw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_) for isp in range(self.n_spin_blocks_input)]
+               Annkw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_) for isp in range(n_inequiv_spin_blocks)]
                # get lattice green function
             
             S << 1*Omega + 1j*broadening
             
             MS = copy.deepcopy(mupat)
-            for ibl in range(self.n_spin_blocks_input):
+            for ibl in range(n_inequiv_spin_blocks):
                 ind = ntoi[bln[ibl]]
                 n_orb = self.n_orbitals[ik][ibl]
                 MS[ibl] = self.hopping[ik,ind,0:n_orb,0:n_orb].real - mupat[ibl]
             S -= MS
             
-            if (DFT_only == False):
+            if (with_Sigma == False):
                 tmp = S.copy()    # init temporary storage
                 # form self energy from impurity self energy and double counting term.
                 stmp = self.add_dc()
@@ -717,10 +715,10 @@ class SumkDFTTools(SumkDFT):
 
             S.invert()
 
-            for isp in range(self.n_spin_blocks_input):
+            for isp in range(n_inequiv_spin_blocks):
                 Annkw[isp].real = -copy.deepcopy(S[self.spin_block_names[self.SO][isp]].data.swapaxes(0,1).swapaxes(1,2)).imag / numpy.pi
             
-            for isp in range(self.n_spin_blocks_input):
+            for isp in range(n_inequiv_spin_blocks):
                 if(ik%100==0):
                   print "ik,isp", ik, isp
                 kvel = velocities[isp][ik]
@@ -788,55 +786,60 @@ class SumkDFTTools(SumkDFT):
 
            volcc, volpc  = self.cellvolume(self.latticetype, self.latticeconstants, self.latticeangles)
 
-           L1,L2,L3= self.Pw_optic.shape 
+           n_direction,n_q,n_w= self.Pw_optic.shape 
            omegaT = self.omega * beta
-           A0 = numpy.empty((L1,L2), dtype=numpy.float_)
+           A0 = numpy.empty((n_direction,n_q), dtype=numpy.float_)
            q_0 = False
-           Seebeck = numpy.zeros((L1, 1), dtype=numpy.float_)
-           Seebeck[:] = numpy.NAN
+           seebeck = numpy.zeros((n_direction, 1), dtype=numpy.float_)
+           seebeck[:] = numpy.NAN
 
            d_omega = self.omega[1] - self.omega[0]
-           for iq in xrange(L2):
+           for iq in xrange(n_q):
                # treat q = 0,  caclulate conductivity and seebeck
                if (self.Om_meshr[iq] == 0.0):
                    # if Om_meshr contains multiple entries with w=0, A1 is overwritten!
                    q_0 = True
-                   A1 = numpy.zeros((L1, 1), dtype=numpy.float_)
-                   for im in xrange(L1):
-                       for iw in xrange(L3):
-                           A0[im, iq] += beta * self.Pw_optic[im, iq, iw] * self.fermidis(omegaT[iw]) * self.fermidis(-omegaT[iw])
-                           A1[im] += beta * self.Pw_optic[im, iq, iw] *  self.fermidis(omegaT[iw]) * self.fermidis(-omegaT[iw]) * numpy.float(omegaT[iw])
-                       Seebeck[im] = -A1[im] / A0[im, iq]
+                   A1 = numpy.zeros((n_direction, 1), dtype=numpy.float_)
+                   for im in xrange(n_direction):
+                       for iw in xrange(n_w):
+                           A0[im, iq] += beta * self.Pw_optic[im, iq, iw] * self.fermi_dis(omegaT[iw]) * self.fermi_dis(-omegaT[iw])
+                           A1[im] += beta * self.Pw_optic[im, iq, iw] *  self.fermi_dis(omegaT[iw]) * self.fermi_dis(-omegaT[iw]) * numpy.float(omegaT[iw])
+                       seebeck[im] = -A1[im] / A0[im, iq]
                        print "A0", A0[im, iq] *d_omega/beta
                        print "A1", A1[im, iq] *d_omega/beta
                # treat q ~= 0, calculate optical conductivity
                else:
-                   for im in xrange(L1):
-                       for iw in xrange(L3):
-                           A0[im, iq] += self.Pw_optic[im, iq, iw] * (self.fermidis(omegaT[iw]) - self.fermidis(omegaT[iw] + self.Om_meshr[iq] * beta)) / self.Om_meshr[iq]
+                   for im in xrange(n_direction):
+                       for iw in xrange(n_w):
+                           A0[im, iq] += self.Pw_optic[im, iq, iw] * (self.fermi_dis(omegaT[iw]) - self.fermi_dis(omegaT[iw] + self.Om_meshr[iq] * beta)) / self.Om_meshr[iq]
 
            A0 *= d_omega
            #cond = beta * self.tdintegral(beta, 0)[index]
            print "V in bohr^3          ", volpc
            # transform to standard unit as in resistivity
-           OpticCon = A0 * 10700.0 / volpc
-           Seebeck *= 86.17
+           optic_cond = A0 * 10700.0 / volpc
+           seebeck *= 86.17
 
            # print
-           for im in xrange(L1):
-               for iq in xrange(L2):
-                   print "Conductivity in direction %s for Om_mesh %d       %.4f  x 10^4 Ohm^-1 cm^-1" % (self.dir_list[im], iq, OpticCon[im, iq])
-                   print "Resistivity in dircection %s for Om_mesh %d       %.4f  x 10^-4 Ohm cm" % (self.dir_list[im], iq, 1.0 / OpticCon[im, iq])
+           for im in xrange(n_direction):
+               for iq in xrange(n_q):
+                   print "Conductivity in direction %s for Om_mesh %d       %.4f  x 10^4 Ohm^-1 cm^-1" % (self.dir_list[im], iq, optic_cond[im, iq])
+                   print "Resistivity in direction  %s for Om_mesh %d       %.4f  x 10^-4 Ohm cm" % (self.dir_list[im], iq, 1.0 / optic_cond[im, iq])
                if q_0:
-                   print "Seebeck in direction %s  for q = 0              %.4f  x 10^(-6) V/K" % (self.dir_list[im], Seebeck[im])
+                   print "Seebeck in direction      %s for q = 0            %.4f  x 10^(-6) V/K" % (self.dir_list[im], seebeck[im])
            
 
            ar = HDFArchive(self.hdf_file, 'a')
            if not (res_subgrp in ar): ar.create_group(res_subgrp)
-           things_to_save = ['Seebeck', 'OpticCon']
+           things_to_save = ['seebeck', 'optic_cond']
            for it in things_to_save: ar[res_subgrp][it] = locals()[it]
-           ar[res_subgrp]['Seebeck'] = Seebeck
-           ar[res_subgrp]['OpticCon'] = OpticCon
+           ar[res_subgrp]['seebeck'] = seebeck
+           ar[res_subgrp]['optic_cond'] = optic_cond
            del ar
            
-           return OpticCon, Seebeck
+           return optic_cond, seebeck
+
+
+    def fermi_dis(self, x):
+        return 1.0/(numpy.exp(x)+1)
+    
