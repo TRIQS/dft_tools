@@ -696,14 +696,6 @@ class SumkDFTTools(SumkDFT):
         self.Pw_optic = mpi.all_reduce(mpi.world, self.Pw_optic, lambda x, y : x + y)
         self.Pw_optic *= (2 - self.SP)
         
-        # put data to h5
-        # If res_sugrp exists data will be overwritten!
-       # if mpi.is_master_node():
-       #     if save_hdf:
-       #         if not (res_subgrp in ar): ar.create_group(res_subgrp)   
-       #         things_to_save = ['Pw_optic', 'Om_meshr', 'omega', 'dir_list']
-       #         for it in things_to_save: ar[res_subgrp][it] = getattr(self, it)
-       #     del ar
 
     def conductivity_and_seebeck(self, beta=40):
         """ #return 1/T*A0, that is Conductivity in unit 1/V
@@ -711,23 +703,16 @@ class SumkDFTTools(SumkDFT):
         """
 
         if mpi.is_master_node():
-          # if read_hdf:
-          #      things_to_read1 = ['Pw_optic','Om_meshr','omega','dir_list']
-          #      things_to_read2 = ['latticetype', 'latticeconstants', 'latticeangles']
-          #      read_value1 = self.read_input_from_hdf(subgrp = res_subgrp, things_to_read = things_to_read1)
-          #      read_value2 = self.read_input_from_hdf(subgrp = self.transp_data, things_to_read = things_to_read2)
-          #      if not read_value1 and read_value2: return read_value
-          # else:
            assert hasattr(self,'Pw_optic'), "Run transport_distribution first or load data from h5!"
-	   assert hasattr(self,'latticetype'), "Run convert_transp_input first!"
+	   assert hasattr(self,'latticetype'), "Run convert_transp_input first or load data from h5!"
 
            volcc, volpc  = self.cellvolume(self.latticetype, self.latticeconstants, self.latticeangles)
 
            n_direction, n_q, n_w= self.Pw_optic.shape 
            omegaT = self.omega * beta
-           A0 = numpy.empty((n_direction,n_q), dtype=numpy.float_)
+           A0 = numpy.zeros((n_direction,n_q), dtype=numpy.float_)
            q_0 = False
-           self.seebeck = numpy.zeros((n_direction, 1), dtype=numpy.float_)
+           self.seebeck = numpy.zeros((n_direction,), dtype=numpy.float_)
            self.seebeck[:] = numpy.NAN
 
            d_omega = self.omega[1] - self.omega[0]
@@ -736,14 +721,14 @@ class SumkDFTTools(SumkDFT):
                if (self.Om_meshr[iq] == 0.0):
                    # if Om_meshr contains multiple entries with w=0, A1 is overwritten!
                    q_0 = True
-                   A1 = numpy.zeros((n_direction, 1), dtype=numpy.float_)
+                   A1 = numpy.zeros((n_direction,), dtype=numpy.float_)
                    for im in xrange(n_direction):
                        for iw in xrange(n_w):
                            A0[im, iq] += beta * self.Pw_optic[im, iq, iw] * self.fermi_dis(omegaT[iw]) * self.fermi_dis(-omegaT[iw])
                            A1[im] += beta * self.Pw_optic[im, iq, iw] *  self.fermi_dis(omegaT[iw]) * self.fermi_dis(-omegaT[iw]) * numpy.float(omegaT[iw])
                        self.seebeck[im] = -A1[im] / A0[im, iq]
                        print "A0", A0[im, iq] *d_omega/beta
-                       print "A1", A1[im, iq] *d_omega/beta
+                       print "A1", A1[im] *d_omega/beta
                # treat q ~= 0, calculate optical conductivity
                else:
                    for im in xrange(n_direction):
