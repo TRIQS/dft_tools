@@ -525,7 +525,7 @@ class SumkDFTTools(SumkDFT):
         return volumecc, volumepc
 
 
-    def transport_distribution(self, dir_list=[(0,0)], broadening=0.01, energywindow=None, Om_mesh=[0.0], beta=40, with_Sigma=False, n_om=None, save_hdf=True, res_subgrp='transp_output'):
+    def transport_distribution(self, dir_list=[(0,0)], broadening=0.01, energywindow=None, Om_mesh=[0.0], beta=40, with_Sigma=False, n_om=None):
         """calculate Tr A(k,w) v(k) A(k, w+q) v(k) and optics.
         energywindow: regime for omega integral
         Om_mesh: contains the frequencies of the optic conductivitity. Om_mesh is repinned to the self-energy mesh
@@ -554,7 +554,7 @@ class SumkDFTTools(SumkDFT):
         assert self.k_dep_projection == 1, "Not implemented!"
 
         # Define mesh for Greens function and the used energy range
-        if (with_Sigma == False):
+        if (with_Sigma == True):
             self.omega = numpy.array([round(x.real,12) for x in self.Sigma_imp_w[0].mesh])
             mu = self.chemical_potential
             n_om = len(self.omega)
@@ -640,7 +640,7 @@ class SumkDFTTools(SumkDFT):
                 MS[ibl] = self.hopping[ik,ind,0:n_orb,0:n_orb].real - mupat[ibl]
             S -= MS
             
-            if (with_Sigma == False):
+            if (with_Sigma == True):
                 tmp = S.copy()    # init temporary storage
                 # form self energy from impurity self energy and double counting term.
                 sigma_minus_dc = self.add_dc(iw_or_w="w")
@@ -698,27 +698,28 @@ class SumkDFTTools(SumkDFT):
         
         # put data to h5
         # If res_sugrp exists data will be overwritten!
-        if mpi.is_master_node():
-            if save_hdf:
-                if not (res_subgrp in ar): ar.create_group(res_subgrp)   
-                things_to_save = ['Pw_optic', 'Om_meshr', 'omega', 'dir_list']
-                for it in things_to_save: ar[res_subgrp][it] = getattr(self, it)
-            del ar
+       # if mpi.is_master_node():
+       #     if save_hdf:
+       #         if not (res_subgrp in ar): ar.create_group(res_subgrp)   
+       #         things_to_save = ['Pw_optic', 'Om_meshr', 'omega', 'dir_list']
+       #         for it in things_to_save: ar[res_subgrp][it] = getattr(self, it)
+       #     del ar
 
-    def conductivity_and_seebeck(self, beta=40, read_hdf=True, res_subgrp='transp_output'):
+    def conductivity_and_seebeck(self, beta=40):
         """ #return 1/T*A0, that is Conductivity in unit 1/V
         calculate, save and return Conductivity
         """
 
         if mpi.is_master_node():
-           if read_hdf:
-                things_to_read1 = ['Pw_optic','Om_meshr','omega','dir_list']
-                things_to_read2 = ['latticetype', 'latticeconstants', 'latticeangles']
-                read_value1 = self.read_input_from_hdf(subgrp = res_subgrp, things_to_read = things_to_read1)
-                read_value2 = self.read_input_from_hdf(subgrp = self.transp_data, things_to_read = things_to_read2)
-                if not read_value1 and read_value2: return read_value
-           else:
-                assert hasattr(self,'Pw_optic'), "Run transport_distribution first or set read_hdf = True"
+          # if read_hdf:
+          #      things_to_read1 = ['Pw_optic','Om_meshr','omega','dir_list']
+          #      things_to_read2 = ['latticetype', 'latticeconstants', 'latticeangles']
+          #      read_value1 = self.read_input_from_hdf(subgrp = res_subgrp, things_to_read = things_to_read1)
+          #      read_value2 = self.read_input_from_hdf(subgrp = self.transp_data, things_to_read = things_to_read2)
+          #      if not read_value1 and read_value2: return read_value
+          # else:
+           assert hasattr(self,'Pw_optic'), "Run transport_distribution first or load data from h5!"
+	   assert hasattr(self,'latticetype'), "Run convert_transp_input first!"
 
            volcc, volpc  = self.cellvolume(self.latticetype, self.latticeconstants, self.latticeangles)
 
@@ -726,8 +727,8 @@ class SumkDFTTools(SumkDFT):
            omegaT = self.omega * beta
            A0 = numpy.empty((n_direction,n_q), dtype=numpy.float_)
            q_0 = False
-           seebeck = numpy.zeros((n_direction, 1), dtype=numpy.float_)
-           seebeck[:] = numpy.NAN
+           self.seebeck = numpy.zeros((n_direction, 1), dtype=numpy.float_)
+           self.seebeck[:] = numpy.NAN
 
            d_omega = self.omega[1] - self.omega[0]
            for iq in xrange(n_q):
@@ -740,7 +741,7 @@ class SumkDFTTools(SumkDFT):
                        for iw in xrange(n_w):
                            A0[im, iq] += beta * self.Pw_optic[im, iq, iw] * self.fermi_dis(omegaT[iw]) * self.fermi_dis(-omegaT[iw])
                            A1[im] += beta * self.Pw_optic[im, iq, iw] *  self.fermi_dis(omegaT[iw]) * self.fermi_dis(-omegaT[iw]) * numpy.float(omegaT[iw])
-                       seebeck[im] = -A1[im] / A0[im, iq]
+                       self.seebeck[im] = -A1[im] / A0[im, iq]
                        print "A0", A0[im, iq] *d_omega/beta
                        print "A1", A1[im, iq] *d_omega/beta
                # treat q ~= 0, calculate optical conductivity
@@ -753,27 +754,27 @@ class SumkDFTTools(SumkDFT):
            #cond = beta * self.tdintegral(beta, 0)[index]
            print "V in bohr^3          ", volpc
            # transform to standard unit as in resistivity
-           optic_cond = A0 * 10700.0 / volpc
-           seebeck *= 86.17
+           self.optic_cond = A0 * 10700.0 / volpc
+           self.seebeck *= 86.17
 
            # print
            for im in xrange(n_direction):
                for iq in xrange(n_q):
-                   print "Conductivity in direction %s for Om_mesh %d       %.4f  x 10^4 Ohm^-1 cm^-1" % (self.dir_list[im], iq, optic_cond[im, iq])
-                   print "Resistivity in direction  %s for Om_mesh %d       %.4f  x 10^-4 Ohm cm" % (self.dir_list[im], iq, 1.0 / optic_cond[im, iq])
+                   print "Conductivity in direction %s for Om_mesh %d       %.4f  x 10^4 Ohm^-1 cm^-1" % (self.dir_list[im], iq, self.optic_cond[im, iq])
+                   print "Resistivity in direction  %s for Om_mesh %d       %.4f  x 10^-4 Ohm cm" % (self.dir_list[im], iq, 1.0 / self.optic_cond[im, iq])
                if q_0:
-                   print "Seebeck in direction      %s for q = 0            %.4f  x 10^(-6) V/K" % (self.dir_list[im], seebeck[im])
+                   print "Seebeck in direction      %s for q = 0            %.4f  x 10^(-6) V/K" % (self.dir_list[im], self.seebeck[im])
            
 
-           ar = HDFArchive(self.hdf_file, 'a')
-           if not (res_subgrp in ar): ar.create_group(res_subgrp)
-           things_to_save = ['seebeck', 'optic_cond']
-           for it in things_to_save: ar[res_subgrp][it] = locals()[it]
-           ar[res_subgrp]['seebeck'] = seebeck
-           ar[res_subgrp]['optic_cond'] = optic_cond
-           del ar
+          # ar = HDFArchive(self.hdf_file, 'a')
+          # if not (res_subgrp in ar): ar.create_group(res_subgrp)
+          # things_to_save = ['seebeck', 'optic_cond']
+          # for it in things_to_save: ar[res_subgrp][it] = locals()[it]
+          # ar[res_subgrp]['seebeck'] = seebeck
+          # ar[res_subgrp]['optic_cond'] = optic_cond
+          # del ar
            
-           return optic_cond, seebeck
+          # return optic_cond, seebeck
 
 
     def fermi_dis(self, x):

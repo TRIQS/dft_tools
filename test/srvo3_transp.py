@@ -29,7 +29,6 @@ beta = 40
 Converter = Wien2kConverter(filename='SrVO3', repacking=True)
 Converter.convert_dft_input()
 Converter.convert_transport_input()
-Converter.convert_parproj_input()
 
 SK = SumkDFTTools(hdf_file='SrVO3.h5', use_dft_blocks=True)
 
@@ -38,6 +37,9 @@ Sigma = ar['dmft_transp_output']['Sigma']
 SK.put_Sigma(Sigma_imp = [Sigma])
 del ar
 
-SK.transport_distribution(dir_list=[(0,0)], broadening=0.0, energywindow=[-0.3,0.3], Om_mesh=[0.00, 0.02] , beta=beta, with_Sigma=False, save_hdf=False)
+SK.transport_distribution(dir_list=[(0,0)], broadening=0.0, energywindow=[-0.3,0.3], Om_mesh=[0.00, 0.02] , beta=beta, with_Sigma=True)
+#SK.save(['Pw_optic','Om_meshr','omega','dir_list'])
+#SK.load(['Pw_optic','Om_meshr','omega','dir_list'])
+SK.conductivity_and_seebeck(beta=beta)
 SK.hdf_file = 'srvo3_transp.output.h5'
-SK.conductivity_and_seebeck(beta=beta, read_hdf=False, res_subgrp='results')
+SK.save(['seebeck','optic_cond'])
