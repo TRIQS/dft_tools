@@ -368,7 +368,7 @@ class Wien2kConverter(ConverterTools):
         del ar
 
 
-    def convert_transport_input(self, spinbl=['']):
+    def convert_transport_input(self):
         """ 
         Reads the input files necessary for transport calculations
         and stores the data in the HDFfile
@@ -388,19 +388,26 @@ class Wien2kConverter(ConverterTools):
         # Read relevant data from .pmat file
         ############################################
        
-        vk = [[] for sp in spinbl]
-        kp = [[] for sp in spinbl]
+        if (SP == 0 or SO == 1):        
+            files = [self.vel_file]
+        elif SP == 1:
+            files = [self.vel_file+'up', self.vel_file+'dn']
+        else: # SO and SP can't both be 1
+            assert 0, "convert_transport_input: reading velocity file error! Check SP and SO!"
+
+        vk = [[] for f in files]
+        kp = [[] for f in files]
         bandwin_opt = []
         
-        for isp, sp in enumerate(spinbl):
+        for isp, f in enumerate(files):
             bandwin_opt_isp = []
-            if not (os.path.exists(self.vel_file + sp)) : raise IOError, "File %s does not exist" %self.vel_file+sp
-            print "Reading input from %s..."%self.vel_file+sp
+            if not os.path.exists(f) : raise IOError, "File %s does not exist" %f
+            print "Reading input from %s..."%f
 
-            with open(self.vel_file + sp) as f:
+            with open(f) as R:
                 while 1:
                     try:
-                        s = f.readline()
+                        s = R.readline()
                         if (s == ''):
                             break
                     except:
@@ -410,12 +417,12 @@ class Wien2kConverter(ConverterTools):
                        bandwin_opt_isp.append((nu1,nu2))
                        dim = nu2 - nu1 +1
                        v_xyz = numpy.zeros((dim,dim,3), dtype = complex)
-                       temp = f.readline().strip().split()
+                       temp = R.readline().strip().split()
                        kp[isp].append(numpy.array([float(t) for t in temp[0:3]]))
                        for nu_i in xrange(dim):
                            for nu_j in xrange(nu_i, dim):
                                for i in xrange(3):
-                                   s = f.readline().strip("\n ()").split(',')
+                                   s = R.readline().strip("\n ()").split(',')
                                    v_xyz[nu_i][nu_j][i] = float(s[0]) + float(s[1])*1j
                                    if (nu_i != nu_j):
                                         v_xyz[nu_j][nu_i][i] = v_xyz[nu_i][nu_j][i].conjugate()
@@ -438,7 +445,6 @@ class Wien2kConverter(ConverterTools):
             try:
                 f.readline() #title
                 temp = f.readline() #lattice
-                #latticetype = temp[0:10].split()[0]
                 latticetype = temp.split()[0]
                 f.readline()
                 temp = f.readline().strip().split() # lattice constants
@@ -525,8 +531,8 @@ class Wien2kConverter(ConverterTools):
         ar = HDFArchive(self.hdf_file, 'a')
         if not (self.transp_subgrp in ar): ar.create_group(self.transp_subgrp)
         # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!!!
-        things_to_save = ['bandwin_opt', 'kp', 'vk', 'latticetype', 'latticeconstants', 'latticeangles', 'nsymm', 'symmcartesian',
-                        'taucartesian', 'bandwin']
+        things_to_save = ['bandwin', 'bandwin_opt', 'kp', 'vk', 'latticetype', 'latticeconstants', 'latticeangles', 'nsymm', 'symmcartesian',
+                        'taucartesian']
         for it in things_to_save: ar[self.transp_subgrp][it] = locals()[it]
         del ar
 

@@ -610,10 +610,10 @@ class SumkDFTTools(SumkDFT):
     
         ik = 0
         
-        bln = self.spin_block_names[self.SO]
+        spn = self.spin_block_names[self.SO]
         ntoi = self.spin_names_to_ind[self.SO]
           
-        S = BlockGf(name_block_generator=[(bln[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]), window=(self.omega[0], self.omega[-1]), n_points = n_om)) 
+        G_w = BlockGf(name_block_generator=[(spn[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]), window=(self.omega[0], self.omega[-1]), n_points = n_om)) 
                 for isp in range(n_inequiv_spin_blocks) ], make_copies=False)
         mupat = [numpy.identity(self.n_orbitals[ik][isp], numpy.complex_) * mu for isp in range(n_inequiv_spin_blocks)] # construct mupat
         Annkw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_) for isp in range(n_inequiv_spin_blocks)]
@@ -623,7 +623,7 @@ class SumkDFTTools(SumkDFT):
             unchangedsize = all([ self.n_orbitals[ik][isp] == mupat[isp].shape[0] for isp in range(n_inequiv_spin_blocks)])
             if not unchangedsize:
                # recontruct green functions.
-               S = BlockGf(name_block_generator=[(bln[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]), window = (self.omega[0], self.omega[-1]), n_points = n_om)) 
+               G_w = BlockGf(name_block_generator=[(spn[isp], GfReFreq(indices=range(self.n_orbitals[ik][isp]), window = (self.omega[0], self.omega[-1]), n_points = n_om)) 
                        for isp in range(n_inequiv_spin_blocks) ], make_copies=False)
                # construct mupat
                mupat = [numpy.identity(self.n_orbitals[ik][isp], numpy.complex_) * mu for isp in range(n_inequiv_spin_blocks)]
@@ -631,32 +631,30 @@ class SumkDFTTools(SumkDFT):
                Annkw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_) for isp in range(n_inequiv_spin_blocks)]
                # get lattice green function
             
-            S << 1*Omega + 1j*broadening
+            G_w << 1*Omega + 1j*broadening
             
             MS = copy.deepcopy(mupat)
             for ibl in range(n_inequiv_spin_blocks):
-                ind = ntoi[bln[ibl]]
+                ind = ntoi[spn[ibl]]
                 n_orb = self.n_orbitals[ik][ibl]
                 MS[ibl] = self.hopping[ik,ind,0:n_orb,0:n_orb].real - mupat[ibl]
-            S -= MS
+            G_w -= MS
             
             if (with_Sigma == True):
-                tmp = S.copy()    # init temporary storage
+                tmp = G_w.copy()    # init temporary storage
                 # form self energy from impurity self energy and double counting term.
                 sigma_minus_dc = self.add_dc(iw_or_w="w")
                 # substract self energy
-                for icrsh in xrange(self.n_corr_shells):
+                for icrsh in range(self.n_corr_shells):
                     for sig, gf in tmp: tmp[sig] << self.upfold(ik, icrsh, sig, sigma_minus_dc[icrsh][sig], gf)
-                    S -= tmp
+                    G_w -= tmp
 
-            S.invert()
+            G_w.invert()
 
             for isp in range(n_inequiv_spin_blocks):
-                Annkw[isp].real = -copy.deepcopy(S[self.spin_block_names[self.SO][isp]].data.swapaxes(0,1).swapaxes(1,2)).imag / numpy.pi
+                Annkw[isp].real = -copy.deepcopy(G_w[self.spin_block_names[self.SO][isp]].data.swapaxes(0,1).swapaxes(1,2)).imag / numpy.pi
             
             for isp in range(n_inequiv_spin_blocks):
-                if(ik%100==0):
-                  print "ik,isp", ik, isp
                 kvel = velocities[isp][ik]
                 Pwtem = numpy.zeros((len(dir_list), len(Om_mesh_ex), n_om), dtype=numpy.float_)
                 
@@ -671,8 +669,8 @@ class SumkDFTTools(SumkDFT):
                 for Rmat in self.symmcartesian:
                     # get new velocity.
                     Rkvel = copy.deepcopy(kvel)
-                    for vnb1 in xrange(self.bandwin_opt[isp][ik, 1] - self.bandwin_opt[isp][ik, 0] + 1):
-                        for vnb2 in xrange(self.bandwin_opt[isp][ik, 1] - self.bandwin_opt[isp][ik, 0] + 1):
+                    for vnb1 in range(self.bandwin_opt[isp][ik, 1] - self.bandwin_opt[isp][ik, 0] + 1):
+                        for vnb2 in range(self.bandwin_opt[isp][ik, 1] - self.bandwin_opt[isp][ik, 0] + 1):
                             Rkvel[vnb1][vnb2][:] = numpy.dot(Rmat, Rkvel[vnb1][vnb2][:])
                     ipw = 0
                     for (ir, ic) in dir_list:
@@ -722,18 +720,18 @@ class SumkDFTTools(SumkDFT):
                    # if Om_meshr contains multiple entries with w=0, A1 is overwritten!
                    q_0 = True
                    A1 = numpy.zeros((n_direction,), dtype=numpy.float_)
-                   for im in xrange(n_direction):
+                   for idir in range(n_direction):
                        for iw in xrange(n_w):
-                           A0[im, iq] += beta * self.Pw_optic[im, iq, iw] * self.fermi_dis(omegaT[iw]) * self.fermi_dis(-omegaT[iw])
-                           A1[im] += beta * self.Pw_optic[im, iq, iw] *  self.fermi_dis(omegaT[iw]) * self.fermi_dis(-omegaT[iw]) * numpy.float(omegaT[iw])
-                       self.seebeck[im] = -A1[im] / A0[im, iq]
-                       print "A0", A0[im, iq] *d_omega/beta
-                       print "A1", A1[im] *d_omega/beta
+                           A0[idir, iq] += beta * self.Pw_optic[idir, iq, iw] * self.fermi_dis(omegaT[iw]) * self.fermi_dis(-omegaT[iw])
+                           A1[idir] += beta * self.Pw_optic[idir, iq, iw] *  self.fermi_dis(omegaT[iw]) * self.fermi_dis(-omegaT[iw]) * numpy.float(omegaT[iw])
+                       self.seebeck[idir] = -A1[idir] / A0[idir, iq]
+                       print "A0", A0[idir, iq] *d_omega/beta
+                       print "A1", A1[idir] *d_omega/beta
                # treat q ~= 0, calculate optical conductivity
                else:
-                   for im in xrange(n_direction):
+                   for idir in range(n_direction):
                        for iw in xrange(n_w):
-                           A0[im, iq] += self.Pw_optic[im, iq, iw] * (self.fermi_dis(omegaT[iw]) - self.fermi_dis(omegaT[iw] + self.Om_meshr[iq] * beta)) / self.Om_meshr[iq]
+                           A0[idir, iq] += self.Pw_optic[idir, iq, iw] * (self.fermi_dis(omegaT[iw]) - self.fermi_dis(omegaT[iw] + self.Om_meshr[iq] * beta)) / self.Om_meshr[iq]
 
            A0 *= d_omega
            #cond = beta * self.tdintegral(beta, 0)[index]
@@ -743,24 +741,13 @@ class SumkDFTTools(SumkDFT):
            self.seebeck *= 86.17
 
            # print
-           for im in xrange(n_direction):
+           for im in range(n_direction):
                for iq in xrange(n_q):
                    print "Conductivity in direction %s for Om_mesh %d       %.4f  x 10^4 Ohm^-1 cm^-1" % (self.dir_list[im], iq, self.optic_cond[im, iq])
                    print "Resistivity in direction  %s for Om_mesh %d       %.4f  x 10^-4 Ohm cm" % (self.dir_list[im], iq, 1.0 / self.optic_cond[im, iq])
                if q_0:
                    print "Seebeck in direction      %s for q = 0            %.4f  x 10^(-6) V/K" % (self.dir_list[im], self.seebeck[im])
            
-
-          # ar = HDFArchive(self.hdf_file, 'a')
-          # if not (res_subgrp in ar): ar.create_group(res_subgrp)
-          # things_to_save = ['seebeck', 'optic_cond']
-          # for it in things_to_save: ar[res_subgrp][it] = locals()[it]
-          # ar[res_subgrp]['seebeck'] = seebeck
-          # ar[res_subgrp]['optic_cond'] = optic_cond
-          # del ar
-           
-          # return optic_cond, seebeck
-
 
     def fermi_dis(self, x):
         return 1.0/(numpy.exp(x)+1)
