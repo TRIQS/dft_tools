@@ -631,9 +631,9 @@ class SumkDFT:
                 elif self.SP == 1 and self.SO == 1: # correction for SO: we have only one block in this case, but in DC we need N/2
                     Ncr[sp] = Ncrtot / 2.0
 
-            if use_val is None:
+            if use_dc_value is None:
 
-                if U_interact is None and J_hund is None: raise ValueError, "set_dc: either provide U_interact and J_hund or set use_val to dc value."
+                if U_interact is None and J_hund is None: raise ValueError, "set_dc: either provide U_interact and J_hund or set use_dc_value to dc value."
 
                 if use_dc_formula == 0: # FLL
 
@@ -665,10 +665,10 @@ class SumkDFT:
 
             else: # use value provided for user to determine dc_energ and dc_imp
 
-                self.dc_energ[icrsh] = use_val * Ncrtot
-                for sp in spn: self.dc_imp[icrsh][sp] *= use_val
+                self.dc_energ[icrsh] = use_dc_value * Ncrtot
+                for sp in spn: self.dc_imp[icrsh][sp] *= use_dc_value
 
-                mpi.report("DC for shell %(icrsh)i = %(use_val)f"%locals())
+                mpi.report("DC for shell %(icrsh)i = %(use_dc_value)f"%locals())
                 mpi.report("DC energy = %s"%self.dc_energ[icrsh])
 
 
@@ -855,7 +855,7 @@ class SumkDFT:
         mu = self.chemical_potential
 
         def F(dc):
-            self.calc_dc(dens_mat = dens_mat, U_interact = 0, J_hund = 0, orb = orb, use_val = dc)
+            self.calc_dc(dens_mat = dens_mat, U_interact = 0, J_hund = 0, orb = orb, use_dc_value = dc)
             if dens_req is None:
                 return self.total_density(mu = mu)
             else:
