@@ -75,15 +75,20 @@ def U_matrix_kanamori(n_orb, U_int, J_hund):
 
     return U, Uprime
 
-#FIXME WIEN CONVENTION first eg then t2g
 # Get t2g or eg components
-def t2g_submatrix(U):
+def t2g_submatrix(U, convention=''):
     """Return only the t2g part of the full d-manifold two- or four-index U matrix."""
-    return subarray(U, len(U.shape)*[(0,1,3)])
+    if convention == 'wien2k': 
+        return subarray(U, len(U.shape)*[(2,3,4)])
+    else:
+        return subarray(U, len(U.shape)*[(0,1,3)])
 
-def eg_submatrix(U):
+def eg_submatrix(U, convention=''):
     """Return only the eg part of the full d-manifold two- or four-index U matrix."""
-    return subarray(U, len(U.shape)*[(2,4)])
+    if convention == 'wien2k': 
+        return subarray(U, len(U.shape)*[(0,1)])
+    else:
+        return subarray(U, len(U.shape)*[(2,4)])
 
 # Transform the interaction matrix into another basis
 def transform_U_matrix(U_matrix, T):
@@ -92,10 +97,12 @@ def transform_U_matrix(U_matrix, T):
 
 # Rotation matrices: complex harmonics to cubic harmonics
 # Complex harmonics basis: ..., Y_{-2}, Y_{-1}, Y_{0}, Y_{1}, Y_{2}, ...
-def spherical_to_cubic(l):
+def spherical_to_cubic(l, convention=''):
     """Returns the spherical harmonics to cubic harmonics rotation matrix."""
     size = 2*l+1
     T = np.zeros((size,size),dtype=complex)
+    if convention != 'wien2k' and l != 2: 
+        raise ValueError("spherical_to_cubic: wien2k convention only implemented only for l=2")
     if l == 0:
         cubic_names = ("s")
     elif l == 1:
@@ -104,12 +111,20 @@ def spherical_to_cubic(l):
         T[1,0] = 1j/sqrt(2);    T[1,2] = 1j/sqrt(2)
         T[2,1] = 1.0
     elif l == 2:
-        cubic_names = ("xy","yz","z^2","xz","x^2-y^2")
-        T[0,0] = 1j/sqrt(2);    T[0,4] = -1j/sqrt(2)
-        T[1,1] = 1j/sqrt(2);    T[1,3] = 1j/sqrt(2)
-        T[2,2] = 1.0
-        T[3,1] = 1.0/sqrt(2);   T[3,3] = -1.0/sqrt(2)
-        T[4,0] = 1.0/sqrt(2);   T[4,4] = 1.0/sqrt(2)
+        if convention == 'wien2k':
+            cubic_names = ("z^2","x^2-y^2","xy","yz","xz")
+            T[0,2] = 1.0
+            T[1,0] = 1.0/sqrt(2);   T[1,4] = 1.0/sqrt(2)
+            T[2,0] = -1j/sqrt(2);   T[2,4] = 1j/sqrt(2)
+            T[3,1] = 1j/sqrt(2);    T[3,3] = -1j/sqrt(2)
+            T[4,1] = 1.0/sqrt(2);   T[4,3] = 1.0/sqrt(2)
+        else:
+            cubic_names = ("xy","yz","z^2","xz","x^2-y^2")
+            T[0,0] = 1j/sqrt(2);    T[0,4] = -1j/sqrt(2)
+            T[1,1] = 1j/sqrt(2);    T[1,3] = 1j/sqrt(2)
+            T[2,2] = 1.0
+            T[3,1] = 1.0/sqrt(2);   T[3,3] = -1.0/sqrt(2)
+            T[4,0] = 1.0/sqrt(2);   T[4,4] = 1.0/sqrt(2)
     elif l == 3:
         cubic_names = ("x(x^2-3y^2)","z(x^2-y^2)","xz^2","z^3","yz^2","xyz","y(3x^2-y^2)")
         T[0,0] = 1.0/sqrt(2);    T[0,6] = -1.0/sqrt(2)
