@@ -33,13 +33,13 @@ Converter.convert_transport_input()
 SK = SumkDFTTools(hdf_file='SrVO3.h5', use_dft_blocks=True)
 
 ar = HDFArchive('SrVO3_Sigma.h5', 'a')
-Sigma = ar['dmft_transp_output']['Sigma']
+Sigma = ar['dmft_transp_output']['Sigma_w']
 SK.put_Sigma(Sigma_imp = [Sigma])
 del ar
 
-SK.transport_distribution(dir_list=[(0,0)], broadening=0.0, energywindow=[-0.3,0.3], Om_mesh=[0.00, 0.02] , beta=beta, with_Sigma=True)
-#SK.save(['Pw_optic','Om_meshr','omega','dir_list'])
-#SK.load(['Pw_optic','Om_meshr','omega','dir_list'])
+SK.transport_distribution(directions=['xx'], broadening=0.0, energy_window=[-0.3,0.3], Om_mesh=[0.00, 0.02] , beta=beta, with_Sigma=True)
+#SK.save(['Gamma_w','Om_meshr','omega','directions'])
+#SK.load(['Gamma_w','Om_meshr','omega','directions'])
 SK.conductivity_and_seebeck(beta=beta)
 SK.hdf_file = 'srvo3_transp.output.h5'
 SK.save(['seebeck','optic_cond'])
