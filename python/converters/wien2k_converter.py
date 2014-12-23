@@ -411,13 +411,16 @@ class Wien2kConverter(ConverterTools):
                 nu2 = int(R.next())
                 band_window_optics_isp.append((nu1, nu2))
                 n_bands = nu2 - nu1 + 1
-                velocity_xyz = numpy.zeros((n_bands, n_bands, 3), dtype = complex)
                 for _ in range(4): R.next()
-                for nu_i in range(n_bands):
-                    for nu_j in range(nu_i, n_bands):
-                        for i in range(3):
-                            velocity_xyz[nu_i][nu_j][i] = R.next() + R.next()*1j
-                            if (nu_i != nu_j): velocity_xyz[nu_j][nu_i][i] = velocity_xyz[nu_i][nu_j][i].conjugate()
+                if n_bands <= 0:
+                    velocity_xyz = numpy.zeros((1, 1, 3), dtype = complex)
+                else:
+                    velocity_xyz = numpy.zeros((n_bands, n_bands, 3), dtype = complex)
+                    for nu_i in range(n_bands):
+                        for nu_j in range(nu_i, n_bands):
+                            for i in range(3):
+                                velocity_xyz[nu_i][nu_j][i] = R.next() + R.next()*1j
+                                if (nu_i != nu_j): velocity_xyz[nu_j][nu_i][i] = velocity_xyz[nu_i][nu_j][i].conjugate()
                 velocities_k[isp].append(velocity_xyz)
             band_window_optics.append(numpy.array(band_window_optics_isp))
             print "DONE!"

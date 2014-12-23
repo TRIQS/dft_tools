@@ -641,7 +641,7 @@ class SumkDFTTools(SumkDFT):
         
 	for direction in self.directions: 
             self.Gamma_w[direction] = (mpi.all_reduce(mpi.world, self.Gamma_w[direction], lambda x, y : x + y) 
-					/ self.cellvolume(self.lattice_type, self.lattice_constants, self.lattice_angles)[1]) / self.n_symmetries
+					/ self.cellvolume(self.lattice_type, self.lattice_constants, self.lattice_angles)[1] / self.n_symmetries)
 
         
     def transport_coefficient(self, direction, iq=0, n=0, beta=40):
