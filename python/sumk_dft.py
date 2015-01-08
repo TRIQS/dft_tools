@@ -208,29 +208,34 @@ class SumkDFT:
         return gf_upfolded
 
 
-    def rotloc(self,icrsh,gf_to_rotate,direction):
+    def rotloc(self,ish,gf_to_rotate,direction,shells='corr'):
         """Local <-> Global rotation of a GF block.
            direction: 'toLocal' / 'toGlobal' """
 
         assert ((direction == 'toLocal') or (direction == 'toGlobal')),"rotloc: Give direction 'toLocal' or 'toGlobal'."
-
         gf_rotated = gf_to_rotate.copy()
+        if shells == 'corr':
+            rot_mat_time_inv = self.rot_mat_time_inv
+            rot_mat = self.rot_mat
+        elif shells == 'all':
+            rot_mat_time_inv = self.rot_mat_all_time_inv
+            rot_mat = self.rot_mat_all
 
         if direction == 'toGlobal':
 
-            if (self.rot_mat_time_inv[icrsh] == 1) and self.SO:
+            if (rot_mat_time_inv[ish] == 1) and self.SO:
                 gf_rotated << gf_rotated.transpose()
-                gf_rotated.from_L_G_R(self.rot_mat[icrsh].conjugate(),gf_rotated,self.rot_mat[icrsh].transpose())
+                gf_rotated.from_L_G_R(rot_mat[ish].conjugate(),gf_rotated,rot_mat[ish].transpose())
             else:
-                gf_rotated.from_L_G_R(self.rot_mat[icrsh],gf_rotated,self.rot_mat[icrsh].conjugate().transpose())
+                gf_rotated.from_L_G_R(rot_mat[ish],gf_rotated,rot_mat[ish].conjugate().transpose())
 
         elif direction == 'toLocal':
 
-            if (self.rot_mat_time_inv[icrsh] == 1) and self.SO:
+            if (rot_mat_time_inv[ish] == 1) and self.SO:
                 gf_rotated << gf_rotated.transpose()
-                gf_rotated.from_L_G_R(self.rot_mat[icrsh].transpose(),gf_rotated,self.rot_mat[icrsh].conjugate())
+                gf_rotated.from_L_G_R(rot_mat[ish].transpose(),gf_rotated,rot_mat[ish].conjugate())
             else:
-                gf_rotated.from_L_G_R(self.rot_mat[icrsh].conjugate().transpose(),gf_rotated,self.rot_mat[icrsh])
+                gf_rotated.from_L_G_R(rot_mat[ish].conjugate().transpose(),gf_rotated,rot_mat[ish])
 
         return gf_rotated
 
@@ -342,7 +347,7 @@ class SumkDFT:
         # rotation from local to global coordinate system:
         if self.use_rotations:
             for icrsh in range(self.n_corr_shells):
-                for bname,gf in SK_Sigma_imp[icrsh]: gf << self.rotloc(icrsh, gf, direction = 'toGlobal')
+                for bname,gf in SK_Sigma_imp[icrsh]: gf << self.rotloc(icrsh,gf,direction='toGlobal')
 
 
     def extract_G_loc(self, mu = None, with_Sigma = True):
@@ -379,7 +384,7 @@ class SumkDFT:
         # Gloc is rotated to the local coordinate system:
         if self.use_rotations:
             for icrsh in range(self.n_corr_shells):
-                for bname,gf in Gloc[icrsh]: Gloc[icrsh][bname] << self.rotloc(icrsh,gf,direction = 'toLocal')
+                for bname,gf in Gloc[icrsh]: Gloc[icrsh][bname] << self.rotloc(icrsh,gf,direction='toLocal')
 
         # transform to CTQMC blocks:
         Gloc_inequiv = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = Gloc[0].mesh)) for block,inner in self.gf_struct_solver[ish].iteritems() ],

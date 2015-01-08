@@ -40,32 +40,6 @@ class SumkDFTTools(SumkDFT):
                           symmpar_data=symmpar_data, bands_data=bands_data, transp_data=transp_data)
 
 
-    def rotloc_all(self,ish,gf_to_rotate,direction):
-        """Local <-> Global rotation of a GF block.
-           direction: 'toLocal' / 'toGlobal' """
-
-        assert (direction == 'toLocal' or direction == 'toGlobal'),"rotloc_all: Give direction 'toLocal' or 'toGlobal'."
-
-
-        gf_rotated = gf_to_rotate.copy()
-        if direction == 'toGlobal':
-            if (self.rot_mat_all_time_inv[ish] == 1) and self.SO:
-                gf_rotated << gf_rotated.transpose()
-                gf_rotated.from_L_G_R(self.rot_mat_all[ish].conjugate(),gf_rotated,self.rot_mat_all[ish].transpose())
-            else:
-                gf_rotated.from_L_G_R(self.rot_mat_all[ish],gf_rotated,self.rot_mat_all[ish].conjugate().transpose())
-
-        elif direction == 'toLocal':
-            if (self.rot_mat_all_time_inv[ish] == 1) and self.SO:
-                gf_rotated << gf_rotated.transpose()
-                gf_rotated.from_L_G_R(self.rot_mat_all[ish].transpose(),gf_rotated,self.rot_mat_all[ish].conjugate())
-            else:
-                gf_rotated.from_L_G_R(self.rot_mat_all[ish].conjugate().transpose(),gf_rotated,self.rot_mat_all[ish])
-
-
-        return gf_rotated
-
-
     def check_input_dos(self, om_min, om_max, n_om, beta=10, broadening=0.01):
 
 
@@ -218,7 +192,7 @@ class SumkDFTTools(SumkDFT):
         # rotation to local coord. system:
         if self.use_rotations:
             for ish in range(self.n_shells):
-                for bname,gf in Gproj[ish]: Gproj[ish][bname] << self.rotloc_all(ish,gf,direction='toLocal')
+                for bname,gf in Gproj[ish]: Gproj[ish][bname] << self.rotloc(ish,gf,direction='toLocal',shells='all')
 
         for ish in range(self.n_shells):
             for bname,gf in Gproj[ish]:
@@ -467,7 +441,7 @@ class SumkDFTTools(SumkDFT):
 
             # Rotation to local:
             if self.use_rotations:
-                for bname,gf in Gproj[ish]: Gproj[ish][bname] << self.rotloc_all(ish,gf,direction='toLocal')
+                for bname,gf in Gproj[ish]: Gproj[ish][bname] << self.rotloc(ish,gf,direction='toLocal',shells='all')
 
             isp = 0
             for bname,gf in Gproj[ish]: #dmg.append(Gproj[ish].density()[bname])
