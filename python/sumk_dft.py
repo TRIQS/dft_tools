@@ -170,31 +170,41 @@ class SumkDFT:
 # CORE FUNCTIONS
 ################
 
-    def downfold(self,ik,icrsh,bname,gf_to_downfold,gf_inp):
+    def downfold(self,ik,ish,bname,gf_to_downfold,gf_inp,shells='corr',ir=None):
         """Downfolding a block of the Greens function"""
-
+  
         gf_downfolded = gf_inp.copy()
         isp = self.spin_names_to_ind[self.SO][bname]       # get spin index for proj. matrices
-        dim = self.corr_shells[icrsh]['dim']
         n_orb = self.n_orbitals[ik,isp]
-        projmat = self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb]
-
+        if shells == 'corr':
+            dim = self.corr_shells[ish]['dim']
+            projmat = self.proj_mat[ik,isp,ish,0:dim,0:n_orb]
+        elif shells == 'all':
+            if ir is None: raise ValueError, "downfold: provide ir if treating all shells."
+            dim = self.shells[ish]['dim']
+            projmat = self.proj_mat_pc[ik,isp,ish,ir,0:dim,0:n_orb]
+  
         gf_downfolded.from_L_G_R(projmat,gf_to_downfold,projmat.conjugate().transpose())
-
+  
         return gf_downfolded
 
 
-    def upfold(self,ik,icrsh,bname,gf_to_upfold,gf_inp):
+    def upfold(self,ik,ish,bname,gf_to_upfold,gf_inp,shells='corr',ir=None):
         """Upfolding a block of the Greens function"""
-
+  
         gf_upfolded = gf_inp.copy()
         isp = self.spin_names_to_ind[self.SO][bname]       # get spin index for proj. matrices
-        dim = self.corr_shells[icrsh]['dim']
         n_orb = self.n_orbitals[ik,isp]
-        projmat = self.proj_mat[ik,isp,icrsh,0:dim,0:n_orb]
-
+        if shells == 'corr':
+            dim = self.corr_shells[ish]['dim']
+            projmat = self.proj_mat[ik,isp,ish,0:dim,0:n_orb]
+        elif shells == 'all':
+            if ir is None: raise ValueError, "upfold: provide ir if treating all shells."
+            dim = self.shells[ish]['dim']
+            projmat = self.proj_mat_pc[ik,isp,ish,ir,0:dim,0:n_orb]
+  
         gf_upfolded.from_L_G_R(projmat.conjugate().transpose(),gf_to_upfold,projmat)
-
+  
         return gf_upfolded
 
 

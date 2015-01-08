@@ -40,20 +40,6 @@ class SumkDFTTools(SumkDFT):
                           symmpar_data=symmpar_data, bands_data=bands_data, transp_data=transp_data)
 
 
-    def downfold_pc(self,ik,ir,ish,bname,gf_to_downfold,gf_inp):
-        """Downfolding a block of the Greens function"""
-
-        gf_downfolded = gf_inp.copy()
-        isp = self.spin_names_to_ind[self.SO][bname]       # get spin index for proj. matrices
-        dim = self.shells[ish]['dim']
-        n_orb = self.n_orbitals[ik,isp]
-        L=self.proj_mat_pc[ik,isp,ish,ir,0:dim,0:n_orb]
-        R=self.proj_mat_pc[ik,isp,ish,ir,0:dim,0:n_orb].conjugate().transpose()
-        gf_downfolded.from_L_G_R(L,gf_to_downfold,R)
-
-        return gf_downfolded
-
-
     def rotloc_all(self,ish,gf_to_rotate,direction):
         """Local <-> Global rotation of a GF block.
            direction: 'toLocal' / 'toGlobal' """
@@ -217,7 +203,7 @@ class SumkDFTTools(SumkDFT):
             for ish in range(self.n_shells):
                 tmp = Gproj[ish].copy()
                 for ir in range(self.n_parproj[ish]):
-                    for bname,gf in tmp: tmp[bname] << self.downfold_pc(ik,ir,ish,bname,G_latt_w[bname],gf)
+                    for bname,gf in tmp: tmp[bname] << self.downfold(ik,ish,bname,G_latt_w[bname],gf,shells='all',ir=ir)
                     Gproj[ish] += tmp
 
         # collect data from mpi:
@@ -352,7 +338,7 @@ class SumkDFTTools(SumkDFT):
                 Gproj.zero()
                 tmp = Gproj.copy()
                 for ir in range(self.n_parproj[ishell]):
-                    for bname,gf in tmp: tmp[bname] << self.downfold_pc(ik,ir,ishell,bname,G_latt_w[bname],gf)
+                    for bname,gf in tmp: tmp[bname] << self.downfold(ik,ishell,bname,G_latt_w[bname],gf,shells='all',ir=ir)
                     Gproj += tmp
 
                 # FIXME NEED TO READ IN ROTMAT_ALL FROM PARPROJ SUBGROUP, REPLACE ROTLOC WITH ROTLOC_ALL
@@ -465,7 +451,7 @@ class SumkDFTTools(SumkDFT):
             for ish in range(self.n_shells):
                 tmp = Gproj[ish].copy()
                 for ir in range(self.n_parproj[ish]):
-                    for bname,gf in tmp: tmp[bname] << self.downfold_pc(ik,ir,ish,bname,G_latt_iw[bname],gf)
+                    for bname,gf in tmp: tmp[bname] << self.downfold(ik,ish,bname,G_latt_iw[bname],gf,shells='all',ir=ir)
                     Gproj[ish] += tmp
 
         #collect data from mpi:
