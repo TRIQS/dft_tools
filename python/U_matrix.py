@@ -172,6 +172,20 @@ def U_J_to_radial_integrals(l, U_int, J_hund):
 
     return F
 
+# Convert radial integrals F_k -> U,J
+def radial_integrals_to_U_J(l, F):
+    """Determines U_int and J_hund from the radial integrals."""
+
+    if l == 2:
+        U_int = F[0]
+        J_hund = F[1] * (1.0 + 0.63) / 14.0
+    elif l == 3:
+        U_int = F[0]
+        J_hund = F[1] * (286.0 + 195.0 * 451.0 / 675.0 + 250.0 * 1001.0 / 2025.0) / 6435.0
+    else: raise ValueError("radial_integrals_to_U_J: implemented only for l=2,3")
+
+    return U_int,J_hund
+
 # Angular matrix elements of particle-particle interaction
 # (2l+1)^2 ((l 0) (k 0) (l 0))^2 \sum_{q=-k}^{k} (-1)^{m1+m2+q} ((l -m1) (k q) (l m3)) ((l -m2) (k -q) (l m4))
 def angular_matrix_element(l, k, m1, m2, m3, m4):
