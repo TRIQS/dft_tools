@@ -34,14 +34,12 @@ class SumkDFTTools(SumkDFT):
                  parproj_data = 'dft_parproj_input', symmpar_data = 'dft_symmpar_input', bands_data = 'dft_bands_input', 
                  transp_data = 'dft_transp_input'):
 
-        #self.G_latt_w = None # DEBUG -- remove later
         SumkDFT.__init__(self, hdf_file=hdf_file, h_field=h_field, use_dft_blocks=use_dft_blocks,
                           dft_data=dft_data, symmcorr_data=symmcorr_data, parproj_data=parproj_data, 
                           symmpar_data=symmpar_data, bands_data=bands_data, transp_data=transp_data)
 
 
     def check_input_dos(self, om_min, om_max, n_om, beta=10, broadening=0.01):
-
 
         delta_om = (om_max-om_min)/(n_om-1)
         om_mesh = numpy.zeros([n_om],numpy.float_)
@@ -83,8 +81,6 @@ class SumkDFTTools(SumkDFT):
                 for bname,gf in tmp: tmp[bname] << self.downfold(ik,icrsh,bname,G_latt_w[bname],gf) # downfolding G
                 Gloc[icrsh] += tmp
 
-
-
         if self.symm_op != 0: Gloc = self.symmcorr.symmetrize(Gloc)
 
         if self.use_rotations:
@@ -125,7 +121,7 @@ class SumkDFTTools(SumkDFT):
         Reads the data for the partial projectors from the HDF file
         """
 
-        things_to_read = ['dens_mat_below','n_parproj','proj_mat_pc','rot_mat_all','rot_mat_all_time_inv']
+        things_to_read = ['dens_mat_below','n_parproj','proj_mat_all','rot_mat_all','rot_mat_all_time_inv']
         value_read = self.read_input_from_hdf(subgrp=self.parproj_data,things_to_read = things_to_read)
         return value_read
 
@@ -228,7 +224,7 @@ class SumkDFTTools(SumkDFT):
             ATTENTION: Many things from the original input file are overwritten!!!"""
 
         assert hasattr(self,"Sigma_imp_w"), "spaghettis: Set Sigma_imp_w first."
-        things_to_read = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_pc']
+        things_to_read = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_all']
         value_read = self.read_input_from_hdf(subgrp=self.bands_data,things_to_read=things_to_read)
         if not value_read: return value_read
 

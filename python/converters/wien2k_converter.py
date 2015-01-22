@@ -228,7 +228,7 @@ class Wien2kConverter(ConverterTools):
         n_parproj = numpy.array(n_parproj)
                 
         # Initialise P, here a double list of matrices:
-        proj_mat_pc = numpy.zeros([self.n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max([sh['dim'] for sh in self.shells]),max(self.n_orbitals)],numpy.complex_)
+        proj_mat_all = numpy.zeros([self.n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max([sh['dim'] for sh in self.shells]),max(self.n_orbitals)],numpy.complex_)
         
         rot_mat_all = [numpy.identity(self.shells[ish]['dim'],numpy.complex_) for ish in range(self.n_shells)]
         rot_mat_all_time_inv = [0 for i in range(self.n_shells)]
@@ -241,12 +241,12 @@ class Wien2kConverter(ConverterTools):
                     for isp in range(self.n_spin_blocs):
                         for i in range(self.shells[ish]['dim']):    # read real part:
                             for j in range(self.n_orbitals[ik][isp]):
-                                proj_mat_pc[ik,isp,ish,ir,i,j] = R.next()
+                                proj_mat_all[ik,isp,ish,ir,i,j] = R.next()
                             
                     for isp in range(self.n_spin_blocs):
                         for i in range(self.shells[ish]['dim']):    # read imaginary part:
                             for j in range(self.n_orbitals[ik][isp]):
-                                proj_mat_pc[ik,isp,ish,ir,i,j] += 1j * R.next()
+                                proj_mat_all[ik,isp,ish,ir,i,j] += 1j * R.next()
                                         
                     
             # now read the Density Matrix for this orbital below the energy window:
@@ -278,7 +278,7 @@ class Wien2kConverter(ConverterTools):
         ar = HDFArchive(self.hdf_file,'a')
         if not (self.parproj_subgrp in ar): ar.create_group(self.parproj_subgrp) 
         # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
-        things_to_save = ['dens_mat_below','n_parproj','proj_mat_pc','rot_mat_all','rot_mat_all_time_inv']
+        things_to_save = ['dens_mat_below','n_parproj','proj_mat_all','rot_mat_all','rot_mat_all_time_inv']
         for it in things_to_save: ar[self.parproj_subgrp][it] = locals()[it]
         del ar
 
@@ -338,7 +338,7 @@ class Wien2kConverter(ConverterTools):
             n_parproj = numpy.array(n_parproj)
             
             # Initialise P, here a double list of matrices:
-            proj_mat_pc = numpy.zeros([n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max([sh['dim'] for sh in self.shells]),max(n_orbitals)],numpy.complex_)
+            proj_mat_all = numpy.zeros([n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max([sh['dim'] for sh in self.shells]),max(n_orbitals)],numpy.complex_)
 
             for ish in range(self.n_shells):
                 for ik in range(n_k):
@@ -347,11 +347,11 @@ class Wien2kConverter(ConverterTools):
                                     
                             for i in range(self.shells[ish]['dim']):    # read real part:
                                 for j in range(n_orbitals[ik,isp]):
-                                    proj_mat_pc[ik,isp,ish,ir,i,j] = R.next()
+                                    proj_mat_all[ik,isp,ish,ir,i,j] = R.next()
                             
                             for i in range(self.shells[ish]['dim']):    # read imaginary part:
                                 for j in range(n_orbitals[ik,isp]):
-                                    proj_mat_pc[ik,isp,ish,ir,i,j] += 1j * R.next()
+                                    proj_mat_all[ik,isp,ish,ir,i,j] += 1j * R.next()
 
         except StopIteration : # a more explicit error if the file is corrupted.
             raise "Wien2k_converter : reading file band_file failed!"
@@ -363,7 +363,7 @@ class Wien2kConverter(ConverterTools):
         ar = HDFArchive(self.hdf_file,'a')
         if not (self.bands_subgrp in ar): ar.create_group(self.bands_subgrp) 
         # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
-        things_to_save = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_pc']
+        things_to_save = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_all']
         for it in things_to_save: ar[self.bands_subgrp][it] = locals()[it]
         del ar
 

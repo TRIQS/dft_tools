@@ -182,7 +182,7 @@ class SumkDFT:
         elif shells == 'all':
             if ir is None: raise ValueError, "downfold: provide ir if treating all shells."
             dim = self.shells[ish]['dim']
-            projmat = self.proj_mat_pc[ik,isp,ish,ir,0:dim,0:n_orb]
+            projmat = self.proj_mat_all[ik,isp,ish,ir,0:dim,0:n_orb]
   
         gf_downfolded.from_L_G_R(projmat,gf_to_downfold,projmat.conjugate().transpose())
   
@@ -201,7 +201,7 @@ class SumkDFT:
         elif shells == 'all':
             if ir is None: raise ValueError, "upfold: provide ir if treating all shells."
             dim = self.shells[ish]['dim']
-            projmat = self.proj_mat_pc[ik,isp,ish,ir,0:dim,0:n_orb]
+            projmat = self.proj_mat_all[ik,isp,ish,ir,0:dim,0:n_orb]
   
         gf_upfolded.from_L_G_R(projmat.conjugate().transpose(),gf_to_upfold,projmat)
   
@@ -358,9 +358,9 @@ class SumkDFT:
         """
 
         if mu is None: mu = self.chemical_potential
-        Gloc = [ self.Sigma_imp_iw[icrsh].copy() for icrsh in range(self.n_corr_shells) ]   # this list will be returned
-        for icrsh in range(self.n_corr_shells): Gloc[icrsh].zero()                          # initialize to zero
-        beta = Gloc[0].mesh.beta
+        G_loc = [ self.Sigma_imp_iw[icrsh].copy() for icrsh in range(self.n_corr_shells) ]   # this list will be returned
+        for icrsh in range(self.n_corr_shells): G_loc[icrsh].zero()                          # initialize to zero
+        beta = G_loc[0].mesh.beta
 
         ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):
@@ -369,25 +369,25 @@ class SumkDFT:
             G_latt_iw *= self.bz_weights[ik]
 
             for icrsh in range(self.n_corr_shells):
-                tmp = Gloc[icrsh].copy()                  # init temporary storage
+                tmp = G_loc[icrsh].copy()                  # init temporary storage
                 for bname,gf in tmp: tmp[bname] << self.downfold(ik,icrsh,bname,G_latt_iw[bname],gf)
-                Gloc[icrsh] += tmp
+                G_loc[icrsh] += tmp
 
         # collect data from mpi
-        for icrsh in range(self.n_corr_shells): Gloc[icrsh] << mpi.all_reduce(mpi.world, Gloc[icrsh], lambda x,y : x+y)
+        for icrsh in range(self.n_corr_shells): G_loc[icrsh] << mpi.all_reduce(mpi.world, G_loc[icrsh], lambda x,y : x+y)
         mpi.barrier()
 
-        # Gloc[:] is now the sum over k projected to the local orbitals.
+        # G_loc[:] is now the sum over k projected to the local orbitals.
         # here comes the symmetrisation, if needed:
-        if self.symm_op != 0: Gloc = self.symmcorr.symmetrize(Gloc)
+        if self.symm_op != 0: G_loc = self.symmcorr.symmetrize(G_loc)
 
-        # Gloc is rotated to the local coordinate system:
+        # G_loc is rotated to the local coordinate system:
         if self.use_rotations:
             for icrsh in range(self.n_corr_shells):
-                for bname,gf in Gloc[icrsh]: Gloc[icrsh][bname] << self.rotloc(icrsh,gf,direction='toLocal')
+                for bname,gf in G_loc[icrsh]: G_loc[icrsh][bname] << self.rotloc(icrsh,gf,direction='toLocal')
 
         # transform to CTQMC blocks:
-        Gloc_inequiv = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = Gloc[0].mesh)) for block,inner in self.gf_struct_solver[ish].iteritems() ],
+        G_loc_inequiv = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = G_loc[0].mesh)) for block,inner in self.gf_struct_solver[ish].iteritems() ],
                         make_copies = False) for ish in range(self.n_inequiv_shells)  ]
         for ish in range(self.n_inequiv_shells):
             for block,inner in self.gf_struct_solver[ish].iteritems():
@@ -395,10 +395,10 @@ class SumkDFT:
                     for ind2 in inner:
                         block_sumk,ind1_sumk = self.solver_to_sumk[ish][(block,ind1)]
                         block_sumk,ind2_sumk = self.solver_to_sumk[ish][(block,ind2)]
-                        Gloc_inequiv[ish][block][ind1,ind2] << Gloc[self.inequiv_to_corr[ish]][block_sumk][ind1_sumk,ind2_sumk]
+                        G_loc_inequiv[ish][block][ind1,ind2] << G_loc[self.inequiv_to_corr[ish]][block_sumk][ind1_sumk,ind2_sumk]
 
         # return only the inequivalent shells:
-        return Gloc_inequiv
+        return G_loc_inequiv
 
 
     def analyse_block_structure(self, threshold = 0.00001, include_shells = None, dm = None):
@@ -721,7 +721,7 @@ class SumkDFT:
             for bl in degsh: gf_to_symm[bl] << ss
 
 
-    def total_density(self, mu):
+    def total_density(self, mu=None):
         """
         Calculates the total charge for the energy window for a given chemical potential mu. 
         Since in general n_orbitals depends on k, the calculation is done in the following order:
@@ -730,6 +730,7 @@ class SumkDFT:
         The calculation is done in the global coordinate system, if distinction is made between local/global!
         """
 
+        if mu is None: mu = self.chemical_potential
         dens = 0.0
         ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):

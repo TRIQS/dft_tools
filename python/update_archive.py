@@ -5,7 +5,7 @@ import numpy
 import subprocess
 
 if len(sys.argv) < 2:
-  print "Usage: python update_archive.py old_archive"
+  print "Usage: python update_archive.py old_archive [v1.0|v1.2]"
   sys.exit()
 
 print """
@@ -50,6 +50,10 @@ def det_shell_equivalence(corr_shells):
 ### Main ###
 
 filename = sys.argv[1]
+if len(sys.argv) > 2: 
+    from_v = sys.argv[2]
+else: # Assume updating an old v1.0 script
+    from_v = 'v1.0'
 A = h5py.File(filename)
 
 # Rename groups
@@ -76,18 +80,19 @@ for obj in to_delete:
     if obj in A['dft_input'].keys():
        del(A['dft_input'][obj])
 
-# Update shells and corr_shells to list of dicts
-shells_old = HDFArchive(filename,'r')['dft_input']['shells'] 
-corr_shells_old = HDFArchive(filename,'r')['dft_input']['corr_shells']
-shells = convert_shells(shells_old)
-corr_shells = convert_corr_shells(corr_shells_old)
-del(A['dft_input']['shells'])
-del(A['dft_input']['corr_shells'])
-A.close()
-# Need to use HDFArchive for the following
-HDFArchive(filename,'a')['dft_input']['shells'] = shells
-HDFArchive(filename,'a')['dft_input']['corr_shells'] = corr_shells
-A = h5py.File(filename)
+if from_v == 'v1.0':
+    # Update shells and corr_shells to list of dicts
+    shells_old = HDFArchive(filename,'r')['dft_input']['shells'] 
+    corr_shells_old = HDFArchive(filename,'r')['dft_input']['corr_shells']
+    shells = convert_shells(shells_old)
+    corr_shells = convert_corr_shells(corr_shells_old)
+    del(A['dft_input']['shells'])
+    del(A['dft_input']['corr_shells'])
+    A.close()
+    # Need to use HDFArchive for the following
+    HDFArchive(filename,'a')['dft_input']['shells'] = shells
+    HDFArchive(filename,'a')['dft_input']['corr_shells'] = corr_shells
+    A = h5py.File(filename)
 
 # Add shell equivalency quantities
 if 'n_inequiv_shells' not in A['dft_input']:
@@ -98,10 +103,9 @@ if 'n_inequiv_shells' not in A['dft_input']:
 
 # Rename variables
 groups = ['dft_symmcorr_input','dft_symmpar_input']
-
 for group in groups:
     if group not in A.keys(): continue
-    if 'n_s' not in group: continue
+    if 'n_s' not in A[group]: continue
     print "Changing n_s to n_symm ..."
     A[group].move('n_s','n_symm')
     # Convert orbits to list of dicts
@@ -111,6 +115,14 @@ for group in groups:
     A.close()
     HDFArchive(filename,'a')[group]['orbits'] = orbits
     A = h5py.File(filename)
+
+groups = ['dft_parproj_input']
+for group in groups:
+    if group not in A.keys(): continue
+    if 'proj_mat_pc' not in A[group]: continue
+    print "Changing proj_mat_pc to proj_mat_all ..."
+    A[group].move('proj_mat_pc','proj_mat_all')
+
 A.close()
 
 # Repack to reclaim disk space
