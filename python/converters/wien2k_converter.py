@@ -207,7 +207,7 @@ class Wien2kConverter(ConverterTools):
         del ar
 
         # Symmetries are used, so now convert symmetry information for *correlated* orbitals:
-        self.convert_symmetry_input(orbits=corr_shells,symm_file=self.symmcorr_file,symm_subgrp=self.symmcorr_subgrp,SO=self.SO,SP=self.SP)
+        self.convert_symmetry_input(orbits=self.corr_shells,symm_file=self.symmcorr_file,symm_subgrp=self.symmcorr_subgrp,SO=self.SO,SP=self.SP)
 
 
     def convert_parproj_input(self):
@@ -306,7 +306,7 @@ class Wien2kConverter(ConverterTools):
                     n_orbitals[ik,isp] = int(R.next())
 
             # Initialise the projectors:
-            proj_mat = numpy.zeros([n_k,self.n_spin_blocs,self.n_corr_shells,max([crsh['dim'] for crsh in corr_shells]),max(n_orbitals)],numpy.complex_)
+            proj_mat = numpy.zeros([n_k,self.n_spin_blocs,self.n_corr_shells,max([crsh['dim'] for crsh in self.corr_shells]),max(n_orbitals)],numpy.complex_)
 
             # Read the projectors from the file:
             for ik in range(n_k):
