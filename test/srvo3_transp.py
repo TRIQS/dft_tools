@@ -33,8 +33,10 @@ Converter.convert_transport_input()
 SK = SumkDFTTools(hdf_file='SrVO3.h5', use_dft_blocks=True)
 
 ar = HDFArchive('SrVO3_Sigma.h5', 'a')
-Sigma = ar['dmft_transp_output']['Sigma_w']
+Sigma = ar['dmft_transp_input']['Sigma_w']
 SK.put_Sigma(Sigma_imp = [Sigma])
+SK.chemical_potential = ar['dmft_transp_input']['chemical_potential']
+SK.dc_imp = ar['dmft_transp_input']['dc_imp']
 del ar
 
 SK.transport_distribution(directions=['xx'], broadening=0.0, energy_window=[-0.3,0.3], Om_mesh=[0.00, 0.02] , beta=beta, with_Sigma=True)
@@ -43,3 +45,4 @@ SK.transport_distribution(directions=['xx'], broadening=0.0, energy_window=[-0.3
 SK.conductivity_and_seebeck(beta=beta)
 SK.hdf_file = 'srvo3_transp.output.h5'
 SK.save(['seebeck','optic_cond'])
+

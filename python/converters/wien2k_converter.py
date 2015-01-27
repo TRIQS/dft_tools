@@ -403,7 +403,7 @@ class Wien2kConverter(ConverterTools):
             if not os.path.exists(f) : raise IOError, "convert_transport_input: File %s does not exist" %f
             print "Reading input from %s..."%f,
 
-            R = ConverterTools.read_fortran_file(self, f, {'D':'E','(':'',')':'',',':''})
+            R = ConverterTools.read_fortran_file(self, f, {'D':'E','(':'',')':'',',':' '})
             band_window_optics_isp = []
             for ik in xrange(n_k):
                 R.next()
