@@ -21,7 +21,7 @@ html_theme = 'triqs'
 html_theme_path = ['@TRIQS_THEMES_PATH@']
 html_show_sphinx = False
 html_context = {'header_title': 'dft_tools',
-                'header_subtitle': 'Connecting <a class="triqs" style="font-size: 12px" href="http://ipht.cea.fr/triqs">TRIQS</a>  to the Wien2k package',
+                'header_subtitle': 'Connecting <a class="triqs" style="font-size: 12px" href="http://ipht.cea.fr/triqs">TRIQS</a>  to DFT packages',
                 'header_links': [['Install', 'install'],
                                  ['Documentation', 'documentation'],
                                  ['Issues', 'issues'],

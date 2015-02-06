@@ -4,13 +4,13 @@
 Installation
 ============
 
-Prerequisite
-------------
+Prerequisites
+-------------
 
 #. The :ref:`TRIQS <triqslibs:welcome>` toolbox (see :ref:`TRIQS installation instruction <triqslibs:installation>`).
    In the following, we will suppose that it is installed in the ``path_to_triqs`` directory.
 
-#. Likely, you will also need at least one impurity solver, e.g. the :ref:`CTHYB_matrix solver <triqscthyb:welcome>`.
+#. Likely, you will also need at least one impurity solver, e.g. the :ref:`CTHYB solver <triqscthyb:welcome>`.
 
 Installation steps 
 ------------------
@@ -32,6 +32,9 @@ Installation steps
      $ make 
      $ make test 
      $ make install 
+
+Installation steps for use with WIEN2K
+---------------------------------------
 
 #. You need to take this last step manually since the Wien2k installation is not standard on all machines.
    After the above installation several files will be installed into::
@@ -63,7 +66,7 @@ Installation steps
 
    You will also need to insert manually a correct call of :file:`pytriqs` into
    these scripts using an appropriate for your system MPI wrapper (mpirun,
-   mpprun...), if needed. Search for *pytriqs* within the scripts to locate the
+   mpprun, etc.), if needed. Search for *pytriqs* within the scripts to locate the
    appropriate place for inserting the :file:`pytriqs` call.
 
    Finally, you will have to change the calls to :program:`python_with_DMFT` to

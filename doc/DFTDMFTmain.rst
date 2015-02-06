@@ -5,7 +5,7 @@
 The DFT+DMFT calculation
 ========================
 
-After having set up the hdf5 arxive, we can now do our DFT+DMFT calculation. It consists of
+After having set up the hdf5 archive, we can now do our DFT+DMFT calculation. It consists of
 initialisation steps, and the actual DMFT self consistency loop.
 
 .. index:: initialisation of DFT+DMFT
@@ -22,12 +22,12 @@ to get the local quantities used in DMFT. It is initialized by::
 
 The only necessary parameter is the filename of the hdf5 archive. In addition, there are some optional parameters:
 
-  * `mu`: The chemical potential at initialization. This value is only used if no other value is found in the hdf5 arxive. The default value is 0.0.
+  * `mu`: The chemical potential at initialization. This value is only used if no other value is found in the hdf5 archive. The default value is 0.0.
   * `h_field`: External magnetic field. The default value is 0.0.
   * `use_dft_blocks`: If true, the structure of the density matrix is analysed at initialisation, and non-zero matrix elements 
     are identified. The DMFT calculation is then restricted to these matrix elements, yielding a more efficient solution of the 
     local interaction problem. Degeneracies in orbital and spin space are also identified and stored for later use. The default value is `False`. 
-  * `dft_data`, `symmcorr_data`, `parproj_data`, `symmpar_data`, `bands_data`: These string variables define the subgroups in the hdf5 arxive,
+  * `dft_data`, `symmcorr_data`, `parproj_data`, `symmpar_data`, `bands_data`: These string variables define the subgroups in the hdf5 archive,
     where the corresponding information is stored. The default values are consistent with those in :ref:`interfacetowien`.
 
 At initialisation, the necessary data is read from the hdf5 file. If a calculation is restarted based on a previous hdf5 file, information on
