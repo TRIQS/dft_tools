@@ -20,9 +20,9 @@
 ################################################################################
 
 from pytriqs.archive import *
+from pytriqs.gf.local import *
 from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
-from pytriqs.applications.impurity_solvers.cthyb import *
 from pytriqs.operators.hamiltonians import set_operator_structure
 
 # Basic input parameters
@@ -37,9 +37,11 @@ spin_names = ['up','down']
 orb_names = ['%s'%i for i in range(num_orbitals)]
 orb_hybridized = False
 
-S = Solver(beta=beta, gf_struct=set_operator_structure(spin_names,orb_names,orb_hybridized))
+gf_struct = set_operator_structure(spin_names,orb_names,orb_hybridized)
+glist = [ GfImFreq(indices=inner,beta=beta) for block,inner in gf_struct.iteritems()]
+Sigma_iw = BlockGf(name_list = gf_struct.keys(), block_list = glist, make_copies = False)
 
-SK.put_Sigma([S.Sigma_iw]) 
+SK.put_Sigma([Sigma_iw]) 
 Gloc=SK.extract_G_loc()
 
 ar = HDFArchive('srvo3_Gloc.output.h5','w')
