@@ -41,8 +41,8 @@ class Wien2kConverter(ConverterTools):
         """
 
         assert type(filename)==StringType, "Please provide the DFT files' base name as a string."
-        if hdf_filename is None: hdf_filename = filename
-        self.hdf_file = hdf_filename+'.h5'
+        if hdf_filename is None: hdf_filename = filename+'.h5'
+        self.hdf_file = hdf_filename
         self.dft_file = filename+'.ctqmcout'
         self.symmcorr_file = filename+'.symqmc'
         self.parproj_file = filename+'.parproj'

@@ -40,6 +40,16 @@ class SumkDFTTools(SumkDFT):
                           misc_data=misc_data)
 
 
+    def read_parproj_input_from_hdf(self):
+        """
+        Reads the data for the partial projectors from the HDF file
+        """
+
+        things_to_read = ['dens_mat_below','n_parproj','proj_mat_all','rot_mat_all','rot_mat_all_time_inv']
+        value_read = self.read_input_from_hdf(subgrp=self.parproj_data,things_to_read = things_to_read)
+        return value_read
+
+
     def check_input_dos(self, om_min, om_max, n_om, beta=10, broadening=0.01):
 
         delta_om = (om_max-om_min)/(n_om-1)
@@ -113,19 +123,6 @@ class SumkDFTTools(SumkDFT):
                             f=open(Fname,'w')
                             for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj_orb[ish][sp][iom,i,j]))
                             f.close()
-
-
-
-
-    def read_parproj_input_from_hdf(self):
-        """
-        Reads the data for the partial projectors from the HDF file
-        """
-
-        things_to_read = ['dens_mat_below','n_parproj','proj_mat_all','rot_mat_all','rot_mat_all_time_inv']
-        value_read = self.read_input_from_hdf(subgrp=self.parproj_data,things_to_read = things_to_read)
-        return value_read
-
 
 
     def dos_partial(self,broadening=0.01):
@@ -218,11 +215,8 @@ class SumkDFTTools(SumkDFT):
                             f.close()
 
 
-
-
     def spaghettis(self,broadening,shift=0.0,plot_range=None, ishell=None, invert_Akw=False, fermi_surface=False):
-        """ Calculates the correlated band structure with a real-frequency self energy.
-            ATTENTION: Many things from the original input file are overwritten!!!"""
+        """ Calculates the correlated band structure with a real-frequency self energy."""
 
         assert hasattr(self,"Sigma_imp_w"), "spaghettis: Set Sigma_imp_w first."
         things_to_read = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_all']
@@ -233,26 +227,6 @@ class SumkDFTTools(SumkDFT):
 
         # FIXME CAN REMOVE?
         # print hamiltonian for checks:
-        if self.SP == 1 and self.SO == 0:
-            f1=open('hamup.dat','w')
-            f2=open('hamdn.dat','w')
-
-            for ik in range(self.n_k):
-                for i in range(self.n_orbitals[ik,0]):
-                    f1.write('%s    %s\n'%(ik,self.hopping[ik,0,i,i].real))
-                for i in range(self.n_orbitals[ik,1]):
-                    f2.write('%s    %s\n'%(ik,self.hopping[ik,1,i,i].real))
-                f1.write('\n')
-                f2.write('\n')
-            f1.close()
-            f2.close()
-        else:
-            f=open('ham.dat','w')
-            for ik in range(self.n_k):
-                for i in range(self.n_orbitals[ik,0]):
-                    f.write('%s    %s\n'%(ik,self.hopping[ik,0,i,i].real))
-                f.write('\n')
-            f.close()
 
 
         #=========================================
@@ -450,6 +424,31 @@ class SumkDFTTools(SumkDFT):
                      for isp in range(len(spn)) ]
 
         return dens_mat
+
+
+    def print_hamiltonian(self):
+        """ Print Hamiltonian for checks."""
+        if self.SP == 1 and self.SO == 0:
+            f1=open('hamup.dat','w')
+            f2=open('hamdn.dat','w')
+
+            for ik in range(self.n_k):
+                for i in range(self.n_orbitals[ik,0]):
+                    f1.write('%s    %s\n'%(ik,self.hopping[ik,0,i,i].real))
+                for i in range(self.n_orbitals[ik,1]):
+                    f2.write('%s    %s\n'%(ik,self.hopping[ik,1,i,i].real))
+                f1.write('\n')
+                f2.write('\n')
+            f1.close()
+            f2.close()
+        else:
+            f=open('ham.dat','w')
+            for ik in range(self.n_k):
+                for i in range(self.n_orbitals[ik,0]):
+                    f.write('%s    %s\n'%(ik,self.hopping[ik,0,i,i].real))
+                f.write('\n')
+            f.close()
+
 
 # ----------------- transport -----------------------
 

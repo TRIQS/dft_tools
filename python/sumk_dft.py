@@ -845,31 +845,6 @@ class SumkDFT:
 # FIXME LEAVE UNDOCUMENTED
 ################
 
-    # FIXME Merge with calc_mu?
-    def calc_mu_nonint(self, dens_req, orb = None, precision = 0.01):
-
-        def F(mu):
-            gnonint = self.extract_G_loc(mu = mu, with_Sigma = False)
-
-            if orb is None:
-                dens = 0.0
-                for ish in range(self.n_inequiv_shells):
-                    dens += gnonint[ish].total_density()
-            else:
-                dens = gnonint[orb].total_density()
-
-            return dens
-
-
-        self.chemical_potential = dichotomy.dichotomy(function = F,
-                                         x_init = self.chemical_potential, y_value = dens_req,
-                                         precision_on_y = precision, delta_x = 0.5, max_loops = 100, 
-                                         x_name = "Chemical Potential", y_name = "Total Density",
-                                         verbosity = 3)[0]
-
-        return self.chemical_potential
-
-
     def calc_dc_for_density(self,orb,dc_init,dens_mat,density=None,precision=0.01):
         """Searches for DC in order to fulfill charge neutrality.
            If density is given, then DC is set such that the LOCAL charge of orbital
