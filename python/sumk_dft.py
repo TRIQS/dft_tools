@@ -34,7 +34,8 @@ class SumkDFT:
 
     def __init__(self, hdf_file, h_field = 0.0, use_dft_blocks = False, 
 	         dft_data = 'dft_input', symmcorr_data = 'dft_symmcorr_input', parproj_data = 'dft_parproj_input', 
-                 symmpar_data = 'dft_symmpar_input', bands_data = 'dft_bands_input', transp_data = 'dft_transp_input'):
+                 symmpar_data = 'dft_symmpar_input', bands_data = 'dft_bands_input', transp_data = 'dft_transp_input',
+                 misc_data = 'dft_misc_input'):
         """
         Initialises the class from data previously stored into an HDF5
         """
@@ -49,7 +50,7 @@ class SumkDFT:
             self.symmpar_data = symmpar_data
             self.bands_data = bands_data
             self.transp_data = transp_data
-            #self.G_latt_iw = None # DEBUG -- remove later
+            self.misc_data = misc_data
             self.h_field = h_field
 
             # Read input from HDF:

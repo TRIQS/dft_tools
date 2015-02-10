@@ -32,11 +32,12 @@ class SumkDFTTools(SumkDFT):
 
     def __init__(self, hdf_file, h_field = 0.0, use_dft_blocks = False, dft_data = 'dft_input', symmcorr_data = 'dft_symmcorr_input',
                  parproj_data = 'dft_parproj_input', symmpar_data = 'dft_symmpar_input', bands_data = 'dft_bands_input', 
-                 transp_data = 'dft_transp_input'):
+                 transp_data = 'dft_transp_input', misc_data = 'dft_misc_input'):
 
         SumkDFT.__init__(self, hdf_file=hdf_file, h_field=h_field, use_dft_blocks=use_dft_blocks,
                           dft_data=dft_data, symmcorr_data=symmcorr_data, parproj_data=parproj_data, 
-                          symmpar_data=symmpar_data, bands_data=bands_data, transp_data=transp_data)
+                          symmpar_data=symmpar_data, bands_data=bands_data, transp_data=transp_data, 
+                          misc_data=misc_data)
 
 
     def check_input_dos(self, om_min, om_max, n_om, beta=10, broadening=0.01):
@@ -456,9 +457,10 @@ class SumkDFTTools(SumkDFT):
         """
         Reads the data for transport calculations from the HDF file
         """
-        thingstoread = ['band_window','band_window_optics','velocities_k','lattice_angles','lattice_constants','lattice_type','n_symmetries','rot_symmetries']
-        retval = self.read_input_from_hdf(subgrp=self.transp_data,things_to_read = thingstoread)
-        return retval
+        thingstoread = ['band_window_optics','velocities_k']
+        self.read_input_from_hdf(subgrp=self.transp_data,things_to_read = thingstoread)
+        thingstoread = ['band_window','lattice_angles','lattice_constants','lattice_type','n_symmetries','rot_symmetries']
+        self.read_input_from_hdf(subgrp=self.misc_data,things_to_read = thingstoread)
     
     
     def cellvolume(self, lattice_type, lattice_constants, latticeangle):

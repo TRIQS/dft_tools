@@ -34,7 +34,8 @@ class Wien2kConverter(ConverterTools):
     def __init__(self, filename, hdf_filename = None,
                        dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input',
                        parproj_subgrp='dft_parproj_input', symmpar_subgrp='dft_symmpar_input',
-                       bands_subgrp = 'dft_bands_input', transp_subgrp = 'dft_transp_input', repacking = False):
+                       bands_subgrp = 'dft_bands_input', misc_subgrp = 'dft_misc_input',
+                       transp_subgrp = 'dft_transp_input', repacking = False):
         """
         Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so on. 
         """
@@ -47,17 +48,18 @@ class Wien2kConverter(ConverterTools):
         self.parproj_file = filename+'.parproj'
         self.symmpar_file = filename+'.sympar'
         self.band_file = filename+'.outband'
+        self.bandwin_file = filename+'.oubwin'
+        self.struct_file = filename+'.struct'
+        self.outputs_file = filename+'.outputs'
+        self.pmat_file = filename+'.pmat'
         self.dft_subgrp = dft_subgrp
         self.symmcorr_subgrp = symmcorr_subgrp
         self.parproj_subgrp = parproj_subgrp
         self.symmpar_subgrp = symmpar_subgrp
         self.bands_subgrp = bands_subgrp
+        self.misc_subgrp = misc_subgrp
         self.transp_subgrp = transp_subgrp
         self.fortran_to_replace = {'D':'E'}
-        self.pmat_file = filename+'.pmat'
-        self.outputs_file = filename+'.outputs'
-        self.struct_file = filename+'.struct'
-        self.oubwin_file = filename+'.oubwin'
 
         # Checks if h5 file is there and repacks it if wanted:
         if (os.path.exists(self.hdf_file) and repacking):
@@ -208,6 +210,8 @@ class Wien2kConverter(ConverterTools):
 
         # Symmetries are used, so now convert symmetry information for *correlated* orbitals:
         self.convert_symmetry_input(orbits=self.corr_shells,symm_file=self.symmcorr_file,symm_subgrp=self.symmcorr_subgrp,SO=self.SO,SP=self.SP)
+        self.convert_misc_input(bandwin_file=self.bandwin_file,struct_file=self.struct_file,outputs_file=self.outputs_file,
+                                misc_subgrp=self.misc_subgrp,SO=self.SO,SP=self.SP,n_k=self.n_k)
 
 
     def convert_parproj_input(self):
@@ -368,6 +372,100 @@ class Wien2kConverter(ConverterTools):
         del ar
 
 
+    def convert_misc_input(self, bandwin_file, struct_file, outputs_file, misc_subgrp, SO, SP, n_k):
+        """
+        Reads input for the band window from bandwin_file, which is case.oubwin,
+                            structure from struct_file, which is case.struct,
+                            symmetries from outputs_file, which is case.outputs.
+        """
+
+        if not (mpi.is_master_node()): return
+
+        # Read relevant data from .oubwin/up/dn files
+        #############################################
+        # band_window: Contains the index of the lowest and highest band within the
+        #              projected subspace (used by dmftproj) for each k-point.
+
+        if (SP == 0 or SO == 1):        
+            files = [self.bandwin_file]
+        elif SP == 1:
+            files = [self.bandwin_file+'up', self.bandwin_file+'dn']
+        else: # SO and SP can't both be 1
+            assert 0, "convert_transport_input: Reding oubwin error! Check SP and SO!"
+        
+        band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(SP + 1 - SO)]
+        for isp, f in enumerate(files):
+            if not os.path.exists(f): raise IOError, "convert_misc_input: File %s does not exist" %f
+            print "Reading input from %s..."%f,
+            
+            R = ConverterTools.read_fortran_file(self, f, self.fortran_to_replace)
+            assert int(R.next()) == n_k, "convert_misc_input: Number of k-points is inconsistent in oubwin file!"
+            assert int(R.next()) == SO, "convert_misc_input: SO is inconsistent in oubwin file!"
+            for ik in xrange(n_k):
+                R.next()
+                band_window[isp][ik,0] = R.next() # lowest band
+                band_window[isp][ik,1] = R.next() # highest band
+                R.next()
+
+        R.close() # Reading done!
+
+        # Read relevant data from .struct file
+        ######################################
+        # lattice_type: bravais lattice type as defined by Wien2k
+        # lattice_constants: unit cell parameters in a. u.
+        # lattice_angles: unit cell angles in rad
+
+        if not (os.path.exists(self.struct_file)) : raise IOError, "convert_misc_input: File %s does not exist" %self.struct_file
+        print "Reading input from %s..."%self.struct_file,
+        
+        with open(self.struct_file) as R:
+            try:
+                R.readline()
+                lattice_type = R.readline().split()[0]
+                R.readline()
+                temp = R.readline().strip().split() 
+                lattice_constants = numpy.array([float(t) for t in temp[0:3]])
+                lattice_angles = numpy.array([float(t) for t in temp[3:6]]) * numpy.pi / 180.0
+            except IOError:
+                raise "convert_misc_input: reading file %s failed" %self.struct_file
+
+        # Read relevant data from .outputs file
+        #######################################
+        # rot_symmetries: matrix representation of all (space group) symmetry operations
+        
+        if not (os.path.exists(self.outputs_file)) : raise IOError, "convert_misc_input: File %s does not exist" %self.outputs_file
+        print "Reading input from %s..."%self.outputs_file,
+        
+        rot_symmetries = []
+        with open(self.outputs_file) as R:
+            try:
+                while 1:
+                    temp = R.readline().strip(' ').split()
+                    if (temp[0] =='PGBSYM:'):
+                         n_symmetries = int(temp[-1])
+                         break
+                for i in range(n_symmetries):
+                    while 1:
+                        if (R.readline().strip().split()[0] == 'Symmetry'): break
+                    sym_i = numpy.zeros((3, 3), dtype = float)
+                    for ir in range(3):
+                        temp = R.readline().strip().split()
+                        for ic in range(3):
+                            sym_i[ir, ic] = float(temp[ic])
+                    R.readline()
+                    rot_symmetries.append(sym_i)
+            except IOError:
+                 raise "convert_misc_input: reading file %s failed" %self.outputs_file
+
+
+        # Save it to the HDF:
+        ar=HDFArchive(self.hdf_file,'a')
+        if not (misc_subgrp in ar): ar.create_group(misc_subgrp)
+        things_to_save = ['band_window', 'lattice_type', 'lattice_constants', 'lattice_angles', 'n_symmetries', 'rot_symmetries']
+        for it in things_to_save: ar[misc_subgrp][it] = locals()[it]
+        del ar
+
+
     def convert_transport_input(self):
         """ 
         Reads the input files necessary for transport calculations
@@ -425,88 +523,11 @@ class Wien2kConverter(ConverterTools):
             band_window_optics.append(numpy.array(band_window_optics_isp))
             print "DONE!"
 
-        # Read relevant data from .struct file
-        ######################################
-        # lattice_type: bravais lattice type as defined by Wien2k
-        # lattice_constants: unit cell parameters in a. u.
-        # lattice_angles: unit cell angles in rad
-
-        if not (os.path.exists(self.struct_file)) : raise IOError, "convert_transport_input: File %s does not exist" %self.struct_file
-        print "Reading input from %s..."%self.struct_file,
-        
-        with open(self.struct_file) as R:
-            try:
-                R.readline()
-                lattice_type = R.readline().split()[0]
-                R.readline()
-                temp = R.readline().strip().split() 
-                lattice_constants = numpy.array([float(t) for t in temp[0:3]])
-                lattice_angles = numpy.array([float(t) for t in temp[3:6]]) * numpy.pi / 180.0
-            except IOError:
-                raise "convert_transport_input: reading file %s failed" %self.struct_file
-        print "DONE!"
-
-        # Read relevant data from .outputs file
-        #######################################
-        # rot_symmetries: matrix representation of all (space group) symmetry operations
-        
-        if not (os.path.exists(self.outputs_file)) : raise IOError, "convert_transport_input: File %s does not exist" %self.outputs_file
-        print "Reading input from %s..."%self.outputs_file,
-        
-        rot_symmetries = []
-        with open(self.outputs_file) as R:
-            try:
-                while 1:
-                    temp = R.readline().strip(' ').split()
-                    if (temp[0] =='PGBSYM:'):
-                         n_symmetries = int(temp[-1])
-                         break
-                for i in range(n_symmetries):
-                    while 1:
-                        if (R.readline().strip().split()[0] == 'Symmetry'): break
-                    sym_i = numpy.zeros((3, 3), dtype = float)
-                    for ir in range(3):
-                        temp = R.readline().strip().split()
-                        for ic in range(3):
-                            sym_i[ir, ic] = float(temp[ic])
-                    R.readline()
-                    rot_symmetries.append(sym_i)
-            except IOError:
-                 raise "convert_transport_input: reading file %s failed" %self.outputs_file
-        print "DONE!"
-
-        # Read relevant data from .oubwin/up/dn files
-        ###############################################
-        # band_window: Contains the index of the lowest and highest band within the
-        #              projected subspace (used by dmftproj) for each k-point.
-        
-        if (SP == 0 or SO == 1):        
-            files = [self.oubwin_file]
-        elif SP == 1:
-            files = [self.oubwin_file+'up', self.oubwin_file+'dn']
-        else: # SO and SP can't both be 1
-            assert 0, "convert_transport_input: Reding oubwin error! Check SP and SO!"
-        
-        band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(SP + 1 - SO)]
-        for isp, f in enumerate(files):
-            if not os.path.exists(f): raise IOError, "convert_transport_input: File %s does not exist" %f
-            print "Reading input from %s..."%f,
-            
-            R = ConverterTools.read_fortran_file(self, f, self.fortran_to_replace)
-            assert int(R.next()) == n_k, "convert_transport_input: Number of k-points is inconsistent in oubwin file!"
-            assert int(R.next()) == SO, "convert_transport_input: SO is inconsistent in oubwin file!"
-            for ik in xrange(n_k):
-                R.next()
-                band_window[isp][ik,0] = R.next()
-                band_window[isp][ik,1] = R.next()
-                R.next()
-            print "DONE!"
-
         # Put data to HDF5 file
         ar = HDFArchive(self.hdf_file, 'a')
         if not (self.transp_subgrp in ar): ar.create_group(self.transp_subgrp)
         # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!!!
-        things_to_save = ['band_window', 'band_window_optics', 'velocities_k', 'lattice_type', 'lattice_constants', 'lattice_angles', 'n_symmetries', 'rot_symmetries']
+        things_to_save = ['band_window_optics', 'velocities_k']
         for it in things_to_save: ar[self.transp_subgrp][it] = locals()[it]
         del ar
 
