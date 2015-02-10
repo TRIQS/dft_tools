@@ -23,9 +23,9 @@ In order to be used with the DMFT routines, the following data needs to be provi
 
   * `SO`, numpy.int. 1 if spin-orbit interaction is included, 0 otherwise.
 
-  * `charge_below`, numpy.float. The number of electrons in the crystal below the correlated orbitals. 
+  * `charge_below`, numpy.float. The number of electrons in the crystal below the correlated orbitals. Note that this is for compatibility with dmftproj. 
 
-  * `density_required`, numpy.float. Required total electron density, important for the determination of the chemical potential. The density of the correlated electrons is then `density_required`-`charge_below`. 
+  * `density_required`, numpy.float. Required total electron density, important for the determination of the chemical potential. The density within the projection window is then `density_required`-`charge_below`. 
 
   * `symm_op`, numpy.int. 1 if symmetry operations are used for the BZ sums, 0 if all k-points are directly included in the input.
 
