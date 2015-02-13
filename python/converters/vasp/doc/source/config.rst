@@ -15,7 +15,7 @@ A config-file contains three types of sections:
    (e.g. Fermi level)
  - **[Shell <Ns>]** : each section like this describes a PLO shell, with the index
    `Ns` used for referencing
- - **[Group <Ng>]** : describes shell groups
+ - **[Group <tag>]** : describes shell groups
 
 The format requirements are relatively flexible. A config-file must contain
 at least one `[Shell]` section. If there is only one shell defined, it is possible
@@ -88,6 +88,6 @@ It will be used to tag intermediate output files.
 
 **Required parameters:**
  - *SHELLS* ([int]): indices refering to shells forming the group.
- - **EMIN**, **EMAX**: the bottom and top of the energy window with respect to the Fermi level.
+ - *EMIN*, *EMAX*: the bottom and top of the energy window with respect to the Fermi level.
 
  
