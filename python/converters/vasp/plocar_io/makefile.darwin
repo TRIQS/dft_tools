@@ -1,0 +1,9 @@
+
+CC=gcc
+INC_FLAGS=-I/opt/local/Library/Frameworks/Python.framework/Versions/Current/include/python2.7 -I/opt/local/Library/Frameworks/Python.framework/Versions/Current/lib/python2.7/site-packages/numpy/core/include/numpy
+LIB_FLAGS=-L/opt/local/Library/Frameworks/Python.framework/Versions/Current/lib/python2.7
+
+c_plocar_io.so: c_plocar_io.c
+	$(CC) $< -fPIC -shared -o $@ $(INC_FLAGS) $(LIB_FLAGS) -lpython2.7
+	cp $@ ..
+

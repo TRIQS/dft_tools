@@ -1,0 +1,4 @@
+makefile
+*.so
+*.o
+*.pyc
