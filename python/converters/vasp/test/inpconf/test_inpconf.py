@@ -244,6 +244,32 @@ class TestSpecialParsers(unittest.TestCase):
 
         self.assertDictEqual(res, expected)
 
+################################################################################
+#
+# test_parse_groups()
+#
+################################################################################
+    def test_parse_groups(self):
+        """
+        Function:
+
+        def parse_groups(self)
+
+        Scenarios:
+
+        - **if** no [Group] section exists and more than one [Shell] section
+          is given **raise** AssertionError
+        - **if** a [Group] section does not contain all required parameters
+          **raise** Exception
+        - **if** two correct [Shell] sections are defined
+          **return** a dictionary of shell parameters
+        """
+# Scenario 1
+        conf_pars = ConfigParameters('test6.cfg')
+        err_mess = "At least one group"
+        with self.assertRaisesRegexp(AssertionError, err_mess):
+            conf_pars.parse_shells()
+
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestSpecialParsers)

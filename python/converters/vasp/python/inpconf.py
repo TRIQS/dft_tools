@@ -289,7 +289,7 @@ class ConfigParameters:
 # Find group sections
         sections = self.cp.sections()
 
-        gr_patt = re.compile('group *([0-9]*)')
+        gr_patt = re.compile('group +(.*)', re.IGNORECASE)
         sec_groups = filter(gr_patt.match, sections)
 
         self.ngroups = len(sec_groups)
