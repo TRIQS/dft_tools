@@ -5,5 +5,4 @@ LIB_FLAGS=-L/opt/local/Library/Frameworks/Python.framework/Versions/Current/lib/
 
 c_plocar_io.so: c_plocar_io.c
 	$(CC) $< -fPIC -shared -o $@ $(INC_FLAGS) $(LIB_FLAGS) -lpython2.7
-	cp $@ ..
 

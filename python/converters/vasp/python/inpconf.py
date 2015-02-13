@@ -1,8 +1,12 @@
+r"""
+  Module for parsing and checking an input config-file.
+"""
 
 import ConfigParser
 import numpy as np
 import re
 import sys
+import itertools as it
 import vaspio
 
 def issue_warning(message):
@@ -12,6 +16,7 @@ def issue_warning(message):
     print
     print "  !!! WARNING !!!: " + message
     print
+
 ################################################################################
 ################################################################################
 #
@@ -34,23 +39,6 @@ class ConfigParameters:
       1. internal name of a parameter
       2. function used to convert an input string into data for a given parameter
     """
-    self.sh_required = {
-        'ions': ('ion_list', self.parse_ion_list),
-        'lshell': ('lshell', int)}
-
-    self.sh_optional = {
-        'rtransform': ('tmatrix', lambda s: self.parse_tmatrix(s, real=True)),
-        'ctransform': ('tmatrix', lambda s: self.parse_tmatrix(s, real=False))}
-
-    self.gr_required = {
-        'emin': ('emin', float),
-        'emax': ('emax', float)}
-
-    self.gr_optional = {
-        'normalize' : ('normalize', self.parse_logical),
-        'normion' : ('normion', self.parse_logical)}
-
-
 ################################################################################
 #
 # __init__()
@@ -58,10 +46,29 @@ class ConfigParameters:
 ################################################################################
     def __init__(self, input_filename, verbosity=1):
         self.verbosity = verbosity
-        self.cp = ConfigParser.ConfigParser()
+        self.cp = ConfigParser.SafeConfigParser()
         self.cp.readfp(open(input_filename, 'r'))
 
-        self.conf_pars = {}
+        self.parameters = {}
+
+        self.sh_required = {
+            'ions': ('ion_list', self.parse_string_ion_list),
+            'lshell': ('lshell', int)}
+
+        self.sh_optional = {
+            'rtransform': ('tmatrix', lambda s: self.parse_string_tmatrix(s, real=True)),
+            'ctransform': ('tmatrix', lambda s: self.parse_string_tmatrix(s, real=False))}
+
+        self.gr_required = {
+            'shells': ('shells', lambda s: map(int, s.split())),
+            'emin': ('emin', float),
+            'emax': ('emax', float)}
+
+        self.gr_optional = {
+            'normalize' : ('normalize', self.parse_string_logical),
+            'normion' : ('normion', self.parse_string_logical)}
+
+
 
 #
 # Special parsers
@@ -75,19 +82,34 @@ class ConfigParameters:
         """
         The ion list accepts two formats:
           1). A list of ion indices according to POSCAR.
+              The list can be defined as a range '9..20'.
           2). An element name, in which case all ions with
               this name are included.
 
         The second option requires an input from POSCAR file.
         """
-        try:
-            l_tmp = map(int, par_str.split())
+# First check if a range is given
+        patt = '([0-9]+)\.\.([0-9]+)'
+        match = re.match(patt, par_str)
+        if match:
+            i1, i2 = tuple(map(int, match.groups()[:2]))
+            mess = "First index of the range must be smaller or equal to the second"
+            assert i1 <= i2, mess
+            ion_list = np.array(range(i1 - 1, i2))
+        else:
+# Check if a set of indices is given
+            try:
+                l_tmp = map(int, par_str.split())
+                l_tmp.sort()
 # Subtract 1 so that VASP indices (starting with 1) are converted
 # to Python indices (starting with 0)
-            ion_list = np.array(l_tmp) - 1
-        except ValueError:
-            err_msg = "Only an option with a list of ion indices is implemented"
-            raise NotImplementedError(err_msg)
+                ion_list = np.array(l_tmp) - 1
+            except ValueError:
+                err_msg = "Only an option with a list of ion indices is implemented"
+                raise NotImplementedError(err_msg)
+
+        err_mess = "Lowest ion index is smaller than 1 in '%s'"%(par_str)
+        assert np.all(ion_list >= 0), err_mess
 
         return ion_list
 
@@ -102,8 +124,44 @@ class ConfigParameters:
         (case does not matter). In fact, only the first symbol matters so that
         one can write 'T' or 'F'.
         """
-        assert par_str[0] in 'tf', "Logical parameters should be given by either 'True' or 'False'"
-        return par_str[0] == 't'
+        first_char = par_str[0].lower()
+        assert first_char in 'tf', "Logical parameters should be given by either 'True' or 'False'"
+        return first_char == 't'
+
+################################################################################
+#
+# parse_string_tmatrix()
+#
+################################################################################
+    def parse_string_tmatrix(self, par_str, real):
+        """
+        Transformation matrix is defined as a set of rows separated
+        by a new line symbol.
+        """
+        str_rows = par_str.split('\n')
+        try:
+            rows = [map(float, s.split()) for s in str_rows]
+        except ValueError:
+            err_mess = "Cannot parse a matrix string:\n%s"%(par_str)
+            raise ValueError(err_mess)
+
+        nr = len(rows)
+        nm = len(rows[0])
+
+        err_mess = "Number of columns must be the same:\n%s"%(par_str)
+        for row in rows:
+            assert len(row) == nm, err_mess
+
+        if real:
+            mat = np.array(rows)
+        else:
+            err_mess = "Complex matrix must contain 2*M values:\n%s"%(par_str)
+            assert 2 * (nm / 2) == nm, err_mess
+
+            tmp = np.array(rows, dtype=np.complex128)
+            mat = tmp[:, 0::2] + 1.0j * tmp[:, 1::2]
+
+        return mat
 
 ################################################################################
 #
@@ -122,7 +180,7 @@ class ConfigParameters:
             except ConfigParser.NoOptionError:
                 if exception:
                     message = "Required parameter '%s' not found in section [%s]"%(par, section)
-                    raise ConfigParser.NoOptionError(message)
+                    raise Exception(message)
                 else:
                     continue
 
@@ -149,9 +207,8 @@ class ConfigParameters:
 # (note that ConfigParser transforms all names to lower case)
         sections = self.cp.sections()
 
-        sh_patt = 'shell *([0-9]*)'
-        ismatch = lambda s: not re.match(sh_patt, s) is None
-        sec_shells = filter(ismatch, sections)
+        sh_patt1 = re.compile('shell +.*', re.IGNORECASE)
+        sec_shells = filter(sh_patt1.match, sections)
 
         self.nshells = len(sec_shells)
         assert self.nshells > 0, "No projected shells found in the input file"
@@ -164,15 +221,17 @@ class ConfigParameters:
                 print "  Found 1 projected shell"
 
 # Get shell indices
-        get_ind = lambda s: int(re.match(sh_patt, s).groups()[0])
+        sh_patt2 = re.compile('shell +([0-9]*)$', re.IGNORECASE)
         try:
+            get_ind = lambda s: int(sh_patt2.match(s).groups()[0])
             sh_inds = map(get_ind, sec_shells)
-        except ValueError:
+        except (ValueError, AttributeError):
             raise ValueError("Failed to extract shell indices from a list: %s"%(sec_shells))
 
-        self.sh_sections = {ind: sec for ind, sec in sh_inds, sec_shells}
+        self.sh_sections = {ind: sec for ind, sec in it.izip(sh_inds, sec_shells)}
 
 # Check that all indices are unique
+# In principle redundant because the list of sections will contain only unique names
         assert len(sh_inds) == len(set(sh_inds)), "There must be no shell with the same index!"
 
 # Ideally, indices should run from 1 to <nshells>
@@ -180,7 +239,7 @@ class ConfigParameters:
         sh_inds.sort()
         if sh_inds != range(1, len(sh_inds) + 1):
             issue_warning("Shell indices are not uniform or not starting from 1. "
-               "This might be an indication of a incorrect setup."
+               "This might be an indication of a incorrect setup.")
 
 # Parse shell parameters
         self.shells = {}
@@ -230,9 +289,8 @@ class ConfigParameters:
 # Find group sections
         sections = self.cp.sections()
 
-        gr_patt = 'group *([0-9]*)'
-        ismatch = lambda s: not re.match(gr_patt, s) is None
-        sec_groups = filter(ismatch, sections)
+        gr_patt = re.compile('group *([0-9]*)')
+        sec_groups = filter(gr_patt.match, sections)
 
         self.ngroups = len(sec_groups)
 
