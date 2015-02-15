@@ -393,7 +393,7 @@ class ConfigParameters:
                 try:
                     ind, shell = find_shell_by_user_index(user_ind)
                 except KeyError:
-                    raise Exception("Shell %i reference in group '%s' does not exist"%(user_ind, group['index'])
+                    raise Exception("Shell %i reference in group '%s' does not exist"%(user_ind, group['index']))
                 sh_inds.append(ind)
 
 # If [Shell] section contains (potentiall conflicting) group parameters
