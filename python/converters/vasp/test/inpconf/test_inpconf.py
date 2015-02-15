@@ -228,6 +228,7 @@ class TestSpecialParsers(unittest.TestCase):
         expected = {1: {'lshell': 2, 'ion_list': np.array([4, 5, 6, 7])},
                     2: {'lshell': 1, 'ion_list': np.array([0, 1, 2, 3]), 
                         'tmatrix': np.array([[ 0.,  1.,  0.], [ 1.,  0.,  0.], [ 0.,  0.,  1.]])}}
+# ...lousy way to test equality of two dictionaries containing numpy arrays
         self.assertSetEqual(set(res.keys()), set(expected.keys()))
 
         arr = res[1].pop('ion_list')
@@ -257,18 +258,44 @@ class TestSpecialParsers(unittest.TestCase):
 
         Scenarios:
 
-        - **if** no [Group] section exists and more than one [Shell] section
-          is given **raise** AssertionError
         - **if** a [Group] section does not contain all required parameters
           **raise** Exception
-        - **if** two correct [Shell] sections are defined
-          **return** a dictionary of shell parameters
+        - **if** a correct group section is defined **return** a list of dictionaries
+        """
+# Scenario 1
+#        conf_pars = ConfigParameters('test6.cfg')
+#        err_mess = "At least one group"
+#        with self.assertRaisesRegexp(AssertionError, err_mess):
+#            conf_pars.parse_shells()
+
+################################################################################
+#
+# test_groups_shells_consistency()
+#
+################################################################################
+    def test_groups_shells_consistency(self):
+        """
+        Function:
+
+        def groups_shells_consistency(self)
+
+        Scenarios:
+
+        - **if** no [Group] section exists and more than one [Shell] section
+          is given **raise** AssertionError
+        - **if** no [Group] section exists but the single [Shell] section
+          does not contain required group information **raise** KeyError
+        - **if** a shell referenced in a group does not exist
+          **raise** Exception
+        - **if** not all defined shells are referenced in the groups
+          **raise** Exception
         """
 # Scenario 1
         conf_pars = ConfigParameters('test6.cfg')
         err_mess = "At least one group"
         with self.assertRaisesRegexp(AssertionError, err_mess):
             conf_pars.parse_shells()
+
 
 
 if __name__ == '__main__':

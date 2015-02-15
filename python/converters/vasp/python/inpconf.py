@@ -241,10 +241,12 @@ class ConfigParameters:
             issue_warning("Shell indices are not uniform or not starting from 1. "
                "This might be an indication of a incorrect setup.")
 
-# Parse shell parameters
-        self.shells = {}
+# Parse shell parameters and put them into a list sorted according to the original indices
+        self.shells = []
         for ind in sh_inds:
-            self.shells[ind] = {}
+            shell = {}
+# Store the original user-defined index
+            shell['user_index'] = ind
             section = self.sh_sections[ind]
 
 # Shell required parameters
@@ -252,14 +254,14 @@ class ConfigParameters:
                 print
                 print "  Required shell parameters:"
             parsed = self.parse_parameter_set(section, self.sh_required, exception=True)
-            self.shells[ind].update(parsed)
+            shell.update(parsed)
 
 # Shell optional parameters
             if self.verbosity > 0:
                 print
                 print "  Optional shell parameters:"
             parsed = self.parse_parameter_set(section, self.sh_optional, exception=False)
-            self.shells[ind].update(parsed)
+            shell.update(parsed)
 
 # Group required parameters
 # Must be given if no group is explicitly specified
@@ -268,14 +270,16 @@ class ConfigParameters:
                 print
                 print "  Required group parameters:"
             parsed = self.parse_parameter_set(section, self.gr_required, exception=False)
-            self.shells[ind].update(parsed)
+            shell.update(parsed)
 
 # Group optional parameters
             if self.verbosity > 0:
                 print
                 print "  Optional group parameters:"
             parsed = self.parse_parameter_set(section, self.gr_optional, exception=False)
-            self.shells[ind].update(parsed)
+            shell.update(parsed)
+
+            self.shells.append(shell)
 
 ################################################################################
 #
@@ -294,20 +298,66 @@ class ConfigParameters:
 
         self.ngroups = len(sec_groups)
 
+        self.groups = []
+# Parse group parameters
+        for section in sec_groups:
+            group = {}
+
+# Extract group index (FIXME: do we really need it?)
+            gr_patt2 = re.compile('group +([0-9]*)$', re.IGNORECASE)
+            try:
+                gr_ind = int(gr_patt2.match(section).groups()[0])
+            except (ValueError, AttributeError):
+                raise ValueError("Failed to extract group index from a group name: %s"%(section))
+            group['index'] = gr_ind
+
+# Group required parameters
+            if self.verbosity > 0:
+                print
+                print "  Required group parameters:"
+            parsed = self.parse_parameter_set(section, self.gr_required, exception=True)
+            group.update(parsed)
+
+# Group optional parameters
+            if self.verbosity > 0:
+                print
+                print "  Optional group parameters:"
+            parsed = self.parse_parameter_set(section, self.gr_optional, exception=False)
+            group.update(parsed)
+
+            self.groups.append(group)
+
+# Sort groups according to indices defined in the config-file
+        if self.ngroups > 0:
+            self.groups.sort(key=lambda g: g['index'])
+
+################################################################################
+#
+# groups_shells_consistency()
+#
+################################################################################
+    def groups_shells_consistency(self):
+        """
+        Ensures consistency between groups and shells.
+        In particular:
+        - if no groups are explicitly defined and only shell is defined create
+          a group automatically
+        - check the existance of all shells referenced in the groups
+        - check that all shells are referenced in the groups
+        """
 # Special case: no groups is defined
         if self.ngroups == 0:
 # Check that 'nshells = 1'
             assert self.nshells == 1, "At least one group must be defined if there are more than one shells."
 
 # Otherwise create a single group taking group information from [Shell] section
-            self.groups = [{}]
+            self.groups.append({})
 # Check that the single '[Shell]' section contains enough information
 # and move it to the `groups` dictionary
-            ind = self.sh_sections.keys()[0]
             try:
                 for par in self.gr_required.keys():
                     key = self.gr_required[par][0]
-                    value = self.shells[ind].pop(key)
+                    value = self.shells[0].pop(key)
                     self.groups[0][key] = value
             except KeyError:
                 message = "One [Shell] section is specified but no explicit [Group] section is provided."
@@ -316,16 +366,67 @@ class ConfigParameters:
                 raise KeyError(message)
 
 # Do the same for optional group parameters, but do not raise an exception
-            for par in self.gr_required.keys():
+            for par in self.gr_optional.keys():
                 try:
-                    key = self.gr_required[par][0]
+                    key = self.gr_optional[par][0]
                     value = self.shells[ind].pop(key)
                     self.groups[0][key] = value
                 except KeyError:
                     continue
-                
-            self.groups.update({'shells': [self.shells[ind]]})
-            
+# Add the index of the single shell into the group                
+            self.groups.update({'shells': 0})
+
+#
+# Consistency checks
+#
+# Check the existance of shells referenced in the groups 
+        def find_shell_by_user_index(uindex):
+            for ind, shell in enumerate(self.shells):
+                if shell['user_index'] == uindex:
+                    return shell
+            raise KeyError
+
+        sh_inds = []
+        for group in self.groups:
+            gr_shells = group['shells']
+            for user_ind in gr_shells:
+                try:
+                    ind, shell = find_shell_by_user_index(user_ind)
+                except KeyError:
+                    raise Exception("Shell %i reference in group '%s' does not exist"%(user_ind, group['index'])
+                sh_inds.append(ind)
+
+# If [Shell] section contains (potentiall conflicting) group parameters
+# remove them and issue a warning
+# First, required group parameters
+                for par in self.gr_required.keys():
+                    try:
+                        key = self.gr_required[par][0]
+                        value = shell.pop(key)
+                        mess = ("  Redundant group parameter '%s' in [Shell] section"
+                                " %i is discarded"%(par, user_ind))
+                        issue_warning(mess)
+                    except KeyError:
+                        continue
+
+# Second, optional group parameters
+                for par in self.gr_optional.keys():
+                    try:
+                        key = self.gr_optional[par][0]
+                        value = shell.pop(key)
+                        mess = ("  Redundant group parameter '%s' in [Shell] section"
+                                " %i is discarded"%(par, user_ind))
+                        issue_warning(mess)
+                    except KeyError:
+                        continue
+
+        sh_refs_used = list(set(sh_inds))
+        sh_refs_used.sort()
+
+# Check that all shells are referenced in the groups
+        assert sh_refs_used == range(self.nshells), "Some shells are not inside any of the groups"
+
+ 
 
 ################################################################################
 #
@@ -340,8 +441,9 @@ class ConfigParameters:
         self.parse_shells()
         self.parse_groups()
 
+        self.groups_shells_consistency()
 
-# Output list of dictionaries
+# Return a 
         output_pars = [{} for isec in xrange(nsections)]
         for isec, section in enumerate(sections):
             print "Section: %s"%(section)
