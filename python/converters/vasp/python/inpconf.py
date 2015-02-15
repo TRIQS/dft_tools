@@ -427,6 +427,17 @@ class ConfigParameters:
         assert sh_refs_used == range(self.nshells), "Some shells are not inside any of the groups"
 
  
+################################################################################
+#
+# parse_general()
+#
+################################################################################
+    def parse_general(self):
+        """
+        Parses [General] section.
+        """
+# TODO:
+        pass
 
 ################################################################################
 #
@@ -438,30 +449,12 @@ class ConfigParameters:
         """
         Parses input conf-file.
         """
+        self.parse_general()
         self.parse_shells()
         self.parse_groups()
 
         self.groups_shells_consistency()
 
-# Return a 
-        output_pars = [{} for isec in xrange(nsections)]
-        for isec, section in enumerate(sections):
-            print "Section: %s"%(section)
-            for par in required.keys():
-                try:
-                    par_str = cp.get(section, par)
-                except ConfigParser.NoOptionError:
-                    raise SystemExit("*** Error: Required entry '%s' not found in the input file"%(par))
-
-                print "  %s: %s"%(par, par_str)
-                key = required[par][0]
-                parse_fun = required[par][1]
-                output_pars[isec][key] = parse_fun(par_str)
-
-        print output_pars
-        print cp.get(section, 'rtransform').strip().split('\n')
-
-        return output_pars
 
 if __name__ == '__main__':
     narg = len(sys.argv)
