@@ -263,21 +263,21 @@ class TestSpecialParsers(unittest.TestCase):
         - **if** a correct group section is defined **return** a list of dictionaries
         """
 # Scenario 1
-#        conf_pars = ConfigParameters('test6.cfg')
-#        err_mess = "At least one group"
-#        with self.assertRaisesRegexp(AssertionError, err_mess):
-#            conf_pars.parse_shells()
+        conf_pars = ConfigParameters('test5.cfg')
+        err_mess = "Required parameter"
+        with self.assertRaisesRegexp(Exception, err_mess):
+            conf_pars.parse_groups()
 
 ################################################################################
 #
-# test_groups_shells_consistency()
+# test_parse_input()
 #
 ################################################################################
-    def test_groups_shells_consistency(self):
+    def test_parse_input(self):
         """
         Function:
 
-        def groups_shells_consistency(self)
+        def parse_input(self)
 
         Scenarios:
 
@@ -294,7 +294,7 @@ class TestSpecialParsers(unittest.TestCase):
         conf_pars = ConfigParameters('test6.cfg')
         err_mess = "At least one group"
         with self.assertRaisesRegexp(AssertionError, err_mess):
-            conf_pars.parse_shells()
+            conf_pars.parse_input()
 
 
 
