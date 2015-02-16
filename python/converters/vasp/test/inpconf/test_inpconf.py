@@ -268,6 +268,15 @@ class TestSpecialParsers(unittest.TestCase):
         with self.assertRaisesRegexp(Exception, err_mess):
             conf_pars.parse_groups()
 
+# Scenario 2
+        conf_pars = ConfigParameters('test7.cfg')
+        conf_pars.parse_groups()
+        res = conf_pars.groups
+        expected = [{'index': 1, 'shells': [1, 2], 'emin': -7.6, 'emax': 3.0},
+                    {'index': 2, 'shells': [3], 'emin': -1.6, 'emax': 2.0}]
+        self.assertListEqual(res, expected)
+
+
 ################################################################################
 #
 # test_parse_input()
