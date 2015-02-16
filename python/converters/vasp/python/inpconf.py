@@ -249,33 +249,24 @@ class ConfigParameters:
             shell['user_index'] = ind
             section = self.sh_sections[ind]
 
-# Shell required parameters
             if self.verbosity > 0:
                 print
-                print "  Required shell parameters:"
+                print "  Shell parameters:"
+# Shell required parameters
             parsed = self.parse_parameter_set(section, self.sh_required, exception=True)
             shell.update(parsed)
 
 # Shell optional parameters
-            if self.verbosity > 0:
-                print
-                print "  Optional shell parameters:"
             parsed = self.parse_parameter_set(section, self.sh_optional, exception=False)
             shell.update(parsed)
 
 # Group required parameters
 # Must be given if no group is explicitly specified
 # If in conflict with the [Group] section, the latter has a priority
-            if self.verbosity > 0:
-                print
-                print "  Required group parameters:"
             parsed = self.parse_parameter_set(section, self.gr_required, exception=False)
             shell.update(parsed)
 
 # Group optional parameters
-            if self.verbosity > 0:
-                print
-                print "  Optional group parameters:"
             parsed = self.parse_parameter_set(section, self.gr_optional, exception=False)
             shell.update(parsed)
 
@@ -311,17 +302,14 @@ class ConfigParameters:
                 raise ValueError("Failed to extract group index from a group name: %s"%(section))
             group['index'] = gr_ind
 
-# Group required parameters
             if self.verbosity > 0:
                 print
-                print "  Required group parameters:"
+                print "  Group parameters:"
+# Group required parameters
             parsed = self.parse_parameter_set(section, self.gr_required, exception=True)
             group.update(parsed)
 
 # Group optional parameters
-            if self.verbosity > 0:
-                print
-                print "  Optional group parameters:"
             parsed = self.parse_parameter_set(section, self.gr_optional, exception=False)
             group.update(parsed)
 
