@@ -374,7 +374,7 @@ class ConfigParameters:
         def find_shell_by_user_index(uindex):
             for ind, shell in enumerate(self.shells):
                 if shell['user_index'] == uindex:
-                    return shell
+                    return ind, shell
             raise KeyError
 
         sh_inds = []
@@ -384,7 +384,7 @@ class ConfigParameters:
                 try:
                     ind, shell = find_shell_by_user_index(user_ind)
                 except KeyError:
-                    raise Exception("Shell %i reference in group '%s' does not exist"%(user_ind, group['index']))
+                    raise Exception("Shell %i referenced in group '%s' does not exist"%(user_ind, group['index']))
                 sh_inds.append(ind)
 
 # If [Shell] section contains (potentiall conflicting) group parameters

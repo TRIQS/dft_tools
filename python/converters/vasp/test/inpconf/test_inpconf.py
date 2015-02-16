@@ -311,6 +311,12 @@ class TestSpecialParsers(unittest.TestCase):
         with self.assertRaisesRegexp(KeyError, err_mess):
             conf_pars.parse_input()
 
+# Scenario 3
+        conf_pars = ConfigParameters('test9.cfg')
+        err_mess = "Shell 3 referenced in"
+        with self.assertRaisesRegexp(Exception, err_mess):
+            conf_pars.parse_input()
+
 
 
 
