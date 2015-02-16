@@ -433,7 +433,7 @@ class ConfigParameters:
         """
         Parses [General] section.
         """
-# TODO:
+# TODO: write the parser
         pass
 
 ################################################################################
@@ -451,7 +451,9 @@ class ConfigParameters:
 
         self.groups_shells_consistency()
 
-
+#
+# Obsolete part
+#
 if __name__ == '__main__':
     narg = len(sys.argv)
     if narg < 2:
