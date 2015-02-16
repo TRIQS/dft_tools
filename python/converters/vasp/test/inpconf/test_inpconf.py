@@ -298,6 +298,8 @@ class TestSpecialParsers(unittest.TestCase):
           **raise** Exception
         - **if** not all defined shells are referenced in the groups
           **raise** Exception
+        - **if** all sections are parsed error-free check that the output
+          is correct
         """
 # Scenario 1
         conf_pars = ConfigParameters('test6.cfg')
@@ -323,6 +325,28 @@ class TestSpecialParsers(unittest.TestCase):
         with self.assertRaisesRegexp(AssertionError, err_mess):
             conf_pars.parse_input()
 
+# Scenario 5
+        conf_pars = ConfigParameters('test7.cfg')
+        conf_pars.parse_input()
+#        with open('parse_input.output.test', 'wt') as f:
+#            f.write("Shells:\n")
+#            f.write(conf_pars.shells.__repr__() + '\n\n')
+#            f.write("Groups:\n")
+#            f.write(conf_pars.groups.__repr__() + '\n')
+        res = "Shells:\n"
+        res += conf_pars.shells.__repr__() + '\n\n'
+        res += "Groups:\n"
+        res += conf_pars.groups.__repr__()
+
+        expected = r"""Shells:
+[{'ion_list': array([4, 5, 6, 7]), 'user_index': 1, 'lshell': 2}, {'tmatrix': array([[ 0.,  1.,  0.],
+       [ 1.,  0.,  0.],
+       [ 0.,  0.,  1.]]), 'ion_list': array([0, 1, 2, 3]), 'user_index': 2, 'lshell': 1}, {'ion_list': array([0, 1, 2, 3]), 'user_index': 3, 'lshell': 3}]
+
+Groups:
+[{'index': 1, 'shells': [0, 1], 'emin': -7.6, 'emax': 3.0}, {'index': 2, 'shells': [2], 'emin': -1.6, 'emax': 2.0}]"""
+
+        self.assertEqual(res, expected)
 
 
 

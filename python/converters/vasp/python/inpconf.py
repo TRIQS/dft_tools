@@ -377,9 +377,10 @@ class ConfigParameters:
                     return ind, shell
             raise KeyError
 
-        sh_inds = []
+        sh_all_inds = []
         for group in self.groups:
             gr_shells = group['shells']
+            sh_inds = []
             for user_ind in gr_shells:
                 try:
                     ind, shell = find_shell_by_user_index(user_ind)
@@ -387,8 +388,9 @@ class ConfigParameters:
                     raise Exception("Shell %i referenced in group '%s' does not exist"%(user_ind, group['index']))
                 sh_inds.append(ind)
 
-# If [Shell] section contains (potentiall conflicting) group parameters
-# remove them and issue a warning
+# If [Shell] section contains (potentially conflicting) group parameters
+# remove them and issue a warning.
+#
 # First, required group parameters
                 for par in self.gr_required.keys():
                     try:
@@ -411,7 +413,11 @@ class ConfigParameters:
                     except KeyError:
                         continue
 
-        sh_refs_used = list(set(sh_inds))
+            sh_all_inds += sh_inds
+# Replace user shell indices with internal ones
+            group['shells'] = sh_inds
+
+        sh_refs_used = list(set(sh_all_inds))
         sh_refs_used.sort()
 
 # Check that all shells are referenced in the groups
@@ -432,8 +438,7 @@ class ConfigParameters:
 
 ################################################################################
 #
-# Main parser
-# parse_logical()
+# Main parser function
 #
 ################################################################################
     def parse_input(self):
