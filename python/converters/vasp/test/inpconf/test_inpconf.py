@@ -317,6 +317,12 @@ class TestSpecialParsers(unittest.TestCase):
         with self.assertRaisesRegexp(Exception, err_mess):
             conf_pars.parse_input()
 
+# Scenario 4
+        conf_pars = ConfigParameters('test10.cfg')
+        err_mess = "Some shells are not inside"
+        with self.assertRaisesRegexp(AssertionError, err_mess):
+            conf_pars.parse_input()
+
 
 
 
