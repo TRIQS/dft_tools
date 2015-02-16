@@ -305,6 +305,13 @@ class TestSpecialParsers(unittest.TestCase):
         with self.assertRaisesRegexp(AssertionError, err_mess):
             conf_pars.parse_input()
 
+# Scenario 2
+        conf_pars = ConfigParameters('test8.cfg')
+        err_mess = "One \[Shell\] section is"
+        with self.assertRaisesRegexp(KeyError, err_mess):
+            conf_pars.parse_input()
+
+
 
 
 if __name__ == '__main__':

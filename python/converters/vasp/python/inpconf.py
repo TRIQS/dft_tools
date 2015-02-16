@@ -341,16 +341,19 @@ class ConfigParameters:
 # Otherwise create a single group taking group information from [Shell] section
             self.groups.append({})
 # Check that the single '[Shell]' section contains enough information
+# (required group parameters except 'shells')
 # and move it to the `groups` dictionary
+            sh_gr_required = dict(self.gr_required)
+            sh_gr_required.pop('shells')
             try:
-                for par in self.gr_required.keys():
-                    key = self.gr_required[par][0]
+                for par in sh_gr_required.keys():
+                    key = sh_gr_required[par][0]
                     value = self.shells[0].pop(key)
                     self.groups[0][key] = value
             except KeyError:
                 message = "One [Shell] section is specified but no explicit [Group] section is provided."
                 message += " In this case the [Shell] section must contain all required group information.\n"
-                message += "  Required parameters are: %s"%(self.gr_required.keys())
+                message += "  Required parameters are: %s"%(sh_gr_required.keys())
                 raise KeyError(message)
 
 # Do the same for optional group parameters, but do not raise an exception
