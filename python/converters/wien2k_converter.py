@@ -221,7 +221,7 @@ class Wien2kConverter(ConverterTools):
         """
 
         if not (mpi.is_master_node()): return
-        mpi.report("Reading parproj input from %s..."%self.parproj_file)
+        mpi.report("Reading input from %s..."%self.parproj_file)
 
         dens_mat_below = [ [numpy.zeros([self.shells[ish]['dim'],self.shells[ish]['dim']],numpy.complex_) for ish in range(self.n_shells)] 
                            for isp in range(self.n_spin_blocs) ]
@@ -396,7 +396,7 @@ class Wien2kConverter(ConverterTools):
         band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(SP + 1 - SO)]
         for isp, f in enumerate(files):
             if not os.path.exists(f): raise IOError, "convert_misc_input: File %s does not exist" %f
-            print "Reading input from %s..."%f,
+            mpi.report("Reading input from %s..."%f)
             
             R = ConverterTools.read_fortran_file(self, f, self.fortran_to_replace)
             assert int(R.next()) == n_k, "convert_misc_input: Number of k-points is inconsistent in oubwin file!"
@@ -416,7 +416,7 @@ class Wien2kConverter(ConverterTools):
         # lattice_angles: unit cell angles in rad
 
         if not (os.path.exists(self.struct_file)) : raise IOError, "convert_misc_input: File %s does not exist" %self.struct_file
-        print "Reading input from %s..."%self.struct_file,
+        mpi.report("Reading input from %s..."%self.struct_file)
         
         with open(self.struct_file) as R:
             try:
@@ -434,7 +434,7 @@ class Wien2kConverter(ConverterTools):
         # rot_symmetries: matrix representation of all (space group) symmetry operations
         
         if not (os.path.exists(self.outputs_file)) : raise IOError, "convert_misc_input: File %s does not exist" %self.outputs_file
-        print "Reading input from %s..."%self.outputs_file,
+        mpi.report("Reading input from %s..."%self.outputs_file)
         
         rot_symmetries = []
         with open(self.outputs_file) as R:
@@ -499,7 +499,7 @@ class Wien2kConverter(ConverterTools):
         band_window_optics = []
         for isp, f in enumerate(files):
             if not os.path.exists(f) : raise IOError, "convert_transport_input: File %s does not exist" %f
-            print "Reading input from %s..."%f,
+            mpi.report("Reading input from %s..."%f)
 
             R = ConverterTools.read_fortran_file(self, f, {'D':'E','(':'',')':'',',':' '})
             band_window_optics_isp = []
@@ -521,7 +521,7 @@ class Wien2kConverter(ConverterTools):
                                 if (nu_i != nu_j): velocity_xyz[nu_j][nu_i][i] = velocity_xyz[nu_i][nu_j][i].conjugate()
                 velocities_k[isp].append(velocity_xyz)
             band_window_optics.append(numpy.array(band_window_optics_isp))
-            print "DONE!"
+            R.close() # Reading done!
 
         # Put data to HDF5 file
         ar = HDFArchive(self.hdf_file, 'a')
@@ -537,7 +537,7 @@ class Wien2kConverter(ConverterTools):
         """
 
         if not (mpi.is_master_node()): return
-        mpi.report("Reading symmetry input from %s..."%symm_file)
+        mpi.report("Reading input from %s..."%symm_file)
 
         n_orbits = len(orbits)
 

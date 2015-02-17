@@ -85,10 +85,12 @@ First we have to read the Wien2k files and store the relevant information in the
 
     SK = SumkDFTTools(hdf_file='case.h5', use_dft_blocks=True)
 
-Additionally we need to read and set the self energy::
+Additionally we need to read and set the self energy, the chemical potential and the double counting::
 
     ar = HDFArchive('case_Sigma.h5', 'a')
     SK.put_Sigma(Sigma_imp = [ar['dmft_transp_output']['Sigma_w']])
+    SK.chemical_potential = ar['dmft_transp_output']['chemical_potential']
+    SK.dc_imp = ar['dmft_transp_output']['dc_imp']
     del ar
 
 As next step we can calculate the transport distribution :math:`\Gamma_{\alpha\beta}(\omega)`::
@@ -100,8 +102,8 @@ The parameters are:
     * `directions`: :math:`\alpha` and :math:`\beta` (e.g. xx, yy, xz, ...)
     * `Om_mesh`: :math:`\Omega`-mesh for the optical conductivity. Note that the code repines this mesh to the closest values on the self energy mesh! The new mesh is stored in `Om_meshr`. 
       The Seebeck coefficient is only calculated if :math:`\Omega=0.0` is included.
-    * `energy_window`: Limits for the integration over :math:`\omega`. (Due to the Fermi functions the integrand is only of considerable size in a small 
-      window around the Fermi energy.)
+    * `energy_window`: Limits for the integration over :math:`\omega` (Due to the Fermi functions the integrand is only of considerable size in a small 
+      window around the Fermi energy). For optical conductivity calculations the window is automatically enlarged by :math:`\Omega` .
     * `with_Sigma`: If this parameter is set to False then Sigma is set to 0 (i.e. the DFT band structure :math:`A(k,\omega)` is taken).
     * `broadening`: The numerical broadening should be set to a finite value for with_Sigma = False.
 

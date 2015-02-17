@@ -480,7 +480,7 @@ class SumkDFTTools(SumkDFT):
         return volumecc, volumepc
 
 
-    def transport_distribution(self, directions=['xx'], energy_window=None, Om_mesh=[0.0], beta=40, with_Sigma=False, n_om=None, broadening=0.01):
+    def transport_distribution(self, directions=['xx'], energy_window=None, Om_mesh=[0.0], beta=40.0, with_Sigma=False, n_om=None, broadening=0.0):
         """
         calculate Tr A(k,w) v(k) A(k, w+Om) v(k).
         energy_window: regime for omega integral
@@ -496,13 +496,16 @@ class SumkDFTTools(SumkDFT):
             if not (self.transp_data in ar): raise IOError, "transport_distribution: No %s subgroup in hdf file found! Call convert_transp_input first." %self.transp_data
         self.read_transport_input_from_hdf()
         
+        if mpi.is_master_node():
+            # k-dependent-projections.
+            assert self.k_dep_projection == 1, "transport_distribution: k dependent projection is not implemented!"
+            # positive Om_mesh
+            assert all(Om >= 0.0 for Om in Om_mesh), "transport_distribution: Om_mesh should not contain negative values!"
+
         n_inequiv_spin_blocks = self.SP + 1 - self.SO  # up and down are equivalent if SP = 0
         self.directions = directions
-	dir_to_int = {'x':0, 'y':1, 'z':2}
+        dir_to_int = {'x':0, 'y':1, 'z':2}
             
-        # k-dependent-projections.
-        assert self.k_dep_projection == 1, "transport_distribution: k dependent projection is not implemented!"
-        
         # calculate A(k,w)
         #######################################
         
@@ -515,14 +518,14 @@ class SumkDFTTools(SumkDFT):
             print "Using omega mesh provided by Sigma!"
 
             if energy_window is not None:
-                # Find according window in Sigma  mesh
-                ioffset = numpy.sum(self.omega < energy_window[0])
-                self.omega = self.omega[numpy.logical_and(self.omega >= energy_window[0], self.omega <= energy_window[1])]
+                # Find according window in Sigma mesh
+                ioffset = numpy.sum(self.omega < energy_window[0]-max(Om_mesh))
+                self.omega = self.omega[numpy.logical_and(self.omega >= energy_window[0]-max(Om_mesh), self.omega <= energy_window[1]+max(Om_mesh))]
                 n_om = len(self.omega)
                 
                 # Truncate Sigma to given omega window
-		# In the future there should be an option in gf to manipulate the mesh (e.g. truncate) directly.
-		# For we stick with this: 
+		        # In the future there should be an option in gf to manipulate the mesh (e.g. truncate) directly.
+		        # For now we stick with this: 
                 for icrsh in range(self.n_corr_shells):
                     Sigma_save = self.Sigma_imp_w[icrsh].copy()
                     spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
@@ -536,10 +539,10 @@ class SumkDFTTools(SumkDFT):
         else:
             assert n_om is not None, "transport_distribution: Number of omega points (n_om) needed to calculate transport distribution!"
             assert energy_window is not None, "transport_distribution: Energy window needed to calculate transport distribution!"
-	    assert broadening != 0.0 and broadening is not None, "transport_distribution: Broadening necessary to calculate transport distribution!" 
-	    self.omega = numpy.linspace(energy_window[0],energy_window[1],n_om)
-            mesh = [energy_window[0], energy_window[1], n_om]
-	    mu = 0.0
+            assert broadening != 0.0 and broadening is not None, "transport_distribution: Broadening necessary to calculate transport distribution!"
+            self.omega = numpy.linspace(energy_window[0]-max(Om_mesh),energy_window[1]+max(Om_mesh),n_om)
+            mesh = [energy_window[0]-max(Om_mesh), energy_window[1]+max(Om_mesh), n_om]
+            mu = 0.0
 
         # Check if energy_window is sufficiently large
         if (abs(self.fermi_dis(self.omega[0]*beta)*self.fermi_dis(-self.omega[0]*beta)) > 1e-5
@@ -550,7 +553,7 @@ class SumkDFTTools(SumkDFT):
 
         # Define mesh for optic conductivity
         d_omega = round(numpy.abs(self.omega[0] - self.omega[1]), 12)
-        iOm_mesh = numpy.array([int(Om / d_omega) for Om in Om_mesh])
+        iOm_mesh = numpy.array([round((Om / d_omega),0) for Om in Om_mesh])
         self.Om_mesh = iOm_mesh * d_omega
 
         if mpi.is_master_node():
@@ -571,7 +574,7 @@ class SumkDFTTools(SumkDFT):
             A_kw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_) 
 				for isp in range(n_inequiv_spin_blocks)]
             
-	    for isp in range(n_inequiv_spin_blocks):
+            for isp in range(n_inequiv_spin_blocks):
                 # Obtain A_kw from G_w (swapaxes is used to have omega in the 3rd dimension)
                 A_kw[isp].real = -copy.deepcopy(G_w[self.spin_block_names[self.SO][isp]].data.swapaxes(0,1).swapaxes(1,2)).imag / numpy.pi 
                 b_min = max(self.band_window[isp][ik, 0], self.band_window_optics[isp][ik, 0])
@@ -588,10 +591,10 @@ class SumkDFTTools(SumkDFT):
                             vel_R[nu1][nu2][:] = numpy.dot(R, vel_R[nu1][nu2][:])
                     
                     # calculate Gamma_w for each direction from the velocities vel_R and the spectral function A_kw
-		    for direction in self.directions:
+                    for direction in self.directions:
                         for iw in xrange(n_om):
                             for iq in range(len(self.Om_mesh)):
-                                if(iw + iOm_mesh[iq] >= n_om): continue
+                                if(iw + iOm_mesh[iq] >= n_om or self.omega[iw] < -self.Om_mesh[iq] + energy_window[0] or self.omega[iw] > self.Om_mesh[iq] + energy_window[1]): continue
                                 self.Gamma_w[direction][iq, iw] += (numpy.dot(numpy.dot(numpy.dot(vel_R[v_i, v_i, dir_to_int[direction[0]]], 
                                                                     A_kw[isp][A_i, A_i, iw]), vel_R[v_i, v_i, dir_to_int[direction[1]]]), 
                                                                     A_kw[isp][A_i, A_i, iw + iOm_mesh[iq]]).trace().real * self.bz_weights[ik])
@@ -649,7 +652,7 @@ class SumkDFTTools(SumkDFT):
                 if ~numpy.isnan(A1[direction][iq]):
                     # Seebeck is overwritten if there is more than one Omega = 0 in Om_mesh
                     self.seebeck[direction] = - A1[direction][iq] / A0[direction][iq] * 86.17
-            self.optic_cond[direction] = A0[direction] * 10700.0
+            self.optic_cond[direction] = beta * A0[direction] * 10700.0 / numpy.pi
             for iq in xrange(n_q):
                print "Conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" % (direction, self.Om_mesh[iq], self.optic_cond[direction][iq])
                if not (numpy.isnan(A1[direction][iq])):
