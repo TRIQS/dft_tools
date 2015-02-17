@@ -33,9 +33,11 @@ class Projector:
         return (overlap, over_eig)
         
 ################################################################################
-# orthogonalize_projector()
+#
+# orthogonalize_projector_matrix()
+#
 ################################################################################
-def orthogonalize_projector(p_matrix):
+def orthogonalize_projector_matrix(p_matrix):
     """
     Orthogonalizes a projector defined by a rectangular matrix `p_matrix`.
 
@@ -50,13 +52,15 @@ def orthogonalize_projector(p_matrix):
 
     Orthogonalized projector matrix, initial overlap matrix and its eigenvalues.
     """
-
+# Overlap matrix O_{m m'} = \sum_{v} P_{m v} P^{*}_{v m'}
     overlap = np.dot(p_matrix, p_matrix.conj().T)
+# Calculate [O^{-1/2}]_{m m'}
     eig, eigv = np.linalg.eigh(overlap)
-    assert np.all(eig > 0.0), ("  Negative eigenvalues of the overlap matrix:"
+    assert np.all(eig > 0.0), ("Negative eigenvalues of the overlap matrix:"
        "projectors are ill-defined")
     sqrt_eig = np.diag(1.0 / np.sqrt(eig))
     shalf = np.dot(eigv, np.dot(sqrt_eig, eigv.conj().T))
+# Apply \tilde{P}_{m v} = \sum_{m'} [O^{-1/2}]_{m m'} P_{m' v}
     p_ortho = np.dot(shalf, p_matrix)
 
     return (p_ortho, overlap, eig)
@@ -116,9 +120,11 @@ def select_bands(eigvals, emin, emax):
     return ib_win, nb_min, nb_max
 
 ################################################################################
+################################################################################
 #
 # class ProjectorGroup
 #
+################################################################################
 ################################################################################
 class ProjectorGroup:
     """
@@ -129,45 +135,22 @@ class ProjectorGroup:
 
     Parameters:
 
-    - pars (dict) : dictionary of parameters from the config-file for a given PLO group
-    - proj_raw (numpy.array) : array of raw projectors
+    - gr_pars (dict) : group parameters from the config-file
+    - shells ([ProjectorShell]) : array of ProjectorShell objects
     - eigvals (numpy.array) : array of KS eigenvalues
 
     """
-#    def __init__(self, proj_set, nb_min, nb_max, ib_win):
-#        """
-#        Constructor.
-#
-#        Parameters
-#        ----------
-#
-#        proj_set (numpy.array) : projector array
-#        nb_min (int) : the lowest absolute band index 
-#        nb_max (int) : the lowest absolute band index
-#        ib_win (numpy.array((nk, ns, 2), dtype=int)) : the lowest and highest band indices
-#          for a given `k`-point
-#        """
-#        self.proj_set = proj_set
-#        self.nb_min = nb_min
-#        self.nb_max = nb_max
-#        self.ib_win = ib_win
-
-#################################################################################
-# __init__()
-#################################################################################
-    def __init__(self, pars, proj_raw, eigvals):
+    def __init__(self, gr_pars, shells, eigvals):
         """
         Constructor
         """
-        ns = proj_raw.shape[1]
-        nk, nband, ns_band = eigvals.shape
+        self.emin = gr_pars['emin']
+        self.emax = gr_pars['emax']
+        self.ishells = gr_pars['shells']
+        self.ortho = gr_pars['normalize']
+        self.normion = gr_pars['normion']
 
-        self.lorb = pars['lshell']
-        self.lm_l = range(lorb**2, (lorb+1)**2)
-        nlm = len(self.lm_l)
-
-        self.emin = pars['emin']
-        self.emax = pars['emax']
+        self.shells = shells
 
 # Determine the minimum and maximum band numbers
         ib_win, nb_min, nb_max = select_bands(eigvals, self.emin, self.emax)
@@ -175,22 +158,63 @@ class ProjectorGroup:
         self.nb_min = nb_min
         self.nb_max = nb_max
 
-# Set the dimensions of the array
-        nb_win = self.nb_max - self.nb_min + 1
-        nion_sel = pars['ion_list'].shape[0]
+# Select projectors within the energy window
+        for ish in self.ishells:
+            shell = self.shells[ish]
+            shell.select_projectors(ib_win, nb_min, nb_max)
 
-        self.proj_set = np.zeros((nion_sel, ns, nk, nb_win, nlm), dtype=np.complex128)
-# Select projectors for a given energy window
+################################################################################
+#
+# orthogonalize
+#
+################################################################################
+    def orthogonalize(self):
+        """
+        Orthogonalize a group of projectors.
+        """
+# Quick exit if no normalization is requested
+        if not self.ortho:
+            return
+
+# TODO: add the case of 'normion = True'
+        assert not self.normion, "'NORMION = True' is not yet implemented"
+
+# Determine the dimension of the projector matrix
+# and map the blocks to the big matrix
+        i1_bl = 0
+        bl_map = [{} for ish in self.ishells]
+        for ish in self.ishells:
+            _shell = self.shells[ish]
+            nion, ns, nk, nlm, nb_max = _shell.proj_win.shape
+            bmat_bl = []  # indices corresponding to a big block matrix
+            for ion in xrange(nion):
+                i2_bl = i1_bl + nlm
+                bmat_bl.append((i1_bl, i2_bl))
+                i1_bl = i2_bl
+            bl_map[ish]['bmat_blocks'] = bmat_bl
+
+        ndim = i2
+        p_mat = np.zeros((ndim, nb_max), dtype=np.complex128)
         for isp in xrange(ns):
             for ik in xrange(nk):
-# TODO: for non-collinear case something else should be done here
-                is_b = min(isp, ns_band)
-                ib1 = self.ib_win[ik, is_b, 0]
-                ib2 = self.ib_win[ik, is_b, 1] + 1
-                ib1_win = ib1 - self.nb_min
-                ib2_win = ib2 - self.nb_min
-                for ion, ion_sel in enumerate(pars['ion_list']):
-                    self.proj_set[ion, isp, ik, ib1_win:ib2_win, :] = proj_raw[ion_sel, isp, ik, ib1:ib2, self.lm_l]
+                nb = self.ib_win[ik, isp, 1] - self.ib_win[ik, isp, 0] + 1
+# Combine all projectors of the group to one block projector
+                for ish in self.ishells:
+                    shell = self.shells[ish]
+                    blocks = bl_map[ish]['bmat_blocks']
+                    for ion in xrange(nion):
+                        i1, i2 = blocks[ion]
+                        p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
+# Now orthogonalize the obtained block projector
+                p_orth, overl, eig = orthogonalize_projector_matrix(p_mat)
+# Distribute back projectors in the same order
+                for ish in self.ishells:
+                    shell = self.shells[ish]
+                    blocks = bl_map[ish]['bmat_blocks']
+                    for ion in xrange(nion):
+                        i1, i2 = blocks[ion]
+                        shell.proj_win[ion, isp, ik, :nlm, :nb] = p_mat[i1:i2, :nb]
+
 
 ################################################################################
 ################################################################################
@@ -208,9 +232,8 @@ class ProjectorShell:
 
     Parameters:
 
-    - pars (dict) : dictionary of parameters from the config-file for a given PLO group
+    - sh_pars (dict) : shell parameters from the config-file
     - proj_raw (numpy.array) : array of raw projectors
-    - eigvals (numpy.array) : array of KS eigenvalues
 
     """
     def __init__(self, sh_pars, proj_raw):
@@ -224,7 +247,7 @@ class ProjectorShell:
         self.lm1 = self.lorb**2
         self.lm2 = (self.lorb+1)**2
 
-# Pre-select a subset of projectors
+# Pre-select a subset of projectors (this should be an array view => no memory is wasted)
         self.proj_arr = proj_raw[self.ion_list, :, :, :, lm1:lm2]
 
 ################################################################################
@@ -243,6 +266,7 @@ class ProjectorShell:
 # Set the dimensions of the array
         nb_win = self.nb_max - self.nb_min + 1
         nion, ns, nk, nbtot, nlm = self.proj_arr.shape
+# !!! Note that the order is changed below !!!
         self.proj_win = np.zeros((nion, ns, nk, nb_win, nlm), dtype=np.complex128)
 
 # Select projectors for a given energy window
@@ -256,6 +280,9 @@ class ProjectorShell:
                 ib1_win = ib1 - self.nb_min
                 ib2_win = ib2 - self.nb_min
                 self.proj_win[:, isp, ik, ib1_win:ib2_win, :] = self.proj_arr[:, isp, ik, ib1:ib2, :]
+
+# !!! This sucks but I have to change the order of 'ib' and 'ilm' indices here
+        self.proj_win.transpose((0, 1, 2, 4, 3))
 
 
 def generate_ortho_plos(conf_pars, vasp_data):
@@ -281,5 +308,9 @@ def generate_ortho_plos(conf_pars, vasp_data):
     shells = []
     for sh_par in conf_pars.shells:
         shells.append(ProjectorShell(sh_par, proj_raw))
+
+    groups = []
+    for gr_par in conf_pars.groups:
+        group = ProjectorGroup(gr_par, shells, eigvals)
 
 
