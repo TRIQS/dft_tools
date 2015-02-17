@@ -117,10 +117,10 @@ def select_bands(eigvals, emin, emax):
 
 ################################################################################
 #
-# class ProjectorSet
+# class ProjectorGroup
 #
 ################################################################################
-class ProjectorSet:
+class ProjectorGroup:
     """
     Container of projectors defined within a certain energy window.
 
@@ -192,6 +192,71 @@ class ProjectorSet:
                 for ion, ion_sel in enumerate(pars['ion_list']):
                     self.proj_set[ion, isp, ik, ib1_win:ib2_win, :] = proj_raw[ion_sel, isp, ik, ib1:ib2, self.lm_l]
 
+################################################################################
+################################################################################
+#
+# class ProjectorShell
+#
+################################################################################
+################################################################################
+class ProjectorShell:
+    """
+    Container of projectors related to a specific shell.
+
+    The constructor pre-selects a subset of projectors according to
+    the shell parameters passed from the config-file.
+
+    Parameters:
+
+    - pars (dict) : dictionary of parameters from the config-file for a given PLO group
+    - proj_raw (numpy.array) : array of raw projectors
+    - eigvals (numpy.array) : array of KS eigenvalues
+
+    """
+    def __init__(self, sh_pars, proj_raw):
+        self.lorb = sh_pars['lshell']
+        self.ion_list = sh_pars['ion_list']
+        try:
+            self.tmatrix = sh_pars['tmatrix']
+        except KeyError:
+            self.tmatrix = None
+
+        self.lm1 = self.lorb**2
+        self.lm2 = (self.lorb+1)**2
+
+# Pre-select a subset of projectors
+        self.proj_arr = proj_raw[self.ion_list, :, :, :, lm1:lm2]
+
+################################################################################
+#
+# select_projectors
+#
+################################################################################
+    def select_projectors(self, ib_win, nb_min, nb_max):
+        """
+        Selects a subset of projectors corresponding to a given energy window.
+        """
+        self.ib_win = ib_win
+        self.nb_min = nb_min
+        self.nb_max = nb_max
+
+# Set the dimensions of the array
+        nb_win = self.nb_max - self.nb_min + 1
+        nion, ns, nk, nbtot, nlm = self.proj_arr.shape
+        self.proj_win = np.zeros((nion, ns, nk, nb_win, nlm), dtype=np.complex128)
+
+# Select projectors for a given energy window
+        ns_band = self.ib_win.shape[1]
+        for isp in xrange(ns):
+            for ik in xrange(nk):
+# TODO: for non-collinear case something else should be done here
+                is_b = min(isp, ns_band)
+                ib1 = self.ib_win[ik, is_b, 0]
+                ib2 = self.ib_win[ik, is_b, 1] + 1
+                ib1_win = ib1 - self.nb_min
+                ib2_win = ib2 - self.nb_min
+                self.proj_win[:, isp, ik, ib1_win:ib2_win, :] = self.proj_arr[:, isp, ik, ib1:ib2, :]
+
 
 def generate_ortho_plos(conf_pars, vasp_data):
     """
@@ -205,11 +270,16 @@ def generate_ortho_plos(conf_pars, vasp_data):
     check_vasp_data_consistency(vasp_data)
 
     proj_raw = vaps_data['plocar'].plo
-    efermi = vasp_data['doscar'].efermi
+    try:
+        efermi = conf_pars.general['efermi']
+    except KeyError:
+        efermi = vasp_data['doscar'].efermi
+
 # eigvals(nktot, nband, ispin) are defined with respect to the Fermi level
     eigvals = vasp_data['eigenval'].eigs - efermi 
 
-    proj_set_l = []
-    for pars in conf_pars:
-        proj_set = select_projectors(pars, proj_raw, eigvals)
+    shells = []
+    for sh_par in conf_pars.shells:
+        shells.append(ProjectorShell(sh_par, proj_raw))
+
 
