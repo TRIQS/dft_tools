@@ -4,5 +4,6 @@ INC_FLAGS=-I/usr/include/python2.7 -I/usr/lib/python2.7/dist-packages/numpy/core
 LIB_FLAGS=-L/usr/lib/python2.7
 
 c_plocar_io.so: c_plocar_io.c
-	$(CC) $< -fPIC -shared -o $@ $(INC_FLAGS) $(LIB_FLAGS) -lpython2.7
+#	$(CC) $< -fPIC -shared -o $@ $(INC_FLAGS) $(LIB_FLAGS) -lpython2.7
+	python setup.py build_ext --inplace
 

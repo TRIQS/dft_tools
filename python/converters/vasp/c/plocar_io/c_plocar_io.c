@@ -1,6 +1,9 @@
 
 #include <Python.h>
-#include <arrayobject.h>
+
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+
+#include <numpy/arrayobject.h>
 #include <complex.h>
 #include <string.h>
 
@@ -32,7 +35,7 @@ static PyMethodDef c_plocar_io[] = {
 };
 
 PyMODINIT_FUNC
-initc_plocar_io()
+initc_plocar_io(void)
 {
   (void) Py_InitModule("c_plocar_io", c_plocar_io);
   import_array();
@@ -58,7 +61,7 @@ io_read_plocar(PyObject *self, PyObject *args)
 
   FILE* fh;
   
-  int isdouble, prec;
+  int prec;
   t_params params;
 
   if(!PyArg_ParseTuple(args, "|s", &fname))
@@ -271,7 +274,7 @@ int read_arrays(FILE* fh, t_params* p, PyArrayObject* py_plo, PyArrayObject* py_
   ind1 = 0;
   ind2 = 0;
   for(ion = 0; ion < p->nion; ion++) {
-    fread(&nlm, 4, 1, fh);
+    if(fread(&nlm, 4, 1, fh) < 1) goto error;
 //    printf("  nlm = %d\n", nlm);
     for(is = 0; is < p->ns; is++)
       for(ik = 0; ik < p->nk; ik++)
