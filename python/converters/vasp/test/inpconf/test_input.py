@@ -77,7 +77,7 @@ class TestParseInput(arraytest.ArrayTestCase):
        [ 0.,  0.,  1.]]), 'ion_list': array([0, 1, 2, 3]), 'user_index': 2, 'lshell': 1}, {'ion_list': array([0, 1, 2, 3]), 'user_index': 3, 'lshell': 3}]
 
 Groups:
-[{'index': 1, 'shells': [0, 1], 'emin': -7.6, 'emax': 3.0}, {'index': 2, 'shells': [2], 'emin': -1.6, 'emax': 2.0}]"""
+[{'normalize': True, 'index': 1, 'shells': [0, 1], 'normion': False, 'emax': 3.0, 'emin': -7.6}, {'normalize': True, 'index': 2, 'shells': [2], 'normion': False, 'emax': 2.0, 'emin': -1.6}]"""
 
         self.assertEqual(res, expected)
 

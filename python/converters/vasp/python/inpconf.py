@@ -65,9 +65,8 @@ class ConfigParameters:
             'emax': ('emax', float)}
 
         self.gr_optional = {
-            'normalize' : ('normalize', self.parse_string_logical),
-            'normion' : ('normion', self.parse_string_logical)}
-
+            'normalize' : ('normalize', self.parse_string_logical, True),
+            'normion' : ('normion', self.parse_string_logical, False)}
 
 
 #
@@ -168,13 +167,14 @@ class ConfigParameters:
 # parse_parameter_set()
 #
 ################################################################################
-    def parse_parameter_set(self, section, param_set, exception=False):
+    def parse_parameter_set(self, section, param_set, exception=False, defaults=True):
         """
         Parses required or optional parameter set from a section.
         For required parameters `exception=True` must be set.
         """
         parsed = {}
         for par in param_set.keys():
+            key = param_set[par][0]
             try:
                 par_str = self.cp.get(section, par)
             except ConfigParser.NoOptionError:
@@ -182,12 +182,14 @@ class ConfigParameters:
                     message = "Required parameter '%s' not found in section [%s]"%(par, section)
                     raise Exception(message)
                 else:
+# Use the default value if there is one
+                    if defaults and len(param_set[par]) > 2:
+                        parsed[key] = param_set[par][2]
                     continue
 
             if self.verbosity > 0:
                 print "  %s = %s"%(par, par_str)
 
-            key = param_set[par][0]
             parse_fun = param_set[par][1]
             parsed[key] = parse_fun(par_str)
 
@@ -267,7 +269,7 @@ class ConfigParameters:
             shell.update(parsed)
 
 # Group optional parameters
-            parsed = self.parse_parameter_set(section, self.gr_optional, exception=False)
+            parsed = self.parse_parameter_set(section, self.gr_optional, exception=False, defaults=False)
             shell.update(parsed)
 
             self.shells.append(shell)
