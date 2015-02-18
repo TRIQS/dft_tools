@@ -502,6 +502,17 @@ class SumkDFTTools(SumkDFT):
             # positive Om_mesh
             assert all(Om >= 0.0 for Om in Om_mesh), "transport_distribution: Om_mesh should not contain negative values!"
 
+        # Check if energy_window is sufficiently large and correct
+
+        if (energy_window[0] >= energy_window[1] or energy_window[0] >= 0 or energy_window[1] <= 0):
+            assert 0, "transport_distribution: energy_window wrong!"
+
+        if (abs(self.fermi_dis(energy_window[0]*beta)*self.fermi_dis(-energy_window[0]*beta)) > 1e-5
+            or abs(self.fermi_dis(energy_window[1]*beta)*self.fermi_dis(-energy_window[1]*beta)) > 1e-5):
+                mpi.report("\n####################################################################")
+                mpi.report("transport_distribution: WARNING - energy window might be too narrow!")
+                mpi.report("####################################################################\n")
+
         n_inequiv_spin_blocks = self.SP + 1 - self.SO  # up and down are equivalent if SP = 0
         self.directions = directions
         dir_to_int = {'x':0, 'y':1, 'z':2}
@@ -515,7 +526,7 @@ class SumkDFTTools(SumkDFT):
             mesh = None
             mu = self.chemical_potential
             n_om = len(self.omega)
-            print "Using omega mesh provided by Sigma!"
+            mpi.report("Using omega mesh provided by Sigma!")
 
             if energy_window is not None:
                 # Find according window in Sigma mesh
@@ -543,13 +554,6 @@ class SumkDFTTools(SumkDFT):
             self.omega = numpy.linspace(energy_window[0]-max(Om_mesh),energy_window[1]+max(Om_mesh),n_om)
             mesh = [energy_window[0]-max(Om_mesh), energy_window[1]+max(Om_mesh), n_om]
             mu = 0.0
-
-        # Check if energy_window is sufficiently large
-        if (abs(self.fermi_dis(self.omega[0]*beta)*self.fermi_dis(-self.omega[0]*beta)) > 1e-5
-            or abs(self.fermi_dis(self.omega[-1]*beta)*self.fermi_dis(-self.omega[-1]*beta)) > 1e-5):
-                print "\n####################################################################"
-                print "transport_distribution: WARNING - energy window might be too narrow!"
-                print "####################################################################\n"
 
         # Define mesh for optic conductivity
         d_omega = round(numpy.abs(self.omega[0] - self.omega[1]), 12)
