@@ -1,37 +1,39 @@
 .. highlight:: python
 
+#########
 PLO tools
 #########
 
 Introduction
-============
+************
 
 This set of tools is intended for processing of raw projectors read
 from VASP. One of the main tasks is to generate an orthonormalized subset
 of PLOs constructed according to the :doc:`config-file </config>`.
 
-As an input this sub-library accepts a dictionary with parameters from
-the config-file and a dictionary containing VASP-data objects.
-Generally, the following workflow is adopted:
+To produce the final output the following steps are undertaken:
 
- * The VASP data is checked for consistency. 
+ * Parse input config-file
+
+ * Input raw VASP data 
+
+ * Convert the raw VASP data into an internal representaion and check it for consistency.
  
- * For each group of PLOs a corresponding subset of projectors and eigenvalues
-   is selected according to the config-file.
+ * Generate a set of projector shells according to the parameters of the config-file
 
- * The selected subsets of projectors are orthogonalized. In general, there are different ways
-   how it can be done (see :ref:`Orthogonalization<ortho>`).
+ * Create a set of projector groups
+
+ * Perform necessary group operations (such as :ref:`orthogonalization<ortho>`) on the constituing shells 
+
+ * Calculate and output some useful quantities (bare density matrix, DOS, etc.)
 
 
 Initial Processing
-==================
+******************
 
-Consistency check
------------------
-
-The purpose of a consistency check is to make sure that the VASP data passed
-to PLOtools are complete and originating from the same calculation.
-In particular, the following things are supposed to be checked:
+The raw data from VASP files is initially read in simple objects (containers).
+Then these objects are combined in an another object containing all necessary
+electronic structure data. At this stage simple consistency checks are performed:
 
  * the basic dimensions, such as the number of bands, number of `k`-points, etc.,
    are consistent for all data
@@ -41,6 +43,14 @@ In particular, the following things are supposed to be checked:
 
  * in case tetrahedron data is read from IBZKPT, the tetrahedron volume must be related
    to the total volume of the unit cell as derived from POSCAR
+
+All electronic structure from VASP is stored in a class ElectronicStructure:
+
+.. autoclass:: elstruct.ElectronicStructure
+   :members:
+
+
+Consistency with parameters
 
  * parameters in the config-file should pass trivial checks such as that the ion
    list does not contain non-existing ions (boundary check for ion indices)
@@ -64,7 +74,28 @@ In particular, the following things are supposed to be checked:
 Selecting projector subsets
 ---------------------------
 
-.. autoclass:: plotools.ProjectorSet
+The first step of PLO processing is to select subsets of projectors
+corresponding to PLO groups. Each group contains a set of shells.
+Each projector shell is represented by an object 'ProjectorShell'
+that contains an array of projectors and information on the shell itself
+(orbital number, ions, etc.). 'ProjectorShell's are contained in
+both a list of shells (according to the original list as read
+from config-file) and in a 'ProjectorGroup' object, the latter
+also providing information about the energy window.
+`[In fact, shell container can be a simple dictionary.]`
+
+Order of operations:
+
+  - transform projectors (all bands) in each shell
+  - select transformed shell projectors for a given group within the window
+  - orthogonalize if necessary projectors within a group by performing
+    the following operations for each k-point:
+    * combine all projector shells into a single array
+    * orthogonalize the array
+    * distribute back the arrays assuming that the order is preserved
+    
+
+.. autoclass:: plotools.ProjectorShell
    :members:
 
 
@@ -100,15 +131,10 @@ at least two options can be considered:
  #. Projectors are normalized for all ions in the unit cell simultaneously. This
     ensures that the Wannier functions for different ions are mutually orthogonal.
 
-If more than one shells is considered (say, `p` and `d` orbitals), the
-normalization can be imposed either for a combined set of shells or for each shell
-separately.
+The way the normalization of a PLO group is done is controlled by two group parameters:
 
-The way the normalization of a PLO group is done is controlled by two flags:
+  - *NORMALIZE* (True/False) : indicates whether the PLO group is normalized (True by default)
+  - *NORMION* (True/False) : indicates whether the PLO group is normalized on a per-ion basis
+    (False by default)
 
-  - **NORMALIZE** (True/False) : indicates whether the PLO group is normalized (True by default)
-  - **NORMION** (True/False) : indicates whether the PLO group is normalized on a per-ion basis
-
-If there are several PLO groups defined, the convention is the following: All PLO groups
-marked with `NORMALIZE = True` are orthogonalized with respect to each other.
 
