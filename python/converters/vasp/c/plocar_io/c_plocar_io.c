@@ -245,34 +245,27 @@ int read_arrays(FILE* fh, t_params* p, PyArrayObject* py_plo, PyArrayObject* py_
 {
   double complex *plo;
   double *ferw;
-  npy_intp idx5[5], idx4[4];
+  npy_intp idx5[5];
 
-  int ion, ik, ib, is, ilm;
+  int ilm;
   int nlm;
   float rtmp;
   float complex rbuf[50]; 
   double dtmp;
   double complex dbuf[50]; 
 
-  for(ion = 0; ion < p->nion; ion++) {
+  idx5[4] = 0;
+  for(idx5[0] = 0; idx5[0] < p->nion; idx5[0]++) {
     if(fread(&nlm, 4, 1, fh) < 1) goto error;
 //    printf("  nlm = %d\n", nlm);
-    for(is = 0; is < p->ns; is++)
-      for(ik = 0; ik < p->nk; ik++)
-        for(ib = 0; ib < p->nb; ib++) {
+    for(idx5[1] = 0; idx5[1] < p->ns; idx5[1]++)
+      for(idx5[2] = 0; idx5[2] < p->nk; idx5[2]++)
+        for(idx5[3] = 0; idx5[3] < p->nb; idx5[3]++) {
 // Get the pointers to corresponding elements according to the new API
-          idx5[0] = ion;
-          idx5[1] = is;
-          idx5[2] = ik;
-          idx5[3] = ib;
-          idx5[4] = 0;
           plo = (double complex *)PyArray_GetPtr(py_plo, idx5);
 
-          idx4[0] = ion;
-          idx4[1] = is;
-          idx4[2] = ik;
-          idx4[3] = ib;
-          ferw = (double *)PyArray_GetPtr(py_ferw, idx4);
+// Here, only the first 4 elements of idx5 are used
+          ferw = (double *)PyArray_GetPtr(py_ferw, idx5);
 
           if(p->isdouble) {
             if(fread(&dtmp, sizeof(double), 1, fh) < 1) goto error;
