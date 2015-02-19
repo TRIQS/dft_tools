@@ -271,7 +271,7 @@ class Kpoints:
                line = ibz_file.next()
                self.itet[it, :] = map(int, line.split()[:5])
         except StopIteration, ValueError:
-            print "  Error reading tetrahedra. No tetrahedron data is used"
+            print "  No tetrahedron data found in %s. Skipping..."%(ibz_filename)
             self.ntet = 0
 
 #        data = { 'nktot': nktot,

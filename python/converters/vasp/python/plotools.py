@@ -93,7 +93,13 @@ def select_bands(eigvals, emin, emax):
 
     ib_win, nb_min, nb_max : 
     """
+# Sanity check
+    if emin > eigvals.max() or emax < eigvals.min():
+        raise Exception("Energy window does not overlap with the band structure")
+
     nk, nband, ns_band = eigvals.shape
+    print nk, nband, ns_band
+    print emin, emax
     ib_win = np.zeros((nk, ns_band, 2), dtype=np.int32)
 
     nb_min = 10000000
@@ -105,11 +111,14 @@ def select_bands(eigvals, emin, emax):
                 if en >= emin:
                     break
             ib1 = ib
-            for ib in xrange(ib1, nb_max):
+            for ib in xrange(ib1, nband):
                 en = eigvals[ik, ib, isp]
-                if en <= emax:
+                if en > emax:
                     break
-            ib2 = ib
+            else:
+# If we reached the last band add 1 to get the correct bound
+                ib += 1
+            ib2 = ib - 1
 
             ib_win[ik, isp, 0] = ib1
             ib_win[ik, isp, 1] = ib2
@@ -248,7 +257,7 @@ class ProjectorShell:
         self.lm2 = (self.lorb+1)**2
 
 # Pre-select a subset of projectors (this should be an array view => no memory is wasted)
-        self.proj_arr = proj_raw[self.ion_list, :, :, :, lm1:lm2]
+        self.proj_arr = proj_raw[self.ion_list, :, :, :, self.lm1:self.lm2]
 
 ################################################################################
 #
@@ -282,6 +291,7 @@ class ProjectorShell:
                 self.proj_win[:, isp, ik, ib1_win:ib2_win, :] = self.proj_arr[:, isp, ik, ib1:ib2, :]
 
 # !!! This sucks but I have to change the order of 'ib' and 'ilm' indices here
+# This should perhaps be done right after the projector array is read from PLOCAR
         self.proj_win.transpose((0, 1, 2, 4, 3))
 
 
