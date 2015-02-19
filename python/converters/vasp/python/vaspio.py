@@ -15,6 +15,38 @@ def read_lines(filename):
         for line in f:
             yield line
 
+################################################################################
+################################################################################
+#
+# class VaspData
+#
+################################################################################
+################################################################################
+class VaspData:
+    """
+    Container class for all VASP data.
+    """
+    def __init__(self, vasp_dir):
+        self.vasp_dir = vasp_dir
+
+        self.plocar = Plocar()
+        self.plocar.from_file(vasp_dir)
+        self.poscar = Poscar()
+        self.poscar.from_file(vasp_dir)
+        self.kpoints = Kpoints()
+        self.kpoints.from_file(vasp_dir)
+        self.eigenval = Eigenval()
+        self.eigenval.from_file(vasp_dir)
+        self.doscar = Doscar()
+        self.doscar.from_file(vasp_dir)
+
+################################################################################
+################################################################################
+#
+# class Plocar
+#
+################################################################################
+################################################################################
 class Plocar:
     r"""
     Class containing raw PLO data from VASP.
@@ -44,6 +76,13 @@ class Plocar:
         self.params, self.plo, self.ferw = c_plocar_io.read_plocar(vasp_dir + plocar_filename)
 
 
+################################################################################
+################################################################################
+#
+# class Poscar
+#
+################################################################################
+################################################################################
 class Poscar:
     """
     Class containing POSCAR data from VASP.
@@ -153,11 +192,13 @@ class Poscar:
 #            print "    Element:", el_names[it]
 #            print q_at[it]
 
-################################################################
+################################################################################
+################################################################################
 #
-# Kpoints
+# class Kpoints
 #
-################################################################
+################################################################################
+################################################################################
 class Kpoints:
     """
     Class describing k-points and optionally tetrahedra.
@@ -229,8 +270,8 @@ class Kpoints:
             for it in xrange(self.ntet):
                line = ibz_file.next()
                self.itet[it, :] = map(int, line.split()[:5])
-        except IOError, ValueError:
-            print "  Error reading tetrahedra. No tetrahedron data is uesd"
+        except StopIteration, ValueError:
+            print "  Error reading tetrahedra. No tetrahedron data is used"
             self.ntet = 0
 
 #        data = { 'nktot': nktot,
@@ -241,11 +282,14 @@ class Kpoints:
 #
 #        return data
 
-################################################################
+
+################################################################################
+################################################################################
 #
-# Eigenval
+# class Eigenval
 #
-################################################################
+################################################################################
+################################################################################
 class Eigenval:
     """
     Class containing Kohn-Sham-eigenvalues data from VASP (EIGENVAL file).
@@ -265,7 +309,7 @@ class Eigenval:
 
 # First line: only the first and the last number out of four
 # are used; these are 'nions' and 'ispin'
-        sline = f.next()
+        sline = f.next().split()
         self.nq = int(sline[0])
         self.ispin = int(sline[3])
 
@@ -280,38 +324,41 @@ class Eigenval:
         sline = f.next()
 
 # Sixth line: NELECT, NKTOT, NBTOT
-        sline = f.next()
+        sline = f.next().split()
         self.nelect = int(sline[0])
         self.nktot = int(sline[1])
         self.nband = int(sline[2])
 
 # Set of eigenvalues and k-points
         self.kpts = np.zeros((self.nktot, 3))
-        sefl.kwghts = np.zeros((self.nktot,))
+        self.kwghts = np.zeros((self.nktot,))
         self.eigs = np.zeros((self.nktot, self.nband, self.ispin))
 
         for ik in xrange(self.nktot):
             sline = f.next() # Empty line
             sline = f.next() # k-point info
-            tmp = map(float, sline)
+            tmp = map(float, sline.split())
             self.kpts[ik, :] = tmp[:3]
             self.kwghts[ik] = tmp[3]
 
             for ib in xrange(self.nband):
-                sline = f.next()
+                sline = f.next().split()
                 tmp = map(float, sline[1:self.ispin+1])
                 self.eigs[ik, ib, :] = tmp[:]
                 
-################################################################
+
+################################################################################
+################################################################################
 #
-# Doscar
+# class Doscar
 #
-################################################################
+################################################################################
+################################################################################
 class Doscar:
     """
     Class containing some data from DOSCAR
     """
-    def from_file(self, vasp_dir='./', eig_filename='DOSCAR'):
+    def from_file(self, vasp_dir='./', dos_filename='DOSCAR'):
         """
         Reads only E_Fermi from DOSCAR.
         """
@@ -320,15 +367,15 @@ class Doscar:
         if vasp_dir[-1] != '/':
             vasp_dir += '/'
 
-        f = read_lines(vasp_dir + eig_filename)
+        f = read_lines(vasp_dir + dos_filename)
 
 # Skip first 5 lines
         for _ in xrange(5):
             sline = f.next()
 
 # Sixth line: EMAX, EMIN, NEDOS, EFERMI, 1.0
-        sline = f.next()
-        self.efermi = int(sline[3])
+        sline = f.next().split()
+        self.efermi = float(sline[3])
 
 
 ################################################################
