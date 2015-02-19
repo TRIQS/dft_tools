@@ -95,13 +95,12 @@ Groups:
         res += conf_pars.shells.__repr__() + '\n\n'
         res += "Groups:\n"
         res += conf_pars.groups.__repr__()
-        print res
 
         expected = r"""Shells:
 [{'ion_list': array([4, 5, 6, 7]), 'user_index': 1, 'lshell': 2}]
 
 Groups:
-[{'index': '1', 'emin': -7.6, 'shells': [0], 'emax': 3.0}]"""
+[{'normalize': True, 'index': '1', 'emin': -7.6, 'emax': 3.0, 'normion': False, 'shells': [0]}]"""
 
         self.assertEqual(res, expected)
 

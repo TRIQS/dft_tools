@@ -366,6 +366,8 @@ class ConfigParameters:
                     value = self.shells[0].pop(key)
                     self.groups[0][key] = value
                 except KeyError:
+                    if len(self.gr_optional[par]) > 2:
+                        self.groups[0][key] = self.gr_optional[par][2]
                     continue
 # Add the index of the single shell into the group                
             self.groups[0].update({'shells': [1]})
