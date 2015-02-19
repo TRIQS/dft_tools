@@ -1,6 +1,7 @@
 
 import numpy as np
 import vaspio
+import elstruct
 from inpconf import ConfigParameters
 from plotools import select_bands, ProjectorShell
 import mytest
@@ -18,6 +19,7 @@ class TestProjectorShell(mytest.MyTestCase):
 
     Scenarios:
     - compare output for a correct input
+    - test density matrix
     """
 # Scenario 1
     def test_example(self):
@@ -52,5 +54,33 @@ class TestProjectorShell(mytest.MyTestCase):
                                 f.write("%5i  %s\n"%(ilm+1, p))
 
         expected_file = 'projshells.out'
+        self.assertFileEqual(testout, expected_file)
+
+# Scenario 2
+    def test_dens_mat(self):
+        conf_file = 'example.cfg'
+        pars = ConfigParameters(conf_file)
+        pars.parse_input()
+        vasp_data = vaspio.VaspData('./')
+        el_struct = elstruct.ElectronicStructure(vasp_data)
+
+        efermi = el_struct.efermi
+        eigvals = el_struct.eigvals - efermi
+        emin = pars.groups[0]['emin']
+        emax = pars.groups[0]['emax']
+        ib_win, nb_min, nb_max = select_bands(eigvals, emin, emax)
+
+        proj_sh = ProjectorShell(pars.shells[0], vasp_data.plocar.plo)
+
+        proj_sh.select_projectors(ib_win, nb_min, nb_max)
+
+        dens_mat = proj_sh.density_matrix(el_struct)
+        print dens_mat
+
+        testout = 'densmat.out.test'
+        with open(testout, 'wt') as f:
+            f.write("density matrix: %s\n"%(dens_mat))
+
+        expected_file = 'densmat.out'
         self.assertFileEqual(testout, expected_file)
  

@@ -46,7 +46,9 @@ class TestProjectorGroup(mytest.MyTestCase):
                         ib1 = self.proj_gr.ib_win[ik, 0, 0]
                         ib2 = self.proj_gr.ib_win[ik, 0, 1]
                         f.write("%i  %i\n"%(ib1, ib2))
-                        for ib in xrange(ib2 - self.proj_gr.nb_min + 1):
+                        ib1w = ib1 - self.proj_gr.nb_min
+                        ib2w = ib2 - self.proj_gr.nb_min + 1
+                        for ib in xrange(ib1w, ib2w):
                             for ilm in xrange(nlm):
                                 p = self.proj_gr.shells[0].proj_win[ion, isp, ik, ilm, ib]
                                 f.write("%5i  %s\n"%(ilm+1, p))
@@ -65,7 +67,9 @@ class TestProjectorGroup(mytest.MyTestCase):
                         ib1 = self.proj_gr.ib_win[ik, 0, 0]
                         ib2 = self.proj_gr.ib_win[ik, 0, 1]
                         f.write("%i  %i\n"%(ib1, ib2))
-                        for ib in xrange(ib2 - self.proj_gr.nb_min + 1):
+                        ib1w = ib1 - self.proj_gr.nb_min
+                        ib2w = ib2 - self.proj_gr.nb_min + 1
+                        for ib in xrange(ib1w, ib2w):
                             for ilm in xrange(nlm):
                                 p = self.proj_gr.shells[0].proj_win[ion, isp, ik, ilm, ib]
                                 f.write("%5i  %s\n"%(ilm+1, p))

@@ -15,6 +15,7 @@ class ElectronicStructure:
     - *efermi* (float) : Fermi level read from DOSCAR
     - *proj_raw* (array[complex]) : raw projectors from PLOCAR
     - *eigvals* (array[float]) : KS eigenvalues
+    - *ferw* (array[float]) : Fermi weights from VASP
     - *kmesh* (dict) : parameters of the `k`-mesh
     - *structure* (dict) : parameters of the crystal structure
     - *symmetry* (dict) : paramters of symmetry
@@ -29,12 +30,12 @@ class ElectronicStructure:
 
         self.kmesh = {'nktot': self.nktot}
         self.kmesh['kpoints'] = vasp_data.kpoints.kpts
-        self.kmesh['kwights'] = vasp_data.eigenval.kwghts
+        self.kmesh['kweights'] = vasp_data.eigenval.kwghts
         try:
             self.kmesh['ntet'] = vasp_data.kpoints.ntet
             self.kmesh['itet'] = vasp_data.kpoints.itet
             self.kmesh['volt'] = vasp_data.kpoints.volt
-        except NameError:
+        except AttributeError:
             pass
 
 # Note that one should not subtract this Fermi level from eigenvalues
@@ -54,6 +55,11 @@ class ElectronicStructure:
 # For later use it is more convenient to use a different order of indices
 # [see ProjectorGroup.orthogonalization()]
         self.proj_raw = vasp_data.plocar.plo.transpose((0, 1, 2, 4, 3))
+
+# In fact, Fermi weights do not depend on ions
+# FIXME: restructure the data in PLOCAR to remove the redundant dependency
+#        of 'ferw' on ions
+        self.ferw = vasp_data.plocar.ferw[0, :, :, :]
 
 # Check that the number of atoms is the same in PLOCAR and POSCAR
         natom_plo = vasp_data.plocar.params['nion']

@@ -1,4 +1,5 @@
 
+import itertools as it
 import numpy as np
 
 class Projector:
@@ -291,6 +292,39 @@ class ProjectorShell:
                 ib1_win = ib1 - self.nb_min
                 ib2_win = ib2 - self.nb_min
                 self.proj_win[:, isp, ik, :, ib1_win:ib2_win] = self.proj_arr[:, isp, ik, :, ib1:ib2]
+
+################################################################################
+#
+# select_projectors
+#
+################################################################################
+    def density_matrix(self, el_struct, site_diag=True, spin_diag=True):
+        """
+        Returns occupation matrix/matrices for the shell.
+        """
+        nion, ns, nk, nlm, nbtot = self.proj_win.shape
+
+        assert site_diag, "site_diag = False is not implemented"
+        assert spin_diag, "spin_diag = False is not implemented"
+
+        occ_mats = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
+
+        kweights = el_struct.kmesh['kweights']
+        occnums = el_struct.ferw
+        ib1 = self.nb_min
+        ib2 = self.nb_max + 1
+        for isp in xrange(ns):
+            for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
+                for io in xrange(nion):
+                    proj_k = self.proj_win[isp, io, ik, ...]
+                    occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2], 
+                                                 proj_k.conj().T).real * weight
+
+#        if not symops is None:
+#            occ_mats = symmetrize_matrix_set(occ_mats, symops, ions, perm_map)
+
+        return occ_mats
+
 
 
 def generate_ortho_plos(conf_pars, vasp_data):

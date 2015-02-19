@@ -54,7 +54,9 @@ class Plocar:
     Properties
     ----------
 
-    plo (numpy.array((nion, ns, nk, nb, nlmmax))) : raw projectors
+    - *plo* (numpy.array((nion, ns, nk, nb, nlmmax))) : raw projectors
+    - *params* (dict) : parameters read from PLOCAR
+    - *ferw* (array(nion, ns, nk, nb)) : Fermi weights from VASP
     """
 
     def from_file(self, vasp_dir='./', plocar_filename='PLOCAR'):
@@ -206,11 +208,11 @@ class Kpoints:
     Properties
     ----------
 
-        nktot (int) : total number of k-points in the IBZ
-        kpts (numpy.array((nktot, 3), dtype=float)) : k-point vectors (fractional coordinates)
-        ntet (int) : total number of k-point tetrahedra
-        itet (numpy.array((ntet, 5), dtype=float) : array of tetrahedra
-        volt (float) : volume of a tetrahedron (the k-grid is assumed to
+    - nktot (int) : total number of k-points in the IBZ
+    - kpts (numpy.array((nktot, 3), dtype=float)) : k-point vectors (fractional coordinates)
+    - ntet (int) : total number of k-point tetrahedra
+    - itet (numpy.array((ntet, 5), dtype=float) : array of tetrahedra
+    - volt (float) : volume of a tetrahedron (the k-grid is assumed to
           be uniform)
     """
 #
