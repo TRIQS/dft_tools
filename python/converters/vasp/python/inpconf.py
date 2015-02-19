@@ -342,6 +342,7 @@ class ConfigParameters:
 
 # Otherwise create a single group taking group information from [Shell] section
             self.groups.append({})
+            self.groups[0]['index'] = '1'
 # Check that the single '[Shell]' section contains enough information
 # (required group parameters except 'shells')
 # and move it to the `groups` dictionary
@@ -362,12 +363,12 @@ class ConfigParameters:
             for par in self.gr_optional.keys():
                 try:
                     key = self.gr_optional[par][0]
-                    value = self.shells[ind].pop(key)
+                    value = self.shells[0].pop(key)
                     self.groups[0][key] = value
                 except KeyError:
                     continue
 # Add the index of the single shell into the group                
-            self.groups.update({'shells': 0})
+            self.groups[0].update({'shells': [1]})
 
 #
 # Consistency checks

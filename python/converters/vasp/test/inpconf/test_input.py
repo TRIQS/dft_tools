@@ -28,6 +28,7 @@ class TestParseInput(arraytest.ArrayTestCase):
       **raise** Exception
     - **if** all sections are parsed error-free check that the output
       is correct
+    - correct example with a single shell and no explicit groups
     """
 # Scenario 1
     def test_no_group(self):
@@ -81,5 +82,27 @@ Groups:
 
         self.assertEqual(res, expected)
 
+# Scenario 6
+    def test_example_no_groups(self):
+        conf_pars = ConfigParameters('example_nogroup.cfg')
+        conf_pars.parse_input()
+#        with open('parse_input.output.test', 'wt') as f:
+#            f.write("Shells:\n")
+#            f.write(conf_pars.shells.__repr__() + '\n\n')
+#            f.write("Groups:\n")
+#            f.write(conf_pars.groups.__repr__() + '\n')
+        res = "Shells:\n"
+        res += conf_pars.shells.__repr__() + '\n\n'
+        res += "Groups:\n"
+        res += conf_pars.groups.__repr__()
+        print res
+
+        expected = r"""Shells:
+[{'ion_list': array([4, 5, 6, 7]), 'user_index': 1, 'lshell': 2}]
+
+Groups:
+[{'index': '1', 'emin': -7.6, 'shells': [0], 'emax': 3.0}]"""
+
+        self.assertEqual(res, expected)
 
 
