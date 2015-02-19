@@ -1,7 +1,7 @@
 
 #include <Python.h>
 
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+//#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 #include <numpy/arrayobject.h>
 #include <complex.h>
@@ -9,7 +9,7 @@
 
 #define MAX_STR_LEN 512
 
-static int verbose = 1;
+static int verbose = 0;
 
 typedef struct {
   int nion;
@@ -76,7 +76,7 @@ io_read_plocar(PyObject *self, PyObject *args)
   fh = fopen(fname, "r");
   if(fh == NULL) {
 // Treat this error separately because no clean-up is necessary
-    strncpy(errmsg, "Error opening PLOCAR\n", MAX_STR_LEN);
+    snprintf(errmsg, MAX_STR_LEN, "Error opening %s\n", fname);
     strncat(errmsg, strerror(errno), MAX_STR_LEN);
     PyErr_SetString(PyExc_IOError, errmsg);
     return NULL;
@@ -162,13 +162,12 @@ io_read_plocar(PyObject *self, PyObject *args)
 // Handle IO-errors
 //
 ioerror:
-  printf("Error number: %d\n",  errno);
   if(feof(fh)) {
-    PyErr_SetString(PyExc_IOError, "End-of-file reading PLOCAR");
+    snprintf(errmsg, MAX_STR_LEN, "End-of-file reading %s", fname);
+    PyErr_SetString(PyExc_IOError, errmsg);
   }
   else {
-    strncpy(errmsg, "Error reading PLOCAR\n", MAX_STR_LEN);
-    strncat(errmsg, strerror(errno), MAX_STR_LEN);
+    snprintf(errmsg, MAX_STR_LEN, "Error reading %s: %s", fname, strerror(errno));
     PyErr_SetString(PyExc_IOError, errmsg);
   }
 
