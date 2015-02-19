@@ -1,7 +1,7 @@
 
 #include <Python.h>
 
-//#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
 #include <numpy/arrayobject.h>
 #include <complex.h>
@@ -76,8 +76,7 @@ io_read_plocar(PyObject *self, PyObject *args)
   fh = fopen(fname, "r");
   if(fh == NULL) {
 // Treat this error separately because no clean-up is necessary
-    snprintf(errmsg, MAX_STR_LEN, "Error opening %s\n", fname);
-    strncat(errmsg, strerror(errno), MAX_STR_LEN);
+    snprintf(errmsg, MAX_STR_LEN, "Error opening %s\n%s", fname, strerror(errno));
     PyErr_SetString(PyExc_IOError, errmsg);
     return NULL;
   } 
@@ -246,59 +245,53 @@ int read_arrays(FILE* fh, t_params* p, PyArrayObject* py_plo, PyArrayObject* py_
 {
   double complex *plo;
   double *ferw;
-  int strd_plo[5], strd_ferw[4];
+  npy_intp idx5[5], idx4[4];
 
   int ion, ik, ib, is, ilm;
   int nlm;
-  long ind1, ind2;
   float rtmp;
   float complex rbuf[50]; 
   double dtmp;
   double complex dbuf[50]; 
 
-// Initialize array pointers and strides
-  plo = (double complex *)py_plo->data;
-  strd_plo[0] = py_plo->strides[0] / sizeof(double complex);
-  strd_plo[1] = py_plo->strides[1] / sizeof(double complex);
-  strd_plo[2] = py_plo->strides[2] / sizeof(double complex);
-  strd_plo[3] = py_plo->strides[3] / sizeof(double complex);
-  strd_plo[4] = py_plo->strides[4] / sizeof(double complex);
-
-  ferw = (double *)py_ferw->data;
-  strd_ferw[0] = py_ferw->strides[0] / sizeof(double);
-  strd_ferw[1] = py_ferw->strides[1] / sizeof(double);
-  strd_ferw[2] = py_ferw->strides[2] / sizeof(double);
-  strd_ferw[3] = py_ferw->strides[3] / sizeof(double);
-
-  ind1 = 0;
-  ind2 = 0;
   for(ion = 0; ion < p->nion; ion++) {
     if(fread(&nlm, 4, 1, fh) < 1) goto error;
 //    printf("  nlm = %d\n", nlm);
     for(is = 0; is < p->ns; is++)
       for(ik = 0; ik < p->nk; ik++)
         for(ib = 0; ib < p->nb; ib++) {
-          ind1 = strd_ferw[0] * ion + strd_ferw[1] * is + strd_ferw[2] * ik + strd_ferw[3] * ib;
-          ind2 = strd_plo[0] * ion + strd_plo[1] * is + strd_plo[2] * ik + strd_plo[3] * ib;
+// Get the pointers to corresponding elements according to the new API
+          idx5[0] = ion;
+          idx5[1] = is;
+          idx5[2] = ik;
+          idx5[3] = ib;
+          idx5[4] = 0;
+          plo = (double complex *)PyArray_GetPtr(py_plo, idx5);
+
+          idx4[0] = ion;
+          idx4[1] = is;
+          idx4[2] = ik;
+          idx4[3] = ib;
+          ferw = (double *)PyArray_GetPtr(py_ferw, idx4);
 
           if(p->isdouble) {
             if(fread(&dtmp, sizeof(double), 1, fh) < 1) goto error;
             if(fread(dbuf, sizeof(double complex), nlm, fh) < nlm) goto error;
  
-            ferw[ind1] = dtmp;
+            ferw[0] = dtmp;
 //            printf("%5d %5d %5d %5d %lf\n", ion, is, ik, ib, dtmp);
-            memcpy(plo + ind2, dbuf, nlm * sizeof(double complex));
+            memcpy(plo, dbuf, nlm * sizeof(double complex));
           }
           else {
             if(fread(&rtmp, sizeof(float), 1, fh) < 1) goto error;
             if(fread(rbuf, sizeof(float complex), nlm, fh) < nlm) goto error;
  
-            ferw[ind1] = (double)rtmp;
+            ferw[0] = (double)rtmp;
 //            printf("%5d %5d %5d %5d %f\n", ion, is, ik, ib, rtmp);
 // In this case destination and source arrays are not compatible,
 // we have to copy element-wise
             for(ilm = 0; ilm < nlm; ilm++) {
-              plo[ind2 + ilm] = (double complex)rbuf[ilm];
+              plo[ilm] = (double complex)rbuf[ilm];
 //              printf("%5d %5d %f\n", ilm, ind2 + ilm, rbuf[ilm]);
             }
           } // if p->isdouble
