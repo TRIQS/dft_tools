@@ -202,7 +202,7 @@ class ProjectorGroup:
                 i1_bl = i2_bl
             bl_map[ish]['bmat_blocks'] = bmat_bl
 
-        ndim = i2
+        ndim = i2_bl
         p_mat = np.zeros((ndim, nb_max), dtype=np.complex128)
         for isp in xrange(ns):
             for ik in xrange(nk):
@@ -257,7 +257,9 @@ class ProjectorShell:
         self.lm2 = (self.lorb+1)**2
 
 # Pre-select a subset of projectors (this should be an array view => no memory is wasted)
-        self.proj_arr = proj_raw[self.ion_list, :, :, :, self.lm1:self.lm2]
+# !!! This sucks but I have to change the order of 'ib' and 'ilm' indices here
+# This should perhaps be done right after the projector array is read from PLOCAR
+        self.proj_arr = proj_raw[self.ion_list, :, :, :, self.lm1:self.lm2].transpose((0, 1, 2, 4, 3))
 
 ################################################################################
 #
@@ -274,9 +276,9 @@ class ProjectorShell:
 
 # Set the dimensions of the array
         nb_win = self.nb_max - self.nb_min + 1
-        nion, ns, nk, nbtot, nlm = self.proj_arr.shape
+        nion, ns, nk, nlm, nbtot = self.proj_arr.shape
 # !!! Note that the order is changed below !!!
-        self.proj_win = np.zeros((nion, ns, nk, nb_win, nlm), dtype=np.complex128)
+        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_win), dtype=np.complex128)
 
 # Select projectors for a given energy window
         ns_band = self.ib_win.shape[1]
@@ -288,11 +290,7 @@ class ProjectorShell:
                 ib2 = self.ib_win[ik, is_b, 1] + 1
                 ib1_win = ib1 - self.nb_min
                 ib2_win = ib2 - self.nb_min
-                self.proj_win[:, isp, ik, ib1_win:ib2_win, :] = self.proj_arr[:, isp, ik, ib1:ib2, :]
-
-# !!! This sucks but I have to change the order of 'ib' and 'ilm' indices here
-# This should perhaps be done right after the projector array is read from PLOCAR
-        self.proj_win.transpose((0, 1, 2, 4, 3))
+                self.proj_win[:, isp, ik, :, ib1_win:ib2_win] = self.proj_arr[:, isp, ik, :, ib1:ib2]
 
 
 def generate_ortho_plos(conf_pars, vasp_data):

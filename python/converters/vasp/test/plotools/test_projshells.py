@@ -37,7 +37,7 @@ class TestProjectorShell(mytest.MyTestCase):
         proj_sh.select_projectors(ib_win, nb_min, nb_max)
 
         testout = 'projshells.out.test'
-        nion, ns, nk, nbtot, nlm = proj_sh.proj_win.shape
+        nion, ns, nk, nlm, nbtot = proj_sh.proj_win.shape
         with open(testout, 'wt') as f:
             f.write("pars: %s\n"%(pars.shells[0]))
             for ion in xrange(nion):
@@ -48,7 +48,7 @@ class TestProjectorShell(mytest.MyTestCase):
                         f.write("%i  %i\n"%(ib1, ib2))
                         for ib in xrange(ib2 - nb_min + 1):
                             for ilm in xrange(nlm):
-                                p = proj_sh.proj_win[ion, isp, ik, ib, ilm]
+                                p = proj_sh.proj_win[ion, isp, ik, ilm, ib]
                                 f.write("%5i  %s\n"%(ilm+1, p))
 
         expected_file = 'projshells.out'
