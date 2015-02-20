@@ -395,17 +395,17 @@ class Wien2kConverter(ConverterTools):
         
         band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(SP + 1 - SO)]
         for isp, f in enumerate(files):
-            if not os.path.exists(f): raise IOError, "convert_misc_input: File %s does not exist" %f
-            mpi.report("Reading input from %s..."%f)
+            if os.path.exists(f):
+                mpi.report("Reading input from %s..."%f)
             
-            R = ConverterTools.read_fortran_file(self, f, self.fortran_to_replace)
-            assert int(R.next()) == n_k, "convert_misc_input: Number of k-points is inconsistent in oubwin file!"
-            assert int(R.next()) == SO, "convert_misc_input: SO is inconsistent in oubwin file!"
-            for ik in xrange(n_k):
-                R.next()
-                band_window[isp][ik,0] = R.next() # lowest band
-                band_window[isp][ik,1] = R.next() # highest band
-                R.next()
+                R = ConverterTools.read_fortran_file(self, f, self.fortran_to_replace)
+                assert int(R.next()) == n_k, "convert_misc_input: Number of k-points is inconsistent in oubwin file!"
+                assert int(R.next()) == SO, "convert_misc_input: SO is inconsistent in oubwin file!"
+                for ik in xrange(n_k):
+                    R.next()
+                    band_window[isp][ik,0] = R.next() # lowest band
+                    band_window[isp][ik,1] = R.next() # highest band
+                    R.next()
 
         R.close() # Reading done!
 
@@ -415,48 +415,47 @@ class Wien2kConverter(ConverterTools):
         # lattice_constants: unit cell parameters in a. u.
         # lattice_angles: unit cell angles in rad
 
-        if not (os.path.exists(self.struct_file)) : raise IOError, "convert_misc_input: File %s does not exist" %self.struct_file
-        mpi.report("Reading input from %s..."%self.struct_file)
+        if (os.path.exists(self.struct_file)):
+            mpi.report("Reading input from %s..."%self.struct_file)
         
-        with open(self.struct_file) as R:
-            try:
-                R.readline()
-                lattice_type = R.readline().split()[0]
-                R.readline()
-                temp = R.readline().strip().split() 
-                lattice_constants = numpy.array([float(t) for t in temp[0:3]])
-                lattice_angles = numpy.array([float(t) for t in temp[3:6]]) * numpy.pi / 180.0
-            except IOError:
-                raise "convert_misc_input: reading file %s failed" %self.struct_file
+            with open(self.struct_file) as R:
+                try:
+                    R.readline()
+                    lattice_type = R.readline().split()[0]
+                    R.readline()
+                    temp = R.readline().strip().split() 
+                    lattice_constants = numpy.array([float(t) for t in temp[0:3]])
+                    lattice_angles = numpy.array([float(t) for t in temp[3:6]]) * numpy.pi / 180.0
+                except IOError:
+                    raise "convert_misc_input: reading file %s failed" %self.struct_file
 
         # Read relevant data from .outputs file
         #######################################
         # rot_symmetries: matrix representation of all (space group) symmetry operations
         
-        if not (os.path.exists(self.outputs_file)) : raise IOError, "convert_misc_input: File %s does not exist" %self.outputs_file
-        mpi.report("Reading input from %s..."%self.outputs_file)
+        if (os.path.exists(self.outputs_file)):
+            mpi.report("Reading input from %s..."%self.outputs_file)
         
-        rot_symmetries = []
-        with open(self.outputs_file) as R:
-            try:
-                while 1:
-                    temp = R.readline().strip(' ').split()
-                    if (temp[0] =='PGBSYM:'):
-                         n_symmetries = int(temp[-1])
-                         break
-                for i in range(n_symmetries):
+            rot_symmetries = []
+            with open(self.outputs_file) as R:
+                try:
                     while 1:
-                        if (R.readline().strip().split()[0] == 'Symmetry'): break
-                    sym_i = numpy.zeros((3, 3), dtype = float)
-                    for ir in range(3):
-                        temp = R.readline().strip().split()
-                        for ic in range(3):
-                            sym_i[ir, ic] = float(temp[ic])
-                    R.readline()
-                    rot_symmetries.append(sym_i)
-            except IOError:
-                 raise "convert_misc_input: reading file %s failed" %self.outputs_file
-
+                        temp = R.readline().strip(' ').split()
+                        if (temp[0] =='PGBSYM:'):
+                            n_symmetries = int(temp[-1])
+                            break
+                    for i in range(n_symmetries):
+                        while 1:
+                            if (R.readline().strip().split()[0] == 'Symmetry'): break
+                        sym_i = numpy.zeros((3, 3), dtype = float)
+                        for ir in range(3):
+                            temp = R.readline().strip().split()
+                            for ic in range(3):
+                                sym_i[ir, ic] = float(temp[ic])
+                        R.readline()
+                        rot_symmetries.append(sym_i)
+                except IOError:
+                    raise "convert_misc_input: reading file %s failed" %self.outputs_file
 
         # Save it to the HDF:
         ar=HDFArchive(self.hdf_file,'a')
