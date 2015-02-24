@@ -380,6 +380,7 @@ class Wien2kConverter(ConverterTools):
         """
 
         if not (mpi.is_master_node()): return
+        things_to_save = []
 
         # Read relevant data from .oubwin/up/dn files
         #############################################
@@ -397,7 +398,6 @@ class Wien2kConverter(ConverterTools):
         for isp, f in enumerate(files):
             if os.path.exists(f):
                 mpi.report("Reading input from %s..."%f)
-            
                 R = ConverterTools.read_fortran_file(self, f, self.fortran_to_replace)
                 assert int(R.next()) == n_k, "convert_misc_input: Number of k-points is inconsistent in oubwin file!"
                 assert int(R.next()) == SO, "convert_misc_input: SO is inconsistent in oubwin file!"
@@ -406,6 +406,7 @@ class Wien2kConverter(ConverterTools):
                     band_window[isp][ik,0] = R.next() # lowest band
                     band_window[isp][ik,1] = R.next() # highest band
                     R.next()
+                things_to_save.append('band_window')
 
         R.close() # Reading done!
 
@@ -426,6 +427,7 @@ class Wien2kConverter(ConverterTools):
                     temp = R.readline().strip().split() 
                     lattice_constants = numpy.array([float(t) for t in temp[0:3]])
                     lattice_angles = numpy.array([float(t) for t in temp[3:6]]) * numpy.pi / 180.0
+                    things_to_save.extend(['lattice_type', 'lattice_constants', 'lattice_angles'])
                 except IOError:
                     raise "convert_misc_input: reading file %s failed" %self.struct_file
 
@@ -454,13 +456,14 @@ class Wien2kConverter(ConverterTools):
                                 sym_i[ir, ic] = float(temp[ic])
                         R.readline()
                         rot_symmetries.append(sym_i)
+                    things_to_save.extend(['n_symmetries', 'rot_symmetries'])
+                    things_to_save.append('rot_symmetries')
                 except IOError:
                     raise "convert_misc_input: reading file %s failed" %self.outputs_file
 
         # Save it to the HDF:
         ar=HDFArchive(self.hdf_file,'a')
         if not (misc_subgrp in ar): ar.create_group(misc_subgrp)
-        things_to_save = ['band_window', 'lattice_type', 'lattice_constants', 'lattice_angles', 'n_symmetries', 'rot_symmetries']
         for it in things_to_save: ar[misc_subgrp][it] = locals()[it]
         del ar
 
