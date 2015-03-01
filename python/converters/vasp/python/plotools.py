@@ -325,6 +325,11 @@ class ProjectorShell:
 
 
 
+################################################################################
+#
+# generate_ortho_plos
+#
+################################################################################
 def generate_ortho_plos(conf_pars, el_struct):
     """
     Parameters
@@ -357,3 +362,48 @@ def generate_ortho_plos(conf_pars, el_struct):
 
     return pshells, pgroups
 
+
+################################################################################
+#
+# plo_output
+#
+################################################################################
+# TODO: k-points with weights should be stored once and for all
+def plo_output(conf_pars, pshells, pgroups):
+    """
+    Outputs PLO groups into text files.
+
+    Filenames are defined by <basename> that is passed from config-file.
+    All necessary general parameters are stored in a file '<basename>.ctrl'.
+
+    Each group is stored in a '<basename>.plog<Ng>' file. The format is the
+    following:
+
+    # Energy window: emin, emax
+    ib_min, ib_max
+    # Eigenvalues
+    ik1, kx, ky, kz, kweight
+    ib1, ib2
+    eig1
+    eig2
+    ...
+    eigN
+    ik2, kx, ky, kz, kweight
+    ...
+
+    # Projected shells
+    Nshells
+    # Shells: <shell indices>
+    Shell 1
+    ndim
+    # complex arrays: plo(ns, nion, ndim, nb)
+    ...
+    # Shells: <shell indices>
+    Shell 2
+    ...
+
+    """
+# TODO: add BASENAME option to config parameters.
+    basename = 'vasp'
+
+    
