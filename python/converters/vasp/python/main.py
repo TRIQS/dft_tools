@@ -2,6 +2,8 @@
 import sys
 import vaspio
 from inpconf import ConfigParameters
+from elstruct import ElectronicStructure
+from plotools import generate_ortho_plos
 
 if __name__ == '__main__':
     narg = len(sys.argv)
@@ -17,5 +19,9 @@ if __name__ == '__main__':
             vasp_dir = './'
 
 
-    pars = ConfigParameters(filename)
+    pars = ConfigParameters(filename, verbosity=0)
+    pars.parse_input()
     vasp_data = vaspio.VaspData(vasp_dir)
+    el_struct = ElectronicStructure(vasp_data)
+    pshells, pgroups = generate_ortho_plos(pars, el_struct)
+    plo_output(pars, pshells, pgroups)
