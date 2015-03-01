@@ -67,9 +67,9 @@ def orthogonalize_projector_matrix(p_matrix):
     return (p_ortho, overlap, eig)
 
 ################################################################################
-# check_vasp_data_consistency()
+# check_data_consistency()
 ################################################################################
-def check_vasp_data_consistency(vasp_data):
+def check_data_consistency(pars, el_struct):
     """
     Check the consistency of the VASP data.
     """
@@ -99,8 +99,6 @@ def select_bands(eigvals, emin, emax):
         raise Exception("Energy window does not overlap with the band structure")
 
     nk, nband, ns_band = eigvals.shape
-    print nk, nband, ns_band
-    print emin, emax
     ib_win = np.zeros((nk, ns_band, 2), dtype=np.int32)
 
     nb_min = 10000000
@@ -278,7 +276,7 @@ class ProjectorShell:
 # Set the dimensions of the array
         nb_win = self.nb_max - self.nb_min + 1
         nion, ns, nk, nlm, nbtot = self.proj_arr.shape
-# !!! Note that the order is changed below !!!
+# !!! Note that the order of the two last indices is different !!!
         self.proj_win = np.zeros((nion, ns, nk, nlm, nb_win), dtype=np.complex128)
 
 # Select projectors for a given energy window
@@ -327,32 +325,35 @@ class ProjectorShell:
 
 
 
-def generate_ortho_plos(conf_pars, vasp_data):
+def generate_ortho_plos(conf_pars, el_struct):
     """
     Parameters
     ----------
 
       conf_pars (dict) : dictionary of input parameters (from conf-file)
-      vasp_data (dict) : dictionary of object representing various VASP files
+      el_struct : ElectronicStructure object
     """
 
-    check_vasp_data_consistency(vasp_data)
+    check_data_consistency(conf_pars, el_struct)
 
-    proj_raw = vaps_data['plocar'].plo
+    proj_raw = el_struct.proj_raw
     try:
         efermi = conf_pars.general['efermi']
-    except KeyError:
-        efermi = vasp_data['doscar'].efermi
+    except (KeyError, AttributeError):
+        efermi = el_struct.efermi
 
 # eigvals(nktot, nband, ispin) are defined with respect to the Fermi level
-    eigvals = vasp_data['eigenval'].eigs - efermi 
+    eigvals = el_struct.eigvals - efermi 
 
-    shells = []
+    pshells = []
     for sh_par in conf_pars.shells:
-        shells.append(ProjectorShell(sh_par, proj_raw))
+        pshells.append(ProjectorShell(sh_par, proj_raw))
 
-    groups = []
+    pgroups = []
     for gr_par in conf_pars.groups:
-        group = ProjectorGroup(gr_par, shells, eigvals)
+        pgroup = ProjectorGroup(gr_par, pshells, eigvals)
+        pgroup.orthogonalize()
+        pgroups.append(pgroup)
 
+    return pshells, pgroups
 
