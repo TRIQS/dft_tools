@@ -166,18 +166,30 @@ class ProjectorGroup:
         self.nb_min = nb_min
         self.nb_max = nb_max
 
-# Determine the total number of electrons within the window
-        self.nelect = 0
-        nk, ns_band, _ = ib_win.shape
-        for isp in xrange(ns_band):
-            for ik in xrange(nk):
-                self.nelect += ferw[isp, ik, self.nb_min:self.nb_max+1].sum()
-
 # Select projectors within the energy window
         for ish in self.ishells:
             shell = self.shells[ish]
             shell.select_projectors(ib_win, nb_min, nb_max)
 
+################################################################################
+#
+# nelect_window
+#
+################################################################################
+    def nelect_window(self, el_struct):
+        """
+        Determines the total number of electrons within the window.
+        """
+        self.nelect = 0
+        nk, ns_band, _ = self.ib_win.shape
+        rspin = 2.0 if ns_band == 1 else 1.0
+        for isp in xrange(ns_band):
+            for ik in xrange(nk):
+                occ = el_struct.ferw[isp, ik, self.nb_min:self.nb_max+1]
+                kwght = el_struct.kmesh['kweights'][ik]
+                self.nelect += occ.sum() * kwght * rspin
+
+        return self.nelect
 
 ################################################################################
 #
@@ -423,7 +435,8 @@ def plo_output(conf_pars, pshells, pgroups, el_struct):
             f.write("# Energy window: emin, emax\n")
             f.write("%i   %i\n"%(gr.emin, gr.emax))
             f.write("# Number of electrons within the window\n")
-            f.write("%s\n"%(gr.nelect))
+            nelect = gr.nelect_window(el_struct)
+            f.write("%s\n"%(round(nelect, 5)))
             f.write("# Eigenvalues: is, ik, ib1, ib2 then list of values\n")
 
             nk, ns_band, _ = gr.ib_win.shape
