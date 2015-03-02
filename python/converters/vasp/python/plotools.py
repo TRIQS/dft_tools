@@ -148,7 +148,7 @@ class ProjectorGroup:
     - eigvals (numpy.array) : array of KS eigenvalues
 
     """
-    def __init__(self, gr_pars, shells, eigvals):
+    def __init__(self, gr_pars, shells, eigvals, ferw):
         """
         Constructor
         """
@@ -166,10 +166,18 @@ class ProjectorGroup:
         self.nb_min = nb_min
         self.nb_max = nb_max
 
+# Determine the total number of electrons within the window
+        self.nelect = 0
+        nk, ns_band, _ = ib_win.shape
+        for isp in xrange(ns_band):
+            for ik in xrange(nk):
+                self.nelect += ferw[isp, ik, self.nb_min:self.nb_max+1].sum()
+
 # Select projectors within the energy window
         for ish in self.ishells:
             shell = self.shells[ish]
             shell.select_projectors(ib_win, nb_min, nb_max)
+
 
 ################################################################################
 #
@@ -247,6 +255,7 @@ class ProjectorShell:
     def __init__(self, sh_pars, proj_raw):
         self.lorb = sh_pars['lshell']
         self.ion_list = sh_pars['ion_list']
+        self.user_index = sh_pars['user_index']
         try:
             self.tmatrix = sh_pars['tmatrix']
         except KeyError:
@@ -254,6 +263,7 @@ class ProjectorShell:
 
         self.lm1 = self.lorb**2
         self.lm2 = (self.lorb+1)**2
+        self.ndim = self.lm2 - self.lm1
 
 # Pre-select a subset of projectors (this should be an array view => no memory is wasted)
 # !!! This sucks but I have to change the order of 'ib' and 'ilm' indices here
@@ -356,7 +366,7 @@ def generate_ortho_plos(conf_pars, el_struct):
 
     pgroups = []
     for gr_par in conf_pars.groups:
-        pgroup = ProjectorGroup(gr_par, pshells, eigvals)
+        pgroup = ProjectorGroup(gr_par, pshells, eigvals, el_struct.ferw)
         pgroup.orthogonalize()
         pgroups.append(pgroup)
 
@@ -369,7 +379,7 @@ def generate_ortho_plos(conf_pars, el_struct):
 #
 ################################################################################
 # TODO: k-points with weights should be stored once and for all
-def plo_output(conf_pars, pshells, pgroups):
+def plo_output(conf_pars, pshells, pgroups, el_struct):
     """
     Outputs PLO groups into text files.
 
@@ -381,8 +391,9 @@ def plo_output(conf_pars, pshells, pgroups):
 
     # Energy window: emin, emax
     ib_min, ib_max
+    nelect
     # Eigenvalues
-    ik1, kx, ky, kz, kweight
+    isp, ik1, kx, ky, kz, kweight
     ib1, ib2
     eig1
     eig2
@@ -406,4 +417,45 @@ def plo_output(conf_pars, pshells, pgroups):
 # TODO: add BASENAME option to config parameters.
     basename = 'vasp'
 
+    for ig, gr in enumerate(pgroups):
+        fname = basename + '.plog%i'%(ig+1)
+        with open(fname, 'wt') as f:
+            f.write("# Energy window: emin, emax\n")
+            f.write("%i   %i\n"%(gr.emin, gr.emax))
+            f.write("# Number of electrons within the window\n")
+            f.write("%s\n"%(gr.nelect))
+            f.write("# Eigenvalues: is, ik, ib1, ib2 then list of values\n")
+
+            nk, ns_band, _ = gr.ib_win.shape
+            for isp in xrange(ns_band):
+                for ik in xrange(nk):
+                    ib1 = gr.ib_win[ik, isp, 0]
+                    ib2 = gr.ib_win[ik, isp, 1]
+                    f.write("%i  %i    %i  %i\n"%(isp+1, ik+1, ib1+1, ib2+1))
+                    for ib in xrange(ib1, ib2+1):
+                        f.write("%s\n"%(el_struct.eigvals[ik, ib, isp]))
+
+            f.write("\nProjected shells: nshells\n")
+            f.write("%i\n"%(len(gr.ishells)))
+            f.write("Shells: <shell indices>\n")
+            f.write('  '.join(map(lambda ish: "{0:d}".format(pshells[ish].user_index), gr.ishells)) + '\n')
+            for ish in gr.ishells:
+                shell = pshells[ish]
+                f.write("Orbital dimension: ndim\n")
+                f.write("%i\n"%(shell.ndim))
+
+                nion, ns, nk, ndim, _ = shell.proj_win.shape
+                f.write("# Blocks [isp, ion, ndim, nb], 'nb' fastest index\n")
+                for ik in xrange(nk):
+                    for isp in xrange(ns):
+# TODO: fix this for non-collinear case (ns != ns_band)
+                        ib1 = gr.ib_win[ik, isp, 0] - gr.nb_min
+                        ib2 = gr.ib_win[ik, isp, 1] - gr.nb_min
+                        for ion in xrange(nion):
+                            f.write("# ik = %i, is = %i, ion = %i\n"%(ik+1, isp+1, ion+1))
+                            for iorb in xrange(ndim):
+                                for ib in xrange(ib1, ib2+1):
+                                    plo = shell.proj_win[ion, isp, ik, iorb, ib]
+                                    f.write("%20.10f %20.10f\n"%(plo.real, plo.imag))
+                                f.write("\n")
     
