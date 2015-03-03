@@ -424,9 +424,10 @@ class Wien2kConverter(ConverterTools):
                     R.readline()
                     lattice_type = R.readline().split()[0]
                     R.readline()
-                    temp = R.readline().strip().split() 
-                    lattice_constants = numpy.array([float(t) for t in temp[0:3]])
-                    lattice_angles = numpy.array([float(t) for t in temp[3:6]]) * numpy.pi / 180.0
+                    temp = R.readline()
+                    print temp
+                    lattice_constants = numpy.array([float(temp[0+10*i:10+10*i].strip()) for i in range(3)])
+                    lattice_angles = numpy.array([float(temp[30+10*i:40+10*i].strip()) for i in range(3)]) * numpy.pi / 180.0
                     things_to_save.extend(['lattice_type', 'lattice_constants', 'lattice_angles'])
                 except IOError:
                     raise "convert_misc_input: reading file %s failed" %self.struct_file
