@@ -349,10 +349,10 @@ class ProjectorShell:
 
 ################################################################################
 #
-# generate_ortho_plos
+# generate_plos
 #
 ################################################################################
-def generate_ortho_plos(conf_pars, el_struct):
+def generate_plo(conf_pars, el_struct):
     """
     Parameters
     ----------
@@ -379,7 +379,7 @@ def generate_ortho_plos(conf_pars, el_struct):
     pgroups = []
     for gr_par in conf_pars.groups:
         pgroup = ProjectorGroup(gr_par, pshells, eigvals, el_struct.ferw)
-        pgroup.orthogonalize()
+#        pgroup.orthogonalize()
         pgroups.append(pgroup)
 
     return pshells, pgroups
@@ -391,7 +391,7 @@ def generate_ortho_plos(conf_pars, el_struct):
 #
 ################################################################################
 # TODO: k-points with weights should be stored once and for all
-def plo_output(conf_pars, pshells, pgroups, el_struct):
+def plo_output(pshells, pgroups, el_struct):
     """
     Outputs PLO groups into text files.
 

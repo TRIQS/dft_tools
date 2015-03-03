@@ -23,5 +23,7 @@ if __name__ == '__main__':
     pars.parse_input()
     vasp_data = vaspio.VaspData(vasp_dir)
     el_struct = ElectronicStructure(vasp_data)
-    pshells, pgroups = generate_ortho_plos(pars, el_struct)
-    plo_output(pars, pshells, pgroups, el_struct)
+    pshells, pgroups = generate_plo(pars, el_struct)
+    for gr in pgroups:
+        gr.orthogonalize()
+    plo_output(pshells, pgroups, el_struct)
