@@ -3,7 +3,7 @@ import sys
 import vaspio
 from inpconf import ConfigParameters
 from elstruct import ElectronicStructure
-from plotools import generate_ortho_plos, plo_output
+from plotools import generate_plo, plo_output, kpoints_output
 
 if __name__ == '__main__':
     narg = len(sys.argv)
@@ -26,4 +26,8 @@ if __name__ == '__main__':
     pshells, pgroups = generate_plo(pars, el_struct)
     for gr in pgroups:
         gr.orthogonalize()
-    plo_output(pshells, pgroups, el_struct)
+
+# TODO: add BASENAME to config parameters
+    basename = 'vasp'
+    kpoints_output(basename, el_struct)
+    plo_output(basename, pshells, pgroups, el_struct)

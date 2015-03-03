@@ -349,7 +349,7 @@ class ProjectorShell:
 
 ################################################################################
 #
-# generate_plos
+# generate_plo()
 #
 ################################################################################
 def generate_plo(conf_pars, el_struct):
@@ -385,13 +385,51 @@ def generate_plo(conf_pars, el_struct):
     return pshells, pgroups
 
 
+# TODO: k-points with weights should be stored once and for all
+################################################################################
+#
+# kpoints_output
+#
+################################################################################
+def kpoints_output(basename, el_struct):
+    """
+    Outputs k-point data into a text file.
+    """
+
+    kmesh = el_struct.kmesh
+    fname = basename + '.kpoints'
+    with open(fname, 'wt') as f:
+        f.write("# Number of k-points: nktot\n")
+        nktot = kmesh['nktot']
+        f.write("%i\n"%(nktot))
+# TODO: add the output of reciprocal lattice vectors
+        f.write("# List of k-points with weights\n")
+        for ik in xrange(nktot):
+            kx, ky, kz = kmesh['kpoints'][ik, :]
+            kwght = kmesh['kweights'][ik]
+            f.write("%15.10f%15.10f%15.10f%20.10f\n"%(kx, ky, kz, kwght))
+
+# Check if there are tetrahedra defined and if they are, output them
+        try:
+            ntet = kmesh['ntet']
+            volt = kmesh['volt']
+            f.write("\n# Number of tetrahedra and volume: ntet, volt\n")
+            f.write("%i %s\n"%(ntet, volt))
+            f.write("# List of tetrahedra: imult, ik1, ..., ik4\n")
+            for it in xrange(ntet):
+                f.write('  '.join(map("{0:d}".format, *kmesh['itet'][it, :])) + '\n')
+        except KeyError:
+            pass
+
+
+
+
 ################################################################################
 #
 # plo_output
 #
 ################################################################################
-# TODO: k-points with weights should be stored once and for all
-def plo_output(pshells, pgroups, el_struct):
+def plo_output(basename, pshells, pgroups, el_struct):
     """
     Outputs PLO groups into text files.
 
@@ -426,9 +464,6 @@ def plo_output(pshells, pgroups, el_struct):
     ...
 
     """
-# TODO: add BASENAME option to config parameters.
-    basename = 'vasp'
-
     for ig, gr in enumerate(pgroups):
         fname = basename + '.plog%i'%(ig+1)
         with open(fname, 'wt') as f:
