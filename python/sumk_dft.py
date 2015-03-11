@@ -241,10 +241,11 @@ class SumkDFT:
         return gf_rotated
 
 
-    def lattice_gf(self, ik, mu, iw_or_w="iw", beta=40, broadening=None, mesh=None, with_Sigma=True, with_dc=True):
+    def lattice_gf(self, ik, mu=None, iw_or_w="iw", beta=40, broadening=None, mesh=None, with_Sigma=True, with_dc=True):
         """Calculates the lattice Green function from the DFT hopping and the self energy at k-point number ik
            and chemical potential mu."""
 
+        if mu is None: mu = self.chemical_potential
         ntoi = self.spin_names_to_ind[self.SO]
         spn = self.spin_block_names[self.SO]
         if (iw_or_w != "iw") and (iw_or_w != "w"): raise ValueError, "lattice_gf: Implemented only for Re/Im frequency functions."
@@ -351,7 +352,7 @@ class SumkDFT:
                 for bname,gf in SK_Sigma_imp[icrsh]: gf << self.rotloc(icrsh,gf,direction='toGlobal')
 
 
-    def extract_G_loc(self, mu = None, with_Sigma = True):
+    def extract_G_loc(self, mu=None, with_Sigma=True, with_dc=True):
         """
         Extracts the local downfolded Green function at the chemical potential of the class.
         At the end, the local G is rotated from the global coordinate system to the local system.
@@ -366,7 +367,7 @@ class SumkDFT:
         ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):
 
-            G_latt_iw = self.lattice_gf(ik = ik, mu = mu, iw_or_w = "iw", with_Sigma = with_Sigma, beta = beta)
+            G_latt_iw = self.lattice_gf(ik=ik, mu=mu, iw_or_w="iw", with_Sigma=with_Sigma, with_dc=with_dc, beta=beta)
             G_latt_iw *= self.bz_weights[ik]
 
             for icrsh in range(self.n_corr_shells):
@@ -722,7 +723,7 @@ class SumkDFT:
             for bl in degsh: gf_to_symm[bl] << ss
 
 
-    def total_density(self, mu=None):
+    def total_density(self, mu=None, with_Sigma=True, with_dc=True):
         """
         Calculates the total charge for the energy window for a given chemical potential mu. 
         Since in general n_orbitals depends on k, the calculation is done in the following order:
@@ -735,7 +736,7 @@ class SumkDFT:
         dens = 0.0
         ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):
-            G_latt_iw = self.lattice_gf(ik = ik, mu = mu, iw_or_w = "iw")
+            G_latt_iw = self.lattice_gf(ik=ik, mu=mu, iw_or_w="iw", with_Sigma=with_Sigma, with_dc=with_dc)
             dens += self.bz_weights[ik] * G_latt_iw.total_density()
         # collect data from mpi:
         dens = mpi.all_reduce(mpi.world, dens, lambda x,y : x+y)
