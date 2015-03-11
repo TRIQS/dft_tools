@@ -1,8 +1,8 @@
-
-SumK_DFT
+SumK DFT
 ========
 
-.. toctree::
-   :maxdepth: 1
 
-   put_Sigma
+.. autoclass:: pytriqs.applications.dft.sumk_dft.SumkDFT
+   :members:
+   :special-members:
+   :show-inheritance:

@@ -1,4 +1,4 @@
-.. _Ce-gamma_DOS-script:
+.. _Ce-gamma_DOS_script:
 
 Ce-gamma_DOS.py
 ---------------

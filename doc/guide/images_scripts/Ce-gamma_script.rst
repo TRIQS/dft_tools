@@ -1,4 +1,4 @@
-.. _Ce-gamma-script:
+.. _Ce-gamma_script:
 
 Ce-gamma.py
 -----------

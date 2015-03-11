@@ -5,7 +5,7 @@ from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solve
 # Creates the data directory, cd into it:
 #Prepare_Run_Directory(DirectoryName = "Ce-Gamma") 
 dft_filename = 'Ce-gamma'
-Beta =  40
+beta =  40
 U_int = 6.00
 J_hund = 0.70
 DC_type = 0                      # 0...FLL, 1...Held, 2... AMF, 3...Lichtenstein
@@ -63,7 +63,7 @@ N = SK.corr_shells[0]['dim']
 l = SK.corr_shells[0]['l']
 
 # Init the Solver:
-S = Solver(beta = Beta, l = l)
+S = Solver(beta = beta, l = l)
 
 # set atomic levels:
 eal = SK.eff_atomic_levels()[0]
@@ -75,4 +75,3 @@ SK.put_Sigma(Sigma_imp = [S.Sigma])
 
 # compute DOS
 SK.dos_partial(broadening=broadening)
-

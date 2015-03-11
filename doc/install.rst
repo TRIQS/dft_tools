@@ -4,6 +4,8 @@
 Installation
 ============
 
+LINKS ARE BROKEN!
+
 Prerequisites
 -------------
 
@@ -32,6 +34,9 @@ Installation steps
      $ make 
      $ make test 
      $ make install 
+
+TO BE FIXED
+===========
 
 Installation steps for use with WIEN2K
 ---------------------------------------
@@ -76,10 +81,9 @@ Version compatibility
 --------------------- 
  
 Be careful that the version of the TRIQS library and of the dft tools must be 
-compatible (more information on the `TRIQS website 
-<http://ipht.cea.fr/triqs/versions.html>`_). If you want to use a version of 
-the dft tools that is not the latest one, go into the directory with the sources 
-and look at all available versions:: 
+compatible (more information on the :ref:`TRIQS website <triqslibs:welcome>`. 
+If you want to use a version of the dft tools that is not the latest one, go
+into the directory with the sources and look at all available versions:: 
  
      $ cd src && git tag 
  

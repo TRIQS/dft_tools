@@ -27,17 +27,24 @@ from pytriqs.archive import *
 import pytriqs.utility.mpi as mpi
 
 class Symmetry:
-    """This class provides the routines for applying symmetry operations for the k sums.
-       It contains the permutations of the atoms in the unti cell, and the corresponding
-       rotational matrices for each symmetry operation."""
+    """
+    This class provides the routines for applying symmetry operations for the k sums.
+    It contains the permutations of the atoms in the unit cell, and the corresponding
+    rotational matrices for each symmetry operation.
+    """
 
     def __init__(self, hdf_file, subgroup = None):
-        """Initialises the class.
-           Reads the permutations and rotation matrizes from the file, and constructs the mapping for
-           the given orbitals. For each orbit a matrix is read!!!
-           SO: Flag for spin-orbit coupling.
-           SP: Flag for spin polarisation.
-           """
+        """
+        Initialises the class.
+        
+        Parameters
+        ----------
+        hdf_file : string
+                   Base name of the hdf5 archive with the symmetry data.
+        subgroup : string, optional
+                   Name of subgroup storing correlated-shell symmetry data. If not given, it is assumed that
+                   the data is stored at the root of the hdf5 archive.
+        """
 
         assert type(hdf_file) == StringType, "Symmetry: hdf_file must be a filename."
         self.hdf_file = hdf_file
@@ -72,6 +79,23 @@ class Symmetry:
 
 
     def symmetrize(self,obj):
+        """
+        Symmetrizes a given object. 
+        
+        Parameters
+        ----------
+        obj : list
+              object to symmetrize. It has to be given as list, where its length is determined by the number 
+              of equivalent members of the object. Two types of objects are supported:
+              
+              - BlockGf : list of Green's functions,
+              - Matrices : The format is taken from density matrices as obtained from Green's functions (DictType).
+              
+        Returns
+        -------
+        symm_obj : list
+                   Symmetrized object, of the same type as input object.
+        """
 
         assert isinstance(obj,list), "symmetrize: obj has to be a list of objects."
         assert len(obj) == self.n_orbits, "symmetrize: obj has to be a list of the same length as defined in the init."

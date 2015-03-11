@@ -37,10 +37,34 @@ class Wien2kConverter(ConverterTools):
                        bands_subgrp = 'dft_bands_input', misc_subgrp = 'dft_misc_input',
                        transp_subgrp = 'dft_transp_input', repacking = False):
         """
-        Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so on. 
+        Initialise the class.
+
+        Parameters
+        ----------
+        filename : string
+                   Base name of DFT files.
+        hdf_filename : string, optional
+                       Name of hdf5 archive to be created.
+        dft_subgrp : string, optional
+                     Name of subgroup storing necessary DFT data.
+        symmcorr_subgrp : string, optional
+                          Name of subgroup storing correlated-shell symmetry data.
+        parproj_subgrp : string, optional
+                         Name of subgroup storing partial projector data.
+        symmpar_subgrp : string, optional
+                         Name of subgroup storing partial-projector symmetry data.
+        bands_subgrp : string, optional
+                       Name of subgroup storing band data.
+        misc_subgrp : string, optional
+                      Name of subgroup storing miscellaneous DFT data.
+        transp_subgrp : string, optional
+                        Name of subgroup storing transport data.
+        repacking : boolean, optional
+                    Does the hdf5 archive need to be repacked to save space?
+ 
         """
 
-        assert type(filename)==StringType, "Please provide the DFT files' base name as a string."
+        assert type(filename)==StringType, "Wien2kConverter: Please provide the DFT files' base name as a string."
         if hdf_filename is None: hdf_filename = filename+'.h5'
         self.hdf_file = hdf_filename
         self.dft_file = filename+'.ctqmcout'
@@ -68,7 +92,14 @@ class Wien2kConverter(ConverterTools):
 
     def convert_dft_input(self):
         """
-        Reads the input files, and stores the data in the HDFfile
+        Reads the appropriate files and stores the data for the
+
+        - dft_subgrp
+        - symmcorr_subgrp
+        - misc_subgrp
+
+        in the hdf5 archive. 
+
         """
         
         # Read and write only on the master node
@@ -210,14 +241,18 @@ class Wien2kConverter(ConverterTools):
 
         # Symmetries are used, so now convert symmetry information for *correlated* orbitals:
         self.convert_symmetry_input(orbits=self.corr_shells,symm_file=self.symmcorr_file,symm_subgrp=self.symmcorr_subgrp,SO=self.SO,SP=self.SP)
-        self.convert_misc_input(bandwin_file=self.bandwin_file,struct_file=self.struct_file,outputs_file=self.outputs_file,
-                                misc_subgrp=self.misc_subgrp,SO=self.SO,SP=self.SP,n_k=self.n_k)
+        self.convert_misc_input()
 
 
     def convert_parproj_input(self):
         """
-        Reads the input for the partial charges projectors from case.parproj, and stores it in the symmpar_subgrp
-        group in the HDF5.
+        Reads the appropriate files and stores the data for the 
+
+        - parproj_subgrp
+        - symmpar_subgrp
+
+        in the hdf5 archive. 
+
         """
 
         if not (mpi.is_master_node()): return
@@ -292,12 +327,12 @@ class Wien2kConverter(ConverterTools):
 
     def convert_bands_input(self):
         """
-        Converts the input for momentum resolved spectral functions, and stores it in bands_subgrp in the
-        HDF5.
+        Reads the appropriate files and stores the data for the bands_subgrp in the hdf5 archive. 
+
         """
 
         if not (mpi.is_master_node()): return
-        mpi.report("Reading bands input from %s..."%self.band_file)
+        mpi.report("Reading input from %s..."%self.band_file)
 
         R = ConverterTools.read_fortran_file(self,self.band_file,self.fortran_to_replace)
         try:
@@ -372,14 +407,29 @@ class Wien2kConverter(ConverterTools):
         del ar
 
 
-    def convert_misc_input(self, bandwin_file, struct_file, outputs_file, misc_subgrp, SO, SP, n_k):
+    def convert_misc_input(self):
         """
-        Reads input for the band window from bandwin_file, which is case.oubwin,
-                            structure from struct_file, which is case.struct,
-                            symmetries from outputs_file, which is case.outputs.
+        Reads additional information on:
+        
+        - the band window from :file:`case.oubwin`,
+        - lattice parameters from :file:`case.struct`,
+        - symmetries from :file:`case.outputs`,
+        
+        if those Wien2k files are present and stores the data in the hdf5 archive.
+        This function is automatically called by :meth:`convert_dft_input <pytriqs.applications.dft.converters.wien2k_converter.Wien2kConverter.convert_dft_input>`. 
+
         """
 
         if not (mpi.is_master_node()): return
+        
+        # Check if SP, SO and n_k are already in h5
+        ar = HDFArchive(self.hdf_file, 'a')
+        if not (self.dft_subgrp in ar): raise IOError, "convert_misc_input: No %s subgroup in hdf file found! Call convert_dft_input first." %self.dft_subgrp
+        SP = ar[self.dft_subgrp]['SP']
+        SO = ar[self.dft_subgrp]['SO']
+        n_k = ar[self.dft_subgrp]['n_k']
+        del ar
+        
         things_to_save = []
 
         # Read relevant data from .oubwin/up/dn files
@@ -392,7 +442,7 @@ class Wien2kConverter(ConverterTools):
         elif SP == 1:
             files = [self.bandwin_file+'up', self.bandwin_file+'dn']
         else: # SO and SP can't both be 1
-            assert 0, "convert_transport_input: Reding oubwin error! Check SP and SO!"
+            assert 0, "convert_misc_input: Reding oubwin error! Check SP and SO!"
         
         band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(SP + 1 - SO)]
         for isp, f in enumerate(files):
@@ -463,21 +513,26 @@ class Wien2kConverter(ConverterTools):
 
         # Save it to the HDF:
         ar=HDFArchive(self.hdf_file,'a')
-        if not (misc_subgrp in ar): ar.create_group(misc_subgrp)
-        for it in things_to_save: ar[misc_subgrp][it] = locals()[it]
+        if not (self.misc_subgrp in ar): ar.create_group(self.misc_subgrp)
+        for it in things_to_save: ar[self.misc_subgrp][it] = locals()[it]
         del ar
 
 
     def convert_transport_input(self):
         """ 
-        Reads the input files necessary for transport calculations
-        and stores the data in the HDFfile
+        Reads the necessary information for transport calculations on:
+        
+        - the optical band window and the velocity matrix elements from :file:`case.pmat`
+
+        and stores the data in the hdf5 archive.
+ 
         """
+        
         if not (mpi.is_master_node()): return
         
         # Check if SP, SO and n_k are already in h5
         ar = HDFArchive(self.hdf_file, 'a')
-        if not (self.dft_subgrp in ar): raise IOError, "convert_transport_input: No %s subgroup in hdf file found! Call convert_dmft_input first." %self.dft_subgrp
+        if not (self.dft_subgrp in ar): raise IOError, "convert_transport_input: No %s subgroup in hdf file found! Call convert_dft_input first." %self.dft_subgrp
         SP = ar[self.dft_subgrp]['SP']
         SO = ar[self.dft_subgrp]['SO']
         n_k = ar[self.dft_subgrp]['n_k']
@@ -535,7 +590,23 @@ class Wien2kConverter(ConverterTools):
 
     def convert_symmetry_input(self, orbits, symm_file, symm_subgrp, SO, SP):
         """
-        Reads input for the symmetrisations from symm_file, which is case.sympar or case.symqmc.
+        Reads and stores symmetrisation data from symm_file, which can be is case.sympar or case.symqmc.
+
+        Parameters
+        ----------
+        orbits : list of dicts
+                 This is either shells or corr_shells depending on whether the symmetry 
+                 information is for correlated shells or partial projectors.
+        symm_file : string
+                    Name of the file containing symmetry data. 
+                    This is case.symqmc for correlated shells and case.sympar for partial projectors.
+        symm_subgrp : string, optional
+                      Name of subgroup storing symmetry data.
+        SO : integer
+             Is spin-orbit coupling considered?
+        SP : integer
+             Is the system spin-polarised?
+
         """
 
         if not (mpi.is_master_node()): return

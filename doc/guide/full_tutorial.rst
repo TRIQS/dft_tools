@@ -1,5 +1,3 @@
-.. index:: tutorial on Ce within Hub.-I approximation
-
 .. _DFTDMFTtutorial:
 
 DFT+DMFT tutorial: Ce with Hubbard-I approximation
@@ -7,7 +5,11 @@ DFT+DMFT tutorial: Ce with Hubbard-I approximation
 
 In this tutorial we will perform DFT+DMFT :program:`Wien2k` calculations of the high-temperature :math:`\gamma`-phase of Ce employing the 
 Hubbard-I approximation for its localized *4f* shell.
-First we create the Wien2k :file:`Ce-gamma.struct` file as described in `Wien2k manual <http://www.wien2k.at/reg_user/textbooks/usersguide.pdf>`_  
+
+Wien2k setup
+------------
+
+First we create the Wien2k :file:`Ce-gamma.struct` file as described in the `Wien2k manual <http://www.wien2k.at/reg_user/textbooks/usersguide.pdf>`_  
 for the :math:`\gamma`-Ce fcc structure with lattice parameter of 9.75 a.u.
 
 .. literalinclude:: Ce-gamma.struct
@@ -23,6 +25,8 @@ Hence, the initialization script is executed as follows ::
 and then LDA calculations of non-magnetic :math:`\gamma`-Ce are performed by launching the :program:`Wien2k` :program:`run` script. 
 These self-consistent LDA calculations will typically take a couple of minutes.
 
+DMFTPROJ
+--------
 
 Then we create :file:`Ce-gamma.indmftpr` file specifying parameters for construction of Wannier orbitals representing *4f* states:
 
@@ -66,14 +70,10 @@ This program produces the following files:
 Now we have all necessary input from :program:`Wien2k` for running DMFT calculations. 
 
 
-.. index:: Hubbard-I in TRIQS
+DMFT setup: Hubbard-I calculations in TRIQS
+--------------------------------------------
 
-.. _HubITRIQS:
-
-Hubbard-I calculations in TRIQS
--------------------------------
-
-In order to run DFT+DMFT calculations within Hubbard-I we need the corresponding python script, :ref:`Ce-gamma-script`. 
+In order to run DFT+DMFT calculations within Hubbard-I we need the corresponding python script, :ref:`Ce-gamma_script`. 
 It is generally similar to the script for the case of DMFT calculations with the CT-QMC solver (see :ref:`advanced`), 
 however there are also some differences. First, instead of *pytriqs.applications.dft.solver_multiband* we import Hubbard-I solver ::
 
@@ -122,13 +122,12 @@ Then the double counting is recalculated and the correlation energy is computed 
 Finally, we compute the modified charge density and save it as well as correlational correction to the total energy in 
 :file:`Ce-gamma.qdmft` file, which is then read by :program:`lapw2` in the case of self-consistent DFT+DMFT calculations.
 
-.. index:: running DFT+DMFT calculations
 
-Running DFT+DMFT calculations
------------------------------
+Running single-shot DFT+DMFT calculations
+------------------------------------------
 
 After having prepared the script one may run one-shot DMFT calculations by
-executing :ref:`Ce-gamma-script` with :program:`pytriqs` on a single processor::
+executing :ref:`Ce-gamma_script` with :program:`pytriqs` on a single processor::
 
    pytriqs Ce-gamma.py
 
@@ -139,6 +138,10 @@ or in parallel mode::
 where :program:`mpirun` launches these calculations in parallel mode and
 enables MPI. The exact form of this command will, of course, depend on
 mpi-launcher installed in your system.
+
+
+Running self-consistent DFT+DMFT calculations
+---------------------------------------------
 
 Instead of doing one-shot run one may also  perform fully self-consistent
 DFT+DMFT calculations, as we will do in this tutorial. We launch these
@@ -171,8 +174,9 @@ One may also check the convergence in total energy::
    :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.56285812
    :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.56287381
 
-Calculating DOS with Hubbard-I
-------------------------------
+
+Post-processing and data analysis
+---------------------------------
 
 Within Hubbard-I one may also easily obtain the angle-resolved spectral function (band
 structure) and integrated spectral function (density of states or DOS).  In
@@ -180,7 +184,7 @@ difference with the CT-QMC approach one does not need to provide the
 real-frequency self-energy (see :ref:`analysis`) as it can be calculated directly
 in the Hubbard-I solver.
 
-The corresponding script :ref:`Ce-gamma_DOS-script` contains several new parameters ::
+The corresponding script :ref:`Ce-gamma_DOS_script` contains several new parameters ::
 
    ommin=-4.0    # bottom of the energy range for DOS calculations 
    ommax=6.0     # top  of the energy range for DOS calculations
@@ -204,17 +208,15 @@ We may first increase the number of **k**-points in BZ to 10000 by executing :pr
   
    x kgen
 
-and then by executing :ref:`Ce-gamma_DOS-script` with :program:`pytriqs`::
+and then by executing :ref:`Ce-gamma_DOS_script` with :program:`pytriqs`::
 
    pytriqs Ce-gamma_DOS.py
 
 In result we get the total DOS for spins `up` and `down` (identical in our paramagnetic case) in :file:`DOScorrup.dat` and :file:`DOScorrdown.dat` files, respectively, as well as projected DOSs written in the corresponding files as described in :ref:`analysis`. 
 In our case, for example, the files :file:`DOScorrup.dat` and :file:`DOScorrup_proj3.dat` contain the total DOS for spin *up* and the corresponding projected DOS for Ce *4f* orbital, respectively. They are plotted below.
 
-.. image:: Ce_DOS.png
+.. image:: images_scripts/Ce_DOS.png
    :width: 700
    :align: center
 
 As one may clearly see, the Ce *4f* band is split by the local Coulomb interaction into the filled lower Hubbard band and empty upper Hubbard band (the latter is additionally split into several peaks due to the Hund's rule coupling and multiplet effects). 
-
-

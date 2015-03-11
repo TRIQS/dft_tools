@@ -32,14 +32,30 @@ class HkConverter(ConverterTools):
     Conversion from general H(k) file to an hdf5 file that can be used as input for the SumKDFT class.
     """
 
-    def __init__(self, hk_filename, hdf_filename, dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input', repacking = False):
+    def __init__(self, filename, hdf_filename = None, dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input', repacking = False):
         """
-        Init of the class.
+        Initialise the class.
+
+        Parameters
+        ----------
+        filename : string
+                   Name of file containing the H(k) and other relevant data.
+        hdf_filename : string, optional
+                       Name of hdf5 archive to be created.
+        dft_subgrp : string, optional
+                     Name of subgroup storing necessary DFT data.
+        symmcorr_subgrp : string, optional
+                          Name of subgroup storing correlated-shell symmetry data.
+                          The group is actually empty; it is just included for compatibility.
+        repacking : boolean, optional
+                    Does the hdf5 archive need to be repacked to save space?
+ 
         """
 
-        assert type(hk_filename)==StringType,"HkConverter: hk_filename must be a filename."
+        assert type(filename)==StringType,"HkConverter: filename must be a filename."
+        if hdf_filename is None: hdf_filename = filename+'.h5'
         self.hdf_file = hdf_filename
-        self.dft_file = hk_filename
+        self.dft_file = filename
         self.dft_subgrp = dft_subgrp
         self.symmcorr_subgrp = symmcorr_subgrp
         self.fortran_to_replace = {'D':'E', '(':' ', ')':' ', ',':' '}
@@ -52,7 +68,17 @@ class HkConverter(ConverterTools):
 
     def convert_dft_input(self, first_real_part_matrix = True, only_upper_triangle = False, weights_in_file = False):
         """
-        Reads the input files, and stores the data in the HDFfile
+        Reads the appropriate files and stores the data for the dft_subgrp in the hdf5 archive. 
+
+        Parameters
+        ----------
+        first_real_part_matrix : boolean, optional
+                                 Should all the real components for given k be read in first, followed by the imaginary parts?
+        only_upper_triangle : boolean, optional
+                              Should only the upper triangular part of H(k) be read in? 
+        weights_in_file : boolean, optional
+                          Are the k-point weights to be read in?
+
         """
                    
         # Read and write only on the master node

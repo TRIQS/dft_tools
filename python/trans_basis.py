@@ -1,17 +1,33 @@
 from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.converters import Wien2kConverter
-from pytriqs.gf.local.block_gf import BlockGf
-from pytriqs.gf.local.gf_imfreq import GfImFreq
+from pytriqs.gf.local import *
 from pytriqs.archive import *
 import pytriqs.utility.mpi as mpi
 import numpy
 import copy
 
 class TransBasis:
-    '''Computates rotations into a new basis in order to make certain quantities diagonal.'''
+    """
+    Computates rotations into a new basis, using the condition that a given property is diagonal in the new basis.
+    """
 
     def __init__(self, SK=None, hdf_datafile=None):
-        '''Inits the class by reading the input.'''
+        """
+        Initialization of the class. There are two ways to do so:
+        
+        - existing SumkLDA class :  when you have an existing SumkLDA instance
+        - from hdf5 archive :  when you want to use data from hdf5 archive
+        
+        Giving the class instance overrides giving the string for the hdf5 archive.
+        
+        Parameters
+        ----------
+        SK : class SumkLDA, optional
+             Existing instance of SumkLDA class.
+        hdf5_datafile : string, optional
+                        Name of hdf5 archive to be used.
+        
+        """
 
         if SK is None:
             # build our own SK instance
@@ -31,8 +47,24 @@ class TransBasis:
         self.w = numpy.identity(SK.corr_shells[0]['dim'])
 
 
-    def __call__(self, prop_to_be_diagonal = 'eal'):
-        '''Calculates the diagonalisation.'''
+    def calculate_diagonalisation_matrix(self, prop_to_be_diagonal = 'eal'):
+        """
+        Calculates the diagonalisation matrix w, and stores it as member of the class.
+        
+        Parameters
+        ----------
+        prop_to_be_diagonal : string, optional
+                              Defines the property to be diagonalized.
+                              
+                              - 'eal' : local hamiltonian (i.e. crystal field)
+                              - 'dm' : local density matrix
+                              
+        Returns
+        -------
+        wsqr : double
+               Measure for the degree of rotation done by the diagonalisation. wsqr=1 means no rotation.
+        
+        """
 
         if prop_to_be_diagonal == 'eal':
             prop = self.SK.eff_atomic_levels()[0]
@@ -57,7 +89,19 @@ class TransBasis:
 
 
     def rotate_gf(self,gf_to_rot):
-        '''Rotates a given GF into the new basis.'''
+        """
+        Uses the diagonalisation matrix w to rotate a given GF into the new basis.
+        
+        Parameters
+        ----------
+        gf_to_rot : BlockGf
+                    Green's function block to rotate.
+                    
+        Returns
+        -------
+        gfreturn : BlockGf
+                   Green's function rotated into the new basis.
+        """
 
         # build a full GF
         gfrotated = BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = gf_to_rot.mesh)) for block,inner in self.SK.gf_struct_sumk[0] ], make_copies = False)
@@ -84,7 +128,15 @@ class TransBasis:
 
 
     def write_trans_file(self, filename):
-        '''Writes the new transformation into a file readable by dmftproj.'''
+        """
+        Writes the new transformation T into a file readable by dmftproj. By that, the requested quantity is
+        diagonal already at input.
+        
+        Parameters
+        ----------
+        filename : string
+                   Name of the file where the transformation is stored.
+        """
 
         f = open(filename,'w')
         Tnew = self.T.conjugate()

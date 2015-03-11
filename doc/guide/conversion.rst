@@ -1,22 +1,26 @@
+.. _conversion:
 
-The interface
-=============
+Converting DFT data to a hdf archive
+====================================
+
+.. warning::
+  TO BE UPDATED!
+
+EXPLAIN CONCEPT OF CONVERSION
+
+Wien2k + dmftproj
+-----------------
+
+LISTING OF FILES NECESSARY FOR EACH SUBGROUP
 
 The basic function of the interface to the Wien2k program package is to take
 the output of the program that constructs the projected local orbitals
 (:program:`dmftproj`, for documentation see 
-:download:`TutorialDmftproj.pdf <TutorialDmftproj.pdf>`), 
+:download:`TutorialDmftproj.pdf <images_scripts/TutorialDmftproj.pdf>`), 
 and to store all the necessary information into an hdf5 file. This latter file
 is then used to do the DMFT calculation. The reason for this structure is that
 this enables the user to have everything that is necessary to reproduce the
 calculation in one single hdf5 archive.
-
-.. index:: Interface to Wien2k
-
-.. _interfacetowien:
-
-The interface to Wien2k
------------------------
 
 As explained above, this interface produces an hdf5 archive out of the files that
 were written by the band structure package :program:`Wien2k/dmftproj`. 
@@ -60,6 +64,9 @@ After this step, all the necessary information for the DMFT loop is stored in th
 the string variable `Converter.hdf_file` gives the file name of the archive.
 You can now proceed with :ref:`DFTDMFTmain`.
 
+A general H(k)
+--------------
+LISTING OF FILES NECESSARY, NAME OF CONVERTER
 
 Data for post-processing
 ------------------------

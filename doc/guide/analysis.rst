@@ -3,6 +3,9 @@
 Tools for analysis
 ==================
 
+.. warning::
+  TO BE UPDATED!
+
 This section explains how to use some tools of the package in order to analyse the data.
 
 .. warning::

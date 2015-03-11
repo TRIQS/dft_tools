@@ -9,4 +9,3 @@ Table of contents
    documentation
    issues
    about
-

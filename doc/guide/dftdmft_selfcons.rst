@@ -1,11 +1,17 @@
-.. index:: full charge self consistency
+.. _full_charge_selfcons:
 
 Full charge self consistency
 ============================
 
+Wien2k + dmftproj
+-----------------
+
+.. warning::
+  TO BE UPDATED!
+
 .. warning::
   Before using this tool, you should be familiar with the band-structure package :program:`Wien2k`, since
-  the calculation is controlled by the :program:`Wien2k` scripts! See also the :download:`dmftproj tutorial<TutorialDmftproj.pdf>`.
+  the calculation is controlled by the :program:`Wien2k` scripts! See also the :download:`dmftproj tutorial<images_scripts/TutorialDmftproj.pdf>`.
 
 In order to do charge self-consistent calculations, we have to tell the band structure program about the
 changes in the charge density due to correlation effects. In the following, we discuss how to use the 
@@ -26,14 +32,14 @@ and store it in a format such that :program:`Wien2k` can read it. Therefore, aft
 previous section, we symmetrise the self energy, and recalculate the impurity Green function::
 
   SK.symm_deg_gf(S.Sigma,orb=0)
-  S.G << inverse(S.G0) - S.Sigma
-  S.G.invert()
+  S.G_iw << inverse(S.G0_iw) - S.Sigma_iw
+  S.G_iw.invert()
 
 These steps are not necessary, but can help to reduce fluctuations in the total energy. 
 Now we calculate the modified charge density::
 
   # find exact chemical potential
-  SK.put_Sigma(Sigma_imp = [ S.Sigma ])
+  SK.put_Sigma(Sigma_imp = [ S.Sigma_iw ])
   chemical_potential = SK.calc_mu( precision = 0.000001 )
   dN, d = SK.calc_density_correction(filename = dft_filename+'.qdmft')
   SK.save(['chemical_potential','dc_imp','dc_energ'])
@@ -44,7 +50,7 @@ is stored in the file `dft_filename.qdmft`, which is later read by the :program:
 the chemical potential into the hdf5 archive.
 We need also the correlation energy, which we evaluate by the Migdal formula::
 
-  correnerg = 0.5 * (S.G * S.Sigma).total_density()
+  correnerg = 0.5 * (S.G_iw * S.Sigma_iw).total_density()
 
 From this value, we substract the double counting energy::
 
@@ -85,3 +91,11 @@ unstable convergence, you have to adjust the parameters such as
 
 In the next section, :ref:`DFTDMFTtutorial`, we will see in a detailed
 example how such a self consistent calculation is performed.
+
+VASP + wannier90
+----------------
+
+.. warning::
+  IN PROGRESS!
+
+

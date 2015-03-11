@@ -13,7 +13,7 @@ for us to solve the issue please follow these guidelines:
 #. If you have a problem during the installation, give us information about
    your operating system and the compiler you are using. Include the outputs of
    the ``cmake`` and ``make`` commands as well as the ``CMakeCache.txt`` file
-   which is in the build directory. Please include these outputs in a 
+   which is in the build directory. Please include these outputs in a
    `gist <http://gist.github.com/>`_ file referenced in the issue.
 
 #. If you are experiencing a problem during the execution of the application, provide

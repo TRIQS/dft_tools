@@ -25,7 +25,22 @@ import pytriqs.utility.mpi as mpi
 class ConverterTools:
 
     def read_fortran_file(self,filename,to_replace):
-        """ Returns a generator that yields all numbers in the Fortran file as float, one by one"""
+        """
+        Returns a generator that yields all numbers in the Fortran file as float, with possible replacements.
+
+        Parameters
+        ----------
+        filename : string
+                   Name of Fortran-produced file.
+        to_replace : dict of str:str
+                     Dictionary defining old_char:new_char.
+    
+        Yields
+        ------
+        string
+            The next number in file.
+
+        """
         import os.path
         import string
         if not(os.path.exists(filename)) : raise IOError, "File %s does not exist."%filename
@@ -35,9 +50,15 @@ class ConverterTools:
 
 
     def repack(self):
-        """Calls the h5repack routine, in order to reduce the file size of the hdf5 archive.
-           Should only be used BEFORE the first invokation of HDFArchive in the program, otherwise
-           the hdf5 linking is broken!!!"""
+        """
+        Calls the h5repack routine in order to reduce the file size of the hdf5 archive.
+
+        Note
+        ----
+        Should only be used before the first invokation of HDFArchive in the program, 
+        otherwise the hdf5 linking will be broken.
+
+        """
 
         import subprocess
 
@@ -53,12 +74,29 @@ class ConverterTools:
 
     def det_shell_equivalence(self,corr_shells):
         """
-        The number of inequivalent shells is determined from corr_shells, and a mapping is given as
-        corr_to_inequiv(i_corr_shells) = i_inequiv_shells
-        inequiv_to_corr(i_inequiv_shells) = i_corr_shells
-        in order to put the self energies to all equivalent shells, and for extracting Gloc
-        """
+        Determine the equivalence of correlated shells.
 
+        Parameters
+        ----------
+        corr_shells : list of dicts
+                      See documentation of necessary hdf5 elements.
+    
+        Returns
+        -------
+        n_inequiv_shells : integer
+                           Number of inequivalent shells.
+        corr_to_inequiv : list
+                          Mapping between correlated shell index and inequivalent shell index.
+                          corr_to_inequiv(i_corr_shells) = i_inequiv_shells 
+        inequiv_to_corr : list
+                          Mapping between inequivalent shell index and correlated shell index.
+                          inequiv_to_corr(i_inequiv_shells) = i_corr_shells
+
+        Note
+        ----
+        This is needed to set the self energies of all equivalent shells and to extract G_loc.
+
+        """
         corr_to_inequiv = [0 for i in range(len(corr_shells))]
         inequiv_to_corr = [0]
         n_inequiv_shells = 1

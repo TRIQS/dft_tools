@@ -1,11 +1,7 @@
-.. index:: Transport
-
 .. _Transport:
 
 Transport calculations
 ======================
-
-.. index:: Theory
 
 Formalism
 ---------
@@ -34,26 +30,24 @@ The frequency depended optical conductivity is given by
 
    \sigma(\Omega) = N_{sp} \pi e^2 \hbar \int{d\omega \Gamma_{\alpha\beta}(\omega+\Omega/2,\omega-\Omega/2)\frac{f(\omega-\Omega/2)-f(\omega+\Omega/2)}{\Omega}}.
 
-.. index:: Prerequisite
 
 Prerequisites
 -------------
-First perform a standard DFT+DMFT calculation for your desired material (see :ref:`DFTDMFTmain`) and obtain the real-frequency self energy by doing an
+First perform a standard :ref:`DFT+DMFT calculation <dftdmft_selfcons>` for your desired material and obtain the real-frequency self energy by doing an
 analytic continuation.
 
 .. note::
    It is crucial to perform the analytic continuation in such a way that the obtained real-frequency self energy is accurate around the Fermi energy as only its
    low energy structure influences the final results!
 
-Besides the self energy the Wien2k files read by the transport converter are:
+Besides the self energy the Wien2k files read by the transport converter (:meth:`convert_transport_input <pytriqs.applications.dft.converters.wien2k_converter.Wien2kConverter.convert_transport_input>`) are:
    * :file:`.struct`: The lattice constants specified in the struct file are used to calculate the unit cell volume.
    * :file:`.outputs`: In this file the k-point symmetries are given.
    * :file:`.oubwin`: Contains the indices of the bands within the projected subspace (written by :program:`dmftproj`) for each k-point.
    * :file:`.pmat`: This file is the output of the Wien2k optics package and contains the velocity (momentum) matrix elements between all bands in the desired energy
      window for each k-point. How to use the optics package is described below.
-   * :file:`.h5`: The hdf file has to be present and should contain the dft_input subgroup. Otherwise :class:`convert_dft_input` needs to be called before :class:`convert_transport_input`.
+   * :file:`.h5`: The hdf5 archive has to be present and should contain the dft_input subgroup. Otherwise :meth:`convert_dft_input <pytriqs.applications.dft.converters.wien2k_converter.Wien2kConverter.convert_dft_input>` needs to be called before :meth:`convert_transport_input <pytriqs.applications.dft.converters.wien2k_converter.Wien2kConverter.convert_transport_input>`.
 
-.. index:: Wien2k optics package
 
 Wien2k optics package
 ---------------------
@@ -67,15 +61,13 @@ The basics steps to calculate the matrix elements of the momentum operator with 
     6) Run `x optic`. 
 
 Additionally the input file :file:`case.inop` is required. A detail description on how to setup this file can be found in the Wien2k user guide [#userguide]_ on page 166.
-Here the energy window can be chosen according to the window used for :program:`dmftprj`. However, keep in mind that energies have to be specified in absolute values! Furthermore it is important 
-to set line 6 to ON for printing the matrix elements to the :file:`.pmat` file.
+Here the energy window can be chosen according to the window used for :program:`dmftproj`. However, keep in mind that energies have to be specified in absolute values! Furthermore it is important to set line 6 to ON for printing the matrix elements to the :file:`.pmat` file.
 
-.. index:: Using the transport code.
 
 Using the transport code
 ------------------------
 
-First we have to read the Wien2k files and store the relevant information in the hdf-file::
+First we have to read the Wien2k files and store the relevant information in the hdf5 archive::
 
     from pytriqs.applications.dft.converters.wien2k_converter import *
     from pytriqs.applications.dft.sumk_dft_tools import *
@@ -95,17 +87,14 @@ Additionally we need to read and set the self energy, the chemical potential and
 
 As next step we can calculate the transport distribution :math:`\Gamma_{\alpha\beta}(\omega)`::
 
-    SK.transport_distribution(directions=['xx'], Om_mesh=[0.00, 0.02], energy_window=[-0.3,0.3], 
+    SK.transport_distribution(directions=['xx'], Om_mesh=[0.0, 0.1], energy_window=[-0.3,0.3], 
                                                  with_Sigma=True, broadening=0.0, beta=40)
 
-The parameters are:
-    * `directions`: :math:`\alpha` and :math:`\beta` (e.g. xx, yy, xz, ...)
-    * `Om_mesh`: :math:`\Omega`-mesh for the optical conductivity. Note that the code repines this mesh to the closest values on the self energy mesh! The new mesh is stored in `Om_meshr`. 
-      The Seebeck coefficient is only calculated if :math:`\Omega=0.0` is included.
-    * `energy_window`: Limits for the integration over :math:`\omega` (Due to the Fermi functions the integrand is only of considerable size in a small 
-      window around the Fermi energy). For optical conductivity calculations the window is automatically enlarged by :math:`\Omega` .
-    * `with_Sigma`: If this parameter is set to False then Sigma is set to 0 (i.e. the DFT band structure :math:`A(k,\omega)` is taken).
-    * `broadening`: The numerical broadening should be set to a finite value for with_Sigma = False.
+Here the transport distribution is calculated in :math:`xx` direction for the frequencies :math:`\Omega=0.0` and :math:`0.1`. 
+To use the previously obtained self energy we set with_Sigma to True and the broadening to :math:`0.0`.
+As we also want to calculate the Seebeck coefficient we have to include :math:`\Omega=0.0` in the mesh. 
+Note that the current version of the code repines the :math:`\Omega` values to the closest values on the self energy mesh.
+For complete description of the input parameters see the :meth:`transport_distribution reference <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools.transport_distribution>`.
 
 The resulting transport distribution is not automatically saved, but this can be easily achieved with::
     
@@ -119,7 +108,6 @@ Finally the optical conductivity :math:`\sigma(\Omega)` and the Seebeck coeffici
 
 It is strongly advised to check convergence in the number of k-points!
 
-.. index:: References
 
 References
 ----------

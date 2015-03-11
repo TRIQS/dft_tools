@@ -1,7 +1,87 @@
-.. _advanced:
+.. highlight:: python
+
+.. _singleshot:
+
+Single-shot DFT+DMFT
+====================
+
+.. warning::
+  TO BE UPDATED!
+
+After having set up the hdf5 archive, we can now do our DFT+DMFT calculation. It consists of
+initialisation steps, and the actual DMFT self consistency loop.
+
+Initialisation of the calculation
+---------------------------------
+
+Before doing the calculation, we have to intialize all the objects that we will need. The first thing is the 
+:class:`SumkDFT` class. It contains all basic routines that are necessary to perform a summation in k-space 
+to get the local quantities used in DMFT. It is initialized by::
+
+  from pytriqs.applications.dft.sumk_dft import *
+  SK = SumkDFT(hdf_file = filename)
+
+
+Setting up the impurity solver
+------------------------------
+
+The next step is to setup the impurity solver. 
+For more details here, see the `CTHYB <http://ipht.cea.fr/triqs/1.2/applications/cthyb/>`_ documentation.
+
+
+Doing the DMFT loop
+-------------------
+
+Having initialised the SumK class and the Solver, we can proceed with the DMFT
+loop itself. As explained in the tutorial, we have to set up the loop over DMFT
+iterations and the self-consistency condition::
+
+  n_loops = 5
+  for iteration_number in range(n_loops) :            # start the DMFT loop
+
+          SK.put_Sigma(Sigma_imp = [ S.Sigma ])              # Put self energy to the SumK class
+          chemical_potential = SK.calc_mu()                  # calculate the chemical potential for the given density
+          S.G_iw << SK.extract_G_loc()[0]                    # extract the local Green function
+          S.G0_iw << inverse(S.Sigma_iw + inverse(S.G_iw))   # finally get G0, the input for the Solver
+
+          S.solve(h_loc=h_loc, **p)                          # now solve the impurity problem
+
+	  dm = S.G_iw.density()                                                 # Density matrix of the impurity problem  
+          SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0, use_dc_formula=dc_type) # Set the double counting term
+          SK.save(['chemical_potential','dc_imp','dc_energ'])                   # Save data in the hdf5 archive
+
+These basic steps are enough to set up the basic DMFT Loop. For a detailed
+description of the :class:`SumkDFT` routines, see the reference manual. After
+the self-consistency steps, the solution of the Anderson impurity problem is
+calculation by CTQMC.  Different to model calculations, we have to do a few
+more steps after this, because of the double-counting correction. We first
+calculate the density of the impurity problem. Then, the routine `calc_dc`
+takes as parameters this density matrix, the Coulomb interaction, Hund's rule
+coupling, and the type of double-counting that should be used. Possible values
+for `use_dc_formula` are:
+
+  * `0`: Full-localised limit
+  * `1`: DC formula as given in K. Held, Adv. Phys. 56, 829 (2007).
+  * `2`: Around-mean-field
+
+At the end of the calculation, we can save the Greens function and self energy into a file::
+
+  from pytriqs.archive import HDFArchive
+  import pytriqs.utility.mpi as mpi
+  if mpi.is_master_node():
+      ar = HDFArchive("YourDFTDMFTcalculation.h5",'w')
+      ar["G"] = S.G_iw
+      ar["Sigma"] = S.Sigma_iw
+
+This is it! 
+
+These are the essential steps to do a one-shot DFT+DMFT calculation. 
+For full charge-self consistent calculations, there are some more things 
+to consider, which we will see later on.
+
 
 A more advanced example
-=======================
+-----------------------
 
 Normally, one wants to adjust some more parameters in order to make the calculation more efficient. Here, we
 will see a more advanced example, which is also suited for parallel execution. 
@@ -64,7 +144,7 @@ Now we can use all this information to initialise the :class:`SumkDFT` class::
 
   SK = SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=use_blocks)
 
-The next step is to initialise the Solver::
+The next step is to initialise the  :class:`Solver` class::
 
   n_orb = SK.corr_shells[0]['dim']
   l = SK.corr_shells[0]['l']
@@ -162,6 +242,3 @@ refinement::
       SK.save(['chemical_potential','dc_imp','dc_energ'])
 
 This is all we need for the DFT+DMFT calculation. At the end, all results are stored in the hdf5 output file.
-
-
-

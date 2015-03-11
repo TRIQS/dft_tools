@@ -1,17 +1,24 @@
+hdf5 structure
+==============
 
-H5 input file and Converters
-============================
+All the data is stored using the hdf5 standard, as described also in the
+documentation of the TRIQS package itself. In order to do a DMFT calculation,
+using input from DFT applications, a converter is needed on order to provide
+the necessary data in the hdf5 format. 
 
-All the data is stored using the hdf5 standard, as described also in the documentation of the TRIQS package itself. In order to do a DMFT calculation, using input from DFT applications, a converter is needed on order to provide the necessary data in the hdf5 format. 
+groups and their formats
+------------------------
 
+In order to be used with the DMFT routines, the following data needs to be
+provided in the hdf5 file. It contains a lot of information in order to perform
+DMFT calculations for all kinds of situations, e.g. d-p Hamiltonians, more than
+one correlated atomic shell, or using symmetry operations for the k-summation.
+We store all data in subgroups of the hdf5 archive:
 
-
-hdf5 data format
-----------------
-
-In order to be used with the DMFT routines, the following data needs to be provided in the hdf5 file. It contains a lot of information in order to perform DMFT calculations for all kinds of situations, e.g. d-p Hamiltonians, more than one correlated atomic shell, or using symmetry operations for the k-summation. We store all data in subgroups of the hdf5 archive:
-
-:program:`Main data`: There needs to be one subgroup for the main data of the calculation. The default name of this group is `dft_input`. Its contents are
+Main data 
+^^^^^^^^^
+There needs to be one subgroup for the main data of the
+calculation. The default name of this group is `dft_input`. Its contents are
 
 =================  ======================================================================  =====================================================================================
 Name               Type                                                                    Meaning
@@ -70,21 +77,30 @@ hopping            numpy.array.complex,                                         
 =================  ======================================================================  =====================================================================================
 
 
-:program:`Symmetry operations`: In this subgroup we store all the data for applying the symmetry 
-    operations in the DMFT loop (in case you want to use symmetry operations). The default name of this subgroup is `SymmCorr`. This information is needed only if symmetry operations are used to do the k summation. To be continued...
+Symmetry operations
+^^^^^^^^^^^^^^^^^^^ 
+In this subgroup we store all the data for applying the symmetry operations in
+the DMFT loop (in case you want to use symmetry operations). The default name
+of this subgroup is `dft_symmcorr_input`. This information is needed only if symmetry
+operations are used to do the k summation. To be continued...
 
-
-Wien2k Converter
-----------------
-
-The dft_tools package comes with a converter to use `Wien2k <http://www.wien2k.at>`_ band structure calculations as input for the DMFT part of the calculation, through the construction of projective Wannier functions. The first step is done by the program :program:`dmftproj`, producing text output files. In the second step, this ouput is read and converted into the hdf5 format, using the python module :class:`Wien2kConverter`.
-
-HERE COMES A LISTING OF THE FUNCTIONS.
+.. warning::
+   TO BE COMPLETED!
 
 General and simple H(k) Converter
 ---------------------------------
 
-The above described converter of the Wien2k input is quite involved, since Wien2k provides a lot of information, e.g. about symmetry operations, that can be used in the calculation. However, sometimes we want to use a light implementation where the input consists basically only of the Hamiltonian matrix in Wannier basis, given at a grid of k points in the first Brillouin zone. For this purpose, a simple converter is included in the package, called :class:`HkConverter`, which is implemented for the simplest case of paramagnetic DFT calculations without spin-orbit coupling. It reads a simple, easy to construct text file, and produces an archive that can be used for the DMFT calculations. An example input file for a structure with one correlated site with 3 t2g orbitals in the unit cell contains the following:
+The above described converter of the Wien2k input is quite involved, since
+Wien2k provides a lot of information, e.g. about symmetry operations, that can
+be used in the calculation. However, sometimes we want to use a light
+implementation where the input consists basically only of the Hamiltonian
+matrix in Wannier basis, given at a grid of k points in the first Brillouin
+zone. For this purpose, a simple converter is included in the package, called
+:class:`HkConverter`, which is implemented for the simplest case of
+paramagnetic DFT calculations without spin-orbit coupling. It reads a simple,
+easy to construct text file, and produces an archive that can be used for the
+DMFT calculations. An example input file for a structure with one correlated
+site with 3 t2g orbitals in the unit cell contains the following:
 
   10               <- n_k
 
@@ -98,19 +114,19 @@ The above described converter of the Wien2k input is quite involved, since Wien2
 
   1 1 2 3 0 0      <- corr_shells, as above: atom, sort, l, dim, SO, dummy
 
-  2 2 3            <- n_reps, dim_reps (length 2, because eg/t2g splitting)
+  2 2 3            <- n_reps, dim_reps (length 2, because eg/t2g splitting) for each shell
 
-After this header, we give the Hamiltonian matrices for al the k-points. for each k-point we give first the matrix of the real part, then the matrix of the imaginary part. The projection matrices are set automatically to unity matrices, no rotations, no symmetry operations are used. That means that the symmetry sub group in the hdf5 archive needs not be set, since it is not used. It is furthermore assumed that all k-points have equal weight in the k-sum. Note that the input file should contain only the numbers, not the comments given in above example.
+After this header, we give the Hamiltonian matrices for al the k-points. for
+each k-point we give first the matrix of the real part, then the matrix of the
+imaginary part. The projection matrices are set automatically to unity
+matrices, no rotations, no symmetry operations are used. That means that the
+symmetry sub group in the hdf5 archive needs not be set, since it is not used.
+It is furthermore assumed that all k-points have equal weight in the k-sum.
+Note that the input file should contain only the numbers, not the comments
+given in above example.
 
-The Hamiltonian matrices can be taken, e.g., from Wannier90, which contructs the Hamiltonian in a maximally localised Wannier basis.
+The Hamiltonian matrices can be taken, e.g., from Wannier90, which contructs
+the Hamiltonian in a maximally localised Wannier basis.
 
-Note that with this simplified converter, no full charge self consistent calculations are possible!
-
-
-
-  
-
-
-
-
-
+Note that with this simplified converter, no full charge self consistent
+calculations are possible!

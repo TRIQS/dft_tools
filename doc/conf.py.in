@@ -5,11 +5,16 @@
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
               'sphinx.ext.intersphinx',
-              'matplotlib.sphinxext.plot_directive']
+              'matplotlib.sphinxext.plot_directive',
+              'sphinx.ext.doctest',
+              'sphinx.ext.todo',
+              'sphinx.ext.viewcode',
+              'sphinx.ext.autosummary',
+              'numpydoc']
 
 source_suffix = '.rst'
 
-project = u'TRIQS Interface to Wien2k'
+project = u'TRIQS_DFT Tools'
 copyright = u'2011-2013, M. Aichhorn, L. Pourovskii, V. Vildosola, C. Martins'
 version = '@DFT_TOOLS_VERSION@'
 release = '@DFT_TOOLS_RELEASE@'
@@ -21,7 +26,7 @@ html_theme = 'triqs'
 html_theme_path = ['@TRIQS_THEMES_PATH@']
 html_show_sphinx = False
 html_context = {'header_title': 'dft_tools',
-                'header_subtitle': 'Connecting <a class="triqs" style="font-size: 12px" href="http://ipht.cea.fr/triqs">TRIQS</a>  to DFT packages',
+                'header_subtitle': 'connecting <a class="triqs" style="font-size: 12px" href="http://ipht.cea.fr/triqs">TRIQS</a> to DFT packages',
                 'header_links': [['Install', 'install'],
                                  ['Documentation', 'documentation'],
                                  ['Issues', 'issues'],
@@ -32,4 +37,4 @@ html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 htmlhelp_basename = 'TRIQSDftToolsdoc'
 
 intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('http://ipht.cea.fr/triqs', None),
-                       'triqscthyb': ('http://ipht.cea.fr/triqs/applications/cthyb_matrix', None)}
+                       'triqscthyb': ('http://ipht.cea.fr/triqs/applications/cthyb', None)}
