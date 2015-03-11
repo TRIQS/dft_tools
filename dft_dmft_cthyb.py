@@ -5,6 +5,7 @@ from pytriqs.applications.impurity_solvers.cthyb import *
 from pytriqs.gf.local import *
 from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
+from pytriqs.applications.dft.U_matrix import *
 
 dft_filename='Gd_fcc'
 U = 9.6
