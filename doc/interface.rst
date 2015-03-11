@@ -2,13 +2,14 @@
 The interface
 =============
 
-
-The basic function of the interface to the Wien2k program package is
-to take the output of the program that constructs the projected local
-orbitals (:program:`dmftproj`, for documentation see :download:`TutorialDmftproj.pdf <TutorialDmftproj.pdf>`), and to store all the necessary information into
-an hdf5 file. This latter file is then used to do the DMFT calculation. The
-reason for this structure is that this enables the user to have everything
-that is necessary to reproduce the calculation in one single hdf5 archive.
+The basic function of the interface to the Wien2k program package is to take
+the output of the program that constructs the projected local orbitals
+(:program:`dmftproj`, for documentation see 
+:download:`TutorialDmftproj.pdf <TutorialDmftproj.pdf>`), 
+and to store all the necessary information into an hdf5 file. This latter file
+is then used to do the DMFT calculation. The reason for this structure is that
+this enables the user to have everything that is necessary to reproduce the
+calculation in one single hdf5 archive.
 
 .. index:: Interface to Wien2k
 
@@ -31,17 +32,20 @@ calculation for TiO, the :program:`Wien2k` naming convention is that all files a
 :file:`TiO.*`, so you would give `filename = "TiO"`. The constructor opens
 an hdf5 archive, named :file:`material_of_interest.h5`, where all the data is stored.
 
-There are three optional parameters to the Constructor:
+These are the parameters to the Constructor:
 
-  * `dft_subgrp`: We store all data in subgroups of the hdf5 archive. For the main data
-    that is needed for the DMFT loop, we use the subgroup specified by this optional parameter.
-    The default value `dft_input` is used as the subgroup name.
-  * `symmcorr_subgrp`: In this subgroup we store all the data for applying the symmetry 
-    operations in the DMFT loop. The default value is `dft_symmcorr_input`.
-  * `repacking`: If true, and the hdf5 file already exists, the system command :program:`h5repack` 
-    is invoked. This command ensures a minimal file size of the hdf5
-    file. The default value is `False`. If you wish to use this, ensure
-    that :program:`h5repack` is in your path variable!
+=========================   ============================  ===========================================================================
+Name                        Type, Default                 Meaning
+=========================   ============================  ===========================================================================
+filename                    String                        Material being studied, corresponding to the :program:`Wien2k` file names.
+                                                          The constructor stores the data in the hdf5 archive :file:`material_of_interest.h5`.
+dft_subgrp                  String, dft_input             hdf5 subgroup containing required DFT data
+symmcorr_subgrp             String, dft_symmcorr_input    hdf5 subgroup containing all necessary data to apply
+                                                          the symmetry operations in the DMFT loop
+repacking                   Boolean, False                Does the hdf5 file already exist and should the :program:`h5repack` be 
+                                                          invoked to ensures a minimal archive file size? 
+                                                          Note that the :program:`h5repack` must be in your path variable!
+=========================   ============================  ===========================================================================
 
 After initialising the interface module, we can now convert the input text files into the
 hdf5 archive by::
@@ -70,8 +74,12 @@ of :program:`Wien2k`, you have to use::
 This reads the files :file:`material_of_interest.parproj` and :file:`material_of_interest.sympar`.
 Again, there are two optional parameters
 
-  * `parproj_subgrp`: The subgroup for partial projectors data. The default value is `dft_parproj_input`.
-  * `symmpar_subgrp`: The subgroup for symmetry operations data. The default value is `dft_symmpar_input`.
+=========================   ============================  ===========================================================================
+Name                        Type, Default                 Meaning
+=========================   ============================  ===========================================================================
+parproj_subgrp              String, dft_parproj_input     hdf5 subgroup containing partial projectors data.
+symmpar_subgrp              String, dft_symmpar_input     hdf5 subgroup containing symmetry operations data.
+=========================   ============================  ===========================================================================
 
 Another routine of the class allows to read the input for plotting the momentum-resolved
 spectral function. It is done by::
