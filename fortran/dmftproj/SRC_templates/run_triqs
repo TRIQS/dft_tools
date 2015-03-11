@@ -154,7 +154,7 @@ while ($#argv)
     shift; set next  = $1; sb
 # QDMFT
   case -qdmft:
-    set qdmft=-qdmft; set NSLOTS = $1; sb 
+    set qdmft=-qdmft; shift; set NSLOTS = $1; sb
 # END QDMFT
   case -hf:
     set hf = -hf; sb
