@@ -27,7 +27,7 @@ from pytriqs.applications.dft.sumk_dft_tools import SumkDFTTools
 SK = SumkDFTTools(hdf_file = 'SrVO3.h5')
 
 dm = SK.density_matrix(method = 'using_gf', beta = 40)
-dm_pc = SK.partial_charges(40)
+dm_pc = SK.partial_charges(beta=40,with_Sigma=False,with_dc=False)
 
 ar = HDFArchive('sumkdft_basic.output.h5','w')
 ar['dm'] = dm

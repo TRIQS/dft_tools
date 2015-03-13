@@ -375,8 +375,9 @@ class SumkDFT:
                 for bname,gf in tmp: tmp[bname] << self.downfold(ik,icrsh,bname,G_latt_iw[bname],gf)
                 G_loc[icrsh] += tmp
 
-        # collect data from mpi
-        for icrsh in range(self.n_corr_shells): G_loc[icrsh] << mpi.all_reduce(mpi.world, G_loc[icrsh], lambda x,y : x+y)
+        # Collect data from mpi
+        for icrsh in range(self.n_corr_shells): 
+            G_loc[icrsh] << mpi.all_reduce(mpi.world, G_loc[icrsh], lambda x,y : x+y)
         mpi.barrier()
 
         # G_loc[:] is now the sum over k projected to the local orbitals.

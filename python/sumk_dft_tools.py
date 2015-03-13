@@ -40,26 +40,29 @@ class SumkDFTTools(SumkDFT):
                           misc_data=misc_data)
 
 
-    def read_parproj_input_from_hdf(self):
-        """
-        Reads the data for the partial projectors from the HDF file
-        """
+    def dos_wannier_basis(self, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True, save_to_file=True):
 
-        things_to_read = ['dens_mat_below','n_parproj','proj_mat_all','rot_mat_all','rot_mat_all_time_inv']
-        value_read = self.read_input_from_hdf(subgrp=self.parproj_data,things_to_read = things_to_read)
-        return value_read
+        if (mesh is None) and (not with_Sigma):
+            raise ValueError, "lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq."
+        if mesh is None: 
+            om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
+            om_min = om_mesh[0]
+            om_max = om_mesh[-1]
+            n_om = len(om_mesh)
+            mesh = (om_min,om_max,n_om)
+        else: 
+            om_min,om_max,n_om = mesh
+            delta_om = (om_max-om_min)/(n_om-1)
+            om_mesh = [om_min + delta_om * i for i in range(n_om)]
 
+        G_loc = []
+        for icrsh in range(self.n_corr_shells):
+            spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
+            glist = [ GfReFreq(indices = inner, window = (om_min,om_max), n_points = n_om) for block,inner in self.gf_struct_sumk[icrsh]]
+            G_loc.append(BlockGf(name_list = spn, block_list = glist, make_copies=False))
+        for icrsh in range(self.n_corr_shells): G_loc[icrsh].zero()
 
-    def check_input_dos(self, om_min, om_max, n_om, beta=10, broadening=0.01):
-
-        delta_om = (om_max-om_min)/(n_om-1)
-        om_mesh = numpy.zeros([n_om],numpy.float_)
-        for i in range(n_om): om_mesh[i] = om_min + delta_om * i
-
-        DOS = {}
-        for sp in self.spin_block_names[self.SO]:
-            DOS[sp] = numpy.zeros([n_om],numpy.float_)
-
+        DOS = { sp: numpy.zeros([n_om],numpy.float_) for sp in self.spin_block_names[self.SO] }
         DOSproj     = [ {} for ish in range(self.n_inequiv_shells) ]
         DOSproj_orb = [ {} for ish in range(self.n_inequiv_shells) ]
         for ish in range(self.n_inequiv_shells):
@@ -68,86 +71,96 @@ class SumkDFTTools(SumkDFT):
                 DOSproj[ish][sp] = numpy.zeros([n_om],numpy.float_)
                 DOSproj_orb[ish][sp] = numpy.zeros([n_om,dim,dim],numpy.float_)
 
-        # init:
-        Gloc = []
-        for icrsh in range(self.n_corr_shells):
-            spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
-            glist = lambda : [ GfReFreq(indices = inner, window = (om_min,om_max), n_points = n_om) for block,inner in self.gf_struct_sumk[icrsh]]
-            Gloc.append(BlockGf(name_list = spn, block_list = glist(),make_copies=False))
-        for icrsh in range(self.n_corr_shells): Gloc[icrsh].zero()                        # initialize to zero
+        ikarray = numpy.array(range(self.n_k))
+        for ik in mpi.slice_array(ikarray):
 
-        for ik in range(self.n_k):
-
-            G_latt_w=self.lattice_gf(ik=ik,mu=self.chemical_potential,iw_or_w="w",broadening=broadening,mesh=(om_min,om_max,n_om),with_Sigma=False)
+            G_latt_w = self.lattice_gf(ik=ik,mu=mu,iw_or_w="w",broadening=broadening,mesh=mesh,with_Sigma=with_Sigma,with_dc=with_dc)
             G_latt_w *= self.bz_weights[ik]
 
-            # non-projected DOS
+            # Non-projected DOS
             for iom in range(n_om):
                 for bname,gf in G_latt_w:
-                    asd = gf.data[iom,:,:].imag.trace()/(-3.1415926535)
-                    DOS[bname][iom] += asd
+                    DOS[bname][iom] += gf.data[iom,:,:].imag.trace()/numpy.pi
 
+            # Projected DOS:
             for icrsh in range(self.n_corr_shells):
-                tmp = Gloc[icrsh].copy()
+                tmp = G_loc[icrsh].copy()
                 for bname,gf in tmp: tmp[bname] << self.downfold(ik,icrsh,bname,G_latt_w[bname],gf) # downfolding G
-                Gloc[icrsh] += tmp
+                G_loc[icrsh] += tmp
 
-        if self.symm_op != 0: Gloc = self.symmcorr.symmetrize(Gloc)
+        # Collect data from mpi:
+        for bname in DOS:
+            DOS[bname] = mpi.all_reduce(mpi.world, DOS[bname], lambda x,y : x+y)
+        for ish in range(self.n_shells):
+            G_loc[ish] << mpi.all_reduce(mpi.world, G_loc[ish], lambda x,y : x+y)
+        mpi.barrier()
 
+        # Symmetrize and rotate to local coord. system if needed:
+        if self.symm_op != 0: G_loc = self.symmcorr.symmetrize(G_loc)
         if self.use_rotations:
             for icrsh in range(self.n_corr_shells):
-                for bname,gf in Gloc[icrsh]: Gloc[icrsh][bname] << self.rotloc(icrsh,gf,direction='toLocal')
+                for bname,gf in G_loc[icrsh]: G_loc[icrsh][bname] << self.rotloc(icrsh,gf,direction='toLocal')
 
-        # Gloc can now also be used to look at orbitally resolved quantities
+        # G_loc can now also be used to look at orbitally-resolved quantities
         for ish in range(self.n_inequiv_shells):
-            for bname,gf in Gloc[self.inequiv_to_corr[ish]]: # loop over spins
-                for iom in range(n_om): DOSproj[ish][bname][iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
+            for bname,gf in G_loc[self.inequiv_to_corr[ish]]: # loop over spins
+                for iom in range(n_om): DOSproj[ish][bname][iom] += gf.data[iom,:,:].imag.trace()/numpy.pi
+                DOSproj_orb[ish][bname][:,:,:] += gf.data[:,:,:].imag/numpy.pi
 
-                DOSproj_orb[ish][bname][:,:,:] += gf.data[:,:,:].imag/(-3.1415926535)
-
-        # output:
-        if mpi.is_master_node():
+        # Write to files
+        if save_to_file and mpi.is_master_node():
             for sp in self.spin_block_names[self.SO]:
-                f=open('DOS%s.dat'%sp, 'w')
-                for i in range(n_om): f.write("%s    %s\n"%(om_mesh[i],DOS[sp][i]))
+                f = open('DOS_wann_%s.dat'%sp, 'w')
+                for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOS[sp][i]))
                 f.close()
 
+                # Partial
                 for ish in range(self.n_inequiv_shells):
-                    f=open('DOS%s_proj%s.dat'%(sp,ish),'w')
-                    for i in range(n_om): f.write("%s    %s\n"%(om_mesh[i],DOSproj[ish][sp][i]))
+                    f = open('DOS_wann_%s_proj%s.dat'%(sp,ish),'w')
+                    for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj[ish][sp][i]))
                     f.close()
 
+                    # Orbitally-resolved
                     for i in range(self.corr_shells[self.inequiv_to_corr[ish]]['dim']):
                         for j in range(i,self.corr_shells[self.inequiv_to_corr[ish]]['dim']):
-                            Fname = 'DOS'+sp+'_proj'+str(ish)+'_'+str(i)+'_'+str(j)+'.dat'
-                            f=open(Fname,'w')
+                            f = open('DOS_wann_'+sp+'_proj'+str(ish)+'_'+str(i)+'_'+str(j)+'.dat','w')
                             for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj_orb[ish][sp][iom,i,j]))
                             f.close()
 
+        return DOS, DOSproj, DOSproj_orb
 
-    def dos_partial(self,broadening=0.01):
-        """calculates the orbitally-resolved DOS"""
 
-        assert hasattr(self,"Sigma_imp_w"), "dos_partial: Set Sigma_imp_w first."
+    def dos_parproj_basis(self, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True, save_to_file=True):
+        """Calculates the orbitally-resolved DOS"""
 
-        value_read = self.read_parproj_input_from_hdf()
+        things_to_read = ['n_parproj','proj_mat_all','rot_mat_all','rot_mat_all_time_inv']
+        value_read = self.read_input_from_hdf(subgrp=self.parproj_data,things_to_read = things_to_read)
         if not value_read: return value_read
         if self.symm_op: self.symmpar = Symmetry(self.hdf_file,subgroup=self.symmpar_data)
 
-        mu = self.chemical_potential
+        if (mesh is None) and (not with_Sigma):
+            raise ValueError, "lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq."
+        if mesh is None: 
+            om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
+            om_min = om_mesh[0]
+            om_max = om_mesh[-1]
+            n_om = len(om_mesh)
+            mesh = (om_min,om_max,n_om)
+        else: 
+            om_min,om_max,n_om = mesh
+            delta_om = (om_max-om_min)/(n_om-1)
+            om_mesh = [om_min + delta_om * i for i in range(n_om)]
 
-        gf_struct_proj = [ [ (sp, range(self.shells[i]['dim'])) for sp in self.spin_block_names[self.SO] ]  for i in range(self.n_shells) ]
-        Gproj = [BlockGf(name_block_generator = [ (block,GfReFreq(indices = inner, mesh = self.Sigma_imp_w[0].mesh)) 
-                               for block,inner in gf_struct_proj[ish] ], make_copies = False ) for ish in range(self.n_shells)]
-        for ish in range(self.n_shells): Gproj[ish].zero()
+        G_loc = []
+        spn = self.spin_block_names[self.SO]
+        gf_struct_parproj = [ [ (sp, range(self.shells[ish]['dim'])) for sp in spn ] 
+                              for ish in range(self.n_shells) ]
+        for ish in range(self.n_shells): 
+            glist = [ GfReFreq(indices = inner, window = (om_min,om_max), n_points = n_om) for block,inner in gf_struct_parproj[ish] ]
+            G_loc.append(BlockGf(name_list = spn, block_list = glist, make_copies=False))
+        for ish in range(self.n_shells): G_loc[ish].zero()
 
-        mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
-        n_om = len(mesh)
-
-        DOS = {}
-        for sp in self.spin_block_names[self.SO]:
-            DOS[sp] = numpy.zeros([n_om],numpy.float_)
-
+        DOS = { sp: numpy.zeros([n_om],numpy.float_) for sp in self.spin_block_names[self.SO] }
         DOSproj     = [ {} for ish in range(self.n_shells) ]
         DOSproj_orb = [ {} for ish in range(self.n_shells) ]
         for ish in range(self.n_shells):
@@ -156,271 +169,259 @@ class SumkDFTTools(SumkDFT):
                 DOSproj[ish][sp] = numpy.zeros([n_om],numpy.float_)
                 DOSproj_orb[ish][sp] = numpy.zeros([n_om,dim,dim],numpy.float_)
 
-        ikarray=numpy.array(range(self.n_k))
-
+        ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):
 
-            G_latt_w = self.lattice_gf(ik=ik,mu=mu,iw_or_w="w",broadening=broadening)
+            G_latt_w = self.lattice_gf(ik=ik,mu=mu,iw_or_w="w",broadening=broadening,mesh=mesh,with_Sigma=with_Sigma,with_dc=with_dc)
             G_latt_w *= self.bz_weights[ik]
 
-            # non-projected DOS
+            # Non-projected DOS
             for iom in range(n_om):
-                for bname,gf in G_latt_w: DOS[bname][iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
+                for bname,gf in G_latt_w:
+                    DOS[bname][iom] += gf.data[iom,:,:].imag.trace()/numpy.pi
 
-            #projected DOS:
+            # Projected DOS:
             for ish in range(self.n_shells):
-                tmp = Gproj[ish].copy()
+                tmp = G_loc[ish].copy()
                 for ir in range(self.n_parproj[ish]):
                     for bname,gf in tmp: tmp[bname] << self.downfold(ik,ish,bname,G_latt_w[bname],gf,shells='all',ir=ir)
-                    Gproj[ish] += tmp
+                    G_loc[ish] += tmp
 
-        # collect data from mpi:
+        # Collect data from mpi:
         for bname in DOS:
             DOS[bname] = mpi.all_reduce(mpi.world, DOS[bname], lambda x,y : x+y)
         for ish in range(self.n_shells):
-            Gproj[ish] << mpi.all_reduce(mpi.world, Gproj[ish], lambda x,y : x+y)
+            G_loc[ish] << mpi.all_reduce(mpi.world, G_loc[ish], lambda x,y : x+y)
         mpi.barrier()
 
-        if self.symm_op != 0: Gproj = self.symmpar.symmetrize(Gproj)
-
-        # rotation to local coord. system:
+        # Symmetrize and rotate to local coord. system if needed:
+        if self.symm_op != 0: G_loc = self.symmpar.symmetrize(G_loc)
         if self.use_rotations:
             for ish in range(self.n_shells):
-                for bname,gf in Gproj[ish]: Gproj[ish][bname] << self.rotloc(ish,gf,direction='toLocal',shells='all')
+                for bname,gf in G_loc[ish]: G_loc[ish][bname] << self.rotloc(ish,gf,direction='toLocal',shells='all')
 
+        # G_loc can now also be used to look at orbitally-resolved quantities
         for ish in range(self.n_shells):
-            for bname,gf in Gproj[ish]:
-                for iom in range(n_om): DOSproj[ish][bname][iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
-                DOSproj_orb[ish][bname][:,:,:] += gf.data[:,:,:].imag / (-3.1415926535)
+            for bname,gf in G_loc[ish]:
+                for iom in range(n_om): DOSproj[ish][bname][iom] += gf.data[iom,:,:].imag.trace()/numpy.pi
+                DOSproj_orb[ish][bname][:,:,:] += gf.data[:,:,:].imag/numpy.pi
 
-
-        if mpi.is_master_node():
-            # output to files
+        # Write to files
+        if save_to_file and mpi.is_master_node():
             for sp in self.spin_block_names[self.SO]:
-                f=open('./DOScorr%s.dat'%sp, 'w')
-                for i in range(n_om): f.write("%s    %s\n"%(mesh[i],DOS[sp][i]))
+                f = open('DOS_parproj_%s.dat'%sp, 'w')
+                for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOS[sp][i]))
                 f.close()
 
-                # partial
+                # Partial
                 for ish in range(self.n_shells):
-                    f=open('DOScorr%s_proj%s.dat'%(sp,ish),'w')
-                    for i in range(n_om): f.write("%s    %s\n"%(mesh[i],DOSproj[ish][sp][i]))
+                    f = open('DOS_parproj_%s_proj%s.dat'%(sp,ish),'w')
+                    for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj[ish][sp][i]))
                     f.close()
 
+                    # Orbitally-resolved
                     for i in range(self.shells[ish]['dim']):
                         for j in range(i,self.shells[ish]['dim']):
-                            Fname = './DOScorr'+sp+'_proj'+str(ish)+'_'+str(i)+'_'+str(j)+'.dat'
-                            f=open(Fname,'w')
-                            for iom in range(n_om): f.write("%s    %s\n"%(mesh[iom],DOSproj_orb[ish][sp][iom,i,j]))
+                            f = open('DOS_parproj_'+sp+'_proj'+str(ish)+'_'+str(i)+'_'+str(j)+'.dat','w')
+                            for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj_orb[ish][sp][iom,i,j]))
                             f.close()
 
+        return DOS, DOSproj, DOSproj_orb
 
-    def spaghettis(self,broadening,shift=0.0,plot_range=None, ishell=None, invert_Akw=False, fermi_surface=False):
+
+    def spaghettis(self,broadening,plot_shift=0.0,plot_range=None,ishell=None,invert_Akw=False,fermi_surface=False,mu=None,save_to_file=True):
         """ Calculates the correlated band structure with a real-frequency self energy."""
 
         assert hasattr(self,"Sigma_imp_w"), "spaghettis: Set Sigma_imp_w first."
         things_to_read = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_all']
         value_read = self.read_input_from_hdf(subgrp=self.bands_data,things_to_read=things_to_read)
         if not value_read: return value_read
+        things_to_read = ['rot_mat_all','rot_mat_all_time_inv']
+        value_read = self.read_input_from_hdf(subgrp=self.parproj_data,things_to_read = things_to_read)
+        if not value_read: return value_read
 
-        if fermi_surface: ishell=None
-
-        # FIXME CAN REMOVE?
-        # print hamiltonian for checks:
-
-
-        #=========================================
-        # calculate A(k,w):
-
-        mu = self.chemical_potential
+        if mu is None: mu = self.chemical_potential
         spn = self.spin_block_names[self.SO]
-
-        # init DOS:
         mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
         n_om = len(mesh)
 
         if plot_range is None:
-            om_minplot = mesh[0]-0.001
+            om_minplot = mesh[0] - 0.001
             om_maxplot = mesh[n_om-1] + 0.001
         else:
             om_minplot = plot_range[0]
             om_maxplot = plot_range[1]
 
         if ishell is None:
-            Akw = {}
-            for sp in spn: Akw[sp] = numpy.zeros([self.n_k, n_om ],numpy.float_)
+            Akw = { sp: numpy.zeros([self.n_k,n_om],numpy.float_) for sp in spn }
         else:
-            Akw = {}
-            for sp in spn: Akw[sp] = numpy.zeros([self.shells[ishell]['dim'],self.n_k, n_om ],numpy.float_)
+            Akw = { sp: numpy.zeros([self.shells[ishell]['dim'],self.n_k,n_om],numpy.float_) for sp in spn }
 
         if fermi_surface:
+            ishell = None
+            Akw = { sp: numpy.zeros([self.n_k,1],numpy.float_) for sp in spn }
             om_minplot = -2.0*broadening
             om_maxplot =  2.0*broadening
-            Akw = {}
-            for sp in spn: Akw[sp] = numpy.zeros([self.n_k,1],numpy.float_)
 
         if not ishell is None:
-            GFStruct_proj =  [ (sp, range(self.shells[ishell]['dim'])) for sp in spn ]
-            Gproj = BlockGf(name_block_generator = [ (block,GfReFreq(indices = inner, mesh = self.Sigma_imp_w[0].mesh)) for block,inner in GFStruct_proj ], make_copies = False)
-            Gproj.zero()
+            gf_struct_parproj =  [ (sp, range(self.shells[ishell]['dim'])) for sp in spn ]
+            G_loc = BlockGf(name_block_generator = [ (block,GfReFreq(indices = inner, mesh = self.Sigma_imp_w[0].mesh))
+                                                     for block,inner in gf_struct_parproj ], make_copies = False)
+            G_loc.zero()
 
         for ik in range(self.n_k):
 
             G_latt_w = self.lattice_gf(ik=ik,mu=mu,iw_or_w="w",broadening=broadening)
+
             if ishell is None:
-                # non-projected A(k,w)
+                # Non-projected A(k,w)
                 for iom in range(n_om):
                     if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
                         if fermi_surface:
-                            for bname,gf in G_latt_w: Akw[bname][ik,0] += gf.data[iom,:,:].imag.trace()/(-3.1415926535) * (mesh[1]-mesh[0])
+                            for bname,gf in G_latt_w: Akw[bname][ik,0] += gf.data[iom,:,:].imag.trace()/(-1.0*numpy.pi) * (mesh[1]-mesh[0])
                         else:
-                            for bname,gf in G_latt_w: Akw[bname][ik,iom] += gf.data[iom,:,:].imag.trace()/(-3.1415926535)
-                            Akw[bname][ik,iom] += ik*shift                       # shift Akw for plotting in xmgrace -- REMOVE
+                            for bname,gf in G_latt_w: Akw[bname][ik,iom] += gf.data[iom,:,:].imag.trace()/(-1.0*numpy.pi)
+                            Akw[bname][ik,iom] += ik*plot_shift                       # shift Akw for plotting stacked k-resolved eps(k) curves
 
+                if invert_Akw:
+                    for sp in spn: # loop over GF blocs:
+                        maxAkw = Akw[sp].max()
+                        minAkw = Akw[sp].min()
+                        if fermi_surface:
+                            Akw[sp][ik,0] = 1.0/(minAkw-maxAkw)*(Akw[sp][ik,0] - maxAkw)
+                        else:
+                            for iom in range(n_om):
+                                if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
+                                    Akw[sp][ik,iom] = 1.0/(minAkw-maxAkw)*(Akw[sp][ik,iom] - maxAkw)
 
-            else:
-                # projected A(k,w):
-                Gproj.zero()
-                tmp = Gproj.copy()
+            else: # ishell not None
+                # Projected A(k,w):
+                G_loc.zero()
+                tmp = G_loc.copy()
                 for ir in range(self.n_parproj[ishell]):
                     for bname,gf in tmp: tmp[bname] << self.downfold(ik,ishell,bname,G_latt_w[bname],gf,shells='all',ir=ir)
-                    Gproj += tmp
+                    G_loc += tmp
 
-                # FIXME NEED TO READ IN ROTMAT_ALL FROM PARPROJ SUBGROUP, REPLACE ROTLOC WITH ROTLOC_ALL
-                # TO BE FIXED:
-                # rotate to local frame
-                #if (self.use_rotations):
-                #    for bname,gf in Gproj: Gproj[bname] << self.rotloc(0,gf,direction='toLocal')
+                # Rotate to local frame
+                if self.use_rotations:
+                    for bname,gf in G_loc: G_loc[bname] << self.rotloc(ishell,gf,direction='toLocal',shells='all')
 
                 for iom in range(n_om):
                     if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
                         for ish in range(self.shells[ishell]['dim']):
-                            for ibn in spn:
-                                Akw[ibn][ish,ik,iom] = Gproj[ibn].data[iom,ish,ish].imag/(-3.1415926535)
+                            for sp in spn:
+                                Akw[sp][ish,ik,iom] = G_loc[sp].data[iom,ish,ish].imag/(-1.0*numpy.pi)
 
+                if invert_Akw:
+                    for sp in spn:
+                        for ish in range(self.shells[ishell]['dim']):
+                            maxAkw=Akw[sp][ish,:,:].max()
+                            minAkw=Akw[sp][ish,:,:].min()
+                            for iom in range(n_om):
+                                if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
+                                    Akw[sp][ish,ik,iom] = 1.0/(minAkw-maxAkw)*(Akw[sp][ish,ik,iom] - maxAkw)
 
-        # END k-LOOP
-        if mpi.is_master_node():
+        if save_to_file and mpi.is_master_node():
             if ishell is None:
+                for sp in spn: # loop over GF blocs:
 
-                for ibn in spn:
-                    # loop over GF blocs:
-
-                    if invert_Akw:
-                        maxAkw=Akw[ibn].max()
-                        minAkw=Akw[ibn].min()
-
-
-                    # open file for storage:
+                    # Open file for storage:
                     if fermi_surface:
-                        f=open('FS_'+ibn+'.dat','w')
+                        f = open('FS_'+sp+'.dat','w')
                     else:
-                        f=open('Akw_'+ibn+'.dat','w')
+                        f = open('Akw_'+sp+'.dat','w')
 
                     for ik in range(self.n_k):
                         if fermi_surface:
-                            if invert_Akw:
-                                Akw[ibn][ik,0] = 1.0/(minAkw-maxAkw)*(Akw[ibn][ik,0] - maxAkw)
-                            f.write('%s    %s\n'%(ik,Akw[ibn][ik,0]))
+                            f.write('%s    %s\n'%(ik,Akw[sp][ik,0]))
                         else:
                             for iom in range(n_om):
                                 if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
-                                    if invert_Akw:
-                                        Akw[ibn][ik,iom] = 1.0/(minAkw-maxAkw)*(Akw[ibn][ik,iom] - maxAkw)
-                                    if shift > 0.0001:
-                                        f.write('%s      %s\n'%(mesh[iom],Akw[ibn][ik,iom]))
+                                    if plot_shift > 0.0001:
+                                        f.write('%s      %s\n'%(mesh[iom],Akw[sp][ik,iom]))
                                     else:
-                                        f.write('%s     %s      %s\n'%(ik,mesh[iom],Akw[ibn][ik,iom]))
-
+                                        f.write('%s     %s      %s\n'%(ik,mesh[iom],Akw[sp][ik,iom]))
                             f.write('\n')
-
                     f.close()
 
-            else:
-                for ibn in spn:
+            else: # ishell is not None
+                for sp in spn:
                     for ish in range(self.shells[ishell]['dim']):
 
-                        if invert_Akw:
-                            maxAkw=Akw[ibn][ish,:,:].max()
-                            minAkw=Akw[ibn][ish,:,:].min()
-
-                        f=open('Akw_'+ibn+'_proj'+str(ish)+'.dat','w')
+                        f = open('Akw_'+sp+'_proj'+str(ish)+'.dat','w')
 
                         for ik in range(self.n_k):
                             for iom in range(n_om):
                                 if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
-                                    if invert_Akw:
-                                        Akw[ibn][ish,ik,iom] = 1.0/(minAkw-maxAkw)*(Akw[ibn][ish,ik,iom] - maxAkw)
-                                    if shift > 0.0001:
-                                        f.write('%s      %s\n'%(mesh[iom],Akw[ibn][ish,ik,iom]))
+                                    if plot_shift > 0.0001:
+                                        f.write('%s      %s\n'%(mesh[iom],Akw[sp][ish,ik,iom]))
                                     else:
-                                        f.write('%s     %s      %s\n'%(ik,mesh[iom],Akw[ibn][ish,ik,iom]))
-
+                                        f.write('%s     %s      %s\n'%(ik,mesh[iom],Akw[sp][ish,ik,iom]))
                             f.write('\n')
-
                         f.close()
 
+        return Akw
 
-    def partial_charges(self,beta=40):
+    def partial_charges(self,beta=40,mu=None,with_Sigma=True,with_dc=True):
         """Calculates the orbitally-resolved density matrix for all the orbitals considered in the input.
            The theta-projectors are used, hence case.parproj data is necessary"""
 
-        value_read = self.read_parproj_input_from_hdf()
+        things_to_read = ['dens_mat_below','n_parproj','proj_mat_all','rot_mat_all','rot_mat_all_time_inv']
+        value_read = self.read_input_from_hdf(subgrp=self.parproj_data,things_to_read = things_to_read)
         if not value_read: return value_read
         if self.symm_op: self.symmpar = Symmetry(self.hdf_file,subgroup=self.symmpar_data)
 
-        # Density matrix in the window
         spn = self.spin_block_names[self.SO]
         ntoi = self.spin_names_to_ind[self.SO]
-        self.dens_mat_window = [ [numpy.zeros([self.shells[ish]['dim'],self.shells[ish]['dim']],numpy.complex_) for ish in range(self.n_shells)]
-                                 for isp in range(len(spn)) ]    # init the density matrix
-
-        mu = self.chemical_potential
-        GFStruct_proj = [ [ (sp, range(self.shells[i]['dim'])) for sp in spn ]  for i in range(self.n_shells) ]
-        if hasattr(self,"Sigma_imp_iw"):
-            Gproj = [BlockGf(name_block_generator = [ (block,GfImFreq(indices = inner, mesh = self.Sigma_imp_iw[0].mesh)) for block,inner in GFStruct_proj[ish] ], make_copies = False)
+        # Density matrix in the window
+        self.dens_mat_window = [ [ numpy.zeros([self.shells[ish]['dim'],self.shells[ish]['dim']],numpy.complex_) 
+                                   for ish in range(self.n_shells) ]
+                                 for isp in range(len(spn)) ]
+        # Set up G_loc
+        gf_struct_parproj = [ [ (sp, range(self.shells[ish]['dim'])) for sp in spn ]  
+                              for ish in range(self.n_shells) ]
+        if with_Sigma:
+            G_loc = [ BlockGf(name_block_generator = [ (block,GfImFreq(indices = inner, mesh = self.Sigma_imp_iw[0].mesh)) 
+                                                      for block,inner in gf_struct_parproj[ish] ], make_copies = False)
                      for ish in range(self.n_shells)]
             beta = self.Sigma_imp_iw[0].mesh.beta
         else:
-            Gproj = [BlockGf(name_block_generator = [ (block,GfImFreq(indices = inner, beta = beta)) for block,inner in GFStruct_proj[ish] ], make_copies = False)
+            G_loc = [ BlockGf(name_block_generator = [ (block,GfImFreq(indices = inner, beta = beta)) 
+                                                      for block,inner in gf_struct_parproj[ish] ], make_copies = False)
                      for ish in range(self.n_shells)]
+        for ish in range(self.n_shells): G_loc[ish].zero()
 
-        for ish in range(self.n_shells): Gproj[ish].zero()
-
-        ikarray=numpy.array(range(self.n_k))
-
+        ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):
-            G_latt_iw = self.lattice_gf(ik=ik,mu=mu,iw_or_w="iw",beta=beta)
-            G_latt_iw *= self.bz_weights[ik]
 
+            G_latt_iw = self.lattice_gf(ik=ik,mu=mu,iw_or_w="iw",beta=beta,with_Sigma=with_Sigma,with_dc=with_dc)
+            G_latt_iw *= self.bz_weights[ik]
             for ish in range(self.n_shells):
-                tmp = Gproj[ish].copy()
+                tmp = G_loc[ish].copy()
                 for ir in range(self.n_parproj[ish]):
                     for bname,gf in tmp: tmp[bname] << self.downfold(ik,ish,bname,G_latt_iw[bname],gf,shells='all',ir=ir)
-                    Gproj[ish] += tmp
+                    G_loc[ish] += tmp
 
-        #collect data from mpi:
+        # Collect data from mpi:
         for ish in range(self.n_shells):
-            Gproj[ish] << mpi.all_reduce(mpi.world, Gproj[ish], lambda x,y : x+y)
+            G_loc[ish] << mpi.all_reduce(mpi.world, G_loc[ish], lambda x,y : x+y)
         mpi.barrier()
 
-
-        # Symmetrisation:
-        if self.symm_op != 0: Gproj = self.symmpar.symmetrize(Gproj)
+        # Symmetrize and rotate to local coord. system if needed:
+        if self.symm_op != 0: G_loc = self.symmpar.symmetrize(G_loc)
+        if self.use_rotations:
+            for ish in range(self.n_shells):
+                for bname,gf in G_loc[ish]: G_loc[ish][bname] << self.rotloc(ish,gf,direction='toLocal',shells='all')
 
         for ish in range(self.n_shells):
-
-            # Rotation to local:
-            if self.use_rotations:
-                for bname,gf in Gproj[ish]: Gproj[ish][bname] << self.rotloc(ish,gf,direction='toLocal',shells='all')
-
             isp = 0
-            for bname,gf in Gproj[ish]: #dmg.append(Gproj[ish].density()[bname])
-                self.dens_mat_window[isp][ish] = Gproj[ish].density()[bname]
-                isp+=1
+            for bname,gf in G_loc[ish]:
+                self.dens_mat_window[isp][ish] = G_loc[ish].density()[bname]
+                isp += 1
 
-        # add Density matrices to get the total:
-        dens_mat = [ [ self.dens_mat_below[ntoi[spn[isp]]][ish]+self.dens_mat_window[isp][ish] for ish in range(self.n_shells)]
+        # Add density matrices to get the total:
+        dens_mat = [ [ self.dens_mat_below[ntoi[spn[isp]]][ish] + self.dens_mat_window[isp][ish] 
+                       for ish in range(self.n_shells) ]
                      for isp in range(len(spn)) ]
 
         return dens_mat
@@ -429,9 +430,8 @@ class SumkDFTTools(SumkDFT):
     def print_hamiltonian(self):
         """ Print Hamiltonian for checks."""
         if self.SP == 1 and self.SO == 0:
-            f1=open('hamup.dat','w')
-            f2=open('hamdn.dat','w')
-
+            f1 = open('hamup.dat','w')
+            f2 = open('hamdn.dat','w')
             for ik in range(self.n_k):
                 for i in range(self.n_orbitals[ik,0]):
                     f1.write('%s    %s\n'%(ik,self.hopping[ik,0,i,i].real))
@@ -442,7 +442,7 @@ class SumkDFTTools(SumkDFT):
             f1.close()
             f2.close()
         else:
-            f=open('ham.dat','w')
+            f = open('ham.dat','w')
             for ik in range(self.n_k):
                 for i in range(self.n_orbitals[ik,0]):
                     f.write('%s    %s\n'%(ik,self.hopping[ik,0,i,i].real))
@@ -668,4 +668,3 @@ class SumkDFTTools(SumkDFT):
         fermi distribution at x = omega * beta
         """
         return 1.0/(numpy.exp(x)+1)
-    
