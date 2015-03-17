@@ -229,7 +229,7 @@ class SumkDFTTools(SumkDFT):
         return DOS, DOSproj, DOSproj_orb
 
 
-    def spaghettis(self,broadening,plot_shift=0.0,plot_range=None,ishell=None,invert_Akw=False,fermi_surface=False,mu=None,save_to_file=True):
+    def spaghettis(self,broadening=None,plot_shift=0.0,plot_range=None,ishell=None,mu=None,save_to_file=True):
         """ Calculates the correlated band structure with a real-frequency self energy."""
 
         assert hasattr(self,"Sigma_imp_w"), "spaghettis: Set Sigma_imp_w first."
@@ -257,12 +257,6 @@ class SumkDFTTools(SumkDFT):
         else:
             Akw = { sp: numpy.zeros([self.shells[ishell]['dim'],self.n_k,n_om],numpy.float_) for sp in spn }
 
-        if fermi_surface:
-            ishell = None
-            Akw = { sp: numpy.zeros([self.n_k,1],numpy.float_) for sp in spn }
-            om_minplot = -2.0*broadening
-            om_maxplot =  2.0*broadening
-
         if not ishell is None:
             gf_struct_parproj =  [ (sp, range(self.shells[ishell]['dim'])) for sp in spn ]
             G_loc = BlockGf(name_block_generator = [ (block,GfReFreq(indices = inner, mesh = self.Sigma_imp_w[0].mesh))
@@ -277,22 +271,8 @@ class SumkDFTTools(SumkDFT):
                 # Non-projected A(k,w)
                 for iom in range(n_om):
                     if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
-                        if fermi_surface:
-                            for bname,gf in G_latt_w: Akw[bname][ik,0] += gf.data[iom,:,:].imag.trace()/(-1.0*numpy.pi) * (mesh[1]-mesh[0])
-                        else:
-                            for bname,gf in G_latt_w: Akw[bname][ik,iom] += gf.data[iom,:,:].imag.trace()/(-1.0*numpy.pi)
-                            Akw[bname][ik,iom] += ik*plot_shift                       # shift Akw for plotting stacked k-resolved eps(k) curves
-
-                if invert_Akw:
-                    for sp in spn: # loop over GF blocs:
-                        maxAkw = Akw[sp].max()
-                        minAkw = Akw[sp].min()
-                        if fermi_surface:
-                            Akw[sp][ik,0] = 1.0/(minAkw-maxAkw)*(Akw[sp][ik,0] - maxAkw)
-                        else:
-                            for iom in range(n_om):
-                                if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
-                                    Akw[sp][ik,iom] = 1.0/(minAkw-maxAkw)*(Akw[sp][ik,iom] - maxAkw)
+                        for bname,gf in G_latt_w: Akw[bname][ik,iom] += gf.data[iom,:,:].imag.trace()/(-1.0*numpy.pi)
+                        Akw[bname][ik,iom] += ik*plot_shift                       # shift Akw for plotting stacked k-resolved eps(k) curves
 
             else: # ishell not None
                 # Projected A(k,w):
@@ -312,44 +292,24 @@ class SumkDFTTools(SumkDFT):
                             for sp in spn:
                                 Akw[sp][ish,ik,iom] = G_loc[sp].data[iom,ish,ish].imag/(-1.0*numpy.pi)
 
-                if invert_Akw:
-                    for sp in spn:
-                        for ish in range(self.shells[ishell]['dim']):
-                            maxAkw=Akw[sp][ish,:,:].max()
-                            minAkw=Akw[sp][ish,:,:].min()
-                            for iom in range(n_om):
-                                if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
-                                    Akw[sp][ish,ik,iom] = 1.0/(minAkw-maxAkw)*(Akw[sp][ish,ik,iom] - maxAkw)
-
         if save_to_file and mpi.is_master_node():
             if ishell is None:
                 for sp in spn: # loop over GF blocs:
-
-                    # Open file for storage:
-                    if fermi_surface:
-                        f = open('FS_'+sp+'.dat','w')
-                    else:
-                        f = open('Akw_'+sp+'.dat','w')
-
+                    f = open('Akw_'+sp+'.dat','w')   # Open file for storage:
                     for ik in range(self.n_k):
-                        if fermi_surface:
-                            f.write('%s    %s\n'%(ik,Akw[sp][ik,0]))
-                        else:
-                            for iom in range(n_om):
-                                if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
-                                    if plot_shift > 0.0001:
-                                        f.write('%s      %s\n'%(mesh[iom],Akw[sp][ik,iom]))
-                                    else:
-                                        f.write('%s     %s      %s\n'%(ik,mesh[iom],Akw[sp][ik,iom]))
-                            f.write('\n')
+                        for iom in range(n_om):
+                            if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
+                                if plot_shift > 0.0001:
+                                    f.write('%s      %s\n'%(mesh[iom],Akw[sp][ik,iom]))
+                                else:
+                                    f.write('%s     %s      %s\n'%(ik,mesh[iom],Akw[sp][ik,iom]))
+                        f.write('\n')
                     f.close()
 
             else: # ishell is not None
                 for sp in spn:
                     for ish in range(self.shells[ishell]['dim']):
-
-                        f = open('Akw_'+sp+'_proj'+str(ish)+'.dat','w')
-
+                        f = open('Akw_'+sp+'_proj'+str(ish)+'.dat','w')   # Open file for storage:
                         for ik in range(self.n_k):
                             for iom in range(n_om):
                                 if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
