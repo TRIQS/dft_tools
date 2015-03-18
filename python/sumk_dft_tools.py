@@ -229,7 +229,7 @@ class SumkDFTTools(SumkDFT):
         return DOS, DOSproj, DOSproj_orb
 
 
-    def spaghettis(self,broadening=None,plot_shift=0.0,plot_range=None,ishell=None,mu=None,save_to_file=True):
+    def spaghettis(self,broadening=None,plot_shift=0.0,plot_range=None,ishell=None,mu=None,save_to_file='Akw_'):
         """ Calculates the correlated band structure with a real-frequency self energy."""
 
         assert hasattr(self,"Sigma_imp_w"), "spaghettis: Set Sigma_imp_w first."
@@ -295,7 +295,7 @@ class SumkDFTTools(SumkDFT):
         if save_to_file and mpi.is_master_node():
             if ishell is None:
                 for sp in spn: # loop over GF blocs:
-                    f = open('Akw_'+sp+'.dat','w')   # Open file for storage:
+                    f = open(save_to_file+sp+'.dat','w')   # Open file for storage:
                     for ik in range(self.n_k):
                         for iom in range(n_om):
                             if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
@@ -309,7 +309,7 @@ class SumkDFTTools(SumkDFT):
             else: # ishell is not None
                 for sp in spn:
                     for ish in range(self.shells[ishell]['dim']):
-                        f = open('Akw_'+sp+'_proj'+str(ish)+'.dat','w')   # Open file for storage:
+                        f = open(save_to_file+sp+'_proj'+str(ish)+'.dat','w')   # Open file for storage:
                         for ik in range(self.n_k):
                             for iom in range(n_om):
                                 if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
