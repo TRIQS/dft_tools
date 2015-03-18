@@ -399,7 +399,7 @@ class Wien2kConverter(ConverterTools):
             if os.path.exists(f):
                 mpi.report("Reading input from %s..."%f)
                 R = ConverterTools.read_fortran_file(self, f, self.fortran_to_replace)
-                assert int(R.next()) == n_k, "convert_misc_input: Number of k-points is inconsistent in oubwin file!"
+                R.next()
                 assert int(R.next()) == SO, "convert_misc_input: SO is inconsistent in oubwin file!"
                 for ik in xrange(n_k):
                     R.next()
