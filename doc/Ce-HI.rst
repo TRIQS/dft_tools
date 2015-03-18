@@ -95,23 +95,16 @@ where the solver is initialized with the value of `beta`, and the orbital quantu
 The Hubbard-I initialization `Solver` has also optional parameters one may use:
 
   * `n_msb`: the number of Matsubara frequencies used. The default is `n_msb=1025`.
-  * `use_spin_orbit`: if set 'True' the solver is run with spin-orbit coupling
-included. To perform actual DFT+DMFT calculations with spin-orbit one should
-also run   :program:`Wien2k` and :program:`dmftproj` in spin-polarized mode and
-with spin-orbit included. By default, `use_spin_orbit=False`.
+  * `use_spin_orbit`: if set 'True' the solver is run with spin-orbit coupling included. To perform actual DFT+DMFT calculations with spin-orbit one should also run   :program:`Wien2k` and :program:`dmftproj` in spin-polarized mode and with spin-orbit included. By default, `use_spin_orbit=False`.
+  * `Nmoments`: the number of moments used to describe high-ferquency tails of the Hubbard-I Green's function and self-energy. By default `Nmoments = 5`
 
-The `Solver.solve(U_int, J_hund)` statement has two necessary parameters, the
-Hubbard U parameter `U_int` and Hund's rule coupling `J_hund`. Notice that the
-solver constructs the full 4-index `U`-matrix by default, and the `U_int` parameter
-is in fact the Slatter `F0` integral. Other optional parameters are:
+The `Solver.solve(U_int, J_hund)` statement has two necessary parameters, the Hubbard U parameter `U_int` and Hund's rule coupling `J_hund`. Notice that the solver constructs the full 4-index `U`-matrix by default, and the `U_int` parameter is in fact the Slatter `F0` integral. Other optional parameters are:
 
-  * `T`: matrix that transforms the interaction matrix from complex spherical
-harmonics to a symmetry adapted basis. By default, the complex spherical harmonics
-basis is used and `T=None`.
-  * `verbosity`: tunes output from the solver. If `verbosity=0` only basic
-information is printed, if `verbosity=1` the ground state atomic occupancy and
-its energy are printed, if `verbosity=2` additional information is printed for
-all occupancies that were diagonalized. By default, `verbosity=0`.
+  * `T`: matrix that transforms the interaction matrix from complex spherical harmonics to a symmetry adapted basis. By default, the complex spherical harmonics basis is used and `T=None`.
+  * `verbosity`: tunes output from the solver. If `verbosity=0` only basic information is printed, if `verbosity=1` the ground state atomic occupancy and its energy are printed, if `verbosity=2` additional information is printed for all occupancies that were diagonalized. By default, `verbosity=0`. 
+
+  * `Iteration_Number`: the iteration number of the DMFT loop. Used only for printing. By default   `Iteration_Number=1`
+  * `Test_Convergence`: convergence criterion. Once the self-energy is converged below `Test_Convergence` the Hubbard-I solver is not called anymore. By default `Test_Convergence=0.0001`.
 
 We need also to introduce some changes in the DMFT loop with respect that used for CT-QMC calculations in :ref:`advanced`. 
 The hybridization function is neglected in the Hubbard-I approximation, and only non-interacting level 
@@ -160,22 +153,23 @@ use here the default convergence criterion in :program:`Wien2k` (convergence to
 After calculations are done we may check the value of correlation ('Hubbard') energy correction to the total energy::
     
    >grep HUBBARD Ce-gamma.scf|tail -n 1
-   HUBBARD ENERGY(included in SUM OF EIGENVALUES):           -0.220502
+   HUBBARD ENERGY(included in SUM OF EIGENVALUES):           -0.012866
 
-and the band ("kinetic") energy with DMFT correction::
+In the case of Ce, with the correlated shell occupancy close to 1 the Hubbard energy is close to 0, while the DC correction to energy is about J/4 in accordance with the fully-localized-limit formula, hence, giving the total correction :math:`\Delta E_{HUB}=E_{HUB}-E_{DC} \approx -J/4`, which is in our case is equal to -0.175 eV :math:`\approx`-0.013 Ry.
+
+The band ("kinetic") energy with DMFT correction is ::
 
    >grep DMFT Ce-gamma.scf |tail -n 1
-   KINETIC ENERGY with DMFT correction:                      -5.329087
+   KINETIC ENERGY with DMFT correction:                      -5.370632
 
-as well as the convergence in total energy::
+One may also check the convergence in total energy::
    
    >grep :ENE Ce-gamma.scf |tail -n 5
-   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.77119670
-   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.77050935
-   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.77040176
-   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.77020712
-   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.77037540
-
+   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.56318334
+   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.56342250
+   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.56271503
+   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.56285812
+   :ENE  : ********** TOTAL ENERGY IN Ry =       -17717.56287381
 
 Calculating DOS with Hubbard-I
 ------------------------------
@@ -197,7 +191,7 @@ Then one needs to load projectors needed for calculations of corresponding proje
 
    SK = SumkDFTTools(hdf_file=dft_filename+'.h5', use_dft_blocks=False)
 
-Then after the solver initialization and setting up atomic levels we compute atomic Green's function and self-energy on the real axis::
+Then after the solver initialization we load the previously calculated chemical potential and double-counting correction.  Having set up atomic levels we then compute the atomic Green's function and self-energy on the real axis::
 
    S.set_atomic_levels( eal = eal )
    S.GF_realomega(ommin=ommin, ommax = ommax, N_om=N_om,U_int=U_int,J_hund=J_hund)

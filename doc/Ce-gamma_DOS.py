@@ -20,7 +20,6 @@ broadening = 0.02
 HDFfilename = dft_filename+'.h5'
 
 # Convert DMFT input:
-# Can be commented after the first run
 Converter = Wien2kConverter(filename=dft_filename,repacking=True)
 Converter.convert_dft_input()
 Converter.convert_parproj_input()
@@ -30,11 +29,11 @@ previous_runs = 0
 previous_present = False
 
 if mpi.is_master_node():
-    ar = HDFArchive(HDFfilename,'a')
+    ar = HDFArchive(HDFfilename)
     if 'iterations' in ar:
         previous_present = True
         previous_runs = ar['iterations']
-    else: 
+    else:
         previous_runs = 0
         previous_present = False
     del ar
@@ -43,27 +42,37 @@ mpi.barrier()
 previous_runs    = mpi.bcast(previous_runs)
 previous_present = mpi.bcast(previous_present)
 
-# if previous runs are present, no need for recalculating the bloc structure
-# It has to be commented, if you run this script for the first time, starting
-# from a converted h5 archive.
-
 # Init the SumK class
 SK = SumkDFTTools(hdf_file=dft_filename+'.h5',use_dft_blocks=False)
 
+# load old chemical potential and DC
+chemical_potential=0.0
+if mpi.is_master_node():
+    ar = HDFArchive(HDFfilename)
+    things_to_load=['chemical_potential','dc_imp']
+    old_data=SK.load(things_to_load)
+    chemical_potential=old_data[0]
+    SK.dc_imp=old_data[1]
+SK.chemical_potential=mpi.bcast(chemical_potential)
+SK.dc_imp=mpi.bcast(SK.dc_imp)
 
 if (mpi.is_master_node()):
-    print 'DC after reading SK: ',SK.dc_imp[SK.invshellmap[0]]
+    print 'DC after reading SK: ',SK.dc_imp[0]
 
 N = SK.corr_shells[0]['dim']
 l = SK.corr_shells[0]['l']
 
 # Init the Solver:
 S = Solver(beta = Beta, l = l)
-S.Nmoments= 8
 
 # set atomic levels:
 eal = SK.eff_atomic_levels()[0]
 S.set_atomic_levels( eal = eal )
+
+# Run the solver to get GF and self-energy on the real axis
 S.GF_realomega(ommin=ommin, ommax = ommax, N_om=N_om,U_int=U_int,J_hund=J_hund)
 SK.put_Sigma(Sigma_imp = [S.Sigma])
+
+# compute DOS
 SK.dos_partial(broadening=broadening)
+
