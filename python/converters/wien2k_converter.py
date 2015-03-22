@@ -408,7 +408,7 @@ class Wien2kConverter(ConverterTools):
                     R.next()
                 things_to_save.append('band_window')
 
-        R.close() # Reading done!
+                R.close() # Reading done!
 
         # Read relevant data from .struct file
         ######################################
