@@ -80,7 +80,7 @@ class SumkDFTTools(SumkDFT):
             # Non-projected DOS
             for iom in range(n_om):
                 for bname,gf in G_latt_w:
-                    DOS[bname][iom] += gf.data[iom,:,:].imag.trace()/numpy.pi
+                    DOS[bname][iom] -= gf.data[iom,:,:].imag.trace()/numpy.pi
 
             # Projected DOS:
             for icrsh in range(self.n_corr_shells):
@@ -104,20 +104,20 @@ class SumkDFTTools(SumkDFT):
         # G_loc can now also be used to look at orbitally-resolved quantities
         for ish in range(self.n_inequiv_shells):
             for bname,gf in G_loc[self.inequiv_to_corr[ish]]: # loop over spins
-                for iom in range(n_om): DOSproj[ish][bname][iom] += gf.data[iom,:,:].imag.trace()/numpy.pi
-                DOSproj_orb[ish][bname][:,:,:] += gf.data[:,:,:].imag/numpy.pi
+                for iom in range(n_om): DOSproj[ish][bname][iom] -= gf.data[iom,:,:].imag.trace()/numpy.pi
+                DOSproj_orb[ish][bname][:,:,:] -= gf.data[:,:,:].imag/numpy.pi
 
         # Write to files
         if save_to_file and mpi.is_master_node():
             for sp in self.spin_block_names[self.SO]:
                 f = open('DOS_wann_%s.dat'%sp, 'w')
-                for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOS[sp][i]))
+                for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOS[sp][iom]))
                 f.close()
 
                 # Partial
                 for ish in range(self.n_inequiv_shells):
                     f = open('DOS_wann_%s_proj%s.dat'%(sp,ish),'w')
-                    for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj[ish][sp][i]))
+                    for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj[ish][sp][iom]))
                     f.close()
 
                     # Orbitally-resolved
@@ -178,7 +178,7 @@ class SumkDFTTools(SumkDFT):
             # Non-projected DOS
             for iom in range(n_om):
                 for bname,gf in G_latt_w:
-                    DOS[bname][iom] += gf.data[iom,:,:].imag.trace()/numpy.pi
+                    DOS[bname][iom] -= gf.data[iom,:,:].imag.trace()/numpy.pi
 
             # Projected DOS:
             for ish in range(self.n_shells):
@@ -203,20 +203,20 @@ class SumkDFTTools(SumkDFT):
         # G_loc can now also be used to look at orbitally-resolved quantities
         for ish in range(self.n_shells):
             for bname,gf in G_loc[ish]:
-                for iom in range(n_om): DOSproj[ish][bname][iom] += gf.data[iom,:,:].imag.trace()/numpy.pi
-                DOSproj_orb[ish][bname][:,:,:] += gf.data[:,:,:].imag/numpy.pi
+                for iom in range(n_om): DOSproj[ish][bname][iom] -= gf.data[iom,:,:].imag.trace()/numpy.pi
+                DOSproj_orb[ish][bname][:,:,:] -= gf.data[:,:,:].imag/numpy.pi
 
         # Write to files
         if save_to_file and mpi.is_master_node():
             for sp in self.spin_block_names[self.SO]:
                 f = open('DOS_parproj_%s.dat'%sp, 'w')
-                for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOS[sp][i]))
+                for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOS[sp][iom]))
                 f.close()
 
                 # Partial
                 for ish in range(self.n_shells):
                     f = open('DOS_parproj_%s_proj%s.dat'%(sp,ish),'w')
-                    for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj[ish][sp][i]))
+                    for iom in range(n_om): f.write("%s    %s\n"%(om_mesh[iom],DOSproj[ish][sp][iom]))
                     f.close()
 
                     # Orbitally-resolved
