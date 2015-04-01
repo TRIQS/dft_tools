@@ -263,7 +263,8 @@ class SumkDFTTools(SumkDFT):
                                                      for block,inner in gf_struct_parproj ], make_copies = False)
             G_loc.zero()
 
-        for ik in range(self.n_k):
+        ikarray = numpy.array(range(self.n_k))
+        for ik in mpi.slice_array(ikarray):
 
             G_latt_w = self.lattice_gf(ik=ik,mu=mu,iw_or_w="w",broadening=broadening)
 
