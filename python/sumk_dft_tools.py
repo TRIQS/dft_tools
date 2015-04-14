@@ -91,8 +91,8 @@ class SumkDFTTools(SumkDFT):
         # Collect data from mpi:
         for bname in DOS:
             DOS[bname] = mpi.all_reduce(mpi.world, DOS[bname], lambda x,y : x+y)
-        for ish in range(self.n_shells):
-            G_loc[ish] << mpi.all_reduce(mpi.world, G_loc[ish], lambda x,y : x+y)
+        for icrsh in range(self.n_corr_shells):
+            G_loc[icrsh] << mpi.all_reduce(mpi.world, G_loc[icrsh], lambda x,y : x+y)
         mpi.barrier()
 
         # Symmetrize and rotate to local coord. system if needed:
