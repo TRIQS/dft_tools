@@ -52,9 +52,8 @@ class SumkDFTTools(SumkDFT):
             mesh = (om_min,om_max,n_om)
         else: 
             om_min,om_max,n_om = mesh
-            delta_om = (om_max-om_min)/(n_om-1)
-            om_mesh = [om_min + delta_om * i for i in range(n_om)]
-
+            om_mesh = numpy.linspace(om_min, om_max, n_om)
+        
         G_loc = []
         for icrsh in range(self.n_corr_shells):
             spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
@@ -148,9 +147,8 @@ class SumkDFTTools(SumkDFT):
             mesh = (om_min,om_max,n_om)
         else: 
             om_min,om_max,n_om = mesh
-            delta_om = (om_max-om_min)/(n_om-1)
-            om_mesh = [om_min + delta_om * i for i in range(n_om)]
-
+            om_mesh = numpy.linspace(om_min, om_max, n_om)
+        
         G_loc = []
         spn = self.spin_block_names[self.SO]
         gf_struct_parproj = [ [ (sp, range(self.shells[ish]['dim'])) for sp in spn ] 
