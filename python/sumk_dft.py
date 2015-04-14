@@ -839,7 +839,7 @@ class SumkDFT:
                         fout.write("%s\n"%self.n_orbitals[ik,isp])
                         for inu in range(self.n_orbitals[ik,isp]):
                             for imu in range(self.n_orbitals[ik,isp]):
-                                fout.write("%.14f  %.14f "%(deltaN[bn][ik][inu,imu].real,deltaN[bn][ik][inu,imu].imag))
+                                fout.write("%.14f  %.14f "%(deltaN[sp][ik][inu,imu].real,deltaN[sp][ik][inu,imu].imag))
                             fout.write("\n")
                         fout.write("\n")
                     fout.close()
