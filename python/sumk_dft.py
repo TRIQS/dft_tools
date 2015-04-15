@@ -260,7 +260,7 @@ class SumkDFT:
         # Are we including Sigma?
         if with_Sigma:
             Sigma_imp = getattr(self,"Sigma_imp_"+iw_or_w)
-            sigma_minus_dc = Sigma_imp.copy()
+            sigma_minus_dc = [s.copy() for s in Sigma_imp]
             if with_dc: sigma_minus_dc = self.add_dc(iw_or_w)
             if iw_or_w == "iw":
                 beta = Sigma_imp[0].mesh.beta   # override beta if Sigma_iw is present
