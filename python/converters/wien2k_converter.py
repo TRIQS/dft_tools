@@ -512,7 +512,7 @@ class Wien2kConverter(ConverterTools):
                     raise "convert_misc_input: reading file %s failed" %self.outputs_file
 
         # Save it to the HDF:
-        ar=HDFArchive(self.hdf_file,'a')
+        ar = HDFArchive(self.hdf_file,'a')
         if not (self.misc_subgrp in ar): ar.create_group(self.misc_subgrp)
         for it in things_to_save: ar[self.misc_subgrp][it] = locals()[it]
         del ar
@@ -660,7 +660,7 @@ class Wien2kConverter(ConverterTools):
         # Reading done!
 
         # Save it to the HDF:
-        ar=HDFArchive(self.hdf_file,'a')
+        ar = HDFArchive(self.hdf_file,'a')
         if not (symm_subgrp in ar): ar.create_group(symm_subgrp)
         things_to_save = ['n_symm','n_atoms','perm','orbits','SO','SP','time_inv','mat','mat_tinv']
         for it in things_to_save: ar[symm_subgrp][it] = locals()[it]
