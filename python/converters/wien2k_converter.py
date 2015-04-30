@@ -223,7 +223,7 @@ class Wien2kConverter(ConverterTools):
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
             for it in things_to_set: setattr(self,it,locals()[it])
         except StopIteration : # a more explicit error if the file is corrupted.
-            raise "Wien2k_converter : reading file %s failed!"%filename
+            raise "Wien2k_converter : reading file %s failed!"%self.dft_file
 
         R.close()
         # Reading done!
