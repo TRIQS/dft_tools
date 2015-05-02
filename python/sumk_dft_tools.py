@@ -555,7 +555,7 @@ class SumkDFTTools(SumkDFT):
         c_al = numpy.cos(latticeangle[0])
         c_be = numpy.cos(latticeangle[1])
         c_ga = numpy.cos(latticeangle[2])
-        vol_c = a * b * c * numpy.sqrt(1 + 2 * c_al * c_be * c_ga - c_al ** 2 - c_be * 82 - c_ga ** 2)
+        vol_c = a * b * c * numpy.sqrt(1 + 2 * c_al * c_be * c_ga - c_al ** 2 - c_be ** 2 - c_ga ** 2)
       
         det = {"P":1, "F":4, "B":2, "R":3, "H":1, "CXY":2, "CYZ":2, "CXZ":2}
         vol_p = vol_c / det[lattice_type]
