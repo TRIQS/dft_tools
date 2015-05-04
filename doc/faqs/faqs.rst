@@ -11,10 +11,14 @@ A hack solution is as follows:
 3) `x lapw2 -almd -band`
 4) `dmftproj -band` (add the fermi energy to file, it can be found by running `grep :FER *.scf`)
 
-How do I do ..this..?
----------------------
+How do I plot the output of `spaghettis`?
+-----------------------------------------
 
-This is how you do this.
+In python, you can do the following for example. You should pass the name of
+the file written out by the spaghettis function.  Of course, you should change
+the parameters as desired.
+
+.. literalinclude:: plotting_spaghettis.py
 
 Why is my calculation not working?
 ----------------------------------
