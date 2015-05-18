@@ -114,7 +114,7 @@ site with 3 t2g orbitals in the unit cell contains the following:
 
   1 1 2 3 0 0      <- corr_shells, as above: atom, sort, l, dim, SO, dummy
 
-  2 2 3            <- n_reps, dim_reps (length 2, because eg/t2g splitting) for each shell
+  2 2 3            <- n_reps, dim_reps (length 2, because eg/t2g splitting) for each inequivalent correlated shell
 
 After this header, we give the Hamiltonian matrices for al the k-points. for
 each k-point we give first the matrix of the real part, then the matrix of the
