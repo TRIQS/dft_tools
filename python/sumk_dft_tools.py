@@ -685,13 +685,17 @@ class SumkDFTTools(SumkDFT):
 				for isp in range(n_inequiv_spin_blocks)]
             
             for isp in range(n_inequiv_spin_blocks):
-                # Obtain A_kw from G_w (swapaxes is used to have omega in the 3rd dimension)
-                A_kw[isp].real = -copy.deepcopy(G_w[self.spin_block_names[self.SO][isp]].data.swapaxes(0,1).swapaxes(1,2)).imag / numpy.pi 
+                # copy data from G_w (swapaxes is used to have omega in the 3rd dimension)
+                A_kw[isp] = copy.deepcopy(G_w[self.spin_block_names[self.SO][isp]].data.swapaxes(0,1).swapaxes(1,2));
+                # calculate A(k,w) for each frequency
+                for iw in xrange(n_om):
+                       A_kw[isp][:,:,iw] = -1.0/(2.0*numpy.pi*1j)*(A_kw[isp][:,:,iw]-numpy.conjugate(numpy.transpose(A_kw[isp][:,:,iw])))
+                
                 b_min = max(self.band_window[isp][ik, 0], self.band_window_optics[isp][ik, 0])
                 b_max = min(self.band_window[isp][ik, 1], self.band_window_optics[isp][ik, 1])
                 A_i = slice(b_min - self.band_window[isp][ik, 0], b_max - self.band_window[isp][ik, 0] + 1)
                 v_i = slice(b_min - self.band_window_optics[isp][ik, 0], b_max - self.band_window_optics[isp][ik, 0] + 1)
-                
+
                 # loop over all symmetries
                 for R in self.rot_symmetries:
                     # get transformed velocity under symmetry R
@@ -705,13 +709,14 @@ class SumkDFTTools(SumkDFT):
                         for iw in xrange(n_om):
                             for iq in range(len(self.Om_mesh)):
                                 if(iw + iOm_mesh[iq] >= n_om or self.omega[iw] < -self.Om_mesh[iq] + energy_window[0] or self.omega[iw] > self.Om_mesh[iq] + energy_window[1]): continue
+                                
                                 self.Gamma_w[direction][iq, iw] += (numpy.dot(numpy.dot(numpy.dot(vel_R[v_i, v_i, dir_to_int[direction[0]]], 
                                                                     A_kw[isp][A_i, A_i, iw]), vel_R[v_i, v_i, dir_to_int[direction[1]]]), 
                                                                     A_kw[isp][A_i, A_i, iw + iOm_mesh[iq]]).trace().real * self.bz_weights[ik])
         
-	for direction in self.directions: 
-            self.Gamma_w[direction] = (mpi.all_reduce(mpi.world, self.Gamma_w[direction], lambda x, y : x + y) 
-					/ self.cellvolume(self.lattice_type, self.lattice_constants, self.lattice_angles)[1] / self.n_symmetries)
+        for direction in self.directions: 
+                self.Gamma_w[direction] = (mpi.all_reduce(mpi.world, self.Gamma_w[direction], lambda x, y : x + y) 
+                                / self.cellvolume(self.lattice_type, self.lattice_constants, self.lattice_angles)[1] / self.n_symmetries)
 
         
     def transport_coefficient(self, direction, iq, n, beta):
