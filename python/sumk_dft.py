@@ -347,7 +347,7 @@ class SumkDFT:
         Parameters
         ----------
         ish : integer
-              Shell index of GF to be upfolded.
+              Shell index of GF to be rotated.
 
               - if shells='corr': ish labels all correlated shells (equivalent or not)
               - if shells='all': ish labels only representative (inequivalent) non-correlated shells

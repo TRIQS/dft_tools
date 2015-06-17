@@ -91,7 +91,7 @@ First, we load the necessary modules::
   from pytriqs.applications.dft.converters.wien2k_converter import *
   from pytriqs.gf.local import *
   from pytriqs.archive import HDFArchive
-  from pytriqs.operators.hamiltonians import *
+  from pytriqs.operators.util import *
   from pytriqs.applications.impurity_solvers.cthyb import *
 
 

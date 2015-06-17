@@ -6,6 +6,4 @@ triqs_add_test_hdf(wien2k_convert " -p 1.e-6" )
 triqs_add_test_hdf(hk_convert " -p 1.e-6" )
 triqs_add_test_hdf(sumkdft_basic " -d 1.e-6" )
 triqs_add_test_hdf(srvo3_Gloc "  -d 1.e-6" )
-triqs_add_test_hdf(U_mat " -d 1.e-6" )
 triqs_add_test_hdf(srvo3_transp " -d 1.e-6" )
-

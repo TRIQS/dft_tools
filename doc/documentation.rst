@@ -42,7 +42,6 @@ This is the reference manual for the python routines.
    reference/converters
    reference/sumk_dft
    reference/sumk_dft_tools
-   reference/U_matrix
    reference/symmetry
    reference/transbasis
 
