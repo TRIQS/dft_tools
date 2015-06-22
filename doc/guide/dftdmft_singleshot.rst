@@ -44,7 +44,7 @@ iterations and the self-consistency condition::
           S.G_iw << SK.extract_G_loc()[0]                    # extract the local Green function
           S.G0_iw << inverse(S.Sigma_iw + inverse(S.G_iw))   # finally get G0, the input for the Solver
 
-          S.solve(h_loc=h_loc, **p)                          # now solve the impurity problem
+          S.solve(h_int=h_int, **p)                          # now solve the impurity problem
 
 	  dm = S.G_iw.density()                                                 # Density matrix of the impurity problem  
           SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0, use_dc_formula=dc_type) # Set the double counting term
@@ -155,7 +155,7 @@ The next step is to initialise the  :class:`Solver` class::
   # Construct U matrix for density-density calculations
   Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
   # Construct Hamiltonian and solver
-  h_loc = h_loc_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat, H_dump="H.txt")
+  h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat, H_dump="H.txt")
   S = Solver(beta=beta, gf_struct=gf_struct)
 
 If there are previous runs stored in the hdf5 archive, we can now load the self energy
@@ -207,7 +207,7 @@ refinement::
       S.G0_iw << mpi.bcast(S.G0_iw)
 
       # Solve the impurity problem:
-      S.solve(h_loc=h_loc, **p)
+      S.solve(h_int=h_int, **p)
   
       # Solved. Now do post-processing:
       mpi.report("Total charge of impurity problem : %.6f"%S.G_iw.total_density())

@@ -56,7 +56,7 @@ gf_struct = SK.gf_struct_solver[0]
 # Construct U matrix for density-density calculations
 Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
 # Construct Hamiltonian and solver
-h_loc = h_loc_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat, H_dump="H.txt")
+h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat, H_dump="H.txt")
 S = Solver(beta=beta, gf_struct=gf_struct)
 
 if previous_present:
@@ -98,7 +98,7 @@ for iteration_number in range(1,loops+1):
     S.G0_iw << mpi.bcast(S.G0_iw)
 
     # Solve the impurity problem:
-    S.solve(h_loc=h_loc, **p)
+    S.solve(h_int=h_int, **p)
 
     # Solved. Now do post-processing:
     mpi.report("Total charge of impurity problem : %.6f"%S.G_iw.total_density())
