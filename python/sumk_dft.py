@@ -27,6 +27,7 @@ from pytriqs.gf.local import *
 import pytriqs.utility.mpi as mpi
 from pytriqs.archive import *
 from symmetry import *
+from sets import Set
 
 class SumkDFT:
     """This class provides a general SumK method for combining ab-initio code and pytriqs."""
@@ -655,29 +656,27 @@ class SumkDFT:
 
 
             for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]:
+                n_orb = self.corr_shells[self.inequiv_to_corr[ish]]['dim']
                 dmbool = (abs(dens_mat[ish][sp]) > threshold)  # gives an index list of entries larger that threshold
 
                 # Determine off-diagonal entries in upper triangular part of density matrix
-                offdiag = []
-                for i in range(len(dmbool)):
-                    for j in range(i+1,len(dmbool)):
-                        if dmbool[i,j]: offdiag.append([i,j])
+                offdiag = Set([])
+                for i in range(n_orb):
+                    for j in range(i+1,n_orb):
+                        if dmbool[i,j]: offdiag.add((i,j))
 
                 # Determine the number of non-hybridising blocks in the gf
-                num_blocs = len(dmbool)
-                blocs = [ [i] for i in range(num_blocs) ]
-                for i in range(len(offdiag)):
-                    for j in range(len(blocs[offdiag[i][1]])): blocs[offdiag[i][0]].append(blocs[offdiag[i][1]][j])
-                    del blocs[offdiag[i][1]]
-                    for j in range(i+1,len(offdiag)):
-                        if offdiag[j][0] == offdiag[i][1]: offdiag[j][0] = offdiag[i][0]
-                        if offdiag[j][1] == offdiag[i][1]: offdiag[j][1] = offdiag[i][0]
-                        if offdiag[j][0] > offdiag[i][1]: offdiag[j][0] -= 1
-                        if offdiag[j][1] > offdiag[i][1]: offdiag[j][1] -= 1
-                        offdiag[j].sort()
-                    num_blocs -= 1
+                blocs = [ [i] for i in range(n_orb) ]
+                while len(offdiag) != 0:
+                    pair = offdiag.pop()
+                    for b1,b2 in product(blocs,blocs):
+                       if (pair[0] in b1) and (pair[1] in b2):
+                           if blocs.index(b1) != blocs.index(b2):     # In separate blocks?
+                               b1.extend(blocs.pop(blocs.index(b2)))  # Merge two blocks
+                               break                                  # Move on to next pair in offdiag
 
                 # Set the gf_struct for the solver accordingly
+                num_blocs = len(blocs)
                 for i in range(num_blocs):
                     blocs[i].sort()
                     self.gf_struct_solver[ish].update( [('%s_%s'%(sp,i),range(len(blocs[i])))] )
