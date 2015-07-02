@@ -28,6 +28,7 @@ import pytriqs.utility.mpi as mpi
 from pytriqs.archive import *
 from symmetry import *
 from sets import Set
+from itertools import product
 
 class SumkDFT:
     """This class provides a general SumK method for combining ab-initio code and pytriqs."""
