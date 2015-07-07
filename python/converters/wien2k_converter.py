@@ -464,16 +464,20 @@ class Wien2kConverter(ConverterTools):
         elif SP == 1:
             files = [self.bandwin_file+'up', self.bandwin_file+'dn']
         else: # SO and SP can't both be 1
-            assert 0, "convert_misc_input: Reding oubwin error! Check SP and SO!"
-        
-        band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(SP + 1 - SO)]
+            assert 0, "convert_misc_input: Reading oubwin error! Check SP and SO!"
+
+        band_window = [None for isp in range(SP + 1 - SO)]
         for isp, f in enumerate(files):
             if os.path.exists(f):
                 mpi.report("Reading input from %s..."%f)
                 R = ConverterTools.read_fortran_file(self, f, self.fortran_to_replace)
-                R.next()
+                n_k_oubwin = int(R.next())
+                if (n_k_oubwin != n_k):
+                    mpi.report("convert_misc_input : WARNING : n_k in case.oubwin is different from n_k in case.klist")
                 assert int(R.next()) == SO, "convert_misc_input: SO is inconsistent in oubwin file!"
-                for ik in xrange(n_k):
+
+                band_window[isp] = numpy.zeros((n_k_oubwin, 2), dtype=int) 
+                for ik in xrange(n_k_oubwin):
                     R.next()
                     band_window[isp][ik,0] = R.next() # lowest band
                     band_window[isp][ik,1] = R.next() # highest band
