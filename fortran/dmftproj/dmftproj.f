@@ -745,10 +745,10 @@ C Writing the output files for DMFT computations :
 C ------------------------------------------------ 
          IF(.NOT.ifBAND) THEN
           CALL outqmc(elecn,qtot)
+          CALL outbwin
          ELSE
           CALL outband
          ENDIF
-         CALL outbwin
         ENDIF
 C End of the prgm
         CALL printout(0)
