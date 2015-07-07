@@ -256,6 +256,16 @@ class Wien2kConverter(ConverterTools):
         """
 
         if not (mpi.is_master_node()): return
+
+        # get needed data from hdf file
+        ar = HDFArchive(self.hdf_file,'a')
+        things_to_read = ['SP','SO','n_shells','n_k','n_orbitals','shells']
+
+        for it in things_to_read:
+            if not hasattr(self,it): setattr(self,it,ar[self.dft_subgrp][it])
+        self.n_spin_blocs = self.SP + 1 - self.SO
+        del ar
+
         mpi.report("Reading input from %s..."%self.parproj_file)
 
         dens_mat_below = [ [numpy.zeros([self.shells[ish]['dim'],self.shells[ish]['dim']],numpy.complex_) for ish in range(self.n_shells)] 
@@ -332,10 +342,19 @@ class Wien2kConverter(ConverterTools):
         """
 
         if not (mpi.is_master_node()): return
-        mpi.report("Reading input from %s..."%self.band_file)
 
-        R = ConverterTools.read_fortran_file(self,self.band_file,self.fortran_to_replace)
         try:
+            # get needed data from hdf file
+            ar = HDFArchive(self.hdf_file,'a')
+            things_to_read = ['SP','SO','n_corr_shells','n_shells','corr_shells','shells','energy_unit']
+
+            for it in things_to_read:
+                    if not hasattr(self,it): setattr(self,it,ar[self.dft_subgrp][it])
+            self.n_spin_blocs = self.SP + 1 - self.SO
+            del ar
+
+            mpi.report("Reading input from %s..."%self.band_file)
+            R = ConverterTools.read_fortran_file(self,self.band_file,self.fortran_to_replace)
             n_k = int(R.next())
 
             # read the list of n_orbitals for all k points
@@ -392,10 +411,13 @@ class Wien2kConverter(ConverterTools):
                                 for j in range(n_orbitals[ik,isp]):
                                     proj_mat_all[ik,isp,ish,ir,i,j] += 1j * R.next()
 
+            R.close()
+
+        except KeyError:
+            raise "convert_bands_input : Needed data not found in hdf file. Consider calling convert_dft_input first!"
         except StopIteration : # a more explicit error if the file is corrupted.
             raise "Wien2k_converter : reading file band_file failed!"
 
-        R.close()
         # Reading done!
 
         # Save it to the HDF:

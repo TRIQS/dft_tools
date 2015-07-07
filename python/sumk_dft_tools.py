@@ -711,8 +711,8 @@ class SumkDFTTools(SumkDFT):
                                 if(iw + iOm_mesh[iq] >= n_om or self.omega[iw] < -self.Om_mesh[iq] + energy_window[0] or self.omega[iw] > self.Om_mesh[iq] + energy_window[1]): continue
                                 
                                 self.Gamma_w[direction][iq, iw] += (numpy.dot(numpy.dot(numpy.dot(vel_R[v_i, v_i, dir_to_int[direction[0]]], 
-                                                                    A_kw[isp][A_i, A_i, iw]), vel_R[v_i, v_i, dir_to_int[direction[1]]]), 
-                                                                    A_kw[isp][A_i, A_i, iw + iOm_mesh[iq]]).trace().real * self.bz_weights[ik])
+                                                                    A_kw[isp][A_i, A_i, iw + iOm_mesh[iq]]), vel_R[v_i, v_i, dir_to_int[direction[1]]]), 
+                                                                    A_kw[isp][A_i, A_i, iw ]).trace().real * self.bz_weights[ik])
         
         for direction in self.directions: 
                 self.Gamma_w[direction] = (mpi.all_reduce(mpi.world, self.Gamma_w[direction], lambda x, y : x + y) 
