@@ -598,7 +598,7 @@ class SumkDFTTools(SumkDFT):
        
         # Check if wien converter was called and read transport subgroup form hdf file
         if mpi.is_master_node():
-            ar = HDFArchive(self.hdf_file, 'r')
+            ar = HDFArchive(self.hdf_file, 'a')
             if not (self.transp_data in ar): raise IOError, "transport_distribution: No %s subgroup in hdf file found! Call convert_transp_input first." %self.transp_data
         self.read_transport_input_from_hdf()
         

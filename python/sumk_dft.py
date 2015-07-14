@@ -162,7 +162,7 @@ class SumkDFT:
         subgroup_present = 0
 
         if mpi.is_master_node():
-            ar = HDFArchive(self.hdf_file,'r')
+            ar = HDFArchive(self.hdf_file,'a')
             if subgrp in ar:
                 subgroup_present = True
                 # first read the necessary things:
@@ -227,7 +227,7 @@ class SumkDFT:
         """
 
         if not (mpi.is_master_node()): return # do nothing on nodes
-        ar = HDFArchive(self.hdf_file,'r')
+        ar = HDFArchive(self.hdf_file,'a')
         if not subgrp in ar: mpi.report("Loading %s failed!"%subgrp)
         list_to_return = []
         for it in things_to_load: 
