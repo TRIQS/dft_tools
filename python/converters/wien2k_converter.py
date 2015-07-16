@@ -183,7 +183,7 @@ class Wien2kConverter(ConverterTools):
                     n_orbitals[ik,isp] = int(R.next())
             
             # Initialise the projectors:
-            proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max([crsh['dim'] for crsh in corr_shells]),max(n_orbitals)],numpy.complex_)
+            proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max([crsh['dim'] for crsh in corr_shells]),numpy.max(n_orbitals)],numpy.complex_)
 
             # Read the projectors from the file:
             for ik in range(n_k):
@@ -202,7 +202,7 @@ class Wien2kConverter(ConverterTools):
           
             # now define the arrays for weights and hopping ...
             bz_weights = numpy.ones([n_k],numpy.float_)/ float(n_k)  # w(k_index),  default normalisation 
-            hopping = numpy.zeros([n_k,n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
+            hopping = numpy.zeros([n_k,n_spin_blocs,numpy.max(n_orbitals),numpy.max(n_orbitals)],numpy.complex_)
 
             # weights in the file
             for ik in range(n_k) : bz_weights[ik] = R.next()         
@@ -364,7 +364,7 @@ class Wien2kConverter(ConverterTools):
                     n_orbitals[ik,isp] = int(R.next())
 
             # Initialise the projectors:
-            proj_mat = numpy.zeros([n_k,self.n_spin_blocs,self.n_corr_shells,max([crsh['dim'] for crsh in self.corr_shells]),max(n_orbitals)],numpy.complex_)
+            proj_mat = numpy.zeros([n_k,self.n_spin_blocs,self.n_corr_shells,max([crsh['dim'] for crsh in self.corr_shells]),numpy.max(n_orbitals)],numpy.complex_)
 
             # Read the projectors from the file:
             for ik in range(n_k):
@@ -381,7 +381,7 @@ class Wien2kConverter(ConverterTools):
                             for j in range(n_orbitals[ik,isp]):
                                 proj_mat[ik,isp,icrsh,i,j] += 1j * R.next()
 
-            hopping = numpy.zeros([n_k,self.n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
+            hopping = numpy.zeros([n_k,self.n_spin_blocs,numpy.max(n_orbitals),numpy.max(n_orbitals)],numpy.complex_)
          	    
             # Grab the H
             # we use now the convention of a DIAGONAL Hamiltonian!!!!
@@ -396,7 +396,7 @@ class Wien2kConverter(ConverterTools):
             n_parproj = numpy.array(n_parproj)
             
             # Initialise P, here a double list of matrices:
-            proj_mat_all = numpy.zeros([n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max([sh['dim'] for sh in self.shells]),max(n_orbitals)],numpy.complex_)
+            proj_mat_all = numpy.zeros([n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max([sh['dim'] for sh in self.shells]),numpy.max(n_orbitals)],numpy.complex_)
 
             for ish in range(self.n_shells):
                 for ik in range(n_k):
