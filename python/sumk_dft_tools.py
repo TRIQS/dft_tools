@@ -18,13 +18,15 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ################################################################################
-
+import sys
 from types import *
 import numpy
 from pytriqs.gf.local import *
 import pytriqs.utility.mpi as mpi
 from symmetry import *
 from sumk_dft import SumkDFT
+from scipy.integrate import *
+from scipy.interpolate import *
 
 class SumkDFTTools(SumkDFT):
     """
@@ -613,8 +615,8 @@ class SumkDFTTools(SumkDFT):
         if (energy_window[0] >= energy_window[1] or energy_window[0] >= 0 or energy_window[1] <= 0):
             assert 0, "transport_distribution: energy_window wrong!"
 
-        if (abs(self.fermi_dis(energy_window[0]*beta)*self.fermi_dis(-energy_window[0]*beta)) > 1e-5
-            or abs(self.fermi_dis(energy_window[1]*beta)*self.fermi_dis(-energy_window[1]*beta)) > 1e-5):
+        if (abs(self.fermi_dis(energy_window[0],beta)*self.fermi_dis(-energy_window[0],beta)) > 1e-5
+            or abs(self.fermi_dis(energy_window[1],beta)*self.fermi_dis(-energy_window[1],beta)) > 1e-5):
                 mpi.report("\n####################################################################")
                 mpi.report("transport_distribution: WARNING - energy window might be too narrow!")
                 mpi.report("####################################################################\n")
@@ -718,8 +720,8 @@ class SumkDFTTools(SumkDFT):
                 self.Gamma_w[direction] = (mpi.all_reduce(mpi.world, self.Gamma_w[direction], lambda x, y : x + y) 
                                 / self.cellvolume(self.lattice_type, self.lattice_constants, self.lattice_angles)[1] / self.n_symmetries)
 
-        
-    def transport_coefficient(self, direction, iq, n, beta):
+
+    def transport_coefficient(self, direction, iq, n, beta, method=None):
         r"""
         Calculates the transport coefficient A_n in a given direction for a given :math:`\Omega`. The required members (Gamma_w, directions, Om_mesh) have to be obtained first
         by calling the function :meth:`transport_distribution <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools.transport_distribution>`. For n>0 A is set to NaN if :math:`\Omega` is not 0.0. 
@@ -734,6 +736,9 @@ class SumkDFTTools(SumkDFT):
             Number of the desired moment of the transport distribution.
         beta : double
             Inverse temperature :math:`\beta`.
+        method : string
+            Integration method: cubic spline and scipy.integrate.quad ('quad'), simpson rule ('simps'), trapezoidal rule ('trapz'), rectangular integration (otherwise)
+            Note that the sampling points of the the self-energy are used!
         
         Returns
         -------
@@ -744,24 +749,39 @@ class SumkDFTTools(SumkDFT):
         if not (mpi.is_master_node()): return
         
         assert hasattr(self,'Gamma_w'), "transport_coefficient: Run transport_distribution first or load data from h5!"
-        A = 0.0
-        omegaT = self.omega * beta
-        d_omega = self.omega[1] - self.omega[0]
-        if (self.Om_mesh[iq] == 0.0):
-            for iw in xrange(self.Gamma_w[direction].shape[1]):
-                A += self.Gamma_w[direction][iq, iw] * self.fermi_dis(omegaT[iw]) * self.fermi_dis(-omegaT[iw]) * numpy.float(omegaT[iw])**n * d_omega
-        elif (n == 0.0):
-            for iw in xrange(self.Gamma_w[direction].shape[1]):
-                A += (self.Gamma_w[direction][iq, iw] * (self.fermi_dis(omegaT[iw]) - self.fermi_dis(omegaT[iw] + self.Om_mesh[iq] * beta)) 
-                     / (self.Om_mesh[iq] * beta) * d_omega)
-        else:
-                A = numpy.nan
-        A = A * numpy.pi * (2.0-self.SP)
         
+        if (self.Om_mesh[iq] == 0.0 or  n == 0.0):
+            A = 0.0
+            # setup the integrand
+            if (self.Om_mesh[iq] == 0.0):
+                A_int = self.Gamma_w[direction][iq] * (self.fermi_dis(self.omega,beta) * self.fermi_dis(-self.omega,beta)) * (self.omega*beta)**n
+            elif (n == 0.0):
+                A_int = self.Gamma_w[direction][iq] * (self.fermi_dis(self.omega,beta) - self.fermi_dis(self.omega+self.Om_mesh[iq],beta))/(self.Om_mesh[iq]*beta)
+            
+            # w-integration
+            if method == 'quad':
+                # quad on interpolated w-points with cubic spline
+                A_int_interp = interp1d(self.omega,A_int,kind='cubic')
+                A = quad(A_int_interp, min(self.omega), max(self.omega), epsabs=1.0e-12,epsrel=1.0e-12,limit = 500)
+                A = A[0]
+            elif method == 'simps':
+                # simpson rule for w-grid
+                A = simps(A_int,self.omega)
+            elif method == 'trapz':
+                # trapezoidal rule for w-grid
+                A = numpy.trapz(A_int,self.omega)
+            else:
+                # rectangular integration for w-grid (orignal implementation) 
+                d_w = self.omega[1] - self.omega[0]
+                for iw in xrange(self.Gamma_w[direction].shape[1]):
+                    A += A_int[iw]*d_w
+            A = A * numpy.pi * (2.0-self.SP)
+        else:
+            A = numpy.nan
         return A
 
-    
-    def conductivity_and_seebeck(self, beta):
+
+    def conductivity_and_seebeck(self, beta, method=None):
         r"""
         Calculates the Seebeck coefficient and the optical conductivity by calling 
         :meth:`transport_coefficient <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools.transport_coefficient>`. 
@@ -794,8 +814,8 @@ class SumkDFTTools(SumkDFT):
         
         for direction in self.directions:
             for iq in xrange(n_q):
-                A0[direction][iq] = self.transport_coefficient(direction, iq=iq, n=0, beta=beta)
-                A1[direction][iq] = self.transport_coefficient(direction, iq=iq, n=1, beta=beta)
+                A0[direction][iq] = self.transport_coefficient(direction, iq=iq, n=0, beta=beta, method=method)
+                A1[direction][iq] = self.transport_coefficient(direction, iq=iq, n=1, beta=beta, method=method)
                 print "A_0 in direction %s for Omega = %.2f    %e a.u." % (direction, self.Om_mesh[iq], A0[direction][iq])
                 print "A_1 in direction %s for Omega = %.2f    %e a.u." % (direction, self.Om_mesh[iq], A1[direction][iq])
                 if ~numpy.isnan(A1[direction][iq]):
@@ -810,7 +830,7 @@ class SumkDFTTools(SumkDFT):
         return self.optic_cond, self.seebeck
 
 
-    def fermi_dis(self, x):
+    def fermi_dis(self,w,beta):
         r"""
         Fermi distribution.
 
@@ -819,11 +839,13 @@ class SumkDFTTools(SumkDFT):
 
         Parameters
         ----------
-        x : double
-           Inverse temperature times frequency :math:`\beta\omega`.
-
+        w : double
+           frequency
+        beta : double
+           inverse temperature
+ 
         Returns
         -------
         f : double
         """
-        return 1.0/(numpy.exp(x)+1)
+        return 1.0/(numpy.exp(w*beta)+1)
