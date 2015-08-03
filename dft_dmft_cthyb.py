@@ -60,10 +60,16 @@ h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_s
 S = Solver(beta=beta, gf_struct=gf_struct)
 
 if previous_present:
+  chemical_potential = 0
+  dc_imp = 0
+  dc_energ = 0
   if mpi.is_master_node():
       S.Sigma_iw << HDFArchive(dft_filename+'.h5','a')['dmft_output']['Sigma_iw']
       chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
   S.Sigma_iw << mpi.bcast(S.Sigma_iw)
+  chemical_potential = mpi.bcast(chemical_potential)
+  dc_imp = mpi.bcast(dc_imp)
+  dc_energ = mpi.bcast(dc_energ)
   SK.set_mu(chemical_potential)
   SK.set_dc(dc_imp,dc_energ)
 
