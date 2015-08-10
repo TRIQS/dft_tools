@@ -72,7 +72,7 @@ Consistency with parameters
 
 
 Selecting projector subsets
----------------------------
+===========================
 
 The first step of PLO processing is to select subsets of projectors
 corresponding to PLO groups. Each group contains a set of shells.
@@ -117,7 +117,7 @@ The class is using a helper function `select_bands()` for selecting a subset of 
 .. _ortho:
 
 Orthogonalization
-=================
+-----------------
 
 At the second stage the selected projectors are orthogonalized (orthonormalized). 
 Orthogonalization can be performed in different ways if projection is made
@@ -136,5 +136,56 @@ The way the normalization of a PLO group is done is controlled by two group para
   - *NORMALIZE* (True/False) : indicates whether the PLO group is normalized (True by default)
   - *NORMION* (True/False) : indicates whether the PLO group is normalized on a per-ion basis
     (False by default)
+
+
+Storing generated projectors
+****************************
+
+After the PLOs are generated they are stored to text files which can be subsequently
+converted to TRIQS h5-files (using the converter). The general format of the file
+is a JSON-header containing all necessary parameters followed by a set of arrays.
+There is always one (control) file containing general information (`k`-kpoints, lattice vectors etc.)
+and `at least` one file containing correlated groups (one file for each group).
+
+Control file format
+===================
+
+Filename '<namebase>.ctrl'. Contains the data shared between all shells.
+The JSON-header consists of the following elements:
+
+  * *nk*: number of `k`-points
+
+  * *ns*: number of spin channels
+
+  * *nc_flag*: collinear/noncollinear case (False/True)
+
+  * *ng*: number of projector groups
+
+  * Symmetry information (list of symmetry operations)
+
+  * *efermi*: Fermi level (optional)
+
+  * Lattice information
+
+Projector-group file format
+===========================
+
+Projector-group files have names '<namebase>.plog<Ng>'.
+They essentially contain serialized objects of class 'ProjectorGroup'.
+The JSON-header has, thus, the following elements:
+
+  * *shells*: list of shells
+
+  * each shell is a dictionary:
+
+    - *lshell*: orbital number `l`
+
+    - *nion*: number of ions
+
+    - *ndim*: number of orbitals/ion
+
+    - *nbmax*: maxmimum number of bands (needed for array allocations)
+
+  * *emin*, *emax*: energy window
 
 

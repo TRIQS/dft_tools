@@ -2,6 +2,9 @@
 import itertools as it
 import numpy as np
 
+# 'simplejson' is supposed to be faster than 'json' in stdlib.
+import simplejson as json
+
 class Projector:
     """
     Class describing a local-orbital projector.
@@ -394,11 +397,13 @@ def plo_output(conf_pars, pshells, pgroups):
     # Projected shells
     Nshells
     # Shells: <shell indices>
+    # Shell <1>
     Shell 1
     ndim
     # complex arrays: plo(ns, nion, ndim, nb)
     ...
     # Shells: <shell indices>
+    # Shell <2>
     Shell 2
     ...
 
