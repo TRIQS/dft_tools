@@ -445,7 +445,7 @@ class Wien2kConverter(ConverterTools):
         if not (mpi.is_master_node()): return
         
         # Check if SP, SO and n_k are already in h5
-        ar = HDFArchive(self.hdf_file, 'a')
+        ar = HDFArchive(self.hdf_file, 'r')
         if not (self.dft_subgrp in ar): raise IOError, "convert_misc_input: No %s subgroup in hdf file found! Call convert_dft_input first." %self.dft_subgrp
         SP = ar[self.dft_subgrp]['SP']
         SO = ar[self.dft_subgrp]['SO']
@@ -557,7 +557,7 @@ class Wien2kConverter(ConverterTools):
         if not (mpi.is_master_node()): return
         
         # Check if SP, SO and n_k are already in h5
-        ar = HDFArchive(self.hdf_file, 'a')
+        ar = HDFArchive(self.hdf_file, 'r')
         if not (self.dft_subgrp in ar): raise IOError, "convert_transport_input: No %s subgroup in hdf file found! Call convert_dft_input first." %self.dft_subgrp
         SP = ar[self.dft_subgrp]['SP']
         SO = ar[self.dft_subgrp]['SO']

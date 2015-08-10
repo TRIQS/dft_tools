@@ -53,7 +53,7 @@ class Symmetry:
 
         if mpi.is_master_node():
             #Read the stuff on master:
-            ar = HDFArchive(hdf_file,'a')
+            ar = HDFArchive(hdf_file,'r')
             if subgroup is None:
                 ar2 = ar
             else:
