@@ -7,14 +7,20 @@
 DFT Tools
 =========
 
-This application is aimed at DMFT calculations with
-realistic band structure calculations.
-A priori TRIQS can be connected to various realistic band structure codes.
-In this release, we provide the dft_tools extension module which contains an
-interface to the 
+This :ref:`TRIQS-based <triqslibs:welcome>`-based application is aimed
+at ab-initio calculations for 
+correlated materials, combining realistic DFT band-structure
+calculations with the dynamical mean-field theory. Together with the
+necessary tools to perform the DMFT self-consistency loop for
+realistic multi-band problems, the package provides a full-fledged
+charge self-consistent interface to the `WIEN2K package
+<http://www.wien2k.at>`_. In addition, if Wien2k is not available, it
+provides a generic interface for one-shot DFT+DMFT calculations, where
+only the single-particle Hamiltonian in orbital space has to be
+provided.
 
- * `WIEN2K package <http://www.wien2k.at>`_.
- * A general Hamiltonian H(k)
- * FLEUR (in progress..)
- * VASP? (in progress..)
- * Wannier90? (in progress..)
+Learn how to use this package in the :ref:`documentation`.
+
+
+.. toctree::
+   :maxdepth: 2
