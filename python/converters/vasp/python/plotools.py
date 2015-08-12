@@ -368,11 +368,35 @@ def generate_ortho_plos(conf_pars, el_struct):
 
 ################################################################################
 #
+# ctrl_output
+#
+################################################################################
+def ctrl_output(conf_pars, el_struct, ng):
+    """
+    Outputs a ctrl-file.
+    """
+    ctrl_fname = conf_pars.general['basename'] + '.ctrl'
+    head_dict = {}
+
+# Construct the header dictionary
+    head_dict['ngroups'] = ng
+    head_dict['nk'] = el_struct.kmesh['nktot']
+    head_dict['ns'] = el_struct.nspin
+    head_dict['nc_flag'] = 1 if el_struct.nc_flag else 0
+#    head_dict['efermi'] = conf_pars.general['efermi']  # We probably don't need Efermi
+
+    header = json.dumps(head_dict, indent=4, separators=(',', ': '))
+
+    with open(ctrl_fname, 'wt') as f:
+        f.write(header)
+
+################################################################################
+#
 # plo_output
 #
 ################################################################################
 # TODO: k-points with weights should be stored once and for all
-def plo_output(conf_pars, pshells, pgroups):
+def plo_output(conf_pars, el_struct, pshells, pgroups):
     """
     Outputs PLO groups into text files.
 
@@ -408,7 +432,5 @@ def plo_output(conf_pars, pshells, pgroups):
     ...
 
     """
-# TODO: add BASENAME option to config parameters.
-    basename = 'vasp'
-
+    ctrl_output(conf_pars, el_struct, len(pgroups))
     
