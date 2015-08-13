@@ -23,7 +23,7 @@ python-based modules with the DFT output. Naturally, this layer
 depends on the DFT package at hand. At the moment, there is an
 interface to the Wien2k band structure package, and a very light 
 interface that can be used in a more general setup. Note that this
-light interface layer **dows not** allow full charge self-consistent
+light interface layer **does not** allow full charge self-consistent
 calculations. 
 
 Wien2k interface
