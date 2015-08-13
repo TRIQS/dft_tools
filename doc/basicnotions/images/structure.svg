@@ -14,7 +14,10 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.5 r10040"
-   sodipodi:docname="structure.svg">
+   sodipodi:docname="structure.svg"
+   inkscape:export-filename="/itp/MooseFS/AG-CMS/TRIQS/SRC/dfttools/doc/basicnotions/images/structure.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -146,7 +149,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -212,7 +215,7 @@
            height="120.20815"
            width="162.63457"
            id="rect3839" /></flowRegion><flowPara
-         id="flowPara3841">Conversion </flowPara><flowPara
+         id="flowPara3841">Interface </flowPara><flowPara
          id="flowPara3068">layer</flowPara></flowRoot>    <flowRoot
        transform="translate(-254.95949,357.42484)"
        style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
