@@ -5,11 +5,10 @@
 Single-shot DFT+DMFT
 ====================
 
-.. warning::
-  TO BE UPDATED!
 
 After having set up the hdf5 archive, we can now do our DFT+DMFT calculation. It consists of
-initialisation steps, and the actual DMFT self consistency loop.
+initialization steps, and the actual DMFT self-consistency loop, as is
+discussed below. 
 
 Initialisation of the calculation
 ---------------------------------
@@ -25,15 +24,27 @@ to get the local quantities used in DMFT. It is initialized by::
 Setting up the impurity solver
 ------------------------------
 
-The next step is to setup the impurity solver. 
-For more details here, see the `CTHYB <http://ipht.cea.fr/triqs/1.2/applications/cthyb/>`_ documentation.
+The next step is to setup an impurity solver. There are different
+solvers available within the TRIQS framework. Below, we will discuss
+the example of the hybridisation
+expansion :ref:`CTHYB solver <triqscthyb:welcome>`. Later on, we will
+see also the example of the Hubbard-I solver. They all have in common,
+that they are called by a uniform command::
+  
+  S.solve(params)
+
+where `params` are the solver parameters and depend on the actual
+solver that is used. Before going into the details of the solver, let
+us discuss in the next section how to perform the DMFT loop using
+the methods of :program:`dft_tools`, assuming that we have set up a
+working solver instance. 
 
 
 Doing the DMFT loop
 -------------------
 
-Having initialised the SumK class and the Solver, we can proceed with the DMFT
-loop itself. As explained in the tutorial, we have to set up the loop over DMFT
+Having initialized the SumK class and the Solver, we can proceed with the DMFT
+loop itself. We have to set up the loop over DMFT
 iterations and the self-consistency condition::
 
   n_loops = 5
@@ -47,13 +58,18 @@ iterations and the self-consistency condition::
           S.solve(h_int=h_int, **p)                          # now solve the impurity problem
 
 	  dm = S.G_iw.density()                                                 # Density matrix of the impurity problem  
-          SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0, use_dc_formula=dc_type) # Set the double counting term
+          SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0,	use_dc_formula=1)       # Set the double counting term
           SK.save(['chemical_potential','dc_imp','dc_energ'])                   # Save data in the hdf5 archive
 
 These basic steps are enough to set up the basic DMFT Loop. For a detailed
-description of the :class:`SumkDFT` routines, see the reference manual. After
-the self-consistency steps, the solution of the Anderson impurity problem is
-calculation by CTQMC.  Different to model calculations, we have to do a few
+description of the :class:`SumkDFT` routines, see the reference
+manual.
+
+After
+the self-consistency steps (extracting a new :math:`G^0(i\omega)`),
+the Anderson impurity problem is solved. 
+
+Different to model calculations, we have to do a few
 more steps after this, because of the double-counting correction. We first
 calculate the density of the impurity problem. Then, the routine `calc_dc`
 takes as parameters this density matrix, the Coulomb interaction, Hund's rule
@@ -80,11 +96,21 @@ For full charge-self consistent calculations, there are some more things
 to consider, which we will see later on.
 
 
-A more advanced example
------------------------
+A full DFT+DMFT calculation
+---------------------------
 
-Normally, one wants to adjust some more parameters in order to make the calculation more efficient. Here, we
-will see a more advanced example, which is also suited for parallel execution. 
+We will discuss now how to set up a full working calculation,
+including setting up the CTHYB solver, and specifying some more parameters
+in order to make the calculation more efficient. Here, we
+will see a more advanced example, which is also suited for parallel
+execution. For the convenience of the user, we provide also two
+working python scripts in this documentation. One for a calculation
+using Kanamori definitions (:download:`dft_dmft_cthyb.py
+<images_scripts/dft_dmft_cthyb.py>`) and one with a
+rotational-invariant Slater interaction hamiltonian (:download:`dft_dmft_cthyb_slater.py
+<images_scripts/dft_dmft_cthyb.py>`). The user has to adapt these
+scripts to his own needs.
+
 First, we load the necessary modules::
 
   from pytriqs.applications.dft.sumk_dft import *
@@ -94,16 +120,17 @@ First, we load the necessary modules::
   from pytriqs.operators.util import *
   from pytriqs.applications.impurity_solvers.cthyb import *
 
+The last two lines load the modules for the construction of the CTHYB
+solver.
 
 Then we define some parameters::
 
-  dft_filename='srvo3'
-  U = 2.7
+  dft_filename='SrVO3'
+  U = 4.0
   J = 0.65
   beta = 40
   loops =  10                      # Number of DMFT sc-loops
   sigma_mix = 0.8                  # Mixing factor of Sigma after solution of the AIM
-  delta_mix = 1.0                  # Mixing factor of Delta as input for the AIM
   dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
   use_blocks = True                # use bloc structure from DFT input
   prec_mu = 0.0001
@@ -114,7 +141,11 @@ Then we define some parameters::
   p["n_warmup_cycles"] = 2000
   p["n_cycles"] = 20000
 
-Most of these parameters are self-explanatory. The first, `dft_filename`, gives the filename of the input files. 
+Most of these parameters are self-explanatory. The first,
+`dft_filename`, gives the filename of the input files. For more
+details on the solver parameters, we refer the user to
+the :ref:`CTHYB solver <triqscthyb:welcome>` documentation.
+
 The next step, as described in the previous section, is to convert the input files::
 
   Converter = Wien2kConverter(filename=dft_filename, repacking=True)
@@ -140,23 +171,56 @@ from scratch::
   previous_runs    = mpi.bcast(previous_runs)
   previous_present = mpi.bcast(previous_present)
 
+
+You can see in this code snipet, that all results of this calculation
+will be stored in a separate subgroup in the hdf file, called
+`dmft_output`. Removing this subgroup allows you to reset your
+calculation to the starting point easily.
+
 Now we can use all this information to initialise the :class:`SumkDFT` class::
 
   SK = SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=use_blocks)
 
-The next step is to initialise the  :class:`Solver` class::
+The next step is to initialise the  :class:`Solver` class. It consist
+of two steps
+
+#. Calculating the multi-band interaction matrix, and setting up the
+   interaction hamiltonian
+#. Setting up the solver class
+
+The first step is done using methods of
+the :ref:`TRIQS <triqslibs:welcome>` library::
 
   n_orb = SK.corr_shells[0]['dim']
   l = SK.corr_shells[0]['l']
   spin_names = ["up","down"]
   orb_names = [i for i in range(n_orb)]
-  # Use GF structure determined by DFT blocks
+  # Use GF structure determined by DFT blocks:
   gf_struct = SK.gf_struct_solver[0]
-  # Construct U matrix for density-density calculations
+  # Construct U matrix for density-density calculations:
   Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
-  # Construct Hamiltonian and solver
-  h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat, H_dump="H.txt")
+
+We assumed here that we want to use an interaction matrix with
+Kanamori definitions of :math:`U` and :math:`J`. For
+other choices (Slater interaction matrix for instance), and other
+parameters, we refer to the reference manual 
+of the :ref:`TRIQS <triqslibs:welcome>` library.
+
+Next, we construct the hamiltonian and the solver::
+  
+  h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
   S = Solver(beta=beta, gf_struct=gf_struct)
+
+As you see, we take only density-density interactions into
+account. Other choices for the hamiltonian are
+
+* h_int_kanamori
+* h_int_slater
+
+These two include full rotational invariant interactions. Again,
+options can be found in the :ref:`TRIQS <triqslibs:welcome>` library
+reference manual.
+
 
 If there are previous runs stored in the hdf5 archive, we can now load the self energy
 of the last iteration::
@@ -174,7 +238,7 @@ last saved chemical potential and double counting values are read in and set.
 
 Now we can go to the definition of the self-consistency step. It consists again
 of the basic steps discussed in the previous section, with some additional
-refinement::
+refinements::
 
   for iteration_number in range(1,loops+1):
       if mpi.is_master_node(): print "Iteration = ", iteration_number
@@ -192,24 +256,13 @@ refinement::
           S.Sigma_iw << SK.dc_imp[0]['up'][0,0]
   
       # Calculate new G0_iw to input into the solver:
-      if mpi.is_master_node():
-          # We can do a mixing of Delta in order to stabilize the DMFT iterations:
-          S.G0_iw << S.Sigma_iw + inverse(S.G_iw)
-          ar = HDFArchive(dft_filename+'.h5','a')['dmft_output']
-          if (iteration_number>1 or previous_present):
-              mpi.report("Mixing input Delta with factor %s"%delta_mix)
-              Delta = (delta_mix * delta(S.G0_iw)) + (1.0-delta_mix) * ar['Delta_iw']
-              S.G0_iw << S.G0_iw + delta(S.G0_iw) - Delta
-          ar['Delta_iw'] = delta(S.G0_iw)
-          S.G0_iw << inverse(S.G0_iw)
-          del ar
-  
-      S.G0_iw << mpi.bcast(S.G0_iw)
+      S.G0_iw << S.Sigma_iw + inverse(S.G_iw)
+      S.G0_iw << inverse(S.G0_iw)
 
       # Solve the impurity problem:
       S.solve(h_int=h_int, **p)
   
-      # Solved. Now do post-processing:
+      # Solved. Now do post-solution stuff:
       mpi.report("Total charge of impurity problem : %.6f"%S.G_iw.total_density())
   
       # Now mix Sigma and G with factor sigma_mix, if wanted:
