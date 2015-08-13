@@ -13,7 +13,7 @@ correlated materials, combining realistic DFT band-structure
 calculations with the dynamical mean-field theory. Together with the
 necessary tools to perform the DMFT self-consistency loop for
 realistic multi-band problems, the package provides a full-fledged
-charge self-consistent interface to the `WIEN2K package
+charge self-consistent interface to the `Wien2K package
 <http://www.wien2k.at>`_. In addition, if Wien2k is not available, it
 provides a generic interface for one-shot DFT+DMFT calculations, where
 only the single-particle Hamiltonian in orbital space has to be
