@@ -387,8 +387,20 @@ def ctrl_output(conf_pars, el_struct, ng):
 
     header = json.dumps(head_dict, indent=4, separators=(',', ': '))
 
+    print "  Storing ctrl-file..."
     with open(ctrl_fname, 'wt') as f:
-        f.write(header)
+        f.write(header + "\n")
+        f.write("#END OF HEADER\n")
+
+        f.write("# k-points and weights\n")
+        labels = ['kx', 'ky', 'kz', 'kweight']
+        out = "".join(map(lambda s: s.center(15), labels)) 
+        f.write("#" + out + "\n")
+        for ik, kp in enumerate(el_struct.kmesh['kpoints']):
+            tmp1 = "".join(map("{0:15.10f}".format, kp))
+            out = tmp1 + "{0:16.10f}".format(el_struct.kmesh['kweights'][ik])
+            f.write(out + "\n")
+
 
 ################################################################################
 #
