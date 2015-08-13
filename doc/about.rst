@@ -16,7 +16,7 @@ the DMFT calculations [#dft_tools1]_.  This has been followed by the introductio
 of full charge self-consistency [#dft_tools2]_, necessary for total energy
 calculations.
 
-**Developers**: M. Aichhorn, L. Pourovskii, V. Vildosola, C. Martins
+**Developers**: M. Aichhorn, L. Pourovskii, V. Vildosola, C. Martins, P. Seth, M. Zingl
 
 **Related papers**:
 
