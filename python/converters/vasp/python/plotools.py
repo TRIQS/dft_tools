@@ -378,6 +378,7 @@ def ctrl_output(conf_pars, el_struct, ng):
     ctrl_fname = conf_pars.general['basename'] + '.ctrl'
     head_dict = {}
 
+# TODO: Add output of tetrahedra
 # Construct the header dictionary
     head_dict['ngroups'] = ng
     head_dict['nk'] = el_struct.kmesh['nktot']
@@ -407,7 +408,6 @@ def ctrl_output(conf_pars, el_struct, ng):
 # plo_output
 #
 ################################################################################
-# TODO: k-points with weights should be stored once and for all
 def plo_output(conf_pars, el_struct, pshells, pgroups):
     """
     Outputs PLO groups into text files.
@@ -444,5 +444,17 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
     ...
 
     """
-    ctrl_output(conf_pars, el_struct, len(pgroups))
+    pass
     
+################################################################################
+#
+# output_as_text
+#
+################################################################################
+def output_as_text(pars, el_struct, pshells, pgroups):
+    """
+    Output all information necessary for the converter as text files.
+    """
+    ctrl_output(conf_pars, el_struct, len(pgroups))
+    plo_output(conf_pars, el_struct, pshells, pgroups):
+

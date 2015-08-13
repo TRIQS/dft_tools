@@ -24,4 +24,4 @@ if __name__ == '__main__':
     vasp_data = vaspio.VaspData(vasp_dir)
     el_struct = ElectronicStructure(vasp_data)
     pshells, pgroups = generate_ortho_plos(pars, el_struct)
-    plo_output(pars, el_struct, pshells, pgroups)
+    output_to_ascii(pars, el_struct, pshells, pgroups)
