@@ -21,7 +21,6 @@ User guide
 .. toctree::
    :maxdepth: 2
 
-   guide/orbital_construction
    guide/conversion
    guide/dftdmft_singleshot
    guide/dftdmft_selfcons

@@ -1,0 +1,5 @@
+64        ! number of k-points
+1.0       ! Electron density
+1         ! number of correlated atoms
+1 1 2 5   ! iatom, isort, l, dimension
+1 5       ! # of ireps, dimension of irep

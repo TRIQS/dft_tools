@@ -1,3 +1,5 @@
+.. _hdfstructure:
+
 hdf5 structure
 ==============
 

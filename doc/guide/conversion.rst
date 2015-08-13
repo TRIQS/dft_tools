@@ -1,111 +1,237 @@
 .. _conversion:
 
-Converting DFT data to a hdf archive
-====================================
+Orbital construction and conversion
+===================================
 
-.. warning::
-  TO BE UPDATED!
+The first step for a DMFT calculation is to provide the necessary
+input based on a DFT calculation. We will not review how to do the DFT
+calculation here in this documentation, but refer the user to the
+documentation and tutorials that come with the actual DFT
+package. Here, we will describe how to use output created by Wien2k,
+as well as how to use the light-weight general interface.
 
-EXPLAIN CONCEPT OF CONVERSION
+Interface with Wien2k
+---------------------
 
-Wien2k + dmftproj
------------------
+We assume that the user has obtained a self-consistent solution of the
+Kohn-Sham equations. We further have to require that the user is
+familiar with the main inout/output files of Wien2k, and how to run
+the DFT code.
 
-LISTING OF FILES NECESSARY FOR EACH SUBGROUP
+Conversion for the DMFT self-consistency cycle
+""""""""""""""""""""""""""""""""""""""""""""""
 
-The basic function of the interface to the Wien2k program package is to take
-the output of the program that constructs the projected local orbitals
-(:program:`dmftproj`, for documentation see 
-:download:`TutorialDmftproj.pdf <images_scripts/TutorialDmftproj.pdf>`), 
-and to store all the necessary information into an hdf5 file. This latter file
-is then used to do the DMFT calculation. The reason for this structure is that
-this enables the user to have everything that is necessary to reproduce the
-calculation in one single hdf5 archive.
+First, we have to write the necessary
+quantities into a file that can be processed further by invoking in a
+shell the command 
+  
+  `x lapw2 -almd`
 
-As explained above, this interface produces an hdf5 archive out of the files that
-were written by the band structure package :program:`Wien2k/dmftproj`. 
-For this purpose we
+We note that any other flag for lapw2, such as -c or -so (for
+spin-orbit coupling) has to be added also to this line. This creates
+some files that we need for the Wannier orbital construction.
+
+The orbital construction itself is done by the fortran program
+:program:`dmftproj`. For an extensive manual to this program see
+:download:`TutorialDmftproj.pdf <images_scripts/TutorialDmftproj.pdf>`.
+Here we will only describe only the basic steps.
+
+Let us take the example of SrVO3, a commonly used
+example for DFT+DMFT calculations. The input file for
+:program:`dmftproj` looks like 
+
+.. literalinclude:: images_scripts/SrVO3.indmftpr
+
+The first three lines give the number of inequivalent sites, their
+multiplicity (to be in accordance with the Wien2k *struct* file) and
+the maximum orbital quantum number :math:`l_{max}`. In our case our
+struct file contains the atoms in the order Sr, V, O.
+
+Next we have to
+specify for each of the inequivalent sites, whether we want to treat
+their orbitals as correlated or not. This information is given by the
+following 3 to 5 lines:
+
+#. We specify which basis set is used (complex or cubic
+   harmonics).
+#. The four numbers refer to *s*, *p*, *d*, and *f* electrons,
+   resp. Putting 0 means doing nothing, putting 1 will calculate
+   **unnormalised** projectors in compliance with the Wien2k
+   definition. The important flag is 2, this means to include these
+   electrons as correlated electrons, and calculate normalised Wannier
+   functions for them. In the example above, you see that only for the
+   vanadium *d* we set the flag to 2. If you want to do simply a DMFT
+   calculation, then set everything to 0, except one flag 2 for the
+   correlated electrons.
+#. In case you have a irrep splitting of the correlated shell, you can
+   specify here how many irreps you have. You see that we put 2, since
+   eg and t2g symmetries are irreps in this cubic case. If you don't
+   want to use this splitting, just put 0.
+#. (optional) If you specifies a number different from 0 in above line, you have
+   to tell now, which of the irreps you want to be treated
+   correlated. We want to t2g, and not the eg, so we set 0 for eg and
+   1 for t2g. Note that the example above is what you need in 99% of
+   the cases when you want to treat only t2g electrons. For eg's only
+   (e.g. nickelates), you set 10 and 01 in this line.
+#. (optional) If you have specified a correlated shell for this atom,
+   you have to tell if spin-orbit coupling should be taken into
+   account. 0 means no, 1 is yes.
+
+These lines have to be repeated for each inequivalent atom.
+
+The last line gives the energy window, relativ to the Fermi energy,
+that is used for the projective Wannier functions. Note that, in
+accordance with Wien2k, we give energies in Rydberg units!
+
+After setting up this input file, you run:
+
+  `dmftproj`
+
+Again, adding possible flags like -so for spin-orbit coupling. This
+program produces the following files (in the following, take *case* as
+the standard Wien2k place holder, to be replaced by the actual working
+directory name):  
+
+ * :file:`case.ctqmcout` and :file:`case.symqmc` containing projector
+   operators and symmetry operations for orthonormalized Wannier
+   orbitals, respectively. 
+ * :file:`case.parproj` and :file:`case.sympar` containing projector
+   operators and symmetry operations for uncorrelated states,
+   respectively. These files are needed for projected
+   density-of-states or spectral-function calculations in
+   post-processing only. 
+ * :file:`case.oubwin` needed for the charge desity recalculation in
+   the case of fully self-consistent DFT+DMFT run (see below). 
+
+Now we convert these files into an hdf5 file that can be used for the
+DMFT calculations. For this purpose we
 use the python module :class:`Wien2kConverter`. It is initialised as::
 
   from pytriqs.applications.dft.converters.wien2k_converter import *
-  Converter = Wien2kConverter(filename = material_of_interest)
+  Converter = Wien2kConverter(filename = case)
 
 The only necessary parameter to this construction is the parameter `filename`.
-It has to be the root of the files produces by dmftproj. For example, if you did a 
-calculation for TiO, the :program:`Wien2k` naming convention is that all files are called 
-:file:`TiO.*`, so you would give `filename = "TiO"`. The constructor opens
-an hdf5 archive, named :file:`material_of_interest.h5`, where all the data is stored.
+It has to be the root of the files produces by dmftproj. For our
+example, the :program:`Wien2k` naming convention is that all files are
+called the same, for instance
+:file:`SrVO3.*`, so you would give `filename = "SrVO3"`. The constructor opens
+an hdf5 archive, named :file:`case.h5`, where all the data is
+stored. For other parameters of the constructor please visit the
+:ref:`refconverters` section of the reference manual.
 
-These are the parameters to the Constructor:
-
-=========================   ============================  ===========================================================================
-Name                        Type, Default                 Meaning
-=========================   ============================  ===========================================================================
-filename                    String                        Material being studied, corresponding to the :program:`Wien2k` file names.
-                                                          The constructor stores the data in the hdf5 archive :file:`material_of_interest.h5`.
-dft_subgrp                  String, dft_input             hdf5 subgroup containing required DFT data
-symmcorr_subgrp             String, dft_symmcorr_input    hdf5 subgroup containing all necessary data to apply
-                                                          the symmetry operations in the DMFT loop
-repacking                   Boolean, False                Does the hdf5 file already exist and should the :program:`h5repack` be 
-                                                          invoked to ensures a minimal archive file size? 
-                                                          Note that the :program:`h5repack` must be in your path variable!
-=========================   ============================  ===========================================================================
-
-After initialising the interface module, we can now convert the input text files into the
-hdf5 archive by::
+After initialising the interface module, we can now convert the input
+text files to the hdf5 archive by::
 
   Converter.convert_dft_input()
 
-This reads all the data, and stores it in the subgroup `dft_subgrp`, as discussed above. 
-In this step, the files :file:`material_of_interest.ctqmcout` and :file:`material_of_interest.symqmc`
+This reads all the data, and stores it in the file :file:`case.h5`. 
+In this step, the files :file:`case.ctqmcout` and
+:file:`case.symqmc` 
 have to be present in the working directory.
 
-After this step, all the necessary information for the DMFT loop is stored in the hdf5 archive, where
-the string variable `Converter.hdf_file` gives the file name of the archive.
-You can now proceed with :ref:`DFTDMFTmain`.
+After this step, all the necessary information for the DMFT loop is
+stored in the hdf5 archive, where the string variable
+`Converter.hdf_filename` gives the file name of the archive.
 
-A general H(k)
---------------
-LISTING OF FILES NECESSARY, NAME OF CONVERTER
+You have now everything for performing a DMFT calculation, and you can
+proceed with :ref:`singleshot`.
 
 Data for post-processing
-------------------------
+""""""""""""""""""""""""
 
-In order to calculate some properties using the DMFT self energy, several other routines are
-used in order to convert the necessary input from :program:`Wien2k/dmftproj`. For instance, for 
-calculating the partial density of states or partial charges consistent with the definition
-of :program:`Wien2k`, you have to use::
+In case you want to do post-processing of your data using the module
+:class:`SumkDFTTools`, some more files 
+have to be converted to the hdf5 archive. For instance, for
+calculating the partial density of states or partial charges
+consistent with the definition of :program:`Wien2k`, you have to invoke:: 
 
   Converter.convert_parproj_input()
 
-This reads the files :file:`material_of_interest.parproj` and :file:`material_of_interest.sympar`.
-Again, there are two optional parameters
+This reads and converts the files :file:`case.parproj` and
+:file:`case.sympar`.
 
-=========================   ============================  ===========================================================================
-Name                        Type, Default                 Meaning
-=========================   ============================  ===========================================================================
-parproj_subgrp              String, dft_parproj_input     hdf5 subgroup containing partial projectors data.
-symmpar_subgrp              String, dft_symmpar_input     hdf5 subgroup containing symmetry operations data.
-=========================   ============================  ===========================================================================
+If you want to plot band structures, one has to do the
+following. First, one has to do the Wien2k calculation on the given
+:math:`\mathbf{k}`-path, and run :program:`dmftproj` on that path:
+	
+  |  `x lapw1 -band`
+  |  `x lapw2 -band -almd`
+  |  `dmftproj -band`
 
-Another routine of the class allows to read the input for plotting the momentum-resolved
-spectral function. It is done by::
+
+Again, maybe with the optional additional extra flags according to
+Wien2k. Now we use a routine of the converter module allows to read
+and convert the input for :class:`SumkDFTTools`:: 
   
   Converter.convert_bands_input()
+       
+After having converted this input, you can further proceed with the
+:ref:`analysis`. For more options on the converter module, please have
+a look at the :ref:`refconverters` section of the reference manual.
 
-The optional parameter that controls where the data is stored is `bands_subgrp`, 
-with the default value `dft_bands_input`. Note however that you need to run "dmftproj -band" to produce the
-necessary outband file. The casename.indmftpr file needs an additional line with E_fermi 
-(obtainable from casename.qtl).
+Data for transport calculations
+"""""""""""""""""""""""""""""""
 
-After having converted this input, you can further proceed with the :ref:`analysis`.
+For the transport calculations, the situation is a bit more involved,
+since we need also the :program:`optics` package of Wien2k. Please
+look at the section on :ref:`Transport` to see how to do the necessary
+steps, including the conversion.
+  
+  
+A general H(k)
+--------------
 
+In addition to the more complicated Wien2k converter,
+:program:`dft_tools` contains also a light converter. It takes only
+one inputfile, and creates the necessary hdf outputfile for
+the DMFT calculation. The header of this input file has to have the
+following format:
+
+.. literalinclude:: images_scripts/case.hk
+
+The lines of this header define
+		    
+#. Number of :math:`\mathbf{k}`-points used in the calculation
+#. Electron density for setting the chemical potential
+#. Number of correlated atoms in the unit cell
+#. The next line contains four numbers: index of the atom, index
+   of the correlated shell, :math:`l` quantum number, dimension
+   of this shell. Repeat this line for each correlated atom.
+#. The last line contains several numbers: the number of irreducible
+   representations, and then the dimensions of the irreps. One
+   possibility is as the example above, another one would be 2
+   2 3. Thiw would mean, 2 irreps (eg and t2g), of dimension 2 and 3,
+   resp. 
+
+After these header lines, the file has to contain the hamiltonian
+matrix in orbital space. The standard convention is that you give for
+each 
+:math:`\mathbf{k}`-point first the matrix of the real part, then the
+matrix of the imaginary part, and then move on to the next
+:math:`\mathbf{k}`-point. 
+
+The converter itself is used as::
+
+  from pytriqs.applications.dft.converters.hk_converter import *
+  Converter = HkConverter(filename = hkinputfile)
+  Converter.convert_dft_input()
+  
+where :file:`hkinputfile` is the name of the input file described
+above. This produces the hdf file that you need, and you cna proceed
+with the 
+
+For more options of this converter, have a look at the
+:ref:`refconverters` section of the reference manual.
+     
 MPI issues
 ----------
 
-The interface package is written such that all the operations are done only on the master node.
-The broadcasting to the nodes has to be done by hand. The :class:`SumkDFT`, described in the
-following section, takes care of this automatically.
+The interface packages are written such that all the file operations
+are done only on the master node. In general, the philosophy of the
+package is that whenever you read in something from the archive
+yourself, you have to *manually* broadcast it to the nodes. An
+exception to this rule is when you use routines from :class:`SumkDFT`
+or :class:`SumkDFTTools`, where the broadcasting is done for you. 
 
 Interfaces to other packages
 ----------------------------
@@ -113,4 +239,5 @@ Interfaces to other packages
 Because of the modular structure, it is straight forward to extend the TRIQS package 
 in order to work with other band-structure codes. The only necessary requirement is that 
 the interface module produces an hdf5 archive, that stores all the data in the specified
-form. For the details of what data is stored in detail, see the reference manual.
+form. For the details of what data is stored in detail, see the
+:ref:`hdfstructure` part of the reference manual.
