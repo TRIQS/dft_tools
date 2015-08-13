@@ -258,6 +258,12 @@ class ProjectorShell:
         self.lm1 = self.lorb**2
         self.lm2 = (self.lorb+1)**2
 
+        if self.tmatrix is None:
+            self.ndim = self.lm2 - self.lm1 + 1
+        else:
+# TODO: generalize this to a tmatrix for every ion
+            self.ndim = self.tmatrix.shape[0]
+
 # Pre-select a subset of projectors (this should be an array view => no memory is wasted)
 # !!! This sucks but I have to change the order of 'ib' and 'ilm' indices here
 # This should perhaps be done right after the projector array is read from PLOCAR
@@ -444,7 +450,34 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
     ...
 
     """
-    pass
+    for ig, pgroup in enumerate(pgroups):
+        plo_fname = conf_pars.general['basename'] + '.pg%i'%(ig + 1)
+        print "  Storing PLO-group file '%s'..."%(plo_fname)
+        head_dict = {}
+
+        head_dict['ewindow'] = (pgroup.emin, pgroup.emax)
+        head_dict['nb_max'] = pgroup.nb_max
+
+        head_shells = []
+        for shell in pgroup.shells:
+            sh_dict = {}
+            sh_dict['lorb'] = shell.lorb
+            sh_dict['ndim'] = shell.ndim
+# Convert ion indices from the internal representation (starting from 0)
+# to conventional VASP representation (starting from 1)
+            ion_output = [io + 1 for io in shell.ion_list]
+            sh_dict['ion_list'] = ion_output
+# TODO: add the output of transformation matrices
+
+            head_shells.append(sh_dict)
+
+        head_dict['shells'] = head_shells
+
+        header = json.dumps(head_dict, indent=4, separators=(',', ': '))
+
+        with open(plo_fname, 'wt') as f:
+            f.write(header + "\n")
+            
     
 ################################################################################
 #
@@ -455,6 +488,6 @@ def output_as_text(pars, el_struct, pshells, pgroups):
     """
     Output all information necessary for the converter as text files.
     """
-    ctrl_output(conf_pars, el_struct, len(pgroups))
-    plo_output(conf_pars, el_struct, pshells, pgroups):
+    ctrl_output(pars, el_struct, len(pgroups))
+    plo_output(pars, el_struct, pshells, pgroups)
 
