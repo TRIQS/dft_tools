@@ -24,8 +24,8 @@ User guide
    guide/conversion
    guide/dftdmft_singleshot
    guide/dftdmft_selfcons
-   guide/analysis
    guide/full_tutorial
+   guide/analysis
    guide/transport
 
 

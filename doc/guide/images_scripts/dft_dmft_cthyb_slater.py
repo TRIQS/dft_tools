@@ -25,9 +25,11 @@ p["length_cycle"] = 50
 p["n_warmup_cycles"] = 50
 p["n_cycles"] = 5000
 
-Converter = Wien2kConverter(filename=dft_filename, repacking=True)
-Converter.convert_dft_input()
-mpi.barrier()
+# If conversion step was not done, we could do it here. Uncomment the lines it you want to do this.
+#from pytriqs.applications.dft.converters.wien2k_converter import *
+#Converter = Wien2kConverter(filename=dft_filename, repacking=True)
+#Converter.convert_dft_input()
+#mpi.barrier()
 
 previous_runs = 0
 previous_present = False

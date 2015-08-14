@@ -114,7 +114,6 @@ scripts to his own needs.
 First, we load the necessary modules::
 
   from pytriqs.applications.dft.sumk_dft import *
-  from pytriqs.applications.dft.converters.wien2k_converter import *
   from pytriqs.gf.local import *
   from pytriqs.archive import HDFArchive
   from pytriqs.operators.util import *
@@ -146,14 +145,8 @@ Most of these parameters are self-explanatory. The first,
 details on the solver parameters, we refer the user to
 the :ref:`CTHYB solver <triqscthyb:welcome>` documentation.
 
-The next step, as described in the previous section, is to convert the input files::
-
-  Converter = Wien2kConverter(filename=dft_filename, repacking=True)
-  Converter.convert_dft_input()
-  mpi.barrier()
-
-The command ``mpi.barrier()`` ensures that all nodes wait until the conversion of the input is finished on the master
-node. After the conversion, we can check in the hdf5 archive, if previous runs are present, or if we have to start
+We assume that the conversion to the hdf5 archive is alreadz done. We
+can check now in this archive, if previous runs are present, or if we have to start
 from scratch::
 
   previous_runs = 0
@@ -173,7 +166,7 @@ from scratch::
 
 
 You can see in this code snipet, that all results of this calculation
-will be stored in a separate subgroup in the hdf file, called
+will be stored in a separate subgroup in the hdf5 file, called
 `dmft_output`. Removing this subgroup allows you to reset your
 calculation to the starting point easily.
 
