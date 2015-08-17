@@ -18,7 +18,7 @@ Before doing the calculation, we have to intialize all the objects that we will 
 to get the local quantities used in DMFT. It is initialized by::
 
   from pytriqs.applications.dft.sumk_dft import *
-  SK = SumkDFT(hdf_file = filename)
+  SK = SumkDFT(hdf_file = filename + '.h5')
 
 
 Setting up the impurity solver

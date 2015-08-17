@@ -133,6 +133,10 @@ After this step, all the necessary information for the DMFT loop is
 stored in the hdf5 archive, where the string variable
 `Converter.hdf_filename` gives the file name of the archive.
 
+At this point you should use the method :meth:`dos_wannier_basis` 
+contained in the module :class:`SumkDFTTools` to check the density of 
+states of the Wannier orbitals (see :ref:`analysis`). 
+
 You have now everything for performing a DMFT calculation, and you can
 proceed with :ref:`singleshot`.
 
