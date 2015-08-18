@@ -21,30 +21,9 @@ However, a real frequency self energy has to be provided by the user to use the 
   There are methods included e.g. in the :program:`ALPS` package, which can be used for these purposes. 
   Keep in mind that all these methods have to be used very carefully!
 
-Most conveniently, you have your self energy already stored as a real frequency :class:`BlockGf` object 
-in a hdf5 file, which can be easily loaded::
-
-  ar = HDFArchive(filename+'.h5','r')
-  SigmaReFreq = ar['SigmaReFreq']
-  del ar
-
 .. note::
-    What happens if one has a self energy only in text files...?
-
-You may also store it in text files. If all blocks of your self energy are of dimension 1x1, you store them in `fname_(block)0.dat` files. Here `(block)` is a block name (`up`, `down`, or combined `ud`). In the case when you have matrix blocks, you store them in `(i)_(j).dat` files, where `(i)` and `(j)` are the orbital indices, in the `fname_(block)` directory.
-
-This self energy is loaded and put into the :class:`SumkDFT` class by the function:: 
-
-  SK.constr_Sigma_real_axis(filename, hdf=True, hdf_dataset='SigmaReFreq',n_om=0)
-
-where:
- 
-  * `filename`: the name of the hdf5 archive file or the `fname` pattern in text files names as described above,  
-  * `hdf`: if `True`, the real-axis self energy will be read from the hdf5 file, otherwise from the text files,
-  * `hdf_dataset`: the name of dataset where the self energy is stored in the hdf5 file,
-  * `n_om`: the number of points in the real-axis mesh (used only if `hdf=False`).
-  
-The chemical potential as well as the double counting correction were already read in the initialisation process.
+  Add the doc for loading the self energy from a data file. We have to provide this option, because
+  in general the user won't has it stored in h5 file!!
 
 Initialisation
 --------------
@@ -61,45 +40,51 @@ class::
 
 Note that all routines available in :class:`SumkDFT` are also available here. 
 
-If required, the real frequency self energy is set with::
-  
-    SK.put_Sigma(Sigma_imp = [ SigmaReFreq ])
+If required, a self energy is load and initialise in the next step. Most conveniently, 
+your self energy is already stored as a real frequency :class:`BlockGf` object 
+in a hdf5 file::
+
+  ar = HDFArchive(filename+'.h5','r')
+  SigmaReFreq = ar['SigmaReFreq']
+  SK.put_Sigma(Sigma_imp = [ SigmaReFreq ])
+  del ar
+
+Additionally, the chemical potential and the double counting correction are set with::
+
+    SK.chemical_potential = chemical_potential
+    SK.dc_imp = dc_imp
 
 Density of states of the Wannier orbitals
 -----------------------------------------
 
-For plotting the 
-density of states of the Wannier orbitals, you simply type::
+For plotting the density of states of the Wannier orbitals, you type::
 
-  SK.check_input_dos(om_min, om_max, n_om)
+  SK.dos_wannier_basis(broadening=0.03, mesh=[om_min, om_max, n_om], with_Sigma=False, with_dc=False, save_to_file=True)
 
-which produces plots between the real frequencies `om_min` and `om_max`, using a mesh of `n_om` points. There
-is an optional parameter `broadening` which defines an additional Lorentzian broadening, and has the default value of
-`0.01` by default.
+which produces plots between the real frequencies `om_min` and `om_max`, using a mesh of `n_om` points. The parameter 
+`broadening` defines an additional Lorentzian broadening, and has the default value of `0.01` eV. To check the Wannier 
+density of states after the projection set `with_Sigma` and `with_dc` to `False`.
 
 Partial charges
 ---------------
 
 Since we can calculate the partial charges directly from the Matsubara Green's functions, we also do not need a
-real-frequency self energy for this purpose. The calculation is done by::
+real frequency self energy for this purpose. The calculation is done by::
 
-  ar = HDFArchive(SK.hdf_file)
-  SK.put_Sigma([ ar['SigmaImFreq'] ])
-  del ar
-  dm = SK.partial_charges()
+  SK.put_Sigma(Sigma_imp = SigmaImFreq)
+  dm = SK.partial_charges(beta=40.0 with_Sigma=True, with_dc=True)
 
-which calculates the partial charges using the data stored in the hdf5 file, namely the self energy, double counting, and
-chemical potential. Here we assumed that the final self energy is stored as `SigmaImFreq` in the archive. 
-On return, `dm` is a list, where the list items correspond to the density matrices of all shells
+which calculates the partial charges using the self energy, double counting, and chemical potential as set in the 
+`SK` object. On return, `dm` is a list, where the list items correspond to the density matrices of all shells
 defined in the list `SK.shells`. This list is constructed by the Wien2k converter routines and stored automatically
 in the hdf5 archive. For the detailed structure of `dm`, see the reference manual.
 
-Correlated spectral function (with self energy)
------------------------------------------------
+Correlated spectral function (with real frequency self energy)
+--------------------------------------------------------------
 
 With this self energy, we can now execute::
 
-  SK.dos_partial(broadening=broadening)
+  SK.dos_parproj_basis(broadening=broadening)
 
 This produces both the momentum-integrated (total density of states or DOS) and orbitally-resolved (partial/projected DOS) spectral functions.
 The variable `broadening` is an additional Lorentzian broadening applied to the resulting spectra.
@@ -112,8 +97,8 @@ The output is printed into the files
   * `DOScorr(sp)_proj(i)_(m)_(n).dat`: As above, but printed as orbitally-resolved matrix in indices 
     `(m)` and `(n)`. For `d` orbitals, it gives the DOS seperately for, e.g., :math:`d_{xy}`, :math:`d_{x^2-y^2}`, and so on.
 
-Momentum resolved spectral function (with self energy)
-------------------------------------------------------
+Momentum resolved spectral function (with real frequency self energy)
+---------------------------------------------------------------------
 
 Another quantity of interest is the momentum-resolved spectral function, which can directly be compared to ARPES
 experiments. We assume here that we already converted the output of the :program:`dmftproj` program with the 
