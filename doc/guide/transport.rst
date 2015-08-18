@@ -84,9 +84,10 @@ First we have to read the Wien2k files and store the relevant information in the
 Additionally we need to read and set the self energy, the chemical potential and the double counting::
 
     ar = HDFArchive('case_Sigma.h5', 'a')
-    SK.put_Sigma(Sigma_imp = [ar['dmft_transp_output']['Sigma_w']])
-    SK.chemical_potential = ar['dmft_transp_output']['chemical_potential']
-    SK.dc_imp = ar['dmft_transp_output']['dc_imp']
+    SK.put_Sigma(Sigma_imp = [ar['dmft_output']['Sigma_w']])
+    chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
+    SK.set_mu(chemical_potential)
+    SK.set_dc(dc_imp,dc_energ)
     del ar
 
 As next step we can calculate the transport distribution :math:`\Gamma_{\alpha\beta}(\omega)`::
@@ -103,7 +104,10 @@ For complete description of the input parameters see the :meth:`transport_distri
 The resulting transport distribution is not automatically saved, but this can be easily achieved with::
     
     SK.save(['Gamma_w','Om_meshr','omega','directions'])
-    SK.load(['Gamma_w','Om_meshr','omega','directions'])  
+
+You can retrieve it from the archive by::
+      
+    SK.Gamma_w, SK.Om_meshr, SK.omega, SK.directions = SK.load(['Gamma_w','Om_meshr','omega','directions'])  
 
 Finally the optical conductivity :math:`\sigma(\Omega)` and the Seebeck coefficient :math:`S` can be obtained with::
 
