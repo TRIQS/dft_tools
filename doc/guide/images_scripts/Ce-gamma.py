@@ -50,7 +50,9 @@ chemical_potential=chemical_potential_init
 # load previous data: old self-energy, chemical potential, DC correction
 if previous_present:
     if mpi.is_master_node():
-        S.Sigma << HDFArchive(dft_filename+'.h5','a')['dmft_output']['Sigma']
+        ar = HDFArchive(dft_filename+'.h5','a')
+        S.Sigma << ar['dmft_output']['Sigma']
+        del ar
         chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
     S.Sigma << mpi.bcast(S.Sigma)
     SK.set_mu(chemical_potential)
@@ -88,10 +90,10 @@ for iteration_number in range(1,Loops+1):
         # Now mix Sigma and G with factor Mix, if wanted:
         if (iteration_number>1 or previous_present):
             if (mpi.is_master_node() and (sigma_mix<1.0)):
-                ar = HDFArchive(dft_filename+'.h5','a')['dmft_output']
+                ar = HDFArchive(dft_filename+'.h5','a')
                 mpi.report("Mixing Sigma and G with factor %s"%sigma_mix)
-                S.Sigma << sigma_mix * S.Sigma + (1.0-sigma_mix) * ar['Sigma']
-                S.G << sigma_mix * S.G + (1.0-sigma_mix) * ar['G']
+                S.Sigma << sigma_mix * S.Sigma + (1.0-sigma_mix) * ar['dmft_output']['Sigma']
+                S.G << sigma_mix * S.G + (1.0-sigma_mix) * ar['dmft_output']['G']
                 del ar
             S.G << mpi.bcast(S.G)
             S.Sigma << mpi.bcast(S.Sigma)
@@ -107,11 +109,10 @@ for iteration_number in range(1,Loops+1):
 
         # store the impurity self-energy, GF as well as correlation energy in h5
         if mpi.is_master_node():
-            ar = HDFArchive(dft_filename+'.h5','a')['dmft_output']
-            if previous_runs: iteration_number += previous_runs
-            ar['iterations'] = iteration_number
-            ar['G'] = S.G
-            ar['Sigma'] = S.Sigma
+            ar = HDFArchive(dft_filename+'.h5','a')
+            ar['dmft_output']['iterations'] = iteration_number + previous_runs
+            ar['dmft_output']['G'] = S.G
+            ar['dmft_output']['Sigma'] = S.Sigma
             del ar
 
         #Save essential SumkDFT data:

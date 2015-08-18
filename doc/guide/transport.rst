@@ -33,8 +33,8 @@ The frequency depended optical conductivity is given by
 
 Prerequisites
 -------------
-First perform a standard :ref:`DFT+DMFT calculation <dftdmft_selfcons>` for your desired material and obtain the real-frequency self energy by doing an
-analytic continuation.
+First perform a standard :ref:`DFT+DMFT calculation <full_charge_selfcons>` for your desired material and obtain the
+real-frequency self energy by doing an analytic continuation.
 
 .. warning::
   This package does NOT provide an explicit method to do an **analytic continuation** of

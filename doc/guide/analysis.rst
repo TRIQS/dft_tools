@@ -117,7 +117,7 @@ Momentum resolved spectral function (with self energy)
 
 Another quantity of interest is the momentum-resolved spectral function, which can directly be compared to ARPES
 experiments. We assume here that we already converted the output of the :program:`dmftproj` program with the 
-converter routines (see :ref:`interfacetowien`). The spectral function is calculated by::
+converter routines (see :ref:`conversion`). The spectral function is calculated by::
 
   SK.spaghettis(broadening)
 

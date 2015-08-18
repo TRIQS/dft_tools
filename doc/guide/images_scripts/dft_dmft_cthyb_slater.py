@@ -68,7 +68,9 @@ if previous_present:
   dc_imp = 0
   dc_energ = 0
   if mpi.is_master_node():
-      S.Sigma_iw << HDFArchive(dft_filename+'.h5','a')['dmft_output']['Sigma_iw']
+      ar = HDFArchive(dft_filename+'.h5','a')
+      S.Sigma_iw << ar['dmft_output']['Sigma_iw']
+      del ar
       chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
   S.Sigma_iw << mpi.bcast(S.Sigma_iw)
   chemical_potential = mpi.bcast(chemical_potential)
@@ -96,12 +98,12 @@ for iteration_number in range(1,loops+1):
     if mpi.is_master_node():
         # We can do a mixing of Delta in order to stabilize the DMFT iterations:
         S.G0_iw << S.Sigma_iw + inverse(S.G_iw)
-        ar = HDFArchive(dft_filename+'.h5','a')['dmft_output']
+        ar = HDFArchive(dft_filename+'.h5','a')
         if (iteration_number>1 or previous_present):
             mpi.report("Mixing input Delta with factor %s"%delta_mix)
-            Delta = (delta_mix * delta(S.G0_iw)) + (1.0-delta_mix) * ar['Delta_iw']
+            Delta = (delta_mix * delta(S.G0_iw)) + (1.0-delta_mix) * ar['dmft_output']['Delta_iw']
             S.G0_iw << S.G0_iw + delta(S.G0_iw) - Delta
-        ar['Delta_iw'] = delta(S.G0_iw)
+        ar['dmft_output']['Delta_iw'] = delta(S.G0_iw)
         S.G0_iw << inverse(S.G0_iw)
         del ar
 
@@ -116,25 +118,24 @@ for iteration_number in range(1,loops+1):
     # Now mix Sigma and G with factor sigma_mix, if wanted:
     if (iteration_number>1 or previous_present):
         if mpi.is_master_node():
-            ar = HDFArchive(dft_filename+'.h5','a')['dmft_output']
+            ar = HDFArchive(dft_filename+'.h5','a')
             mpi.report("Mixing Sigma and G with factor %s"%sigma_mix)
-            S.Sigma_iw << sigma_mix * S.Sigma_iw + (1.0-sigma_mix) * ar['Sigma_iw']
-            S.G_iw << sigma_mix * S.G_iw + (1.0-sigma_mix) * ar['G_iw']
+            S.Sigma_iw << sigma_mix * S.Sigma_iw + (1.0-sigma_mix) * ar['dmft_output']['Sigma_iw']
+            S.G_iw << sigma_mix * S.G_iw + (1.0-sigma_mix) * ar['dmft_output']['G_iw']
             del ar
         S.G_iw << mpi.bcast(S.G_iw)
         S.Sigma_iw << mpi.bcast(S.Sigma_iw)
 
     # Write the final Sigma and G to the hdf5 archive:
     if mpi.is_master_node():
-        ar = HDFArchive(dft_filename+'.h5','a')['dmft_output']
-        if previous_runs: iteration_number += previous_runs
-        ar['iterations'] = iteration_number
-        ar['G_tau'] = S.G_tau
-        ar['G_iw'] = S.G_iw
-        ar['Sigma_iw'] = S.Sigma_iw
-        ar['G0-%s'%(iteration_number)] = S.G0_iw
-        ar['G-%s'%(iteration_number)] = S.G_iw
-        ar['Sigma-%s'%(iteration_number)] = S.Sigma_iw
+        ar = HDFArchive(dft_filename+'.h5','a')
+        ar['dmft_output']['iterations'] = iteration_number + previous_runs
+        ar['dmft_output']['G_tau'] = S.G_tau
+        ar['dmft_output']['G_iw'] = S.G_iw
+        ar['dmft_output']['Sigma_iw'] = S.Sigma_iw
+        ar['dmft_output']['G0-%s'%(iteration_number)] = S.G0_iw
+        ar['dmft_output']['G-%s'%(iteration_number)] = S.G_iw
+        ar['dmft_output']['Sigma-%s'%(iteration_number)] = S.Sigma_iw
         del ar
 
     # Set the new double counting:
@@ -144,8 +145,4 @@ for iteration_number in range(1,loops+1):
     # Save stuff into the dft_output group of hdf5 archive in case of rerun:
     SK.save(['chemical_potential','dc_imp','dc_energ'])
 
-if mpi.is_master_node():
-    ar = HDFArchive("dftdmft.h5",'w')
-    ar["G_tau"] = S.G_tau
-    ar["G_iw"] = S.G_iw
-    ar["Sigma_iw"] = S.Sigma_iw
+

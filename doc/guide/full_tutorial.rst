@@ -82,7 +82,7 @@ DMFT setup: Hubbard-I calculations in TRIQS
 --------------------------------------------
 
 In order to run DFT+DMFT calculations within Hubbard-I we need the corresponding python script, :ref:`Ce-gamma_script`. 
-It is generally similar to the script for the case of DMFT calculations with the CT-QMC solver (see :ref:`dftdmft_singleshot`), 
+It is generally similar to the script for the case of DMFT calculations with the CT-QMC solver (see :ref:`singleshot`), 
 however there are also some differences. First difference is that we import the Hubbard-I solver by::
 
    from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver

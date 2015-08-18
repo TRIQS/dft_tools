@@ -220,7 +220,9 @@ of the last iteration::
 
   if previous_present:
     if mpi.is_master_node():
-        S.Sigma_iw << HDFArchive(dft_filename+'.h5','a')['dmft_output']['Sigma_iw']
+        ar = HDFArchive(dft_filename+'.h5','a')
+        S.Sigma_iw << ar['dmft_output']['Sigma_iw']
+        del ar
         chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
     S.Sigma_iw << mpi.bcast(S.Sigma_iw)
     SK.set_mu(chemical_potential)
@@ -261,23 +263,22 @@ refinements::
       # Now mix Sigma and G with factor sigma_mix, if wanted:
       if (iteration_number>1 or previous_present):
           if mpi.is_master_node():
-              ar = HDFArchive(dft_filename+'.h5','a')['dmft_output']
+              ar = HDFArchive(dft_filename+'.h5','a')
               mpi.report("Mixing Sigma and G with factor %s"%sigma_mix)
-              S.Sigma_iw << sigma_mix * S.Sigma_iw + (1.0-sigma_mix) * ar['Sigma_iw']
-              S.G_iw << sigma_mix * S.G_iw + (1.0-sigma_mix) * ar['G_iw']
+              S.Sigma_iw << sigma_mix * S.Sigma_iw + (1.0-sigma_mix) * ar['dmft_output']['Sigma_iw']
+              S.G_iw << sigma_mix * S.G_iw + (1.0-sigma_mix) * ar['dmft_output']['G_iw']
               del ar
           S.G_iw << mpi.bcast(S.G_iw)
           S.Sigma_iw << mpi.bcast(S.Sigma_iw)
   
       # Write the final Sigma and G to the hdf5 archive:
       if mpi.is_master_node():
-          ar = HDFArchive(dft_filename+'.h5','a')['dmft_output']
-          if previous_runs: iteration_number += previous_runs
-          ar['iterations'] = iteration_number
-          ar['G_0'] = S.G0_iw
-          ar['G_tau'] = S.G_tau
-          ar['G_iw'] = S.G_iw
-          ar['Sigma_iw'] = S.Sigma_iw
+          ar = HDFArchive(dft_filename+'.h5','a')
+          ar['dmft_output']['iterations'] = iteration_number + previous_runs
+          ar['dmft_output']['G_0'] = S.G0_iw
+          ar['dmft_output']['G_tau'] = S.G_tau
+          ar['dmft_output']['G_iw'] = S.G_iw
+          ar['dmft_output']['Sigma_iw'] = S.Sigma_iw
           del ar
 
       # Set the new double counting:
