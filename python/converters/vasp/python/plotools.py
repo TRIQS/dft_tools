@@ -459,8 +459,10 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
         head_dict['nb_max'] = pgroup.nb_max
 
         head_shells = []
-        for shell in pgroup.shells:
+        for ish in pgroup.ishells:
+            shell = pgroup.shells[ish]
             sh_dict = {}
+            sh_dict['shell_index'] = ish
             sh_dict['lorb'] = shell.lorb
             sh_dict['ndim'] = shell.ndim
 # Convert ion indices from the internal representation (starting from 0)
@@ -477,8 +479,42 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
 
         with open(plo_fname, 'wt') as f:
             f.write(header + "\n")
+            f.write("#END OF HEADER\n")
             
-    
+# Eigenvalues within the window
+            f.write("# Eigenvalues within the energy window: %s, %s\n"%(pgroup.emin, pgroup.emax))
+            nk, nband, ns_band = el_struct.eigvals.shape
+            for isp in xrange(ns_band):
+                f.write("# is = %i\n"%(isp + 1))
+                for ik in xrange(nk):
+                    ib1, ib2 = pgroup.ib_win[ik, isp, 0], pgroup.ib_win[ik, isp, 1]
+                    f.write(" %i  %i\n"%(ib1, ib2))
+                    for ib in xrange(ib1, ib2 + 1):
+                        f.write("%15.7f\n"%(el_struct.eigvals[ik, ib, isp]))
+
+# Projected shells
+            f.write("# Projected shells\n")
+            f.write("# Shells: %s\n"%(pgroup.ishells))
+            for ish in pgroup.ishells:
+                shell = pgroup.shells[ish]
+                f.write("# Shell %i\n"%(ish))
+
+                nion, ns, nk, nlm, nb = shell.proj_win.shape
+                for isp in xrange(ns):
+                    f.write("# is = %i\n"%(isp + 1))
+                    for ik in xrange(nk):
+                        f.write("# ik = %i\n"%(ik + 1))
+                        for ion in xrange(nion):
+                            for ilm in xrange(nlm):
+                                ib1, ib2 = pgroup.ib_win[ik, isp, 0], pgroup.ib_win[ik, isp, 1]
+                                ib1_win = ib1 - shell.nb_min
+                                ib2_win = ib2 - shell.nb_min
+                                for ib in xrange(ib1_win, ib2_win + 1):
+                                    p = shell.proj_win[ion, isp, ik, ilm, ib]
+                                    f.write("{0:16.10f}{1:16.10f}\n".format(p.real, p.imag))
+                                f.write("\n")
+
+
 ################################################################################
 #
 # output_as_text
