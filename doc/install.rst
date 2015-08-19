@@ -35,7 +35,7 @@ Installation steps
 
 
 Installation steps for the use with WIEN2K version 14.2 and older
---------------------------------------------------------------
+-----------------------------------------------------------------
 
 .. warning::
    The following steps are only necessary if you use a Wien2k version

@@ -15,7 +15,7 @@ Wien2k setup
 First we create the Wien2k :file:`Ce-gamma.struct` file as described in the `Wien2k manual <http://www.wien2k.at/reg_user/textbooks/usersguide.pdf>`_  
 for the :math:`\gamma`-Ce fcc structure with lattice parameter of 9.75 a.u.
 
-.. literalinclude:: Ce-gamma.struct
+.. literalinclude:: images_scripts/Ce-gamma.struct
 
 We initalize non-magnetic :program:`Wien2k` calculations using the :program:`init` script as described in the same manual. 
 For this example we specify 3000 :math:`\mathbf{k}`-points in the full Brillouin zone
@@ -33,7 +33,7 @@ Wannier orbitals: dmftproj
 
 Then we create the :file:`Ce-gamma.indmftpr` file specifying parameters for construction of Wannier orbitals representing *4f* states:
 
-.. literalinclude:: Ce-gamma.indmftpr
+.. literalinclude:: images_scripts/Ce-gamma.indmftpr
 
 As we learned in the section :ref:`conversion`, the first three lines
 give the number of inequivalent sites, their multiplicity (to be in

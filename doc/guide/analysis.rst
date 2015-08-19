@@ -44,15 +44,18 @@ If required, a self energy is load and initialise in the next step. Most conveni
 your self energy is already stored as a real frequency :class:`BlockGf` object 
 in a hdf5 file::
 
-  ar = HDFArchive(filename+'.h5','r')
-  SigmaReFreq = ar['SigmaReFreq']
-  SK.put_Sigma(Sigma_imp = [ SigmaReFreq ])
+  ar = HDFArchive('case.h5', 'a')
+  SigmaReFreq = ar['dmft_output']['Sigma_w']
+  SK.put_Sigma(Sigma_imp = [SigmaReFreq])
+
+Additionally, the chemical potential and the double counting
+correction from the DMFT calculation are set, and the archive is closed again::
+  
+  chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
+  SK.set_mu(chemical_potential)
+  SK.set_dc(dc_imp,dc_energ)
   del ar
 
-Additionally, the chemical potential and the double counting correction are set with::
-
-    SK.chemical_potential = chemical_potential
-    SK.dc_imp = dc_imp
 
 Density of states of the Wannier orbitals
 -----------------------------------------

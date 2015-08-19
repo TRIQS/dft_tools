@@ -83,7 +83,7 @@ First we have to read the Wien2k files and store the relevant information in the
 
 Additionally we need to read and set the self energy, the chemical potential and the double counting::
 
-    ar = HDFArchive('case_Sigma.h5', 'a')
+    ar = HDFArchive('case.h5', 'a')
     SK.put_Sigma(Sigma_imp = [ar['dmft_output']['Sigma_w']])
     chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
     SK.set_mu(chemical_potential)
