@@ -81,6 +81,8 @@ First we have to read the Wien2k files and store the relevant information in the
 
     SK = SumkDFTTools(hdf_file='case.h5', use_dft_blocks=True)
 
+The converter :meth:`convert_transport_input <pytriqs.applications.dft.converters.wien2k_converter.Wien2kConverter.convert_transport_input>` 
+reads the required data of the Wien2k output and stores it in the `dft_transp_input` subgroup of your hdf file. 
 Additionally we need to read and set the self energy, the chemical potential and the double counting::
 
     ar = HDFArchive('case.h5', 'a')
