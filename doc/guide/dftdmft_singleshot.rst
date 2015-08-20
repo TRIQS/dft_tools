@@ -14,7 +14,7 @@ Initialisation of the calculation
 ---------------------------------
 
 Before doing the calculation, we have to intialize all the objects that we will need. The first thing is the 
-:class:`SumkDFT` class. It contains all basic routines that are necessary to perform a summation in k-space 
+:class:`SumkDFT <pytriqs.applications.dft.sumk_dft.SumkDFT>` class. It contains all basic routines that are necessary to perform a summation in k-space 
 to get the local quantities used in DMFT. It is initialized by::
 
   from pytriqs.applications.dft.sumk_dft import *
@@ -25,7 +25,7 @@ Setting up the impurity solver
 ------------------------------
 
 The next step is to setup an impurity solver. There are different
-solvers available within the TRIQS framework. Below, we will discuss
+solvers available within the :ref:`TRIQS <triqslibs:welcome>` framework. Below, we will discuss
 the example of the hybridisation
 expansion :ref:`CTHYB solver <triqscthyb:welcome>`. Later on, we will
 see also the example of the Hubbard-I solver. They all have in common,
@@ -62,7 +62,7 @@ iterations and the self-consistency condition::
           SK.save(['chemical_potential','dc_imp','dc_energ'])                   # Save data in the hdf5 archive
 
 These basic steps are enough to set up the basic DMFT Loop. For a detailed
-description of the :class:`SumkDFT` routines, see the reference
+description of the :class:`SumkDFT <pytriqs.applications.dft.sumk_dft.SumkDFT>` routines, see the reference
 manual.
 
 After
@@ -170,11 +170,11 @@ will be stored in a separate subgroup in the hdf5 file, called
 `dmft_output`. Removing this subgroup allows you to reset your
 calculation to the starting point easily.
 
-Now we can use all this information to initialise the :class:`SumkDFT` class::
+Now we can use all this information to initialise the :class:`SumkDFT <pytriqs.applications.dft.sumk_dft.SumkDFT>` class::
 
   SK = SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=use_blocks)
 
-The next step is to initialise the  :class:`Solver` class. It consist
+The next step is to initialise the  :class:`Solver <pytriqs.applications.impurity_solvers.cthyb.Solver>` class. It consist
 of two steps
 
 #. Calculating the multi-band interaction matrix, and setting up the

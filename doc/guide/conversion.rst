@@ -105,7 +105,7 @@ directory name):
 
 Now we convert these files into an hdf5 file that can be used for the
 DMFT calculations. For this purpose we
-use the python module :class:`Wien2kConverter`. It is initialised as::
+use the python module :class:`Wien2kConverter <pytriqs.applications.dft.converters.wien2k_converter.Wien2kConverter>`. It is initialised as::
 
   from pytriqs.applications.dft.converters.wien2k_converter import *
   Converter = Wien2kConverter(filename = case)
@@ -133,8 +133,8 @@ After this step, all the necessary information for the DMFT loop is
 stored in the hdf5 archive, where the string variable
 `Converter.hdf_filename` gives the file name of the archive.
 
-At this point you should use the method :meth:`dos_wannier_basis` 
-contained in the module :class:`SumkDFTTools` to check the density of 
+At this point you should use the method :meth:`dos_wannier_basis <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools.dos_wannier_basis>` 
+contained in the module :class:`SumkDFTTools <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools>` to check the density of 
 states of the Wannier orbitals (see :ref:`analysis`). 
 
 You have now everything for performing a DMFT calculation, and you can
@@ -144,7 +144,7 @@ Data for post-processing
 """"""""""""""""""""""""
 
 In case you want to do post-processing of your data using the module
-:class:`SumkDFTTools`, some more files 
+:class:`SumkDFTTools <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools>`, some more files 
 have to be converted to the hdf5 archive. For instance, for
 calculating the partial density of states or partial charges
 consistent with the definition of :program:`Wien2k`, you have to invoke:: 
@@ -165,7 +165,7 @@ following. First, one has to do the Wien2k calculation on the given
 
 Again, maybe with the optional additional extra flags according to
 Wien2k. Now we use a routine of the converter module allows to read
-and convert the input for :class:`SumkDFTTools`:: 
+and convert the input for :class:`SumkDFTTools <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools>`:: 
   
   Converter.convert_bands_input()
        
@@ -234,13 +234,13 @@ The interface packages are written such that all the file operations
 are done only on the master node. In general, the philosophy of the
 package is that whenever you read in something from the archive
 yourself, you have to *manually* broadcast it to the nodes. An
-exception to this rule is when you use routines from :class:`SumkDFT`
-or :class:`SumkDFTTools`, where the broadcasting is done for you. 
+exception to this rule is when you use routines from :class:`SumkDFT <pytriqs.applications.dft.sumk_dft.SumkDFT>`
+or :class:`SumkDFTTools <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools>`, where the broadcasting is done for you. 
 
 Interfaces to other packages
 ----------------------------
 
-Because of the modular structure, it is straight forward to extend the TRIQS package 
+Because of the modular structure, it is straight forward to extend the :ref:`TRIQS <triqslibs:welcome>` package 
 in order to work with other band-structure codes. The only necessary requirement is that 
 the interface module produces an hdf5 archive, that stores all the data in the specified
 form. For the details of what data is stored in detail, see the

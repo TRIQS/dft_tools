@@ -89,7 +89,7 @@ however there are also some differences. First difference is that we import the 
 
 The Hubbard-I solver is very fast and we do not need to take into account the DFT block structure or use any approximation for the *U*-matrix.
 We load and convert the :program:`dmftproj` output and initialize the
-:class:`SumkDFT` class as described in :ref:`conversion` and
+:class:`SumkDFT <pytriqs.applications.dft.sumk_dft.SumkDFT>` class as described in :ref:`conversion` and
 :ref:`singleshot` and then set up the Hubbard-I solver :: 
  
    S = Solver(beta = beta, l = l)
@@ -206,7 +206,7 @@ symmetries::
   Converter.convert_parpoj_input()
   
 To get access to analysing tools we initialize the
-:class:`SumkDFTTools` class :: 
+:class:`SumkDFTTools <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools>` class :: 
 
    SK = SumkDFTTools(hdf_file=dft_filename+'.h5', use_dft_blocks=False)
 
