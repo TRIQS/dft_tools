@@ -1,3 +1,7 @@
+import numpy
+import string
+from pytriqs.gf.local import *
+
 def read_fortran_file (filename):
     """ Returns a generator that yields all numbers in the Fortran file as float, one by one"""
     import os.path
@@ -17,6 +21,7 @@ def constr_Sigma_real_axis(self, filename, hdf=True, hdf_dataset='SigmaReFreq',n
         if (len(ol)==1): # if blocks are of size one
             Fname = filename+'_'+bl+'.dat'
         else:
+            print 'TEST'
             Fname = filename+'_'+bl+'/'+str(ol[0])+'_'+str(ol[0])+'.dat'
 
         R = read_fortran_file(Fname)
