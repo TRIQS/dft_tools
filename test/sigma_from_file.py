@@ -19,7 +19,7 @@ for name, s in Sigma_hdf:
 
 # Read self energy from txt files
 SK = SumkDFTTools(hdf_file =  'SrVO3.h5', use_dft_blocks = True)
-Sigma_txt = constr_Sigma_real_axis(SK, 'Sigma', hdf=False, n_om=101, orb=0)
+Sigma_txt = constr_Sigma_real_axis(filename='Sigma', gf_struct_orb=SK.gf_struct_solver[0])
 SK.put_Sigma(Sigma_imp = [Sigma_txt])
 
 SK.hdf_file = 'sigma_from_file.output.h5'

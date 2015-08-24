@@ -47,15 +47,12 @@ You may also have your self energy stored in text files. For this case we provid
 :meth:`constr_Sigma_real_axis`, which loads the data and puts it into a real frequency :class:`BlockGf <pytriqs.gf.local.BlockGf>` object::
 
   from pytriqs.applications.dft.build_sigma_from_txt import *
-  SigmaReFreq = constr_Sigma_real_axis(SK, filename, hdf=False, hdf_dataset='SigmaReFreq',n_om=0, orb=0)
+  SigmaReFreq = constr_Sigma_real_axis(filename=filename, gf_struct_orb=SK.gf_struct_solver[0])
 
 where:
  
-  * `filename`: the name of the hdf5 archive file or the `fname` pattern in text files names as described above,  
-  * `hdf`: if `True`, the real axis self energy will be read from the hdf5 file, otherwise from the text files,
-  * `hdf_dataset`: the name of dataset where the self energy is stored in the hdf5 file,
-  * `orb`: index of an inequivalent shell,
-  * `n_om`: the number of points in the real-axis mesh (used only if `hdf=False`).
+  * `filename`: the `fname` pattern in text files names as described below,  
+  * `gf_struct_orb`: the Greens function structure for the regarding inequivalent shell.
 
 It is important that you follow some rules concerning the structure of your data files:
   * Each data file should contain three columns: real frequency, real part and imaginary part of the self energy exactly in this order. 
