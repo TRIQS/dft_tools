@@ -25,6 +25,7 @@ import numpy
 from pytriqs.archive import *
 from converter_tools import *
 import os.path
+import simplejson as json
 
 class VaspConverter(ConverterTools):
     """
@@ -64,11 +65,30 @@ class VaspConverter(ConverterTools):
         """
         Generator for reading plain data.
         """
+        for line in fh:
+            line_ = line.strip()
+            if line_[0] == '#' or line_ == '':
+                continue
+
+            for val in map(float, line.split()):
+                yield val
 
     def read_header_and_data(self, filename):
         """
         Opens a file and returns a JSON-header and the generator for the plain data.
         """
+        fh = open(filename, 'rt')
+        header = ""
+        for line in fh:
+            if not "# END" in line:
+                header += line
+            else:
+                break
+
+        f_gen = self.read_data(fh)
+
+        return header, f_gen
+
     def convert_dft_input(self):
         """
         Reads the input files, and stores the data in the HDFfile
