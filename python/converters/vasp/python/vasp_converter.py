@@ -99,7 +99,27 @@ class VaspConverter(ConverterTools):
         mpi.report("Reading input from %s..."%self.dft_file)
 
         # R is a generator : each R.Next() will return the next number in the file
-        R = ConverterTools.read_fortran_file(self,self.dft_file,self.fortran_to_replace)
+        jheader, rf = self.read_header_and_data(self, self.ctrl_file)
+        ctrl_head = json.loads(jheader)
+
+        ng = ctrl_head['ngroups']
+        nk = ctrl_head['nk']
+        ns = ctrl_head['ns']
+        nc_flag = ctrl_head['nc_flag']
+
+        kpts = numpy.zeros((nk, 3))
+        kweights = numpy.zeros(nk)
+        try:
+            for ik in xrange(nk):
+                kx, ky, kz = rf.next(), rf.next(), rf.next()
+                kpts[ik, :] = kx, ky, kz
+                kweights[ik] = rf.next()
+        except StopIteration:
+            raise "VaspConverter: error reading %s"%self.ctrl_file
+
+# Read PLO groups
+        for ig in xrange(ng):
+
         try:
             energy_unit = R.next()                        # read the energy convertion factor
             n_k = int(R.next())                           # read the number of k points
