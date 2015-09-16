@@ -26,6 +26,7 @@ class ElectronicStructure:
 
     def __init__(self, vasp_data):
         self.natom = vasp_data.poscar.nq
+        self.type_of_ion = vasp_data.poscar.type_of_ion
         self.nktot = vasp_data.kpoints.nktot
 
         self.kmesh = {'nktot': self.nktot}
