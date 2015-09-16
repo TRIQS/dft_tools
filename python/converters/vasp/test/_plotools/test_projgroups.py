@@ -28,9 +28,10 @@ class TestProjectorGroup(mytest.MyTestCase):
 
         efermi = self.vasp_data.doscar.efermi
         eigvals = self.vasp_data.eigenval.eigs - efermi
+        ferw = self.vasp_data.plocar.ferw
 
         self.shells = [ProjectorShell(self.pars.shells[0], self.vasp_data.plocar.plo)]
-        self.proj_gr = ProjectorGroup(self.pars.groups[0], self.shells, eigvals)
+        self.proj_gr = ProjectorGroup(self.pars.groups[0], self.shells, eigvals, ferw)
 
 # Scenario 1
     def test_example(self):
