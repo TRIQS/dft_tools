@@ -18,6 +18,7 @@ class TestPoscar(mytest.MyTestCase):
 
     Scenarios:
     - correct POSCAR file
+    - check 'type_of_ion' array for a complex POSCAR file
 
     """
 # Scenario 1
@@ -40,4 +41,13 @@ class TestPoscar(mytest.MyTestCase):
 
         expected = 'POSCAR.example.out'
         self.assertFileEqual(testout, expected)
+
+# Scenario 2
+    def test_type_of_ion(self):
+        filename = 'POSCAR.complex'
+        poscar = Poscar()
+        poscar.from_file(vasp_dir='./', poscar_filename=filename)
+
+        test_types = 4 * [0] + 4 * [1] + 12 * [2]
+        self.assertListEqual(test_types, poscar.type_of_ion)
 

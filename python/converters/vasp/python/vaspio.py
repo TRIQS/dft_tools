@@ -173,7 +173,11 @@ class Poscar:
 
 # Read atomic positions
         self.q_types = []
+        self.type_of_ion = []
         for it in xrange(self.ntypes):
+# Array mapping ion index to type
+            self.type_of_ion += self.nions[it] * [it]
+
             q_at_it = np.zeros((self.nions[it], 3))
             for iq in xrange(self.nions[it]):
                 sline = readline_remove_comments()
