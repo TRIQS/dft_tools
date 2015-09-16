@@ -78,7 +78,8 @@ def check_data_consistency(pars, el_struct):
     """
 # Check that ions inside each shell are of the same sort
     for sh in pars.shells:
-        sorts = set(el_struct.poscar.type_of_ion[sh['ion_list']])
+        print sh['ion_list']
+        sorts = set([el_struct.type_of_ion[io] for io in sh['ion_list']])
         assert len(sorts) == 1, "Each projected shell must contain only ions of the same sort"
 
 ################################################################################
@@ -531,6 +532,8 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
 # to conventional VASP representation (starting from 1)
             ion_output = [io + 1 for io in shell.ion_list]
             sh_dict['ion_list'] = ion_output
+            sh_dict['ion_sort'] = el_struct.type_of_ion[shell.ion_list[0]]
+
 # TODO: add the output of transformation matrices
 
             head_shells.append(sh_dict)
