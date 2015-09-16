@@ -278,10 +278,9 @@ class ProjectorShell:
 
         self.lm1 = self.lorb**2
         self.lm2 = (self.lorb+1)**2
-        self.ndim = self.lm2 - self.lm1
 
         if self.tmatrix is None:
-            self.ndim = self.lm2 - self.lm1 + 1
+            self.ndim = self.lm2 - self.lm1
         else:
 # TODO: generalize this to a tmatrix for every ion
             self.ndim = self.tmatrix.shape[0]
