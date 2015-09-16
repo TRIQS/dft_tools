@@ -26,7 +26,7 @@ class VaspData:
     """
     Container class for all VASP data.
     """
-    def __init__(self, vasp_dir):
+    def __init__(self, vasp_dir, read_all=True):
         self.vasp_dir = vasp_dir
 
         self.plocar = Plocar()
