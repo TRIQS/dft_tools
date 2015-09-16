@@ -1,6 +1,8 @@
 
 import vaspio
 from inpconf import ConfigParameters
+from plotools import check_data_consistency
+from elstruct import ElectronicStructure
 import mytest
 
 ################################################################################
@@ -12,23 +14,26 @@ class TestDataConsistency(mytest.MyTestCase):
     """
     Function:
 
-    def read_plocar(filename)
+    def check_data_consistency(pars, el_struct)
 
     Scenarios:
 
-    - **if** file PLOCAR does not exist **raise** IOError
-    - **if** PLOCAR is truncated **raise** IOError
-    - **if** the precision flag is not 4 or 8 **raise** ValueError
-    - **if** PLOCAR with prec=8 is read **compare** the output
-    - **if** PLOCAR with prec=4 is read **compare** the output
+    - **if** a shell contains ions of different types **raise** AssertionError
     """
 # Scenario 1
-    def test_example(self):
-        conf_file = 'example.cfg'
-        pars = ConfigParameters(conf_file)
-        pars.parse_input()
-        vasp_data = vaspio.VaspData('./')
-
-        print pars.shells
-        print pars.groups
+    def test_shell_ion_types(self):
+        pass
+#        conf_file = 'wrong_shell.cfg'
+#        pars = ConfigParameters(conf_file)
+#        pars.parse_input()
+#        vasp_data = vaspio.VaspData('./', read_all=False)
+#        vasp_data.poscar.from_file('./', poscar_filename='POSCAR.complex')
+#        el_strct = ElectronicStructure(vasp_data)
+#
+#        print pars.shells
+#        print vasp_data.poscar.type_of_ion
+#
+#        err_mess = "Each projected shell must"
+#        with self.assertRaisesRegexp(Exception, err_mess):
+#            check_data_consistency(pars, el_struct)
 

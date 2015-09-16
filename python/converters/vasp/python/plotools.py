@@ -76,7 +76,10 @@ def check_data_consistency(pars, el_struct):
     """
     Check the consistency of the VASP data.
     """
-    pass
+# Check that ions inside each shell are of the same sort
+    for sh in pars.shells:
+        sorts = set(el_struct.poscar.type_of_ion[sh['ion_list']])
+        assert len(sorts) == 1, "Each projected shell must contain only ions of the same sort"
 
 ################################################################################
 # select_bands()
