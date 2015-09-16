@@ -30,15 +30,17 @@ class VaspData:
         self.vasp_dir = vasp_dir
 
         self.plocar = Plocar()
-        self.plocar.from_file(vasp_dir)
         self.poscar = Poscar()
-        self.poscar.from_file(vasp_dir)
         self.kpoints = Kpoints()
-        self.kpoints.from_file(vasp_dir)
         self.eigenval = Eigenval()
-        self.eigenval.from_file(vasp_dir)
         self.doscar = Doscar()
-        self.doscar.from_file(vasp_dir)
+
+        if read_all:
+            self.plocar.from_file(vasp_dir)
+            self.poscar.from_file(vasp_dir)
+            self.kpoints.from_file(vasp_dir)
+            self.eigenval.from_file(vasp_dir)
+            self.doscar.from_file(vasp_dir)
 
 ################################################################################
 ################################################################################
