@@ -178,6 +178,8 @@ class ProjectorGroup:
             shell = self.shells[ish]
             shell.select_projectors(ib_win, nb_min, nb_max)
 
+        
+
 ################################################################################
 #
 # nelect_window
@@ -192,7 +194,9 @@ class ProjectorGroup:
         rspin = 2.0 if ns_band == 1 else 1.0
         for isp in xrange(ns_band):
             for ik in xrange(nk):
-                occ = el_struct.ferw[isp, ik, self.nb_min:self.nb_max+1]
+                ib1 = self.ib_win[ik, isp, 0]
+                ib2 = self.ib_win[ik, isp, 1]
+                occ = el_struct.ferw[isp, ik, ib1:ib2+1]
                 kwght = el_struct.kmesh['kweights'][ik]
                 self.nelect += occ.sum() * kwght * rspin
 
@@ -520,6 +524,9 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
 
         head_dict['ewindow'] = (pgroup.emin, pgroup.emax)
         head_dict['nb_max'] = pgroup.nb_max
+
+# Number of electrons within the window
+        head_dict['nelect'] = pgroup.nelect_window(el_struct)
 
         head_shells = []
         for ish in pgroup.ishells:
