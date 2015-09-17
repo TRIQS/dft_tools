@@ -26,6 +26,7 @@ from pytriqs.archive import *
 from converter_tools import *
 import os.path
 import simplejson as json
+#from plotools import ProjectorGroup, ProjectorShell
 
 class VaspConverter(ConverterTools):
     """
@@ -93,152 +94,280 @@ class VaspConverter(ConverterTools):
         """
         Reads the input files, and stores the data in the HDFfile
         """
-        
+        energy_unit = 1.0 # VASP interface always uses eV
+        k_dep_projection = 1                          
+        symm_op = 1                                   # Use symmetry groups for the k-sum
+
         # Read and write only on the master node
         if not (mpi.is_master_node()): return
         mpi.report("Reading input from %s..."%self.dft_file)
 
         # R is a generator : each R.Next() will return the next number in the file
-        jheader, rf = self.read_header_and_data(self, self.ctrl_file)
+        jheader, rf = self.read_header_and_data(self.ctrl_file)
         ctrl_head = json.loads(jheader)
 
         ng = ctrl_head['ngroups']
-        nk = ctrl_head['nk']
-        ns = ctrl_head['ns']
-        nc_flag = ctrl_head['nc_flag']
+        n_k = ctrl_head['nk']
+# Note the difference in name conventions!
+        SP = ctrl_head['ns']
+        SO = ctrl_head['nc_flag']
 
         kpts = numpy.zeros((nk, 3))
-        kweights = numpy.zeros(nk)
+        bz_weights = numpy.zeros(nk)
         try:
             for ik in xrange(nk):
                 kx, ky, kz = rf.next(), rf.next(), rf.next()
                 kpts[ik, :] = kx, ky, kz
-                kweights[ik] = rf.next()
+                bz_weights[ik] = rf.next()
         except StopIteration:
             raise "VaspConverter: error reading %s"%self.ctrl_file
 
+#        if nc_flag:
+## TODO: check this
+#            n_spin_blocs = 1
+#        else:
+#            n_spin_blocs = ns
+        n_spin_blocs = SP + 1 - SO
+
 # Read PLO groups
-        for ig in xrange(ng):
+# First, we read everything into a temporary data structure
+# TODO: think about multiple shell groups and how to map them on h5 structures
+        assert ng == 1, "Only one group is allowed at the moment"
 
         try:
-            energy_unit = R.next()                        # read the energy convertion factor
-            n_k = int(R.next())                           # read the number of k points
-            k_dep_projection = 1                          
-            SP = int(R.next())                            # flag for spin-polarised calculation
-            SO = int(R.next())                            # flag for spin-orbit calculation
-            charge_below = R.next()                       # total charge below energy window
-            density_required = R.next()                   # total density required, for setting the chemical potential
-            symm_op = 1                                   # Use symmetry groups for the k-sum
+            for ig in xrange(ng):
+                gr_file = self.basename + '.pg%i'%(ig + 1)
+                jheader, rf = self.read_header_and_data(gr_file)
+                gr_head = json.loads(jheader)
 
-            # the information on the non-correlated shells is not important here, maybe skip:
-            n_shells = int(R.next())                      # number of shells (e.g. Fe d, As p, O p) in the unit cell, 
-                                                          # corresponds to index R in formulas
-            # now read the information about the shells (atom, sort, l, dim):
-            shell_entries = ['atom', 'sort', 'l', 'dim']
-            shells = [ {name: int(val) for name, val in zip(shell_entries, R)} for ish in range(n_shells) ]
+                e_win = gr_head['ewindow']
+                nb_max = gr_head['nb_max']
+                p_shells = gr_head['shells']
+                density_required = gr_head['nelect']
+                charge_below = 0.0 # This is not defined in VASP interface
 
-            n_corr_shells = int(R.next())                 # number of corr. shells (e.g. Fe d, Ce f) in the unit cell, 
-                                                          # corresponds to index R in formulas
-            # now read the information about the shells (atom, sort, l, dim, SO flag, irep):
-            corr_shell_entries = ['atom', 'sort', 'l', 'dim', 'SO', 'irep']
-            corr_shells = [ {name: int(val) for name, val in zip(corr_shell_entries, R)} for icrsh in range(n_corr_shells) ]
+# TODO: generalize this to the case of multiple shell groups
+                n_shells = 0 # No non-correlated shells at the moment
 
-            # determine the number of inequivalent correlated shells and maps, needed for further reading
-            n_inequiv_shells, corr_to_inequiv, inequiv_to_corr = ConverterTools.det_shell_equivalence(self,corr_shells)
+# Note that in the DftTools convention each site gives a separate correlated shell!
+                n_corr_shells = sum([len(sh['ion_list']) for sh in p_shells])
 
+                corr_shells = []
+                shion_to_corr_shell = [[] for ish in xrange(len(p_shells))]
+                icsh = 0
+                for ish, sh in enumerate(p_shells):
+                    ion_list = sh['ion_list']
+                    for i, ion in enumerate(ion_list):
+                        pars = {}
+                        pars['atom'] = ion
+                        pars['sort'] = sh['ion_sort']
+                        pars['l'] = sh['lorb']
+                        pars['dim'] = sh['ndim']
+                        pars['SO'] = SO
+# TODO: check what 'irep' entry does (it seems to be very specific to dmftproj)
+                        pars['irep'] = 0
+                        corr_shells.append(pars)
+                        shion_to_corr_shell[ish].append(i)
+
+# FIXME: atomic sorts in Wien2K are not the same as in VASP.
+#        A symmetry analysis from OUTCAR or symmetry file should be used
+#        to define equivalence classes of sites.
+            n_inequiv_shells, corr_to_inequiv, inequiv_to_corr = ConverterTools.det_shell_equivalence(self, corr_shells)
+
+# NB!: these rotation matrices are specific to Wien2K! Set to identity in VASP
             use_rotations = 1
             rot_mat = [numpy.identity(corr_shells[icrsh]['dim'],numpy.complex_) for icrsh in range(n_corr_shells)]
-           
-            # read the matrices
             rot_mat_time_inv = [0 for i in range(n_corr_shells)]
 
-            for icrsh in range(n_corr_shells):
-                for i in range(corr_shells[icrsh]['dim']):    # read real part:
-                    for j in range(corr_shells[icrsh]['dim']):
-                        rot_mat[icrsh][i,j] = R.next()
-                for i in range(corr_shells[icrsh]['dim']):    # read imaginary part:
-                    for j in range(corr_shells[icrsh]['dim']):
-                        rot_mat[icrsh][i,j] += 1j * R.next()
-
-                if (SP==1):             # read time inversion flag:
-                    rot_mat_time_inv[icrsh] = int(R.next())
-                    
-            # Read here the info for the transformation of the basis:
+# TODO: implement transformation matrices
             n_reps = [1 for i in range(n_inequiv_shells)]
             dim_reps = [0 for i in range(n_inequiv_shells)]
             T = []
             for ish in range(n_inequiv_shells):
-                n_reps[ish] = int(R.next())   # number of representatives ("subsets"), e.g. t2g and eg
-                dim_reps[ish] = [int(R.next()) for i in range(n_reps[ish])]   # dimensions of the subsets
+                n_reps[ish] = 1   # Always 1 in VASP
+                ineq_first = inequiv_to_corr[ish]
+                dim_reps[ish] = [corr_shell[ineq_first]['dim']]   # Just the dimension of the shell
             
                 # The transformation matrix:
                 # is of dimension 2l+1 without SO, and 2*(2l+1) with SO!
-                ll = 2*corr_shells[inequiv_to_corr[ish]]['l']+1
+                ll = 2 * corr_shells[inequiv_to_corr[ish]]['l']+1
                 lmax = ll * (corr_shells[inequiv_to_corr[ish]]['SO'] + 1)
-                T.append(numpy.zeros([lmax,lmax],numpy.complex_))
+# TODO: at the moment put T-matrices to identities
+                T.append(numpy.identity(lmax, numpy.complex_))
                 
-                # now read it from file:
-                for i in range(lmax):
-                    for j in range(lmax):
-                        T[ish][i,j] = R.next()
-                for i in range(lmax):
-                    for j in range(lmax):
-                        T[ish][i,j] += 1j * R.next()
-    
-            # Spin blocks to be read:
-            n_spin_blocs = SP + 1 - SO   
-                 
-            # read the list of n_orbitals for all k points
-            n_orbitals = numpy.zeros([n_k,n_spin_blocs],numpy.int)
-            for isp in range(n_spin_blocs):
-                for ik in range(n_k):
-                    n_orbitals[ik,isp] = int(R.next())
-            
-            # Initialise the projectors:
-            proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max([crsh['dim'] for crsh in corr_shells]),max(n_orbitals)],numpy.complex_)
+#            if nc_flag:
+## TODO: implement the noncollinear part
+#                raise NotImplementedError("Noncollinear calculations are not implemented")
+#            else:
+            hopping = numpy.zeros([n_k, n_spin_blocs, nb_max, nb_max], numpy.complex_)
+            band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in xrange(n_spin_blocs)]
+            n_orbitals = numpy.zeros([n_k, n_spin_blocs], numpy.int)
 
-            # Read the projectors from the file:
-            for ik in range(n_k):
-                for icrsh in range(n_corr_shells):
-                    n_orb = corr_shells[icrsh]['dim']
-                    # first Real part for BOTH spins, due to conventions in dmftproj:
-                    for isp in range(n_spin_blocs):
-                        for i in range(n_orb):
-                            for j in range(n_orbitals[ik][isp]):
-                                proj_mat[ik,isp,icrsh,i,j] = R.next()
-                    # now Imag part:
-                    for isp in range(n_spin_blocs):
-                        for i in range(n_orb):
-                            for j in range(n_orbitals[ik][isp]):
-                                proj_mat[ik,isp,icrsh,i,j] += 1j * R.next()
-          
-            # now define the arrays for weights and hopping ...
-            bz_weights = numpy.ones([n_k],numpy.float_)/ float(n_k)  # w(k_index),  default normalisation 
-            hopping = numpy.zeros([n_k,n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
+            for isp in xrange(n_spin_blocs):
+                for ik in xrange(n_k):
+                    ib1, ib2 = int(rf.next()), int(rf.next())
+                    band_window[isp][ik, :2] = ib1, ib2
+                    nb = ib2 - ib1 + 1
+                    n_orbitals[ik, isp] = nb
+                    for ib in xrange(nb):
+                        hopping[ik, isp, ib, ib] = rf.next()
 
-            # weights in the file
-            for ik in range(n_k) : bz_weights[ik] = R.next()         
-                
-            # if the sum over spins is in the weights, take it out again!!
-            sm = sum(bz_weights)
-            bz_weights[:] /= sm 
+# Projectors
+            proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), max(n_orbitals)], numpy.complex_)
 
-            # Grab the H
-            # we use now the convention of a DIAGONAL Hamiltonian -- convention for Wien2K.
-            for isp in range(n_spin_blocs):
-                for ik in range(n_k) :
-                    n_orb = n_orbitals[ik,isp]
-                    for i in range(n_orb):
-                        hopping[ik,isp,i,i] = R.next() * energy_unit
-            
-            # keep some things that we need for reading parproj:
+# TODO: implement reading from more than one projector group
+# In 'dmftproj' each ion represents a separate correlated shell.
+# In my interface a 'projected shell' includes sets of ions.
+# How to reconcile this? Two options:
+#
+# 1. Redefine 'projected shell' in my interface to make it correspond to one site only.
+#    In this case the list of ions must be defined at the level of the projector group.
+#
+# 2. Split my 'projected shell' to several 'correlated shells' here in the converter.
+#
+# At the moment I choose i.2 for its simplicity. But one should consider possible
+# use cases and decide which solution is to be made permanent.
+#
+            for ish, sh in enumerate(p_shells):
+                for isp in xrange(n_spin_blocs):
+                    for ik in xrange(n_k):
+                        for ion in xrange(len(sh['ion_list'])):
+                            icsh = shion_to_corr_shell[ish][ion]
+                            for ilm in xrange(sh['dim']):
+                                for ib in xrange(n_orbitals[ik, isp]):
+                                    # This is to avoid confusion with the order of arguments
+                                    pr = rf.next()
+                                    pi = rf.next()
+                                    proj_mat[ik, isp, icsh, ilm, ib] = complex(pr, pi)
+
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
             for it in things_to_set: setattr(self,it,locals()[it])
-        except StopIteration : # a more explicit error if the file is corrupted.
-            raise "Wien2k_converter : reading file %s failed!"%filename
 
-        R.close()
-        # Reading done!
+        except StopIteration:
+           raise "VaspConverter: error reading %s"%self.gr_file
+
+        rf.close()
+
+#
+#        try:
+#            energy_unit = R.next()                        # read the energy convertion factor
+#            n_k = int(R.next())                           # read the number of k points
+#            k_dep_projection = 1                          
+#            SP = int(R.next())                            # flag for spin-polarised calculation
+#            SO = int(R.next())                            # flag for spin-orbit calculation
+#            charge_below = R.next()                       # total charge below energy window
+#            density_required = R.next()                   # total density required, for setting the chemical potential
+#            symm_op = 1                                   # Use symmetry groups for the k-sum
+#
+#            # the information on the non-correlated shells is not important here, maybe skip:
+#            n_shells = int(R.next())                      # number of shells (e.g. Fe d, As p, O p) in the unit cell, 
+#                                                          # corresponds to index R in formulas
+#            # now read the information about the shells (atom, sort, l, dim):
+#            shell_entries = ['atom', 'sort', 'l', 'dim']
+#            shells = [ {name: int(val) for name, val in zip(shell_entries, R)} for ish in range(n_shells) ]
+#
+#            n_corr_shells = int(R.next())                 # number of corr. shells (e.g. Fe d, Ce f) in the unit cell, 
+#                                                          # corresponds to index R in formulas
+#            # now read the information about the shells (atom, sort, l, dim, SO flag, irep):
+#            corr_shell_entries = ['atom', 'sort', 'l', 'dim', 'SO', 'irep']
+#            corr_shells = [ {name: int(val) for name, val in zip(corr_shell_entries, R)} for icrsh in range(n_corr_shells) ]
+#
+#            # determine the number of inequivalent correlated shells and maps, needed for further reading
+#            n_inequiv_shells, corr_to_inequiv, inequiv_to_corr = ConverterTools.det_shell_equivalence(self,corr_shells)
+#
+#            use_rotations = 1
+#            rot_mat = [numpy.identity(corr_shells[icrsh]['dim'],numpy.complex_) for icrsh in range(n_corr_shells)]
+#           
+#            # read the matrices
+#            rot_mat_time_inv = [0 for i in range(n_corr_shells)]
+#
+#            for icrsh in range(n_corr_shells):
+#                for i in range(corr_shells[icrsh]['dim']):    # read real part:
+#                    for j in range(corr_shells[icrsh]['dim']):
+#                        rot_mat[icrsh][i,j] = R.next()
+#                for i in range(corr_shells[icrsh]['dim']):    # read imaginary part:
+#                    for j in range(corr_shells[icrsh]['dim']):
+#                        rot_mat[icrsh][i,j] += 1j * R.next()
+#
+#                if (SP==1):             # read time inversion flag:
+#                    rot_mat_time_inv[icrsh] = int(R.next())
+#                    
+#            # Read here the info for the transformation of the basis:
+#            n_reps = [1 for i in range(n_inequiv_shells)]
+#            dim_reps = [0 for i in range(n_inequiv_shells)]
+#            T = []
+#            for ish in range(n_inequiv_shells):
+#                n_reps[ish] = int(R.next())   # number of representatives ("subsets"), e.g. t2g and eg
+#                dim_reps[ish] = [int(R.next()) for i in range(n_reps[ish])]   # dimensions of the subsets
+#            
+#                # The transformation matrix:
+#                # is of dimension 2l+1 without SO, and 2*(2l+1) with SO!
+#                ll = 2*corr_shells[inequiv_to_corr[ish]]['l']+1
+#                lmax = ll * (corr_shells[inequiv_to_corr[ish]]['SO'] + 1)
+#                T.append(numpy.zeros([lmax,lmax],numpy.complex_))
+#                
+#                # now read it from file:
+#                for i in range(lmax):
+#                    for j in range(lmax):
+#                        T[ish][i,j] = R.next()
+#                for i in range(lmax):
+#                    for j in range(lmax):
+#                        T[ish][i,j] += 1j * R.next()
+#    
+#            # Spin blocks to be read:
+#            n_spin_blocs = SP + 1 - SO   
+#                 
+#            # read the list of n_orbitals for all k points
+#            n_orbitals = numpy.zeros([n_k,n_spin_blocs],numpy.int)
+#            for isp in range(n_spin_blocs):
+#                for ik in range(n_k):
+#                    n_orbitals[ik,isp] = int(R.next())
+#            
+#            # Initialise the projectors:
+#            proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max([crsh['dim'] for crsh in corr_shells]),max(n_orbitals)],numpy.complex_)
+#
+#            # Read the projectors from the file:
+#            for ik in range(n_k):
+#                for icrsh in range(n_corr_shells):
+#                    n_orb = corr_shells[icrsh]['dim']
+#                    # first Real part for BOTH spins, due to conventions in dmftproj:
+#                    for isp in range(n_spin_blocs):
+#                        for i in range(n_orb):
+#                            for j in range(n_orbitals[ik][isp]):
+#                                proj_mat[ik,isp,icrsh,i,j] = R.next()
+#                    # now Imag part:
+#                    for isp in range(n_spin_blocs):
+#                        for i in range(n_orb):
+#                            for j in range(n_orbitals[ik][isp]):
+#                                proj_mat[ik,isp,icrsh,i,j] += 1j * R.next()
+#          
+#            # now define the arrays for weights and hopping ...
+#            bz_weights = numpy.ones([n_k],numpy.float_)/ float(n_k)  # w(k_index),  default normalisation 
+#            hopping = numpy.zeros([n_k,n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
+#
+#            # weights in the file
+#            for ik in range(n_k) : bz_weights[ik] = R.next()         
+#                
+#            # if the sum over spins is in the weights, take it out again!!
+#            sm = sum(bz_weights)
+#            bz_weights[:] /= sm 
+#
+#            # Grab the H
+#            # we use now the convention of a DIAGONAL Hamiltonian -- convention for Wien2K.
+#            for isp in range(n_spin_blocs):
+#                for ik in range(n_k) :
+#                    n_orb = n_orbitals[ik,isp]
+#                    for i in range(n_orb):
+#                        hopping[ik,isp,i,i] = R.next() * energy_unit
+#            
+#            # keep some things that we need for reading parproj:
+#            things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
+#            for it in things_to_set: setattr(self,it,locals()[it])
+#        except StopIteration : # a more explicit error if the file is corrupted.
+#            raise "Wien2k_converter : reading file %s failed!"%filename
+#
+#        R.close()
+#        # Reading done!
         
         # Save it to the HDF:
         ar = HDFArchive(self.hdf_file,'a')
