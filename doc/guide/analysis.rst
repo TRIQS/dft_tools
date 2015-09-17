@@ -43,21 +43,26 @@ in a hdf5 file::
   ar = HDFArchive('case.h5', 'a')
   SigmaReFreq = ar['dmft_output']['Sigma_w']
 
-You may also have your self energy stored in text files. For this case we provide the function
-:meth:`constr_Sigma_real_axis`, which loads the data and puts it into a real frequency :class:`BlockGf <pytriqs.gf.local.BlockGf>` object::
+You may also have your self energy stored in text files. For this case the :ref:`TRIQS <triqslibs:welcome>` library offers 
+the function :meth:`read_gf_from_txt`, which is able to load the data from text files of one Greens function block
+into a real frequency :class:`ReFreqGf <pytriqs.gf.local.ReFreqGf>` object. Loading each block separately and
+building up a :class:´BlockGf <pytriqs.gf.local.BlockGf>´ is done with::
 
-  from pytriqs.applications.dft.build_sigma_from_txt import *
-  SigmaReFreq = constr_Sigma_real_axis(filename=filename, gf_struct_orb=SK.gf_struct_solver[0])
+  from pytriqs.gf.local.tools import *
+  # get block names
+  n_list = [n for n,nl in SK.gf_struct_solver[0].iteritems()]
+  # load sigma for each block - in this example sigma is composed of 1x1 blocks
+  g_blocks = [read_gf_from_txt(block_txtfiles=[['Sigma_'+name+'.dat']], block_name=n) for n in n_list]
+  # put the data into a BlockGf object
+  SigmaReFreq = BlockGf(name_list=n_list, block_list=g_blocks, make_copies=False)
 
 where:
  
-  * `filename`: the `fname` pattern in text files names as described below,  
-  * `gf_struct_orb`: the Greens function structure for the regarding inequivalent shell.
+  * `block_txtfiles` is a rank 2 square np.array(str) or list[list[str]] holding the file names of one block and 
+  * `block_name` is the name of the block.
 
-It is important that you follow some rules concerning the structure of your data files:
-  * Each data file should contain three columns: real frequency, real part and imaginary part of the self energy exactly in this order. 
-  * If all blocks of your self energy are of dimension 1x1, you store them in `filename_(block)0.dat` files. Here `(block)` is a block name (`up`, `down`, or combined `ud`). 
-  * In the case when you have matrix blocks, you store them in `(i)_(j).dat` files, where `(i)` and `(j)` are the zero based orbital indices, in the `filename_(block)` directory. 
+It is important that each data file has to contain three columns: the real frequency mesh, the real part and the imaginary part
+of the self energy - exactly in this order! The mesh should be the same for all files read in and non-uniform meshes are not supported. 
   
 Finally, we put the self energy into the `SK` object::  
   
