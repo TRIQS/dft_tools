@@ -23,9 +23,12 @@
 from types import *
 import numpy
 from pytriqs.archive import *
-from converter_tools import *
+from pytriqs.applications.dft.converters.converter_tools import *
 import os.path
-import simplejson as json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 #from plotools import ProjectorGroup, ProjectorShell
 
 class VaspConverter(ConverterTools):
@@ -55,7 +58,6 @@ class VaspConverter(ConverterTools):
         self.bands_subgrp = bands_subgrp
         self.misc_subgrp = misc_subgrp
         self.transp_subgrp = transp_subgrp
-        self.fortran_to_replace = {'D':'E'}
 
         # Checks if h5 file is there and repacks it if wanted:
         if (os.path.exists(self.hdf_file) and repacking):
@@ -95,7 +97,7 @@ class VaspConverter(ConverterTools):
         Reads the input files, and stores the data in the HDFfile
         """
         energy_unit = 1.0 # VASP interface always uses eV
-        k_dep_projection = 1                          
+        k_dep_projection = 1
 # Symmetries are switched off for the moment
 # TODO: implement symmetries
         symm_op = 0                                   # Use symmetry groups for the k-sum
@@ -503,7 +505,7 @@ class VaspConverter(ConverterTools):
                                 proj_mat[ik,isp,icrsh,i,j] += 1j * R.next()
 
             hopping = numpy.zeros([n_k,self.n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
-         	    
+
             # Grab the H
             # we use now the convention of a DIAGONAL Hamiltonian!!!!
             for isp in range(self.n_spin_blocs):
@@ -540,7 +542,7 @@ class VaspConverter(ConverterTools):
 
         # Save it to the HDF:
         ar = HDFArchive(self.hdf_file,'a')
-        if not (self.bands_subgrp in ar): ar.create_group(self.bands_subgrp) 
+        if not (self.bands_subgrp in ar): ar.create_group(self.bands_subgrp)
         # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
         things_to_save = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_all']
         for it in things_to_save: ar[self.bands_subgrp][it] = locals()[it]
@@ -562,7 +564,7 @@ class VaspConverter(ConverterTools):
         # band_window: Contains the index of the lowest and highest band within the
         #              projected subspace (used by dmftproj) for each k-point.
 
-        if (SP == 0 or SO == 1):        
+        if (SP == 0 or SO == 1):
             files = [self.bandwin_file]
         elif SP == 1:
             files = [self.bandwin_file+'up', self.bandwin_file+'dn']
@@ -666,7 +668,7 @@ class VaspConverter(ConverterTools):
         # velocities_k: velocity (momentum) matrix elements between all bands in band_window_optics
         #               and each k-point.
 
-        if (SP == 0 or SO == 1):        
+        if (SP == 0 or SO == 1):
             files = [self.pmat_file]
         elif SP == 1:
             files = [self.pmat_file+'up', self.pmat_file+'dn']
