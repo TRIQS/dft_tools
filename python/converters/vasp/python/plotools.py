@@ -3,7 +3,10 @@ import itertools as it
 import numpy as np
 
 # 'simplejson' is supposed to be faster than 'json' in stdlib.
-import simplejson as json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 class Projector:
     """
