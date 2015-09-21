@@ -96,7 +96,9 @@ class VaspConverter(ConverterTools):
         """
         energy_unit = 1.0 # VASP interface always uses eV
         k_dep_projection = 1                          
-        symm_op = 1                                   # Use symmetry groups for the k-sum
+# Symmetries are switched off for the moment
+# TODO: implement symmetries
+        symm_op = 0                                   # Use symmetry groups for the k-sum
 
         # Read and write only on the master node
         if not (mpi.is_master_node()): return
@@ -381,9 +383,10 @@ class VaspConverter(ConverterTools):
         del ar
 
         # Symmetries are used, so now convert symmetry information for *correlated* orbitals:
-        self.convert_symmetry_input(orbits=self.corr_shells,symm_file=self.symmcorr_file,symm_subgrp=self.symmcorr_subgrp,SO=self.SO,SP=self.SP)
-        self.convert_misc_input(bandwin_file=self.bandwin_file,struct_file=self.struct_file,outputs_file=self.outputs_file,
-                                misc_subgrp=self.misc_subgrp,SO=self.SO,SP=self.SP,n_k=self.n_k)
+        self.convert_symmetry_input(ctrl_head, orbits=self.corr_shells, symm_subgrp=self.symmcorr_subgrp)
+# TODO: Implement misc_input
+#        self.convert_misc_input(bandwin_file=self.bandwin_file,struct_file=self.struct_file,outputs_file=self.outputs_file,
+#                                misc_subgrp=self.misc_subgrp,SO=self.SO,SP=self.SP,n_k=self.n_k)
 
 
     def convert_parproj_input(self):
@@ -706,60 +709,64 @@ class VaspConverter(ConverterTools):
         for it in things_to_save: ar[self.transp_subgrp][it] = locals()[it]
         del ar
 
-    def convert_symmetry_input(self, orbits, symm_file, symm_subgrp, SO, SP):
+    def convert_symmetry_input(self, ctrl_head, orbits, symm_subgrp):
         """
         Reads input for the symmetrisations from symm_file, which is case.sympar or case.symqmc.
         """
 
-        if not (mpi.is_master_node()): return
-        mpi.report("Reading input from %s..."%symm_file)
-
+# In VASP interface the symmetries are read directly from *.ctrl file
+# For the moment the symmetry parameters are just stubs
+        n_symm = 0
+        n_atoms = 0
+        perm = []
         n_orbits = len(orbits)
+        SP = ctrl_head['ns']
+        SO = ctrl_head['nc_flag']
+        time_inv = []
+        mat = []
+        mat_tinv = []
+#        if not (mpi.is_master_node()): return
+#        mpi.report("Reading input from %s..."%symm_file)
+#
+#        n_orbits = len(orbits)
+#
+#        R = ConverterTools.read_fortran_file(self,symm_file,self.fortran_to_replace)
+#
+#        try:
+#            n_symm = int(R.next())           # Number of symmetry operations
+#            n_atoms = int(R.next())       # number of atoms involved
+#            perm = [ [int(R.next()) for i in range(n_atoms)] for j in range(n_symm) ]    # list of permutations of the atoms
+#            if SP: 
+#                time_inv = [ int(R.next()) for j in range(n_symm) ]           # time inversion for SO coupling
+#            else:
+#                time_inv = [ 0 for j in range(n_symm) ]
+#
+#            # Now read matrices:
+#            mat = []  
+#            for i_symm in range(n_symm):
+#                
+#                mat.append( [ numpy.zeros([orbits[orb]['dim'], orbits[orb]['dim']],numpy.complex_) for orb in range(n_orbits) ] )
+#                for orb in range(n_orbits):
+#                    for i in range(orbits[orb]['dim']):
+#                        for j in range(orbits[orb]['dim']):
+#                            mat[i_symm][orb][i,j] = R.next()            # real part
+#                    for i in range(orbits[orb]['dim']):
+#                        for j in range(orbits[orb]['dim']):
+#                            mat[i_symm][orb][i,j] += 1j * R.next()      # imaginary part
+#
+#            mat_tinv = [numpy.identity(orbits[orb]['dim'],numpy.complex_)
+#                        for orb in range(n_orbits)]
+#
+#            if ((SO==0) and (SP==0)):
+#                # here we need an additional time inversion operation, so read it:
+#                for orb in range(n_orbits):
+#                    for i in range(orbits[orb]['dim']):
+#                        for j in range(orbits[orb]['dim']):
+#                            mat_tinv[orb][i,j] = R.next()            # real part
+#                    for i in range(orbits[orb]['dim']):
+#                        for j in range(orbits[orb]['dim']):
+#                            mat_tinv[orb][i,j] += 1j * R.next()      # imaginary part
 
-        R = ConverterTools.read_fortran_file(self,symm_file,self.fortran_to_replace)
-
-        try:
-            n_symm = int(R.next())           # Number of symmetry operations
-            n_atoms = int(R.next())       # number of atoms involved
-            perm = [ [int(R.next()) for i in range(n_atoms)] for j in range(n_symm) ]    # list of permutations of the atoms
-            if SP: 
-                time_inv = [ int(R.next()) for j in range(n_symm) ]           # time inversion for SO coupling
-            else:
-                time_inv = [ 0 for j in range(n_symm) ]
-
-            # Now read matrices:
-            mat = []  
-            for i_symm in range(n_symm):
-                
-                mat.append( [ numpy.zeros([orbits[orb]['dim'], orbits[orb]['dim']],numpy.complex_) for orb in range(n_orbits) ] )
-                for orb in range(n_orbits):
-                    for i in range(orbits[orb]['dim']):
-                        for j in range(orbits[orb]['dim']):
-                            mat[i_symm][orb][i,j] = R.next()            # real part
-                    for i in range(orbits[orb]['dim']):
-                        for j in range(orbits[orb]['dim']):
-                            mat[i_symm][orb][i,j] += 1j * R.next()      # imaginary part
-
-            mat_tinv = [numpy.identity(orbits[orb]['dim'],numpy.complex_)
-                        for orb in range(n_orbits)]
-
-            if ((SO==0) and (SP==0)):
-                # here we need an additional time inversion operation, so read it:
-                for orb in range(n_orbits):
-                    for i in range(orbits[orb]['dim']):
-                        for j in range(orbits[orb]['dim']):
-                            mat_tinv[orb][i,j] = R.next()            # real part
-                    for i in range(orbits[orb]['dim']):
-                        for j in range(orbits[orb]['dim']):
-                            mat_tinv[orb][i,j] += 1j * R.next()      # imaginary part
-                
-
-
-        except StopIteration : # a more explicit error if the file is corrupted.
-            raise "Wien2k_converter : reading file symm_file failed!"
-        
-        R.close()
-        # Reading done!
 
         # Save it to the HDF:
         ar=HDFArchive(self.hdf_file,'a')
