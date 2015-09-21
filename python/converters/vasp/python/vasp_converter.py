@@ -70,7 +70,7 @@ class VaspConverter(ConverterTools):
         """
         for line in fh:
             line_ = line.strip()
-            if line_[0] == '#' or line_ == '':
+            if not line or (line_ == '' or line_[0] == '#'):
                 continue
 
             for val in map(float, line.split()):
@@ -83,7 +83,7 @@ class VaspConverter(ConverterTools):
         fh = open(filename, 'rt')
         header = ""
         for line in fh:
-            if not "# END" in line:
+            if not "#END" in line:
                 header += line
             else:
                 break
@@ -104,22 +104,23 @@ class VaspConverter(ConverterTools):
 
         # Read and write only on the master node
         if not (mpi.is_master_node()): return
-        mpi.report("Reading input from %s..."%self.dft_file)
+        mpi.report("Reading input from %s..."%self.ctrl_file)
 
         # R is a generator : each R.Next() will return the next number in the file
         jheader, rf = self.read_header_and_data(self.ctrl_file)
+        print jheader
         ctrl_head = json.loads(jheader)
 
         ng = ctrl_head['ngroups']
         n_k = ctrl_head['nk']
 # Note the difference in name conventions!
-        SP = ctrl_head['ns']
+        SP = ctrl_head['ns'] - 1
         SO = ctrl_head['nc_flag']
 
-        kpts = numpy.zeros((nk, 3))
-        bz_weights = numpy.zeros(nk)
+        kpts = numpy.zeros((n_k, 3))
+        bz_weights = numpy.zeros(n_k)
         try:
-            for ik in xrange(nk):
+            for ik in xrange(n_k):
                 kx, ky, kz = rf.next(), rf.next(), rf.next()
                 kpts[ik, :] = kx, ky, kz
                 bz_weights[ik] = rf.next()
@@ -150,9 +151,6 @@ class VaspConverter(ConverterTools):
                 density_required = gr_head['nelect']
                 charge_below = 0.0 # This is not defined in VASP interface
 
-# TODO: generalize this to the case of multiple shell groups
-                n_shells = 0 # No non-correlated shells at the moment
-
 # Note that in the DftTools convention each site gives a separate correlated shell!
                 n_corr_shells = sum([len(sh['ion_list']) for sh in p_shells])
 
@@ -173,6 +171,10 @@ class VaspConverter(ConverterTools):
                         corr_shells.append(pars)
                         shion_to_corr_shell[ish].append(i)
 
+# TODO: generalize this to the case of multiple shell groups
+                n_shells = n_corr_shells # No non-correlated shells at the moment
+                shells = corr_shells
+
 # FIXME: atomic sorts in Wien2K are not the same as in VASP.
 #        A symmetry analysis from OUTCAR or symmetry file should be used
 #        to define equivalence classes of sites.
@@ -190,7 +192,7 @@ class VaspConverter(ConverterTools):
             for ish in range(n_inequiv_shells):
                 n_reps[ish] = 1   # Always 1 in VASP
                 ineq_first = inequiv_to_corr[ish]
-                dim_reps[ish] = [corr_shell[ineq_first]['dim']]   # Just the dimension of the shell
+                dim_reps[ish] = [corr_shells[ineq_first]['dim']]   # Just the dimension of the shell
             
                 # The transformation matrix:
                 # is of dimension 2l+1 without SO, and 2*(2l+1) with SO!
@@ -217,6 +219,8 @@ class VaspConverter(ConverterTools):
                         hopping[ik, isp, ib, ib] = rf.next()
 
 # Projectors
+            print n_orbitals
+            print [crsh['dim'] for crsh in corr_shells]
             proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), max(n_orbitals)], numpy.complex_)
 
 # TODO: implement reading from more than one projector group
@@ -237,7 +241,7 @@ class VaspConverter(ConverterTools):
                     for ik in xrange(n_k):
                         for ion in xrange(len(sh['ion_list'])):
                             icsh = shion_to_corr_shell[ish][ion]
-                            for ilm in xrange(sh['dim']):
+                            for ilm in xrange(sh['ndim']):
                                 for ib in xrange(n_orbitals[ik, isp]):
                                     # This is to avoid confusion with the order of arguments
                                     pr = rf.next()
@@ -245,7 +249,9 @@ class VaspConverter(ConverterTools):
                                     proj_mat[ik, isp, icsh, ilm, ib] = complex(pr, pi)
 
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
-            for it in things_to_set: setattr(self,it,locals()[it])
+            for it in things_to_set:
+                print "%s:"%(it), locals()[it]
+                setattr(self,it,locals()[it])
 
         except StopIteration:
            raise "VaspConverter: error reading %s"%self.gr_file
@@ -719,14 +725,14 @@ class VaspConverter(ConverterTools):
 # In VASP interface the symmetries are read directly from *.ctrl file
 # For the moment the symmetry parameters are just stubs
         n_symm = 0
-        n_atoms = 0
-        perm = []
+        n_atoms = 1
+        perm = [0]
         n_orbits = len(orbits)
         SP = ctrl_head['ns']
         SO = ctrl_head['nc_flag']
-        time_inv = []
-        mat = []
-        mat_tinv = []
+        time_inv = [0]
+        mat = [numpy.identity(1)]
+        mat_tinv = [numpy.identity(1)]
 #        if not (mpi.is_master_node()): return
 #        mpi.report("Reading input from %s..."%symm_file)
 #
@@ -774,5 +780,7 @@ class VaspConverter(ConverterTools):
         ar=HDFArchive(self.hdf_file,'a')
         if not (symm_subgrp in ar): ar.create_group(symm_subgrp)
         things_to_save = ['n_symm','n_atoms','perm','orbits','SO','SP','time_inv','mat','mat_tinv']
-        for it in things_to_save: ar[symm_subgrp][it] = locals()[it]
+        for it in things_to_save:
+            print "%s:"%(it), locals()[it]
+            ar[symm_subgrp][it] = locals()[it]
         del ar
