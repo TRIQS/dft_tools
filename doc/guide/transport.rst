@@ -15,13 +15,13 @@ in which the kinetic coefficients :math:`A_{n,\alpha\beta}` are given by
 
 .. math::
   
-   A_{n,\alpha\beta} = N_{sp} \pi \hbar \int{d\omega \left(\beta\omega\right)^n f\left(\omega\right)f\left(-\omega\right)\Gamma_{\alpha\beta}\left(\omega\right)}.
+   A_{n,\alpha\beta} = N_{sp} \pi \hbar \int{d\omega \left(\beta\omega\right)^n f\left(\omega\right)f\left(-\omega\right)\Gamma_{\alpha\beta}\left(\omega,\omega\right)}.
 
-Here :math:`N_{sp}` is the spin factor and :math:`f(\omega)` is the Fermi function. The transport distribution :math:`\Gamma_{\alpha\beta}\left(\omega\right)` is defined as
+Here :math:`N_{sp}` is the spin factor and :math:`f(\omega)` is the Fermi function. The transport distribution :math:`\Gamma_{\alpha\beta}\left(\omega_1,\omega_2\right)` is defined as
 
 .. math::
   
-   \Gamma_{\alpha\beta}\left(\omega\right) = \frac{1}{V} \sum_k Tr\left(v_{k,\alpha}A_{k}(\omega)v_{k,\beta}A_{k}\left(\omega\right)\right),
+   \Gamma_{\alpha\beta}\left(\omega_1,\omega_2\right) = \frac{1}{V} \sum_k Tr\left(v_{k,\alpha}A_{k}(\omega_1)v_{k,\beta}A_{k}\left(\omega_2\right)\right),
 
 where :math:`V` is the unit cell volume. In multi-band systems the velocities :math:`v_{k}` and the spectral function :math:`A(k,\omega)` are matrices in the band indices :math:`i` and :math:`j`.
 The frequency depended optical conductivity is given by
