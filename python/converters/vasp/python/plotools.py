@@ -2,6 +2,9 @@
 import itertools as it
 import numpy as np
 
+# 'simplejson' is supposed to be faster than 'json' in stdlib.
+import simplejson as json
+
 class Projector:
     """
     Class describing a local-orbital projector.
@@ -277,6 +280,12 @@ class ProjectorShell:
         self.lm2 = (self.lorb+1)**2
         self.ndim = self.lm2 - self.lm1
 
+        if self.tmatrix is None:
+            self.ndim = self.lm2 - self.lm1 + 1
+        else:
+# TODO: generalize this to a tmatrix for every ion
+            self.ndim = self.tmatrix.shape[0]
+
 # Pre-select a subset of projectors (this should be an array view => no memory is wasted)
 # !!! This sucks but I have to change the order of 'ib' and 'ilm' indices here
 # This should perhaps be done right after the projector array is read from PLOCAR
@@ -426,10 +435,47 @@ def kpoints_output(basename, el_struct):
 
 ################################################################################
 #
+# ctrl_output
+#
+################################################################################
+def ctrl_output(conf_pars, el_struct, ng):
+    """
+    Outputs a ctrl-file.
+    """
+    ctrl_fname = conf_pars.general['basename'] + '.ctrl'
+    head_dict = {}
+
+# TODO: Add output of tetrahedra
+# Construct the header dictionary
+    head_dict['ngroups'] = ng
+    head_dict['nk'] = el_struct.kmesh['nktot']
+    head_dict['ns'] = el_struct.nspin
+    head_dict['nc_flag'] = 1 if el_struct.nc_flag else 0
+#    head_dict['efermi'] = conf_pars.general['efermi']  # We probably don't need Efermi
+
+    header = json.dumps(head_dict, indent=4, separators=(',', ': '))
+
+    print "  Storing ctrl-file..."
+    with open(ctrl_fname, 'wt') as f:
+        f.write(header + "\n")
+        f.write("#END OF HEADER\n")
+
+        f.write("# k-points and weights\n")
+        labels = ['kx', 'ky', 'kz', 'kweight']
+        out = "".join(map(lambda s: s.center(15), labels)) 
+        f.write("#" + out + "\n")
+        for ik, kp in enumerate(el_struct.kmesh['kpoints']):
+            tmp1 = "".join(map("{0:15.10f}".format, kp))
+            out = tmp1 + "{0:16.10f}".format(el_struct.kmesh['kweights'][ik])
+            f.write(out + "\n")
+
+
+################################################################################
+#
 # plo_output
 #
 ################################################################################
-def plo_output(basename, pshells, pgroups, el_struct):
+def plo_output(conf_pars, el_struct, pshells, pgroups):
     """
     Outputs PLO groups into text files.
 
@@ -455,55 +501,91 @@ def plo_output(basename, pshells, pgroups, el_struct):
     # Projected shells
     Nshells
     # Shells: <shell indices>
+    # Shell <1>
     Shell 1
     ndim
     # complex arrays: plo(ns, nion, ndim, nb)
     ...
     # Shells: <shell indices>
+    # Shell <2>
     Shell 2
     ...
 
     """
-    for ig, gr in enumerate(pgroups):
-        fname = basename + '.plog%i'%(ig+1)
-        with open(fname, 'wt') as f:
-            f.write("# Energy window: emin, emax\n")
-            f.write("%i   %i\n"%(gr.emin, gr.emax))
-            f.write("# Number of electrons within the window\n")
-            nelect = gr.nelect_window(el_struct)
-            f.write("%s\n"%(round(nelect, 5)))
-            f.write("# Eigenvalues: is, ik, ib1, ib2 then list of values\n")
+    for ig, pgroup in enumerate(pgroups):
+        plo_fname = conf_pars.general['basename'] + '.pg%i'%(ig + 1)
+        print "  Storing PLO-group file '%s'..."%(plo_fname)
+        head_dict = {}
 
-            nk, ns_band, _ = gr.ib_win.shape
+        head_dict['ewindow'] = (pgroup.emin, pgroup.emax)
+        head_dict['nb_max'] = pgroup.nb_max
+
+        head_shells = []
+        for ish in pgroup.ishells:
+            shell = pgroup.shells[ish]
+            sh_dict = {}
+            sh_dict['shell_index'] = ish
+            sh_dict['lorb'] = shell.lorb
+            sh_dict['ndim'] = shell.ndim
+# Convert ion indices from the internal representation (starting from 0)
+# to conventional VASP representation (starting from 1)
+            ion_output = [io + 1 for io in shell.ion_list]
+            sh_dict['ion_list'] = ion_output
+# TODO: add the output of transformation matrices
+
+            head_shells.append(sh_dict)
+
+        head_dict['shells'] = head_shells
+
+        header = json.dumps(head_dict, indent=4, separators=(',', ': '))
+
+        with open(plo_fname, 'wt') as f:
+            f.write(header + "\n")
+            f.write("#END OF HEADER\n")
+            
+# Eigenvalues within the window
+            f.write("# Eigenvalues within the energy window: %s, %s\n"%(pgroup.emin, pgroup.emax))
+            nk, nband, ns_band = el_struct.eigvals.shape
             for isp in xrange(ns_band):
+                f.write("# is = %i\n"%(isp + 1))
                 for ik in xrange(nk):
-                    ib1 = gr.ib_win[ik, isp, 0]
-                    ib2 = gr.ib_win[ik, isp, 1]
-                    f.write("%i  %i    %i  %i\n"%(isp+1, ik+1, ib1+1, ib2+1))
-                    for ib in xrange(ib1, ib2+1):
-                        f.write("%s\n"%(el_struct.eigvals[ik, ib, isp]))
+                    ib1, ib2 = pgroup.ib_win[ik, isp, 0], pgroup.ib_win[ik, isp, 1]
+                    f.write(" %i  %i\n"%(ib1, ib2))
+                    for ib in xrange(ib1, ib2 + 1):
+                        f.write("%15.7f\n"%(el_struct.eigvals[ik, ib, isp]))
 
-            f.write("\nProjected shells: nshells\n")
-            f.write("%i\n"%(len(gr.ishells)))
-            f.write("Shells: <shell indices>\n")
-            f.write('  '.join(map(lambda ish: "{0:d}".format(pshells[ish].user_index), gr.ishells)) + '\n')
-            for ish in gr.ishells:
-                shell = pshells[ish]
-                f.write("Orbital dimension: ndim\n")
-                f.write("%i\n"%(shell.ndim))
+# Projected shells
+            f.write("# Projected shells\n")
+            f.write("# Shells: %s\n"%(pgroup.ishells))
+            for ish in pgroup.ishells:
+                shell = pgroup.shells[ish]
+                f.write("# Shell %i\n"%(ish))
 
-                nion, ns, nk, ndim, _ = shell.proj_win.shape
-                f.write("# Blocks [isp, ion, ndim, nb], 'nb' fastest index\n")
-                for ik in xrange(nk):
-                    for isp in xrange(ns):
-# TODO: fix this for non-collinear case (ns != ns_band)
-                        ib1 = gr.ib_win[ik, isp, 0] - gr.nb_min
-                        ib2 = gr.ib_win[ik, isp, 1] - gr.nb_min
+                nion, ns, nk, nlm, nb = shell.proj_win.shape
+                for isp in xrange(ns):
+                    f.write("# is = %i\n"%(isp + 1))
+                    for ik in xrange(nk):
+                        f.write("# ik = %i\n"%(ik + 1))
                         for ion in xrange(nion):
-                            f.write("# ik = %i, is = %i, ion = %i\n"%(ik+1, isp+1, ion+1))
-                            for iorb in xrange(ndim):
-                                for ib in xrange(ib1, ib2+1):
-                                    plo = shell.proj_win[ion, isp, ik, iorb, ib]
-                                    f.write("%20.10f %20.10f\n"%(plo.real, plo.imag))
+                            for ilm in xrange(nlm):
+                                ib1, ib2 = pgroup.ib_win[ik, isp, 0], pgroup.ib_win[ik, isp, 1]
+                                ib1_win = ib1 - shell.nb_min
+                                ib2_win = ib2 - shell.nb_min
+                                for ib in xrange(ib1_win, ib2_win + 1):
+                                    p = shell.proj_win[ion, isp, ik, ilm, ib]
+                                    f.write("{0:16.10f}{1:16.10f}\n".format(p.real, p.imag))
                                 f.write("\n")
-    
+
+
+################################################################################
+#
+# output_as_text
+#
+################################################################################
+def output_as_text(pars, el_struct, pshells, pgroups):
+    """
+    Output all information necessary for the converter as text files.
+    """
+    ctrl_output(pars, el_struct, len(pgroups))
+    plo_output(pars, el_struct, pshells, pgroups)
+

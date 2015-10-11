@@ -68,6 +68,9 @@ class ConfigParameters:
             'normalize' : ('normalize', self.parse_string_logical, True),
             'normion' : ('normion', self.parse_string_logical, False)}
 
+        self.gen_optional = {
+            'basename' : ('basename', str, 'vasp'),
+            'efermi' : ('efermi', float)}
 
 #
 # Special parsers
@@ -177,7 +180,7 @@ class ConfigParameters:
             key = param_set[par][0]
             try:
                 par_str = self.cp.get(section, par)
-            except ConfigParser.NoOptionError:
+            except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
                 if exception:
                     message = "Required parameter '%s' not found in section [%s]"%(par, section)
                     raise Exception(message)
@@ -438,8 +441,18 @@ class ConfigParameters:
         """
         Parses [General] section.
         """
-# TODO: write the parser
-        pass
+        self.general = {}
+        sections = self.cp.sections()
+        gen_section = filter(lambda s: s.lower() == 'general', sections)
+# If no [General] section is found parse a dummy section name to the parser
+# to reset parameters to their default values
+        if len(gen_section) > 1:
+            raise Exception("More than one section [General] is found")
+        if len(gen_section) == 0:
+            gen_section = 'general'
+        gen_section = gen_section[0]
+        parsed = self.parse_parameter_set(gen_section, self.gen_optional, exception=False)
+        self.general.update(parsed)
 
 ################################################################################
 #
