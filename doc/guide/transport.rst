@@ -65,7 +65,7 @@ The basics steps to calculate the matrix elements of the momentum operator with 
     6) Run `x optic`. 
 
 Additionally the input file :file:`case.inop` is required. A detail description on how to setup this file can be found in the Wien2k user guide [#userguide]_ on page 166.
-Here the energy window can be chosen according to the window used for :program:`dmftproj`. However, keep in mind that energies have to be specified in absolute values! Furthermore it is important to set line 6 to ON for printing the matrix elements to the :file:`.pmat` file.
+Here the energy window can be chosen according to the window used for :program:`dmftproj`. However, keep in mind that energies have to be specified in absolute values! Furthermore it is important to set line 6 to "ON" and a "1" in the next line for printing the matrix elements to the :file:`.pmat` file.
 
 
 Using the transport code

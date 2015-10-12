@@ -20,6 +20,12 @@ the parameters as desired.
 
 .. literalinclude:: plotting_spaghettis.py
 
+x optic does not write a case.pmat file
+---------------------------------------
+Make sure that you set line 6 to "ON" and put a "1" to the following line.
+The "1" is undocumented in Wien2k, but needed to have `case.pmat` written.
+However, we are working on reading directly the `case.mommat2` file.
+
 Why is my calculation not working?
 ----------------------------------
 
