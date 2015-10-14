@@ -81,9 +81,20 @@ def check_data_consistency(pars, el_struct):
     """
 # Check that ions inside each shell are of the same sort
     for sh in pars.shells:
-        print sh['ion_list']
         sorts = set([el_struct.type_of_ion[io] for io in sh['ion_list']])
         assert len(sorts) == 1, "Each projected shell must contain only ions of the same sort"
+
+# Check that ion and orbital lists in shells match those of projectors
+        ion_list = sh['ion_list']
+        lshell = sh['lshell']
+        for ion in ion_list:
+            for par in el_struct.proj_params:
+                if par['isite'] - 1 == ion and par['l'] == lshell:
+                    break
+            else:
+                errmsg = "Projector for isite = %s, l = %s does not match PROJCAR"%(ion + 1, lshell)
+                raise Exception(errmsg)
+        
 
 ################################################################################
 # select_bands()
@@ -356,7 +367,7 @@ class ProjectorShell:
             for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
                 for io in xrange(nion):
                     proj_k = self.proj_win[isp, io, ik, ...]
-                    occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2], 
+                    occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
                                                  proj_k.conj().T).real * weight
 
 #        if not symops is None:
@@ -389,7 +400,7 @@ def generate_plo(conf_pars, el_struct):
         efermi = el_struct.efermi
 
 # eigvals(nktot, nband, ispin) are defined with respect to the Fermi level
-    eigvals = el_struct.eigvals - efermi 
+    eigvals = el_struct.eigvals - efermi
 
     pshells = []
     for sh_par in conf_pars.shells:
