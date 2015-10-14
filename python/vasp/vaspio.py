@@ -1,6 +1,7 @@
 
 import numpy as np
-import plocar_io.c_plocar_io as c_plocar_io
+import re
+#import plocar_io.c_plocar_io as c_plocar_io
 
 def read_lines(filename):
     r"""
@@ -77,7 +78,96 @@ class Plocar:
         if vasp_dir[-1] != '/':
             vasp_dir += '/'
 
-        self.params, self.plo, self.ferw = c_plocar_io.read_plocar(vasp_dir + plocar_filename)
+#        self.params, self.plo, self.ferw = c_plocar_io.read_plocar(vasp_dir + plocar_filename)
+        self.params, self.plo = self.temp_parser(projcar_filename=vasp_dir + "PROJCAR", locproj_filename=vasp_dir + "LOCPROJ")
+
+    def temp_parser(self, projcar_filename='PROJCAR', locproj_filename='LOCPROJ'):
+        r"""
+        Parses PROJCAR (and partially LOCPROJ) to get VASP projectors.
+
+        This is a prototype parser that should eventually be written in C for
+        better performance on large files.
+
+        Returns projector parameters (site/orbital indices etc.) and an array
+        with projectors.
+        """
+        orb_labels = ["s", "pz", "px", "py", "dz2", "dxz", "dyz", "dx2-y2", "dxy",
+                      "fz3", "fxz2", "fyz2", "fz(x2-y2)", "fxyz", "fx(x2-3y2)", "fy(3x2-y2)"]
+
+        def lm_to_l_m(lm):
+            l = int(np.sqrt(lm))
+            m = lm - l*l
+            return l, m
+
+# Read the first line of LOCPROJ to get the dimensions
+        with open(locproj_filename, 'rt') as f:
+            line = f.readline()
+            nproj, nspin, nk, nband = map(int, line.split())
+
+        plo = np.zeros((nproj, nspin, nk, nband), dtype=np.complex128)
+        params = [{} for i in xrange(nproj)]
+
+        iproj_site = 0
+        is_first_read = True
+        with open(projcar_filename, 'rt') as f:
+            line = self.search_for(f, "^ *ISITE")
+            while line:
+                isite = int(line.split()[1])
+                if not is_first_read:
+                    for il in xrange(norb):
+                        params[iproj_site * norb + il]['isite'] = isite
+                        params[iproj_site * norb + il]['l'] = params[(iproj_site - 1) * norb + il]['l']
+                        params[iproj_site * norb + il]['m'] = params[(iproj_site - 1) * norb + il]['m']
+
+                for ispin in xrange(nspin):
+                    for ik in xrange(nk):
+# Parse the orbital labels and convert them to l,m-indices
+                        line = self.search_for(f, "^ *band")
+                        if is_first_read:
+                            cpatt = re.compile("lm= *([^\s]+)")
+                            labels = re.findall(cpatt, line)
+                            norb = len(labels)
+                            for il, label in enumerate(labels):
+                                lm = orb_labels.index(label)
+                                l, m = lm_to_l_m(lm)
+
+# For the first read 'iproj_site = 0' and only orbital index 'il' is used
+                                params[il]['isite'] = isite
+                                params[il]['l'] = l
+                                params[il]['m'] = m
+
+                            is_first_read = False
+
+# Read the block of nk * ns * nband complex numbers
+                        for ib in xrange(nband):
+                            line = f.readline()
+                            rtmp = map(float, line.split()[1:])
+                            for il in xrange(norb):
+                                ctmp = complex(rtmp[2 * il], rtmp[2 * il + 1])
+                                plo[iproj_site * norb + il, ispin, ik, ib] = ctmp
+
+# End of site-block
+                iproj_site += 1
+                line = self.search_for(f, "^ *ISITE")
+
+        print "Read parameters:"
+        for il, par in enumerate(params):
+            print il, " -> ", par
+
+        return params, plo
+
+
+    def search_for(self, f, patt):
+        r"""
+        Reads file 'f' until pattern 'patt' is encountered and returns
+        the corresponding line.
+        """
+        cpatt = re.compile(patt)
+        line = "x"
+        while not re.match(cpatt, line) and line:
+            line = f.readline()
+
+        return line
 
 
 ################################################################################
