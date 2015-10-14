@@ -431,6 +431,7 @@ class Eigenval:
         self.kpts = np.zeros((self.nktot, 3))
         self.kwghts = np.zeros((self.nktot,))
         self.eigs = np.zeros((self.nktot, self.nband, self.ispin))
+        self.ferw = np.zeros((self.nktot, self.nband, self.ispin))
 
         for ik in xrange(self.nktot):
             sline = f.next() # Empty line
@@ -441,8 +442,9 @@ class Eigenval:
 
             for ib in xrange(self.nband):
                 sline = f.next().split()
-                tmp = map(float, sline[1:self.ispin+1])
-                self.eigs[ik, ib, :] = tmp[:]
+                tmp = map(float, sline)
+                self.eigs[ik, ib, :] = tmp[1:self.ispin+1]
+                self.ferw[ik, ib, :] = tmp[self.ispin+1:]
                 
 
 ################################################################################
