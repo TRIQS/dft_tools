@@ -55,26 +55,23 @@ class ElectronicStructure:
 
 # For later use it is more convenient to use a different order of indices
 # [see ProjectorGroup.orthogonalization()]
-        self.proj_raw = vasp_data.plocar.plo.transpose((0, 1, 2, 4, 3))
+        self.proj_raw = vasp_data.plocar.plo
+        self.proj_params = vasp_data.plocar.params
 
-# In fact, Fermi weights do not depend on ions
-# FIXME: restructure the data in PLOCAR to remove the redundant dependency
-#        of 'ferw' on ions
         self.ferw = vasp_data.eigenval.ferw
 
+# Not needed any more since PROJCAR contains projectors only for a subset of sites
 # Check that the number of atoms is the same in PLOCAR and POSCAR
-        natom_plo = vasp_data.plocar.params['nion']
-        assert natom_plo == self.natom, "PLOCAR is inconsistent with POSCAR (number of atoms)"
+#        natom_plo = vasp_data.plocar.params['nion']
+#        assert natom_plo == self.natom, "PLOCAR is inconsistent with POSCAR (number of atoms)"
 
 # Check that the number of k-points is the same in all files
-        nk_plo = vasp_data.plocar.params['nk']
+        _, ns_plo, nk_plo, nb_plo = vasp_data.plocar.plo.shape
         assert nk_plo == self.nktot, "PLOCAR is inconsistent with IBZKPT (number of k-points)"
         nk_eig = vasp_data.eigenval.nktot
         assert nk_eig == self.nktot, "PLOCAR is inconsistent with EIGENVAL (number of k-points)"
 
-# Check that the number of band is the same in PLOCAR and EIGENVAL
-        nb_plo = vasp_data.plocar.params['nb']
+# Check that the number of band is the same in PROJCAR and EIGENVAL
         assert nb_plo == self.nband, "PLOCAR is inconsistent with EIGENVAL (number of bands)"
-
 
 

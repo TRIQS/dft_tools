@@ -469,8 +469,12 @@ class Doscar:
 
         f = read_lines(vasp_dir + dos_filename)
 
-# Skip first 5 lines
-        for _ in xrange(5):
+# First line: NION, NION, JOBPAR, NCDIJ
+        sline = f.next().split()
+        self.ncdij = int(sline[3])
+
+# Skip next 4 lines
+        for _ in xrange(4):
             sline = f.next()
 
 # Sixth line: EMAX, EMIN, NEDOS, EFERMI, 1.0
