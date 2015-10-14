@@ -46,8 +46,8 @@ class ElectronicStructure:
 
 # Note that the number of spin-components of projectors might be different from those
 # of bands in case of non-collinear calculations
-        self.nspin = vasp_data.plocar.params['ns']
-        self.nc_flag = vasp_data.plocar.params['nc_flag'] == 1
+        self.nspin = vasp_data.eigenval.ispin
+        self.nc_flag = vasp_data.doscar.ncdij == 4
 
         self.nband = vasp_data.eigenval.nband
 
@@ -60,7 +60,7 @@ class ElectronicStructure:
 # In fact, Fermi weights do not depend on ions
 # FIXME: restructure the data in PLOCAR to remove the redundant dependency
 #        of 'ferw' on ions
-        self.ferw = vasp_data.plocar.ferw[0, :, :, :]
+        self.ferw = vasp_data.eigenval.ferw
 
 # Check that the number of atoms is the same in PLOCAR and POSCAR
         natom_plo = vasp_data.plocar.params['nion']
