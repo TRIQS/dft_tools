@@ -79,7 +79,7 @@ class Plocar:
             vasp_dir += '/'
 
 #        self.params, self.plo, self.ferw = c_plocar_io.read_plocar(vasp_dir + plocar_filename)
-        self.params, self.plo = self.temp_parser(projcar_filename=vasp_dir + "PROJCAR", locproj_filename=vasp_dir + "LOCPROJ")
+        self.proj_params, self.plo = self.temp_parser(projcar_filename=vasp_dir + "PROJCAR", locproj_filename=vasp_dir + "LOCPROJ")
 
     def temp_parser(self, projcar_filename='PROJCAR', locproj_filename='LOCPROJ'):
         r"""
@@ -105,7 +105,7 @@ class Plocar:
             nproj, nspin, nk, nband = map(int, line.split())
 
         plo = np.zeros((nproj, nspin, nk, nband), dtype=np.complex128)
-        params = [{} for i in xrange(nproj)]
+        proj_params = [{} for i in xrange(nproj)]
 
         iproj_site = 0
         is_first_read = True
@@ -115,9 +115,11 @@ class Plocar:
                 isite = int(line.split()[1])
                 if not is_first_read:
                     for il in xrange(norb):
-                        params[iproj_site * norb + il]['isite'] = isite
-                        params[iproj_site * norb + il]['l'] = params[(iproj_site - 1) * norb + il]['l']
-                        params[iproj_site * norb + il]['m'] = params[(iproj_site - 1) * norb + il]['m']
+                        ip_new = iproj_site * norb + il
+                        ip_prev = (iproj_site - 1) * norb + il
+                        proj_params[ip_new]['isite'] = isite
+                        proj_params[ip_new]['l'] = proj_params[ip_prev]['l']
+                        proj_params[ip_new]['m'] = proj_params[ip_prev]['m']
 
                 for ispin in xrange(nspin):
                     for ik in xrange(nk):
@@ -132,9 +134,9 @@ class Plocar:
                                 l, m = lm_to_l_m(lm)
 
 # For the first read 'iproj_site = 0' and only orbital index 'il' is used
-                                params[il]['isite'] = isite
-                                params[il]['l'] = l
-                                params[il]['m'] = m
+                                proj_params[il]['isite'] = isite
+                                proj_params[il]['l'] = l
+                                proj_params[il]['m'] = m
 
                             is_first_read = False
 
@@ -151,10 +153,10 @@ class Plocar:
                 line = self.search_for(f, "^ *ISITE")
 
         print "Read parameters:"
-        for il, par in enumerate(params):
+        for il, par in enumerate(proj_params):
             print il, " -> ", par
 
-        return params, plo
+        return proj_params, plo
 
 
     def search_for(self, f, patt):

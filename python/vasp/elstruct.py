@@ -56,7 +56,7 @@ class ElectronicStructure:
 # For later use it is more convenient to use a different order of indices
 # [see ProjectorGroup.orthogonalization()]
         self.proj_raw = vasp_data.plocar.plo
-        self.proj_params = vasp_data.plocar.params
+        self.proj_params = vasp_data.plocar.proj_params
 
         self.ferw = vasp_data.eigenval.ferw
 
