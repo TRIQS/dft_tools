@@ -58,7 +58,7 @@ class ElectronicStructure:
         self.proj_raw = vasp_data.plocar.plo
         self.proj_params = vasp_data.plocar.proj_params
 
-        self.ferw = vasp_data.eigenval.ferw
+        self.ferw = vasp_data.eigenval.ferw.transpose((2, 0, 1))
 
 # Not needed any more since PROJCAR contains projectors only for a subset of sites
 # Check that the number of atoms is the same in PLOCAR and POSCAR

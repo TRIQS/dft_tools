@@ -211,7 +211,7 @@ class ProjectorGroup:
             for ik in xrange(nk):
                 ib1 = self.ib_win[ik, isp, 0]
                 ib2 = self.ib_win[ik, isp, 1]
-                occ = el_struct.ferw[isp, ik, ib1:ib2+1]
+                occ = el_struct.ferw[isp, ik, ib1:ib2]
                 kwght = el_struct.kmesh['kweights'][ik]
                 self.nelect += occ.sum() * kwght * rspin
 
@@ -290,7 +290,7 @@ class ProjectorShell:
     - proj_raw (numpy.array) : array of raw projectors
 
     """
-    def __init__(self, sh_pars, proj_raw):
+    def __init__(self, sh_pars, proj_raw, proj_params):
         self.lorb = sh_pars['lshell']
         self.ion_list = sh_pars['ion_list']
         self.user_index = sh_pars['user_index']
@@ -311,7 +311,27 @@ class ProjectorShell:
 # Pre-select a subset of projectors (this should be an array view => no memory is wasted)
 # !!! This sucks but I have to change the order of 'ib' and 'ilm' indices here
 # This should perhaps be done right after the projector array is read from PLOCAR
-        self.proj_arr = proj_raw[self.ion_list, :, :, :, self.lm1:self.lm2].transpose((0, 1, 2, 4, 3))
+#        self.proj_arr = proj_raw[self.ion_list, :, :, :, self.lm1:self.lm2].transpose((0, 1, 2, 4, 3))
+# We want to select projectors from 'proj_raw' and form an array
+#   self.proj_arr[nion, ns, nk, nlm, nb]
+# TODO: think of a smart way of copying the selected projectors
+#       perhaps, by redesigning slightly the structure of 'proj_arr' and 'proj_win'
+#       or by storing only a mapping between site/orbitals and indices of 'proj_raw'
+#        iproj_l = []
+        nion = len(self.ion_list)
+        nlm = self.lm2 - self.lm1
+        _, ns, nk, nb = proj_raw.shape
+        self.proj_arr = np.zeros((nion, ns, nk, nlm, nb), dtype=np.complex128)
+        for io, ion in enumerate(self.ion_list):
+            for m in xrange(nlm):
+# Here we search for the index of the projector with the given isite/l/m indices
+                for ip, par in enumerate(proj_params):
+                    if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
+#                        iproj_l.append(ip)
+                        self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :]
+                        break
+
+#        self.proj_arr = proj_raw[iproj_l, :, :, :].transpose((1, 2, 0, 3))
 
 ################################################################################
 #
@@ -405,7 +425,7 @@ def generate_plo(conf_pars, el_struct):
 
     pshells = []
     for sh_par in conf_pars.shells:
-        pshells.append(ProjectorShell(sh_par, proj_raw))
+        pshells.append(ProjectorShell(sh_par, proj_raw, el_struct.proj_params))
 
     pgroups = []
     for gr_par in conf_pars.groups:
@@ -482,7 +502,7 @@ def ctrl_output(conf_pars, el_struct, ng):
 
         f.write("# k-points and weights\n")
         labels = ['kx', 'ky', 'kz', 'kweight']
-        out = "".join(map(lambda s: s.center(15), labels)) 
+        out = "".join(map(lambda s: s.center(15), labels))
         f.write("#" + out + "\n")
         for ik, kp in enumerate(el_struct.kmesh['kpoints']):
             tmp1 = "".join(map("{0:15.10f}".format, kp))
@@ -542,6 +562,7 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
 
 # Number of electrons within the window
         head_dict['nelect'] = pgroup.nelect_window(el_struct)
+        print "  Density within window:", head_dict['nelect']
 
         head_shells = []
         for ish in pgroup.ishells:
