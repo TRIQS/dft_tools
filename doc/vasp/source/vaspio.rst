@@ -27,3 +27,13 @@ To enhance the performance of the parser, it is implemented in plain C. The idea
 that the python part of the parser first reads the first line of **LOCPROJ** and
 then calls the C-routine with necessary parameters to parse **PROJCAR**.
 
+The projectors are read in and stored in class `Plocar`. Two major data structures are stored:
+
+  * complex array `plo = nd.array((nproj, nspin, nk, nband))`
+  * list of projector descriptors `proj_params` containing the information on
+    the character of projectors
+
+When a ProjectorShell is initialized it copies a subset of projectors corresponding
+to selected sites/orbitals. This can be done by looping all shell sites/orbitals and
+searching for the corresponding projector using the descriptor list `proj_params`.
+
