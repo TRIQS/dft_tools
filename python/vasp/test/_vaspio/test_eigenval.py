@@ -1,6 +1,10 @@
 r"""
 Tests for class 'Eigneval' from module 'vaspio'
 """
+import os
+import rpath
+_rpath = os.path.dirname(rpath.__file__) + '/'
+
 import mytest
 import numpy as np
 from vaspio import Eigenval
@@ -24,9 +28,9 @@ class TestEigenval(mytest.MyTestCase):
     def test_example(self):
         filename = 'EIGENVAL.example'
         eigenval = Eigenval()
-        eigenval.from_file(vasp_dir='./', eig_filename=filename)
+        eigenval.from_file(vasp_dir=_rpath, eig_filename=filename)
 
-        testout = 'EIGENVAL.example.out.test'
+        testout = _rpath + 'EIGENVAL.example.out.test'
         with open(testout, 'w') as f:
             writeline = lambda s: f.write(s + '\n')
             writeprop = lambda pname: writeline("%s = %s"%(pname, eigenval.__dict__[pname]))
@@ -39,7 +43,8 @@ class TestEigenval(mytest.MyTestCase):
             writeline("kpts:\n%s"%(eigenval.kpts))
             writeline("kwghts:\n%s"%(eigenval.kwghts))
             writeline("eigs:\n%s"%(eigenval.eigs))
+            writeline("ferw:\n%s"%(eigenval.ferw))
 
-        expected = 'EIGENVAL.example.out'
+        expected = _rpath + 'EIGENVAL.example.out'
         self.assertFileEqual(testout, expected)
 
