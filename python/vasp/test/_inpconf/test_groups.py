@@ -1,6 +1,10 @@
 r"""
 Tests of 'parse_groups()' defined in ConfigParameters class
 """
+import os
+import rpath
+_rpath = os.path.dirname(rpath.__file__) + '/'
+
 import arraytest
 import numpy as np
 from inpconf import ConfigParameters
@@ -24,14 +28,14 @@ class TestParseGroups(arraytest.ArrayTestCase):
     """
 # Scenario 1
     def test_gr_required(self):
-        conf_pars = ConfigParameters('parse_groups_1.cfg')
+        conf_pars = ConfigParameters(_rpath + 'parse_groups_1.cfg')
         err_mess = "Required parameter"
         with self.assertRaisesRegexp(Exception, err_mess):
             conf_pars.parse_groups()
 
 # Scenario 2
     def test_example(self):
-        conf_pars = ConfigParameters('example.cfg')
+        conf_pars = ConfigParameters(_rpath + 'example.cfg')
         conf_pars.parse_groups()
         res = conf_pars.groups
         expected = [{'index': 1, 'shells': [1, 2], 'emin': -7.6, 'emax': 3.0, 

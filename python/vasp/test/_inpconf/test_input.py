@@ -1,6 +1,10 @@
 r"""
 Tests of 'parse_input()' defined in ConfigParameters class
 """
+import os
+import rpath
+_rpath = os.path.dirname(rpath.__file__) + '/'
+
 import arraytest
 import numpy as np
 from inpconf import ConfigParameters
@@ -32,35 +36,35 @@ class TestParseInput(arraytest.ArrayTestCase):
     """
 # Scenario 1
     def test_no_group(self):
-        conf_pars = ConfigParameters('input_test_1.cfg')
+        conf_pars = ConfigParameters(_rpath + 'input_test_1.cfg')
         err_mess = "At least one group"
         with self.assertRaisesRegexp(AssertionError, err_mess):
             conf_pars.parse_input()
 
 # Scenario 2
     def test_gr_required(self):
-        conf_pars = ConfigParameters('input_test_2.cfg')
+        conf_pars = ConfigParameters(_rpath + 'input_test_2.cfg')
         err_mess = "One \[Shell\] section is"
         with self.assertRaisesRegexp(KeyError, err_mess):
             conf_pars.parse_input()
 
 # Scenario 3
     def test_no_shell(self):
-        conf_pars = ConfigParameters('input_test_3.cfg')
+        conf_pars = ConfigParameters(_rpath + 'input_test_3.cfg')
         err_mess = "Shell 3 referenced in"
         with self.assertRaisesRegexp(Exception, err_mess):
             conf_pars.parse_input()
 
 # Scenario 4
     def test_shell_outside_groups(self):
-        conf_pars = ConfigParameters('input_test_4.cfg')
+        conf_pars = ConfigParameters(_rpath + 'input_test_4.cfg')
         err_mess = "Some shells are not inside"
         with self.assertRaisesRegexp(AssertionError, err_mess):
             conf_pars.parse_input()
 
 # Scenario 5
     def test_example(self):
-        conf_pars = ConfigParameters('example.cfg')
+        conf_pars = ConfigParameters(_rpath + 'example.cfg')
         conf_pars.parse_input()
 #        with open('parse_input.output.test', 'wt') as f:
 #            f.write("Shells:\n")
@@ -84,7 +88,7 @@ Groups:
 
 # Scenario 6
     def test_example_no_groups(self):
-        conf_pars = ConfigParameters('example_nogroup.cfg')
+        conf_pars = ConfigParameters(_rpath + 'example_nogroup.cfg')
         conf_pars.parse_input()
 #        with open('parse_input.output.test', 'wt') as f:
 #            f.write("Shells:\n")

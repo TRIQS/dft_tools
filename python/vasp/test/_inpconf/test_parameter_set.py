@@ -1,6 +1,10 @@
 r"""
 Tests of 'parse_parameter_set()' defined in ConfigParameters class
 """
+import os
+import rpath
+_rpath = os.path.dirname(rpath.__file__) + '/'
+
 import arraytest
 import numpy as np
 from inpconf import ConfigParameters
@@ -29,7 +33,7 @@ class TestParseParameterSet(arraytest.ArrayTestCase):
         """
         """
 # Dummy ConfigParameters object
-        self.cpars = ConfigParameters('test1.cfg')
+        self.cpars = ConfigParameters(_rpath + 'test1.cfg')
 
 # Scenario 1
     def test_sh_required(self):
