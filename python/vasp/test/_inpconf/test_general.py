@@ -1,6 +1,10 @@
 r"""
 Tests of 'parse_general()' defined in ConfigParameters class
 """
+import os
+import rpath
+_rpath = os.path.dirname(rpath.__file__) + '/'
+
 import arraytest
 import numpy as np
 from inpconf import ConfigParameters
@@ -22,7 +26,7 @@ class TestParseGeneral(arraytest.ArrayTestCase):
     """
 # Scenario 1
     def test_example(self):
-        conf_pars = ConfigParameters('example.cfg')
+        conf_pars = ConfigParameters(_rpath + 'example.cfg')
         conf_pars.parse_general()
         res = conf_pars.general
         expected = {'basename': 'test_base', 'efermi': 0.1}

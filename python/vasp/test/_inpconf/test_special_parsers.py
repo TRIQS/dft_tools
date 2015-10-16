@@ -1,6 +1,10 @@
 r"""
 Tests of special parseres defined in ConfigParameters class
 """
+import os
+import rpath
+_rpath = os.path.dirname(rpath.__file__) + '/'
+
 import arraytest
 import numpy as np
 from inpconf import ConfigParameters
@@ -26,7 +30,7 @@ class TestParseStringLogical(arraytest.ArrayTestCase):
         """
         """
 # Dummy ConfigParameters object
-        self.cpars = ConfigParameters('test1.cfg')
+        self.cpars = ConfigParameters(_rpath + 'test1.cfg')
 
 # Scenario 1
     def test_true(self):
@@ -66,7 +70,7 @@ class TestParseStringIonList(arraytest.ArrayTestCase):
         """
         """
 # Dummy ConfigParameters object
-        self.cpars = ConfigParameters('test1.cfg')
+        self.cpars = ConfigParameters(_rpath + 'test1.cfg')
 
 # Scenario 1
     def test_simple_list(self):
@@ -123,7 +127,7 @@ class TestParseStringTmatrix(arraytest.ArrayTestCase):
         """
         """
 # Dummy ConfigParameters object
-        self.cpars = ConfigParameters('test1.cfg')
+        self.cpars = ConfigParameters(_rpath + 'test1.cfg')
 
 # Scenario 1
     def test_number_of_columns(self):
