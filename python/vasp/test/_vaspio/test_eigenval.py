@@ -22,6 +22,7 @@ class TestEigenval(mytest.MyTestCase):
 
     Scenarios:
     - correct EIGENVAL file
+    - wrong EIGENVAL file from old versions of VASP
 
     """
 # Scenario 1
@@ -47,4 +48,13 @@ class TestEigenval(mytest.MyTestCase):
 
         expected = _rpath + 'EIGENVAL.example.out'
         self.assertFileEqual(testout, expected)
+
+# Scenario 2
+    def test_bad_example(self):
+        filename = 'EIGENVAL.wrong'
+        eigenval = Eigenval()
+
+        err_mess = "EIGENVAL file is incorrect"
+        with self.assertRaisesRegexp(AssertionError, err_mess):
+            eigenval.from_file(vasp_dir=_rpath, eig_filename=filename)
 

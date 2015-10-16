@@ -445,6 +445,7 @@ class Eigenval:
             for ib in xrange(self.nband):
                 sline = f.next().split()
                 tmp = map(float, sline)
+                assert len(tmp) == 2 * self.ispin + 1, "EIGENVAL file is incorrect (probably from old versions of VASP)"
                 self.eigs[ik, ib, :] = tmp[1:self.ispin+1]
                 self.ferw[ik, ib, :] = tmp[self.ispin+1:]
                 
