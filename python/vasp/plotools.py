@@ -2,6 +2,8 @@
 import itertools as it
 import numpy as np
 
+np.set_printoptions(suppress=True)
+
 # 'simplejson' is supposed to be faster than 'json' in stdlib.
 try:
     import simplejson as json
@@ -140,6 +142,8 @@ def select_bands(eigvals, emin, emax):
 # If we reached the last band add 1 to get the correct bound
                 ib += 1
             ib2 = ib - 1
+
+            assert ib1 <= ib2, "No bands inside the window for ik = %s"%(ik)
 
             ib_win[ik, isp, 0] = ib1
             ib_win[ik, isp, 1] = ib2
@@ -379,6 +383,7 @@ class ProjectorShell:
         assert spin_diag, "spin_diag = False is not implemented"
 
         occ_mats = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
+        overlaps = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
 
         kweights = el_struct.kmesh['kweights']
         occnums = el_struct.ferw
@@ -390,11 +395,13 @@ class ProjectorShell:
                     proj_k = self.proj_win[isp, io, ik, ...]
                     occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
                                                  proj_k.conj().T).real * weight
+                    overlaps[isp, io, :, :] += np.dot(proj_k,
+                                                 proj_k.conj().T).real * weight
 
 #        if not symops is None:
 #            occ_mats = symmetrize_matrix_set(occ_mats, symops, ions, perm_map)
 
-        return occ_mats
+        return occ_mats, overlaps
 
 
 
@@ -430,6 +437,12 @@ def generate_plo(conf_pars, el_struct):
     pgroups = []
     for gr_par in conf_pars.groups:
         pgroup = ProjectorGroup(gr_par, pshells, eigvals, el_struct.ferw)
+        print "Density matrix:"
+        dm, ov = pshells[pgroup.ishells[0]].density_matrix(el_struct)
+        print dm
+        print
+        print "Overlap:"
+        print ov
 #        pgroup.orthogonalize()
         pgroups.append(pgroup)
 
