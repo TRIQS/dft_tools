@@ -23,5 +23,6 @@ if __name__ == '__main__':
     pars.parse_input()
     vasp_data = vaspio.VaspData(vasp_dir)
     el_struct = ElectronicStructure(vasp_data)
+    el_struct.debug_density_matrix()
     pshells, pgroups = generate_plo(pars, el_struct)
     output_as_text(pars, el_struct, pshells, pgroups)

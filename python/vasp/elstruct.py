@@ -74,4 +74,49 @@ class ElectronicStructure:
 # Check that the number of band is the same in PROJCAR and EIGENVAL
         assert nb_plo == self.nband, "PLOCAR is inconsistent with EIGENVAL (number of bands)"
 
+    def debug_density_matrix(self):
+        """
+        Calculate and output the density and overlap matrix out of projectors defined in el_struct.
+        """
+        plo = self.proj_raw
+        nproj, ns, nk, nb = plo.shape
+        ions = list(set([param['isite'] for param in self.proj_params]))
+        nions = len(ions)
+        norb = nproj / nions
+
+        den_mat = np.zeros((ns, nproj, nproj), dtype=np.float64)
+        overlap = np.zeros((ns, nproj, nproj), dtype=np.float64)
+#        ov_min = np.ones((ns, nproj, nproj), dtype=np.float64) * 100.0
+#        ov_max = np.zeros((ns, nproj, nproj), dtype=np.float64)
+        for ispin in xrange(ns):
+            for ik in xrange(nk):
+                kweight = self.kmesh['kweights'][ik]
+                occ = self.ferw[ispin, ik, :]
+                den_mat[ispin, :, :] += np.dot(plo[:, ispin, ik, :] * occ, plo[:, ispin, ik, :].T.conj()).real * kweight
+                ov = np.dot(plo[:, ispin, ik, :], plo[:, ispin, ik, :].T.conj()).real
+                overlap[ispin, :, :] += ov * kweight
+#                ov_max = np.maximum(ov, ov_max)
+#                ov_min = np.minimum(ov, ov_min)
+
+# Output only the site-diagonal parts of the matrices
+        for ispin in xrange(ns):
+            print
+            print "  Spin:", ispin + 1
+            for io, ion in enumerate(ions):
+                print "  Site:", ion
+                iorb_inds = [(ip, param['m']) for ip, param in enumerate(self.proj_params) if param['isite'] == ion]
+                norb = len(iorb_inds)
+                dm = np.zeros((norb, norb))
+                ov = np.zeros((norb, norb))
+                for ind, iorb in iorb_inds:
+                    dm[iorb, :] = den_mat[ispin, ind, :]
+                    ov[iorb, :] = overlap[ispin, ind, :]
+
+                print "  Density matrix" + (12*norb - 12)*" " + "Overlap"
+                for drow, dov in zip(dm, ov):
+                    out = ''.join(map("{0:12.7f}".format, drow))
+                    out += "    "
+                    out += ''.join(map("{0:12.7f}".format, dov))
+                    print out
+
 
