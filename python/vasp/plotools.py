@@ -125,8 +125,8 @@ def select_bands(eigvals, emin, emax):
     nk, nband, ns_band = eigvals.shape
     ib_win = np.zeros((nk, ns_band, 2), dtype=np.int32)
 
-    nb_min = 10000000
-    nb_max = 0
+    ib_min = 10000000
+    ib_max = 0
     for isp in xrange(ns_band):
         for ik in xrange(nk):
             for ib in xrange(nband):
@@ -148,10 +148,10 @@ def select_bands(eigvals, emin, emax):
             ib_win[ik, isp, 0] = ib1
             ib_win[ik, isp, 1] = ib2
 
-            nb_min = min(nb_min, ib1)
-            nb_max = max(nb_max, ib2)
+            ib_min = min(ib_min, ib1)
+            ib_max = max(ib_max, ib2)
 
-    return ib_win, nb_min, nb_max
+    return ib_win, ib_min, ib_max
 
 ################################################################################
 ################################################################################
@@ -187,15 +187,16 @@ class ProjectorGroup:
         self.shells = shells
 
 # Determine the minimum and maximum band numbers
-        ib_win, nb_min, nb_max = select_bands(eigvals, self.emin, self.emax)
+        ib_win, ib_min, ib_max = select_bands(eigvals, self.emin, self.emax)
         self.ib_win = ib_win
-        self.nb_min = nb_min
-        self.nb_max = nb_max
+        self.ib_min = ib_min
+        self.ib_max = ib_max
+        self.nb_max = ib_max - ib_min + 1
 
 # Select projectors within the energy window
         for ish in self.ishells:
             shell = self.shells[ish]
-            shell.select_projectors(ib_win, nb_min, nb_max)
+            shell.select_projectors(ib_win, ib_min, ib_max)
 
         
 
@@ -342,19 +343,19 @@ class ProjectorShell:
 # select_projectors
 #
 ################################################################################
-    def select_projectors(self, ib_win, nb_min, nb_max):
+    def select_projectors(self, ib_win, ib_min, ib_max):
         """
         Selects a subset of projectors corresponding to a given energy window.
         """
         self.ib_win = ib_win
-        self.nb_min = nb_min
-        self.nb_max = nb_max
+        self.ib_min = ib_min
+        self.ib_max = ib_max
+        nb_max = ib_max - ib_min + 1
 
 # Set the dimensions of the array
-        nb_win = self.nb_max - self.nb_min + 1
         nion, ns, nk, nlm, nbtot = self.proj_arr.shape
 # !!! Note that the order of the two last indices is different !!!
-        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_win), dtype=np.complex128)
+        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=np.complex128)
 
 # Select projectors for a given energy window
         ns_band = self.ib_win.shape[1]
@@ -364,8 +365,8 @@ class ProjectorShell:
                 is_b = min(isp, ns_band)
                 ib1 = self.ib_win[ik, is_b, 0]
                 ib2 = self.ib_win[ik, is_b, 1] + 1
-                ib1_win = ib1 - self.nb_min
-                ib2_win = ib2 - self.nb_min
+                ib1_win = ib1 - self.ib_min
+                ib2_win = ib2 - self.ib_min
                 self.proj_win[:, isp, ik, :, ib1_win:ib2_win] = self.proj_arr[:, isp, ik, :, ib1:ib2]
 
 ################################################################################
@@ -387,8 +388,8 @@ class ProjectorShell:
 
         kweights = el_struct.kmesh['kweights']
         occnums = el_struct.ferw
-        ib1 = self.nb_min
-        ib2 = self.nb_max + 1
+        ib1 = self.ib_min
+        ib2 = self.ib_max + 1
         for isp in xrange(ns):
             for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
                 for io in xrange(nion):
@@ -629,8 +630,8 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                         for ion in xrange(nion):
                             for ilm in xrange(nlm):
                                 ib1, ib2 = pgroup.ib_win[ik, isp, 0], pgroup.ib_win[ik, isp, 1]
-                                ib1_win = ib1 - shell.nb_min
-                                ib2_win = ib2 - shell.nb_min
+                                ib1_win = ib1 - shell.ib_min
+                                ib2_win = ib2 - shell.ib_min
                                 for ib in xrange(ib1_win, ib2_win + 1):
                                     p = shell.proj_win[ion, isp, ik, ilm, ib]
                                     f.write("{0:16.10f}{1:16.10f}\n".format(p.real, p.imag))
