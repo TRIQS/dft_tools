@@ -266,13 +266,15 @@ class ProjectorGroup:
                         p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
 # Now orthogonalize the obtained block projector
                 p_orth, overl, eig = orthogonalize_projector_matrix(p_mat)
+                print "ik = ", ik
+                print overl.real
 # Distribute back projectors in the same order
                 for ish in self.ishells:
                     shell = self.shells[ish]
                     blocks = bl_map[ish]['bmat_blocks']
                     for ion in xrange(nion):
                         i1, i2 = blocks[ion]
-                        shell.proj_win[ion, isp, ik, :nlm, :nb] = p_mat[i1:i2, :nb]
+                        shell.proj_win[ion, isp, ik, :nlm, :nb] = p_orth[i1:i2, :nb]
 
 
 ################################################################################
@@ -365,9 +367,8 @@ class ProjectorShell:
                 is_b = min(isp, ns_band)
                 ib1 = self.ib_win[ik, is_b, 0]
                 ib2 = self.ib_win[ik, is_b, 1] + 1
-                ib1_win = ib1 - self.ib_min
-                ib2_win = ib2 - self.ib_min
-                self.proj_win[:, isp, ik, :, ib1_win:ib2_win] = self.proj_arr[:, isp, ik, :, ib1:ib2]
+                ib_win = ib2 - ib1
+                self.proj_win[:, isp, ik, :, :ib_win] = self.proj_arr[:, isp, ik, :, ib1:ib2]
 
 ################################################################################
 #
@@ -438,13 +439,13 @@ def generate_plo(conf_pars, el_struct):
     pgroups = []
     for gr_par in conf_pars.groups:
         pgroup = ProjectorGroup(gr_par, pshells, eigvals, el_struct.ferw)
+        pgroup.orthogonalize()
         print "Density matrix:"
         dm, ov = pshells[pgroup.ishells[0]].density_matrix(el_struct)
         print dm
         print
         print "Overlap:"
         print ov
-#        pgroup.orthogonalize()
         pgroups.append(pgroup)
 
     return pshells, pgroups
@@ -630,9 +631,8 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                         for ion in xrange(nion):
                             for ilm in xrange(nlm):
                                 ib1, ib2 = pgroup.ib_win[ik, isp, 0], pgroup.ib_win[ik, isp, 1]
-                                ib1_win = ib1 - shell.ib_min
-                                ib2_win = ib2 - shell.ib_min
-                                for ib in xrange(ib1_win, ib2_win + 1):
+                                ib_win = ib2 - ib1 + 1
+                                for ib in xrange(ib_win):
                                     p = shell.proj_win[ion, isp, ik, ilm, ib]
                                     f.write("{0:16.10f}{1:16.10f}\n".format(p.real, p.imag))
                                 f.write("\n")
