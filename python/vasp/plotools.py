@@ -611,7 +611,8 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                     ib1, ib2 = pgroup.ib_win[ik, isp, 0], pgroup.ib_win[ik, isp, 1]
                     f.write(" %i  %i\n"%(ib1, ib2))
                     for ib in xrange(ib1, ib2 + 1):
-                        f.write("%15.7f\n"%(el_struct.eigvals[ik, ib, isp]))
+                        eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
+                        f.write("%15.7f\n"%(eigv_ef))
 
 # Projected shells
             f.write("# Projected shells\n")
