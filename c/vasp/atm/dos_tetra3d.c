@@ -2,9 +2,10 @@
 
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 
-#include <arrayobject.h>
+#include <numpy/arrayobject.h>
 #include <complex.h>
 //#include "tetra.h"
+#include "argsort.h"
 #include "dos_tetra3d.h"
 
 /***************************************************
@@ -22,6 +23,24 @@ static void fun_dos_case1(double en, double *eigs, double *ci);
 static void fun_dos_case2(double en, double *eigs, double *ci);
 static void fun_dos_case3(double en, double *eigs, double *ci);
 
+int dos_corner_weights(double en, double *eigs, int *inds, double *ci);
+int dos_tet_weights(double en, double *eigs, int *inds, double *ct);
+
+const static int NUM_TET_CORNERS = 4;
+
+static PyMethodDef c_tetraMethods[] = {
+  {"dos_weights_3d", tetra_DOS3D, METH_VARARGS,
+   "C-implementation of the tetrahedron method for calculating DOS"},
+  {NULL, NULL, 0, NULL}
+};
+
+PyMODINIT_FUNC
+initc_tetra(void)
+{
+  (void) Py_InitModule("c_atm_dos", c_tetraMethods);
+  import_array();
+}
+
 //
 // Integration_Weights
 //
@@ -31,16 +50,15 @@ tetra_DOS3D(PyObject *self, PyObject *args)
 
   PyArrayObject *py_eigk, *py_itt;  // Input Numpy arrays
   PyArrayObject *py_cti;  // Output Numpy array
-  npy_int64 *itt;  // C-pointer to the 'itt' array
+//  npy_int64 *itt;  // C-pointer to the 'itt' array
   npy_intp *dims;  // Dimensions of the output array 'rti'
-  double *eigk, *cti; // C-pointer to 'eigk' and 'rti' arrays
-  double e, en, eigs[4], ri[4];
-  double et[4]; // Real part of eigenvalues
-  int strd_itt[2], strd_eigk, strd_cti[2], it_cti; // Strides
-  int inds[4], ntet; // Indices of sorted 'eigs'; number of tetrahedra
+  double *cti; // C-pointer to 'eigk' and 'rti' arrays
+  double e;
+//  double et[4]; // Real part of eigenvalues
+//  int strd_itt[2], strd_eigk, strd_cti[2], it_cti; // Strides
+  int ntet; // Indices of sorted 'eigs'; number of tetrahedra
 // Auxiliary variables and loop indices
-  int nd, it, ik, i, j, k, flag;
-  double *ptrs[4], e1e2, e2e3; 
+  int nd;
 
 // Data-preparation part
   if (!PyArg_ParseTuple(args, "O!dO!", 
@@ -48,48 +66,52 @@ tetra_DOS3D(PyObject *self, PyObject *args)
     return NULL;
 
 // Sanity tests (the types are assumed to be checked in the python wrapper)
-  nd = py_eigk->nd;
+//  nd = py_eigk->nd;
+  nd = PyArray_NDIM(py_eigk);
   if (nd != 1)
   {
     PyErr_SetString(PyExc_ValueError, "  Array 'eigk' must be 1D");
     return NULL;
   }
 
-  nd = py_itt->nd;
+//  nd = py_itt->nd;
+  nd = PyArray_NDIM(py_itt);
   if (nd != 2)
   {
     PyErr_SetString(PyExc_ValueError, "  Array 'itt' must be 2D");
     return NULL;
   }
 
-  nd = py_itt->dimensions[0];
-  if (nd != 5)
+//  nd = py_itt->dimensions[0];
+  dims = PyArray_DIMS(py_itt);
+  if (dims[0] != 5)
   {
     PyErr_SetString(PyExc_ValueError, 
        "  The first dimension of 'itt' must be equal to 5");
     return NULL;
   }
 
-  ntet = (int) py_itt->dimensions[1];
+//  ntet = (int) py_itt->dimensions[1];
+  ntet = dims[1];
 
-  eigk = (double *)py_eigk->data;
-  strd_eigk = py_eigk->strides[0] / sizeof(npy_float64);
+//  eigk = (double *)py_eigk->data;
+//  strd_eigk = py_eigk->strides[0] / sizeof(npy_float64);
 
-  itt = (npy_int64 *)py_itt->data;
-  strd_itt[0] = py_itt->strides[0] / sizeof(npy_int64);
-  strd_itt[1] = py_itt->strides[1] / sizeof(npy_int64);
+//  itt = (npy_int64 *)py_itt->data;
+//  strd_itt[0] = py_itt->strides[0] / sizeof(npy_int64);
+//  strd_itt[1] = py_itt->strides[1] / sizeof(npy_int64);
 
 // Resulting array (the question is whether dims is copied or not?)
-  cti = (double *)malloc(4 * ntet * sizeof(double));
+  cti = (double *)malloc(NUM_TET_CORNERS * ntet * sizeof(double));
   dims = (npy_intp *)malloc(2 * sizeof(npy_intp));
 
-  dims[0] = 4;  // Magic number: the number of tetrahedron corneres
+  dims[0] = NUM_TET_CORNERS;
   dims[1] = ntet;
 
   py_cti = (PyArrayObject *)PyArray_SimpleNewFromData(2, dims, NPY_DOUBLE, cti);
 
-  strd_cti[0] = py_cti->strides[0] / sizeof(double);
-  strd_cti[1] = py_cti->strides[1] / sizeof(double);
+//  strd_cti[0] = py_cti->strides[0] / sizeof(double);
+//  strd_cti[1] = py_cti->strides[1] / sizeof(double);
 
 // Main part: now we can fill the 'cti' array and it will be returned
 // by 'py_cti' as a numpy array
@@ -97,31 +119,37 @@ tetra_DOS3D(PyObject *self, PyObject *args)
 //
 // Main function
 //
-  tet_dos3d(e, eigk, strd_eigk, itt, ntet, strd_itt, cti, strd_cti);
+//  tet_dos3d(e, eigk, strd_eigk, itt, ntet, strd_itt, cti, strd_cti);
+  tet_dos3d(e, py_eigk, py_itt, ntet, py_cti);
  
   return PyArray_Return(py_cti);
 }
 
-void tet_dos3d(double en, double *eigk, int strd_eigk,
-                 npy_int64 *itt, int ntet, int *strd_itt,
-                 double *cti, int *strd_cti)
+//void tet_dos3d(double en, double *eigk, int strd_eigk,
+//                 npy_int64 *itt, int ntet, int *strd_itt,
+//                 double *cti, int *strd_cti)
+void tet_dos3d(double en, PyArrayObject *py_eigk, 
+                 PyArrayObject *py_itt, int ntet,
+                 PyArrayObject *py_cti)
 {
   double eigs[4], ci[4];
-  int i, j, it, ik, it_cti, inds[4], flag;
+  int i, it, ik, inds[4], flag;
 // **** DEBUG
   double ct, ci_sum;
 
 // Loop over tetrahedra (triangles)
   for (it = 0; it < ntet; it++)
   {
-    it_cti = it * strd_cti[1];
+//    it_cti = it * strd_cti[1];
 // Sort eigenvalues and obtain indices of the sorted array
 //   eigs: sorted eigenvalues
 //   inds: index map
     for (i = 1; i < 5; i++) 
     {
-      ik = itt[i * strd_itt[0] + it * strd_itt[1]];
-      eigs[i - 1] = eigk[ik * strd_eigk];
+//      ik = itt[i * strd_itt[0] + it * strd_itt[1]];
+      ik = ((int *)PyArray_GETPTR2(py_itt, i, it))[0];
+//      eigs[i - 1] = eigk[ik * strd_eigk];
+      eigs[i - 1] = ((double *)PyArray_GETPTR1(py_eigk, ik))[0];
     }
 
 // corner weights for a single tetrahedron
@@ -129,10 +157,10 @@ void tet_dos3d(double en, double *eigk, int strd_eigk,
     for(i = 0, ci_sum = 0.0; i < 4; i++)
       ci_sum += ci[i];
 
-    j = dos_tet_weights(en, eigs, inds, &ct);
+    flag = dos_tet_weights(en, eigs, inds, &ct);
     if(fabs(ct - ci_sum) > tol)
       {
-        printf("  *** Error in weights: it = %d, flag = %d, en = %lf", it, j, en);
+        printf("  *** Error in weights: it = %d, flag = %d, en = %lf", it, flag, en);
         for(i = 0; i < 4; i++)
           printf(", e[%d] = %lf", i, eigs[i]);
         printf(",    c_diff = %le\n", fabs(ct - ci_sum));
@@ -157,8 +185,9 @@ void tet_dos3d(double en, double *eigk, int strd_eigk,
 
     for(i = 0; i < 4; i++)
     {
-      j = inds[i] * strd_cti[0] + it_cti;
-      cti[j] = ci[i];
+//      j = inds[i] * strd_cti[0] + it_cti;
+//      cti[j] = ci[i];
+      ((double *)PyArray_GETPTR2(py_cti, inds[i], it))[0] = ci[i];
     }
 
   }  // it = 1, ntet
@@ -207,7 +236,7 @@ int dos_tet_weights(double en, double *eigs, int *inds,
 {
   double e1, e2, e3, e4;
   double complex s;
-  int flag, i;
+  int flag;
   flag = dos_reorder(en, eigs, inds);
 
   e1 = eigs[0];
@@ -309,7 +338,7 @@ int dos_reorder(double en, double *e, int *inds)
 static void fun_dos_case1(double en, double *eigs, double *ci)
 {
   double e1, e2, e3, e4;
-  int i;
+//  int i;
 
 //  if(fabs(eigs[1] - eigs[0]) < tol)
 //  {
@@ -336,7 +365,6 @@ static void fun_dos_case1(double en, double *eigs, double *ci)
 static void fun_dos_case2(double en, double *eigs, double *ci)
 {
   double e1, e2, e3, e4;
-  int i;
 
 //  if(fabs(eigs[2] - eigs[1]) < tol)
 //  {
@@ -389,7 +417,6 @@ static void fun_dos_case2(double en, double *eigs, double *ci)
 static void fun_dos_case3(double en, double *eigs, double *ci)
 {
   double e1, e2, e3, e4;
-  int i;
 
 //  if(fabs(eigs[3] - eigs[2]) < tol)
 //  {
