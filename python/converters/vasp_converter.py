@@ -219,8 +219,8 @@ class VaspConverter(ConverterTools):
                         hopping[ik, isp, ib, ib] = rf.next()
 
 # Projectors
-            print n_orbitals
-            print [crsh['dim'] for crsh in corr_shells]
+#            print n_orbitals
+#            print [crsh['dim'] for crsh in corr_shells]
             proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), max(n_orbitals)], numpy.complex_)
 
 # TODO: implement reading from more than one projector group
@@ -250,7 +250,7 @@ class VaspConverter(ConverterTools):
 
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
             for it in things_to_set:
-                print "%s:"%(it), locals()[it]
+#                print "%s:"%(it), locals()[it]
                 setattr(self,it,locals()[it])
 
         except StopIteration:
@@ -608,7 +608,7 @@ class VaspConverter(ConverterTools):
                     lattice_type = R.readline().split()[0]
                     R.readline()
                     temp = R.readline()
-                    print temp
+#                    print temp
                     lattice_constants = numpy.array([float(temp[0+10*i:10+10*i].strip()) for i in range(3)])
                     lattice_angles = numpy.array([float(temp[30+10*i:40+10*i].strip()) for i in range(3)]) * numpy.pi / 180.0
                     things_to_save.extend(['lattice_type', 'lattice_constants', 'lattice_angles'])
@@ -781,6 +781,6 @@ class VaspConverter(ConverterTools):
         if not (symm_subgrp in ar): ar.create_group(symm_subgrp)
         things_to_save = ['n_symm','n_atoms','perm','orbits','SO','SP','time_inv','mat','mat_tinv']
         for it in things_to_save:
-            print "%s:"%(it), locals()[it]
+#            print "%s:"%(it), locals()[it]
             ar[symm_subgrp][it] = locals()[it]
         del ar
