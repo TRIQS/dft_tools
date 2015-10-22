@@ -35,7 +35,7 @@ static PyMethodDef c_tetraMethods[] = {
 };
 
 PyMODINIT_FUNC
-initc_tetra(void)
+initc_atm_dos(void)
 {
   (void) Py_InitModule("c_atm_dos", c_tetraMethods);
   import_array();
