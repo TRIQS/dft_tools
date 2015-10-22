@@ -1,6 +1,7 @@
 
 import itertools as it
 import numpy as np
+import vasp.atm.c_atm_dos as c_atm_dos
 
 np.set_printoptions(suppress=True)
 
@@ -266,8 +267,8 @@ class ProjectorGroup:
                         p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
 # Now orthogonalize the obtained block projector
                 p_orth, overl, eig = orthogonalize_projector_matrix(p_mat)
-                print "ik = ", ik
-                print overl.real
+#                print "ik = ", ik
+#                print overl.real
 # Distribute back projectors in the same order
                 for ish in self.ishells:
                     shell = self.shells[ish]
@@ -372,7 +373,7 @@ class ProjectorShell:
 
 ################################################################################
 #
-# select_projectors
+# density_matrix
 #
 ################################################################################
     def density_matrix(self, el_struct, site_diag=True, spin_diag=True):
@@ -404,6 +405,70 @@ class ProjectorShell:
 #            occ_mats = symmetrize_matrix_set(occ_mats, symops, ions, perm_map)
 
         return occ_mats, overlaps
+
+################################################################################
+#
+# density_of_states
+#
+################################################################################
+    def density_of_states(self, el_struct, emesh):
+        """
+        Returns projected DOS for the shell.
+        """
+        nion, ns, nk, nlm, nbtot = self.proj_win.shape
+
+# There is a problem with data storage structure of projectors that will
+# make life more complicated. The problem is that band-indices of projectors
+# for different k-points do not match because we store 'nb_max' values starting
+# from 0.
+        nb_max = self.ib_max - self.ib_min + 1
+        ns_band = self.ib_win.shape[1]
+
+        ne = len(emesh)
+        dos = np.zeros((ne, ns, nion, nlm))
+        w_k = np.zeros((nk, nb_max, ns, nion, nlm), dtype=np.complex128)
+        for isp in xrange(ns):
+            for ik in xrange(nk):
+                is_b = min(isp, ns_band)
+                ib1 = self.ib_win[ik, is_b, 0]
+                ib2 = self.ib_win[ik, is_b, 1] + 1
+                for ib_g in xrange(ib1, ib2):
+                    for io in xrange(nion):
+# Note the difference between 'ib' and 'ibn':
+#  'ib'  counts from 0 to 'nb_k - 1'
+#  'ibn' counts from 'ib1 - ib_min' to 'ib2 - ib_min'
+                        ib = ib_g - ib1
+                        ibn = ib_g - self.ib_min
+                        proj_k = self.proj_win[isp, io, ik, :, ib]
+                        w_k[ik, ib, io, :] = proj_k * proj_k.conj()
+
+#        eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
+        itt = el_struct.kmesh['itet'].T
+# k-indices are starting from 0 in Python
+        itt[1:, :] -= 1
+        for isp in xrange(ns):
+            for ib, eigk in enumerate(el_struct.eigvals[:, self.ib_min:self.ib_max+1, isp].T):
+                for ie, e in enumerate(emesh):
+                    eigk_ef = eigk - el_struct.efermi
+                    cti = c_atm_dos.dos_weights_3d(eigk_ef, e, itt)
+                    for im in xrange(nlm):
+                        for io in xrange(nion):
+                            dos[ie, isp, io, im] += np.sum((cti * w_k[itt[1:, :], ib, isp, io, im].real).sum(0) * itt[0, :])
+
+        dos *= 2 * el_struct.kmesh['volt']
+#        for isp in xrange(ns):
+#            for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
+#                for io in xrange(nion):
+#                    proj_k = self.proj_win[isp, io, ik, ...]
+#                    occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
+#                                                 proj_k.conj().T).real * weight
+#                    overlaps[isp, io, :, :] += np.dot(proj_k,
+#                                                 proj_k.conj().T).real * weight
+
+#        if not symops is None:
+#            occ_mats = symmetrize_matrix_set(occ_mats, symops, ions, perm_map)
+
+        return dos
 
 
 
@@ -446,6 +511,14 @@ def generate_plo(conf_pars, el_struct):
         print
         print "Overlap:"
         print ov
+        print
+        print "Evaluating DOS..."
+        emesh = np.linspace(-3.0, 7.0, 4001)
+        dos = pshells[pgroup.ishells[0]].density_of_states(el_struct, emesh)
+        de = emesh[1] - emesh[0]
+        ntot = (dos[1:,...] + dos[:-1,...]).sum(0) / 2 * de
+        print "  Total number of states:", ntot
+        np.savetxt('pdos.dat', np.vstack((emesh.T, dos[:, 0, 0, :].T)).T)
         pgroups.append(pgroup)
 
     return pshells, pgroups
