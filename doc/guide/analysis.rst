@@ -64,9 +64,9 @@ where:
 It is important that each data file has to contain three columns: the real frequency mesh, the real part and the imaginary part
 of the self energy - exactly in this order! The mesh should be the same for all files read in and non-uniform meshes are not supported. 
   
-Finally, we put the self energy into the `SK` object::  
+Finally, we set the self energy into the `SK` object::  
   
-    SK.put_Sigma(Sigma_imp = [SigmaReFreq])
+    SK.set_Sigma([SigmaReFreq])
 
 and additionally set the chemical potential and the double counting correction from the DMFT calculation::
   
@@ -96,7 +96,7 @@ the output is printed into the files
   * `DOS_wannier_(sp)_proj(i)_(m)_(n).dat`: As above, but printed as orbitally-resolved matrix in indices 
     `(m)` and `(n)`. For `d` orbitals, it gives the DOS separately for, e.g., :math:`d_{xy}`, :math:`d_{x^2-y^2}`, and so on,
 
-otherwise, the ouptput is returned by the function for a further usage in :program:`python`.
+otherwise, the output is returned by the function for a further usage in :program:`python`.
 
 Partial charges
 ---------------
@@ -104,7 +104,7 @@ Partial charges
 Since we can calculate the partial charges directly from the Matsubara Green's functions, we also do not need a
 real frequency self energy for this purpose. The calculation is done by::
 
-  SK.put_Sigma(Sigma_imp = SigmaImFreq)
+  SK.set_Sigma(SigmaImFreq)
   dm = SK.partial_charges(beta=40.0, with_Sigma=True, with_dc=True)
 
 which calculates the partial charges using the self energy, double counting, and chemical potential as set in the 

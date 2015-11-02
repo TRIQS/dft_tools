@@ -86,7 +86,7 @@ reads the required data of the Wien2k output and stores it in the `dft_transp_in
 Additionally we need to read and set the self energy, the chemical potential and the double counting::
 
     ar = HDFArchive('case.h5', 'a')
-    SK.put_Sigma(Sigma_imp = [ar['dmft_output']['Sigma_w']])
+    SK.set_Sigma([ar['dmft_output']['Sigma_w']])
     chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
     SK.set_mu(chemical_potential)
     SK.set_dc(dc_imp,dc_energ)

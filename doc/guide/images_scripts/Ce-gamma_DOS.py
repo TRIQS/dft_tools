@@ -47,7 +47,7 @@ S.set_atomic_levels( eal = eal )
 
 # Run the solver to get GF and self-energy on the real axis
 S.GF_realomega(ommin=ommin, ommax = ommax, N_om=N_om,U_int=U_int,J_hund=J_hund)
-SK.put_Sigma(Sigma_imp = [S.Sigma])
+SK.set_Sigma([S.Sigma])
 
 # compute DOS
 SK.dos_parproj_basis(broadening=broadening)

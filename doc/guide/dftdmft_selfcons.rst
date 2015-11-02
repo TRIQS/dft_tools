@@ -41,7 +41,7 @@ These steps are not necessary, but can help to reduce fluctuations in the total 
 Now we calculate the modified charge density::
 
   # find exact chemical potential
-  SK.put_Sigma(Sigma_imp = [ S.Sigma_iw ])
+  SK.set_Sigma([ S.Sigma_iw ])
   chemical_potential = SK.calc_mu( precision = 0.000001 )
   dN, d = SK.calc_density_correction(filename = dft_filename+'.qdmft')
   SK.save(['chemical_potential','dc_imp','dc_energ'])

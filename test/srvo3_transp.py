@@ -34,7 +34,7 @@ SK = SumkDFTTools(hdf_file='SrVO3.h5', use_dft_blocks=True)
 
 ar = HDFArchive('SrVO3_Sigma.h5', 'a')
 Sigma = ar['dmft_transp_input']['Sigma_w']
-SK.put_Sigma(Sigma_imp = [Sigma])
+SK.set_Sigma([Sigma])
 SK.chemical_potential = ar['dmft_transp_input']['chemical_potential']
 SK.dc_imp = ar['dmft_transp_input']['dc_imp']
 del ar

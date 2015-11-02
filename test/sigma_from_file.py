@@ -24,7 +24,7 @@ a_list = [a for a,al in SK.gf_struct_solver[0].iteritems()]
 g_list = [read_gf_from_txt([['Sigma_' + a + '.dat']], a)  for a in a_list]
 Sigma_txt = BlockGf(name_list = a_list, block_list = g_list, make_copies=False)
 
-SK.put_Sigma(Sigma_imp = [Sigma_txt])
+SK.set_Sigma([Sigma_txt])
 
 SK.hdf_file = 'sigma_from_file.output.h5'
 SK.save(['Sigma_imp_w'])

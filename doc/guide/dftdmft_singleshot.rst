@@ -50,7 +50,7 @@ iterations and the self-consistency condition::
   n_loops = 5
   for iteration_number in range(n_loops) :            # start the DMFT loop
 
-          SK.put_Sigma(Sigma_imp = [ S.Sigma ])              # Put self energy to the SumK class
+          SK.set_Sigma([ S.Sigma ])                          # Put self energy to the SumK class
           chemical_potential = SK.calc_mu()                  # calculate the chemical potential for the given density
           S.G_iw << SK.extract_G_loc()[0]                    # extract the local Green function
           S.G0_iw << inverse(S.Sigma_iw + inverse(S.G_iw))   # finally get G0, the input for the Solver
@@ -239,7 +239,7 @@ refinements::
       if mpi.is_master_node(): print "Iteration = ", iteration_number
   
       SK.symm_deg_gf(S.Sigma_iw,orb=0)                        # symmetrise Sigma
-      SK.put_Sigma(Sigma_imp = [ S.Sigma_iw ])                # put Sigma into the SumK class
+      SK.set_Sigma([ S.Sigma_iw ])                            # put Sigma into the SumK class
       chemical_potential = SK.calc_mu( precision = prec_mu )  # find the chemical potential for given density
       S.G_iw << SK.extract_G_loc()[0]                         # calc the local Green function
       mpi.report("Total charge of Gloc : %.6f"%S.G_iw.total_density())

@@ -510,6 +510,8 @@ class SumkDFT:
 
         return G_latt
 
+    def set_Sigma(self,Sigma_imp):
+        self.put_Sigma(Sigma_imp)
 
     def put_Sigma(self, Sigma_imp):
         r"""
@@ -556,7 +558,6 @@ class SumkDFT:
         if self.use_rotations:
             for icrsh in range(self.n_corr_shells):
                 for bname,gf in SK_Sigma_imp[icrsh]: gf << self.rotloc(icrsh,gf,direction='toGlobal')
-
 
     def extract_G_loc(self, mu=None, with_Sigma=True, with_dc=True):
         r"""

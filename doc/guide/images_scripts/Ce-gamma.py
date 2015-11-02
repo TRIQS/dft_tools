@@ -65,7 +65,7 @@ for iteration_number in range(1,Loops+1):
         itn = iteration_number + previous_runs
        
         # put Sigma into the SumK class:
-        SK.put_Sigma(Sigma_imp = [ S.Sigma ])
+        SK.set_Sigma([ S.Sigma ])
 
         # Compute the SumK, possibly fixing mu by dichotomy
         chemical_potential = SK.calc_mu( precision = 0.000001 )
