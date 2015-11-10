@@ -520,14 +520,26 @@ def generate_plo(conf_pars, el_struct):
         print
         print "Overlap:"
         print ov
-        print
-        print "Evaluating DOS..."
-        emesh = np.linspace(-3.0, 7.0, 4001)
-        dos = pshells[pgroup.ishells[0]].density_of_states(el_struct, emesh)
-        de = emesh[1] - emesh[0]
-        ntot = (dos[1:,...] + dos[:-1,...]).sum(0) / 2 * de
-        print "  Total number of states:", ntot
-        np.savetxt('pdos.dat', np.vstack((emesh.T, dos[:, 0, 0, :].T)).T)
+        if 'dosmesh' in conf_pars.general:
+            print
+            print "Evaluating DOS..."
+            mesh_pars = conf_pars.general['dosmesh']
+            if np.isnan(mesh_pars['emin']):
+                dos_emin = pgroup.emin
+                dos_emax = pgroup.emax
+            else:
+                dos_emin = mesh_pars['emin']
+                dos_emax = mesh_pars['emax']
+            n_points = mesh_pars['n_points']
+
+            emesh = np.linspace(dos_emin, dos_emax, n_points)
+            dos = pshells[pgroup.ishells[0]].density_of_states(el_struct, emesh)
+            de = emesh[1] - emesh[0]
+            ntot = (dos[1:,...] + dos[:-1,...]).sum(0) / 2 * de
+            print "  Total number of states:", ntot
+            for io in xrange(dos.shape[2]):
+                np.savetxt('pdos_%i.dat'%(io), np.vstack((emesh.T, dos[:, 0, io, :].T)).T)
+
         pgroups.append(pgroup)
 
     return pshells, pgroups

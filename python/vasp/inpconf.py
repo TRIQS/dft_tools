@@ -70,7 +70,8 @@ class ConfigParameters:
 
         self.gen_optional = {
             'basename' : ('basename', str, 'vasp'),
-            'efermi' : ('efermi', float)}
+            'efermi' : ('efermi', float),
+            'dosmesh': ('dosmesh', self.parse_string_dosmesh)}
 
 #
 # Special parsers
@@ -97,6 +98,7 @@ class ConfigParameters:
             i1, i2 = tuple(map(int, match.groups()[:2]))
             mess = "First index of the range must be smaller or equal to the second"
             assert i1 <= i2, mess
+# Note that we need to subtract 1 from VASP indices
             ion_list = np.array(range(i1 - 1, i2))
         else:
 # Check if a set of indices is given
@@ -164,6 +166,46 @@ class ConfigParameters:
             mat = tmp[:, 0::2] + 1.0j * tmp[:, 1::2]
 
         return mat
+
+################################################################################
+#
+# parse_string_ion_list()
+#
+################################################################################
+    def parse_string_dosmesh(self, par_str):
+        """
+        Two formats are accepted:
+
+          # Two floats (energy range) and an integer (number of energy points).
+
+          # One integer (number of energy points). In this case the energy
+            range is taken to be equal to EMIN, EMAX of a shell.
+
+        The parser returns a dictionary:
+          {'n_points': int,
+           'emin': float,
+           'emax': float}
+
+        If the second option is used, 'emin' and 'emax' are undefined
+        and set to 'nan'.
+        """
+        stmp = par_str.split()
+        if len(stmp) == 3:
+            emin, emax = float(stmp[0]), float(stmp[1])
+            n_points = int(stmp[2])
+        elif len(stmp) == 1:
+            n_points = int(stmp[0])
+            emin = emax = float('nan')
+        else:
+            err_mess = "DOSMESH must be either 'EMIN EMAX NPOINTS' or 'NPOINTS'"
+            raise ValueError(err_mess)
+
+        dos_pars = {
+            'n_points': n_points,
+            'emin': emin,
+            'emax': emax}
+
+        return dos_pars
 
 ################################################################################
 #
