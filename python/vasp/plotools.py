@@ -441,7 +441,7 @@ class ProjectorShell:
                         ib = ib_g - ib1
                         ibn = ib_g - self.ib_min
                         proj_k = self.proj_win[io, isp, ik, :, ib]
-                        w_k[ik, ib, io, :] = proj_k * proj_k.conj()
+                        w_k[ik, ib, isp, io, :] = proj_k * proj_k.conj()
 
 #        eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
         itt = el_struct.kmesh['itet'].T
