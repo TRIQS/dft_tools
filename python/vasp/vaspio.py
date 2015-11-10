@@ -91,7 +91,7 @@ class Plocar:
         Returns projector parameters (site/orbital indices etc.) and an array
         with projectors.
         """
-        orb_labels = ["s", "pz", "px", "py", "dz2", "dxz", "dyz", "dx2-y2", "dxy",
+        orb_labels = ["s", "py", "pz", "px", "dxy", "dyz", "dz2", "dxz", "dx2-y2",
                       "fz3", "fxz2", "fyz2", "fz(x2-y2)", "fxyz", "fx(x2-3y2)", "fy(3x2-y2)"]
 
         def lm_to_l_m(lm):
@@ -117,6 +117,7 @@ class Plocar:
                     for il in xrange(norb):
                         ip_new = iproj_site * norb + il
                         ip_prev = (iproj_site - 1) * norb + il
+                        proj_params[ip_new]['label'] = proj_params[ip_prev]['label']
                         proj_params[ip_new]['isite'] = isite
                         proj_params[ip_new]['l'] = proj_params[ip_prev]['l']
                         proj_params[ip_new]['m'] = proj_params[ip_prev]['m']
@@ -134,6 +135,7 @@ class Plocar:
                                 l, m = lm_to_l_m(lm)
 
 # For the first read 'iproj_site = 0' and only orbital index 'il' is used
+                                proj_params[il]['label'] = label
                                 proj_params[il]['isite'] = isite
                                 proj_params[il]['l'] = l
                                 proj_params[il]['m'] = m
