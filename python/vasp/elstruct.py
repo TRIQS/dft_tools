@@ -109,8 +109,9 @@ class ElectronicStructure:
                 dm = np.zeros((norb, norb))
                 ov = np.zeros((norb, norb))
                 for ind, iorb in iorb_inds:
-                    dm[iorb, :] = den_mat[ispin, ind, :]
-                    ov[iorb, :] = overlap[ispin, ind, :]
+                    for ind2, iorb2 in iorb_inds:
+                        dm[iorb, iorb2] = den_mat[ispin, ind, ind2]
+                        ov[iorb, iorb2] = overlap[ispin, ind, ind2]
 
                 print "  Density matrix" + (12*norb - 12)*" " + "Overlap"
                 for drow, dov in zip(dm, ov):
