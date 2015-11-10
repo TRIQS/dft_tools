@@ -388,6 +388,7 @@ class ProjectorShell:
         occ_mats = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
         overlaps = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
 
+#        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=np.complex128)
         kweights = el_struct.kmesh['kweights']
         occnums = el_struct.ferw
         ib1 = self.ib_min
@@ -395,7 +396,7 @@ class ProjectorShell:
         for isp in xrange(ns):
             for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
                 for io in xrange(nion):
-                    proj_k = self.proj_win[isp, io, ik, ...]
+                    proj_k = self.proj_win[io, isp, ik, ...]
                     occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
                                                  proj_k.conj().T).real * weight
                     overlaps[isp, io, :, :] += np.dot(proj_k,
@@ -439,7 +440,7 @@ class ProjectorShell:
 #  'ibn' counts from 'ib1 - ib_min' to 'ib2 - ib_min'
                         ib = ib_g - ib1
                         ibn = ib_g - self.ib_min
-                        proj_k = self.proj_win[isp, io, ik, :, ib]
+                        proj_k = self.proj_win[io, isp, ik, :, ib]
                         w_k[ik, ib, io, :] = proj_k * proj_k.conj()
 
 #        eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
@@ -497,9 +498,17 @@ def generate_plo(conf_pars, el_struct):
 # eigvals(nktot, nband, ispin) are defined with respect to the Fermi level
     eigvals = el_struct.eigvals - efermi
 
+    nshell = len(conf_pars.shells)
+    print
+    print "  Generating %i shell%s..."%(nshell, '' if nshell == 1 else 's')
     pshells = []
     for sh_par in conf_pars.shells:
-        pshells.append(ProjectorShell(sh_par, proj_raw, el_struct.proj_params))
+        pshell = ProjectorShell(sh_par, proj_raw, el_struct.proj_params)
+        print
+        print "    Shell         : %s"%(pshell.user_index)
+        print "    Orbital l     : %i"%(pshell.lorb)
+        print "    Number of ions: %i"%(len(pshell.ion_list))
+        pshells.append(pshell)
 
     pgroups = []
     for gr_par in conf_pars.groups:
