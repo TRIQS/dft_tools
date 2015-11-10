@@ -162,7 +162,9 @@ class VaspConverter(ConverterTools):
                     for i, ion in enumerate(ion_list):
                         pars = {}
                         pars['atom'] = ion
-                        pars['sort'] = sh['ion_sort']
+# We set all sites inequivalent
+#                        pars['sort'] = sh['ion_sort']
+                        pars['sort'] = ion
                         pars['l'] = sh['lorb']
                         pars['dim'] = sh['ndim']
                         pars['SO'] = SO
@@ -179,6 +181,9 @@ class VaspConverter(ConverterTools):
 #        A symmetry analysis from OUTCAR or symmetry file should be used
 #        to define equivalence classes of sites.
             n_inequiv_shells, corr_to_inequiv, inequiv_to_corr = ConverterTools.det_shell_equivalence(self, corr_shells)
+
+            if mpi.is_master_node():
+                print "  No. of inequivalent shells:", n_inequiv_shells
 
 # NB!: these rotation matrices are specific to Wien2K! Set to identity in VASP
             use_rotations = 1
