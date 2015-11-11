@@ -57,7 +57,8 @@ class ConfigParameters:
 
         self.sh_optional = {
             'rtransform': ('tmatrix', lambda s: self.parse_string_tmatrix(s, real=True)),
-            'ctransform': ('tmatrix', lambda s: self.parse_string_tmatrix(s, real=False))}
+            'ctransform': ('tmatrix', lambda s: self.parse_string_tmatrix(s, real=False)),
+            'transfile': ('tmatrices', self.parse_file_tmatrix)}
 
         self.gr_required = {
             'shells': ('shells', lambda s: map(int, s.split())),
@@ -169,6 +170,21 @@ class ConfigParameters:
 
 ################################################################################
 #
+# parse_file_tmatrix()
+#
+################################################################################
+    def parse_file_tmatrix(self, filename):
+        """
+        Parses a file 'filename' containing transformation matrices
+        for each ion. The parser returns a raw matrix that will be
+        interpreted elsewhere because the interpretation depends on
+        shell parameters.
+        """
+        tmatrices = np.loadtxt(filename)
+        return tmatrices
+
+################################################################################
+#
 # parse_string_ion_list()
 #
 ################################################################################
@@ -176,10 +192,10 @@ class ConfigParameters:
         """
         Two formats are accepted:
 
-          # Two floats (energy range) and an integer (number of energy points).
+          1. Two floats (energy range) and an integer (number of energy points).
 
-          # One integer (number of energy points). In this case the energy
-            range is taken to be equal to EMIN, EMAX of a shell.
+          2. One integer (number of energy points). In this case the energy
+             range is taken to be equal to EMIN, EMAX of a shell.
 
         The parser returns a dictionary:
           {'n_points': int,
