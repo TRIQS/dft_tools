@@ -50,8 +50,14 @@ it must be given here using parameter *EFERMI*. Note that if this parameter
 is given it will override a value that might have been read from VASP files.
 
 **Optional parameters:**
-
-
+ - *BASENAME* (string): a basename for output files. The filenames will be
+   of the form '<basename>.*'.
+ - *DOSMESH* (float, float, int): if this parameter is provided the projected
+   DOS for each projected shell will be generated, with the energy mesh parameters
+   given by the energy range (two floats) and the number of points (int). It is also
+   possible to omit the energy range, in which case it will be set to the energy window
+   of the corresponding projector group.
+ 
 Section [Shell <Ns>]
 --------------------
 
@@ -62,20 +68,40 @@ make sure that there are no sections with the same name, in which case one
 of them will be ignored by config parser.
 
 **Required parameters:**
+
  - *IONS* ([int]): provides a list of ions. The list can be either given
    by a explicit enumeration of ion indices or by a range `N1..N2` (ions `N1` and `N2`
    will be included). 
  - *LSHELL* (int): orbital number `l` of the shell (`l = 0,1,2,3` for `s,p,d,f`, respectively).
 
+
 **Optional parameters:**
- - *RTRANSFORM*, *CTRANSFORM* (matrix of floats): transformation matrices
+
+ - *TRANSFORM* (matrix of floats): transformation matrices
    (real or complex) that are applied to projectors before orthogonalization.
    The number of columns `Nc` must be consistent with the number of orbitals
-   (`Nc = (l+1)**2` for real matrices and `Nc = 2(l+1)**2` for complex ones).
-   The dimension of the resulting orbital space is determined by the number of rows.
-   Note that if the calculation is spin-polarized, both matrix dimensions should be
-   doubled.
+   (`Nc = 2l+1` for real matrices and `Nc = 2(2l+1)` for complex ones).
+   The dimension of the resulting orbital subspace is determined by the number of rows.
  - *TRANSFILE* (str): file containing transformation matrices for individual ions.
+   The file must contain rows of floats. Empty lines and lines starting with '#' are ignored.
+   The data is interpreted as follows:
+
+   * The number of rows is divided by the number of ions to give the number
+     of rows per ion, `Nr`.
+   * The number of columns is divided by `Nm = 2 * l + 1` to give `nsize`.
+     There are, then, three options:
+
+     #. if `nc_flag = 0`, i.e. a calculation is collinear (no spin-orbit coupling),
+        and `nsize = 1` the matrices are considered to be real;
+     #. if `nc_flag = 0` and `nsize = 2` the matrices are considered to be complex;
+     #. if `nc_flag = 1`, i.e. a calculation is non-collinear, it is expected
+        that `nsize = 4`, and the matrices are considered to be complex and 
+        spin-dependent.
+
+   * The subspace dimension is determined simply as `Ndim = Nr / nsize`.
+
+   In all cases when a division is performed the result must be integer. Otherwise,
+   the matrices are considered to be inconsistent.
  - *EMIN*, *EMAX* (float): energy window. Should be given only if no excplicit groups
    is specified. Otherwise, the values are overriden by group parameters.
 
