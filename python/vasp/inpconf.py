@@ -62,8 +62,7 @@ class ConfigParameters:
 
         self.gr_required = {
             'shells': ('shells', lambda s: map(int, s.split())),
-            'emin': ('emin', float),
-            'emax': ('emax', float)}
+            'ewindow': ('ewindow', self.parse_energy_window)}
 
         self.gr_optional = {
             'normalize' : ('normalize', self.parse_string_logical, True),
@@ -132,6 +131,21 @@ class ConfigParameters:
         first_char = par_str[0].lower()
         assert first_char in 'tf', "Logical parameters should be given by either 'True' or 'False'"
         return first_char == 't'
+
+################################################################################
+#
+# parse_energy_window()
+#
+################################################################################
+    def parse_energy_window(self, par_str):
+        """
+        Energy window is given by two floats, with the first one being smaller
+        than the second one.
+        """
+        ftmp = map(float, par_str.split())
+        assert len(ftmp) == 2, "EWINDOW must be specified by exactly two floats"
+        assert ftmp[0] < ftmp[1], "The first float in EWINDOW must be smaller than the second one"
+        return tuple(ftmp)
 
 ################################################################################
 #

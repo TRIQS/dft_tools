@@ -187,8 +187,7 @@ class ProjectorGroup:
         """
         Constructor
         """
-        self.emin = gr_pars['emin']
-        self.emax = gr_pars['emax']
+        self.emin, self.emax = gr_pars['ewindow']
         self.ishells = gr_pars['shells']
         self.ortho = gr_pars['normalize']
         self.normion = gr_pars['normion']
@@ -319,7 +318,6 @@ class ProjectorShell:
         self.lm2 = (self.lorb+1)**2
 
         self.ndim = self.extract_tmatrices(sh_pars)
-        print "  Dimension of subspace:", self.ndim
 #        if self.tmatrix is None:
 #            self.ndim = self.lm2 - self.lm1
 #        else:
@@ -620,6 +618,7 @@ def generate_plo(conf_pars, el_struct):
         print "    Shell         : %s"%(pshell.user_index)
         print "    Orbital l     : %i"%(pshell.lorb)
         print "    Number of ions: %i"%(len(pshell.ion_list))
+        print "    Dimension     : %i"%(pshell.ndim)
         pshells.append(pshell)
 
     pgroups = []
