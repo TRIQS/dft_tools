@@ -305,10 +305,11 @@ class ProjectorShell:
     - proj_raw (numpy.array) : array of raw projectors
 
     """
-    def __init__(self, sh_pars, proj_raw, proj_params):
+    def __init__(self, sh_pars, proj_raw, proj_params, nc_flag):
         self.lorb = sh_pars['lshell']
         self.ion_list = sh_pars['ion_list']
         self.user_index = sh_pars['user_index']
+        self.nc_flag = nc_flag
 #        try:
 #            self.tmatrix = sh_pars['tmatrix']
 #        except KeyError:
@@ -613,7 +614,7 @@ def generate_plo(conf_pars, el_struct):
     print "  Generating %i shell%s..."%(nshell, '' if nshell == 1 else 's')
     pshells = []
     for sh_par in conf_pars.shells:
-        pshell = ProjectorShell(sh_par, proj_raw, el_struct.proj_params)
+        pshell = ProjectorShell(sh_par, proj_raw, el_struct.proj_params, el_struct.nc_flag)
         print
         print "    Shell         : %s"%(pshell.user_index)
         print "    Orbital l     : %i"%(pshell.lorb)
