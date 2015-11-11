@@ -11,6 +11,14 @@ try:
 except ImportError:
     import json
 
+def issue_warning(message):
+    """
+    Issues a warning.
+    """
+    print
+    print "  !!! WARNING !!!: " + message
+    print
+
 class Projector:
     """
     Class describing a local-orbital projector.
@@ -302,19 +310,21 @@ class ProjectorShell:
         self.lorb = sh_pars['lshell']
         self.ion_list = sh_pars['ion_list']
         self.user_index = sh_pars['user_index']
-        try:
-            self.tmatrix = sh_pars['tmatrix']
-        except KeyError:
-            self.tmatrix = None
+#        try:
+#            self.tmatrix = sh_pars['tmatrix']
+#        except KeyError:
+#            self.tmatrix = None
 
         self.lm1 = self.lorb**2
         self.lm2 = (self.lorb+1)**2
 
-        if self.tmatrix is None:
-            self.ndim = self.lm2 - self.lm1
-        else:
-# TODO: generalize this to a tmatrix for every ion
-            self.ndim = self.tmatrix.shape[0]
+        self.ndim = self.extract_tmatrices(sh_pars)
+        print "  Dimension of subspace:", self.ndim
+#        if self.tmatrix is None:
+#            self.ndim = self.lm2 - self.lm1
+#        else:
+## TODO: generalize this to a tmatrix for every ion
+#            self.ndim = self.tmatrix.shape[0]
 
 # Pre-select a subset of projectors (this should be an array view => no memory is wasted)
 # !!! This sucks but I have to change the order of 'ib' and 'ilm' indices here
@@ -340,6 +350,108 @@ class ProjectorShell:
                         break
 
 #        self.proj_arr = proj_raw[iproj_l, :, :, :].transpose((1, 2, 0, 3))
+
+################################################################################
+#
+# extract_tmatrices
+#
+################################################################################
+    def extract_tmatrices(self, sh_pars):
+        """
+        Extracts and interprets transformation matrices provided by the
+        config-parser.
+        There are two relevant options in 'sh_pars':
+
+          'tmatrix'  : a transformation matrix applied to all ions in the shell
+          'tmatrices': interpreted as a set of transformation matrices for each ion.
+
+        If both of the options are present a warning is issued and 'tmatrices'
+        supersedes 'tmatrix'.
+        """
+        nion = len(self.ion_list)
+        nm = self.lm2 - self.lm1
+
+        if 'tmatrices' in sh_pars:
+            if 'tmatrix' in sh_pars:
+                mess = "Both TRANSFORM and TRANSFILE are specified, TRANSFORM will be ignored."
+                issue_warning(mess)
+
+            raw_matrices = sh_pars['tmatrices']
+            nrow, ncol = raw_matrices.shape
+
+            assert nrow%nion == 0, "Number of rows in TRANSFILE must be divisible by the number of ions"
+            assert ncol%nm == 0, "Number of columns in TRANSFILE must be divisible by the number of orbitals 2*l + 1"
+
+            nr = nrow / nion
+            nsize = ncol / nm
+            assert nsize in (1, 2, 4), "Number of columns in TRANSFILE must be divisible by either 1, 2, or 4"
+#
+# Determine the spin-dimension and whether the matrices are real or complex
+#
+#            if nsize == 1 or nsize == 2:
+# Matrices (either real or complex) are spin-independent
+#                nls_dim = nm
+#                if msize == 2:
+#                    is_complex = True
+#                else:
+#                    is_complex = False
+#            elif nsize = 4:
+# Matrices are complex and spin-dependent
+#                nls_dim = 2 * nm
+#                is_complex = True
+#
+            is_complex = nsize > 1
+            ns_dim = max(1, nsize / 2)
+
+# Dimension of the orbital subspace
+            assert nr%ns_dim == 0, "Number of rows in TRANSFILE is not compatible with the spin dimension"
+            ndim = nr / ns_dim
+
+            self.tmatrices = np.zeros((nion, nr, nm * ns_dim), dtype=np.complex128)
+
+            if is_complex:
+                raw_matrices = raw_matrices[:, ::2] + raw_matrices[:, 1::2] * 1j
+
+            for io in xrange(nion):
+                i1 = io * nr
+                i2 = (io + 1) * nr
+                self.tmatrices[io, :, :] = raw_matrices[i1:i2, :]
+
+            return ndim
+
+        if 'tmatrix' in sh_pars:
+            raw_matrix = sh_pars['tmatrix']
+            nrow, ncol = raw_matrix.shape
+
+            assert ncol%nm == 0, "Number of columns in TRANSFORM must be divisible by the number of orbitals 2*l + 1"
+
+# Only spin-independent matrices are expected here
+            nsize = ncol / nm
+            assert nsize in (1, 2), "Number of columns in TRANSFORM must be divisible by either 1 or 2"
+
+            is_complex = nsize > 1
+            if is_complex:
+                matrix = raw_matrix[:, ::2] + raw_matrix[:, 1::2] * 1j
+            else:
+                matrix = raw_matrix
+
+            ndim = nrow
+
+            self.tmatrices = np.zeros((nion, nrow, nm), dtype=np.complex128)
+            for io in xrange(nion):
+                self.tmatrices[io, :, :] = raw_matrix
+
+            return ndim
+
+# If no transformation matrices are provided define a default one
+        ns_dim = 2 if self.nc_flag else 1
+        ndim = nm * ns_dim
+
+        self.tmatrices = np.zeros((nion, ndim, ndim), dtype=np.complex128)
+        for io in xrange(nion):
+            self.tmatrices[io, :, :] = np.identity(ndim, dtype=np.complex128)
+
+        return ndim
 
 ################################################################################
 #
