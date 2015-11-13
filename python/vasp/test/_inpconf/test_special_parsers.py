@@ -151,3 +151,146 @@ class TestParseStringTmatrix(arraytest.ArrayTestCase):
         self.assertEqual(res, expected)
 
 
+################################################################################
+#
+# TestParseEnergyWindow
+#
+################################################################################
+class TestParseEnergyWindow(arraytest.ArrayTestCase):
+    """
+    Function:
+
+    def parse_energy_window(self, par_str)
+
+    Scenarios:
+
+    - **if** par_str == '-1.5 3.0' **return** (-1.5, 3.0)
+    - **if** par_str == '3.0 -1.5' **raise** AssertionError
+    - **if** par_str == '1.0' **raise** AssertionError
+    - **if** par_str == 'aaa' **raise** ValueError
+    - **if** par_str == '1.5 3.0 2.0' **raise** AssertionError
+    """
+    def setUp(self):
+        """
+        """
+# Dummy ConfigParameters object
+        self.cpars = ConfigParameters(_rpath + 'test1.cfg')
+
+# Scenario 1
+    def test_correct_range(self):
+        expected = (-1.5, 3.0)
+        res = self.cpars.parse_energy_window('-1.5 3.0')
+        self.assertEqual(res, expected)
+
+# Scenario 2
+    def test_wrong_range(self):
+        err_mess = "The first float in EWINDOW"
+        with self.assertRaisesRegexp(AssertionError, err_mess):
+            self.cpars.parse_energy_window('3.0 -1.5')
+
+# Scenario 3
+    def test_one_float(self):
+        err_mess = "EWINDOW must be specified"
+        with self.assertRaisesRegexp(AssertionError, err_mess):
+            self.cpars.parse_energy_window('1.0')
+
+# Scenario 4
+    def test_wrong_string(self):
+        with self.assertRaises(ValueError):
+            self.cpars.parse_energy_window('aaa')
+
+# Scenario 5
+    def test_three_floats(self):
+        err_mess = "EWINDOW must be specified"
+        with self.assertRaisesRegexp(AssertionError, err_mess):
+            self.cpars.parse_energy_window('1.5 3.0 2.0')
+
+
+################################################################################
+#
+# TestParseFileTmatrix
+#
+################################################################################
+class TestParseFileTmatrix(arraytest.ArrayTestCase):
+    """
+    Function:
+
+    def parse_file_tmatrix(self, par_str)
+
+    Scenarios:
+
+    - **if** file is correct **return** array()
+    - **if** file is incorrect **raise** (-1.5, 3.0)
+    """
+    def setUp(self):
+        """
+        """
+# Dummy ConfigParameters object
+        self.cpars = ConfigParameters(_rpath + 'test1.cfg')
+
+# Scenario 1
+    def test_correct_file(self):
+        expected = np.array(
+[[ -2.52000000e-04, -0.00000000e+00, -4.27145000e-02,  3.00000000e-07, -9.99087300e-01],
+ [ -4.13570000e-03, -2.00000000e-07, -9.99078700e-01, -1.00000000e-07,  4.27152000e-02],
+ [ -3.80200000e-04,  0.00000000e+00,  6.04452000e-02, -1.00000000e-07, -9.98171400e-01],
+ [ -5.14500000e-04, -0.00000000e+00, -9.98171400e-01,  0.00000000e+00, -6.04450000e-02]])
+
+        res = self.cpars.parse_file_tmatrix('tmatrix_file.dat')
+        self.assertEqual(res, expected)
+
+# Scenario 2
+    def test_wrong_file(self):
+        with self.assertRaises(ValueError):
+            self.cpars.parse_file_tmatrix('test1.cfg')
+
+################################################################################
+#
+# TestParseStringDosmesh
+#
+################################################################################
+class TestParseStringDosmesh(arraytest.ArrayTestCase):
+    """
+    Function:
+
+    def parse_string_dosmesh(self, par_str)
+
+    Scenarios:
+
+    - **if** par_str == '-8.0 4.0 101' **return** dictionary
+    - **if** par_str == '101' **return** dictionary
+    - **if** par_str == '-8.0 101' **raise** ValueError
+    - **if** par_str == '8.0' **raise** ValueError
+    """
+    def setUp(self):
+        """
+        """
+# Dummy ConfigParameters object
+        self.cpars = ConfigParameters(_rpath + 'test1.cfg')
+
+# Scenario 1
+    def test_range_npoints(self):
+        expected = {'n_points': 101, 'emin': -8.0, 'emax': 4.0}
+        res = self.cpars.parse_string_dosmesh('-8.0 4.0 101')
+        self.assertEqual(res, expected)
+
+# Scenario 2
+    def test_only_npoints(self):
+        expected_npoints = 101
+        res = self.cpars.parse_string_dosmesh('101')
+        self.assertTrue(np.isnan(res['emin']))
+        self.assertTrue(np.isnan(res['emax']))
+        self.assertEqual(res['n_points'], expected_npoints)
+
+# Scenario 3
+    def test_two_numbers(self):
+        err_mess = "DOSMESH must be either"
+        with self.assertRaisesRegexp(ValueError, err_mess):
+            self.cpars.parse_string_dosmesh('-8.0 101')
+
+# Scenario 4
+    def test_wrong_input(self):
+        with self.assertRaises(ValueError):
+            self.cpars.parse_string_dosmesh('8.0')
+
+
