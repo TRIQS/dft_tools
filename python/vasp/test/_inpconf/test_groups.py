@@ -38,9 +38,9 @@ class TestParseGroups(arraytest.ArrayTestCase):
         conf_pars = ConfigParameters(_rpath + 'example.cfg')
         conf_pars.parse_groups()
         res = conf_pars.groups
-        expected = [{'index': 1, 'shells': [1, 2], 'emin': -7.6, 'emax': 3.0, 
+        expected = [{'index': 1, 'shells': [1, 2], 'ewindow': (-7.6, 3.0),
                      'normalize': True, 'normion': False},
-                    {'index': 2, 'shells': [3], 'emin': -1.6, 'emax': 2.0,
+                    {'index': 2, 'shells': [3], 'ewindow': (-1.6, 2.0),
                      'normalize': True, 'normion': False}]
         self.assertListEqual(res, expected)
 

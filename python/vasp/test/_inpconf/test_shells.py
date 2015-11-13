@@ -58,7 +58,7 @@ class TestParseShells(arraytest.ArrayTestCase):
         conf_pars.parse_shells()
         res = conf_pars.shells
         expected = [{'user_index': 1, 'lshell': 2, 'ion_list': np.array([4, 5, 6, 7])},
-                    {'user_index': 2, 'lshell': 1, 'ion_list': np.array([0, 1, 2, 3]), 
+                    {'user_index': 2, 'lshell': 1, 'ion_list': np.array([0, 1, 2, 3]),
                         'tmatrix': np.array([[ 0.,  1.,  0.], [ 1.,  0.,  0.], [ 0.,  0.,  1.]])}]
 # ...lousy way to test equality of two dictionaries containing numpy arrays
         self.assertEqual(len(res), len(expected))

@@ -29,7 +29,8 @@ class TestParseGeneral(arraytest.ArrayTestCase):
         conf_pars = ConfigParameters(_rpath + 'example.cfg')
         conf_pars.parse_general()
         res = conf_pars.general
-        expected = {'basename': 'test_base', 'efermi': 0.1}
+        expected = {'basename': 'test_base', 'efermi': 0.1,
+                    'dosmesh': {'n_points': 101, 'emin': -8.0, 'emax': 4.0}}
         self.assertDictEqual(res, expected)
 
 
