@@ -1,6 +1,8 @@
 
 import itertools as it
 import numpy as np
+from proj_group import ProjectorGroup
+from proj_shell import ProjectorShell
 
 np.set_printoptions(suppress=True)
 
@@ -18,37 +20,6 @@ def issue_warning(message):
     print "  !!! WARNING !!!: " + message
     print
 
-class Projector:
-    """
-    Class describing a local-orbital projector.
-    """
-  
-    def __init__(self, matrix, ib1=1, ib2=None, nion=1):
-        self.p_matrix = matrix.astype(np.complex128)
-        self.norb, self.nb = matrix.shape
-        self.nion = nion
-        self.ib1 = ib1 - 1
-        if not ib2 is None:
-            self.ib2 = ib2 - 1
-        else:
-            self.ib2 = self.nb - 1
-  
-    def project_up(self, mat):
-        return np.dot(self.p_matrix.conj().T, np.dot(mat, self.p_matrix))
-  
-    def project_down(self, mat):
-        assert mat.shape == (self.nb, self.nb), "  Matrix must match projector in size"
-        return np.dot(self.p_matrix, np.dot(mat, self.p_matrix.conj().T))
-  
-    def orthogonalize(self):
-        """
-        Orthogonalizes a projector.
-        Returns an overlap matrix and its eigenvalues for initial projectors.
-        """
-        self.p_matrix, overlap, over_eig = orthogonalize_projector(self.p_matrix)
-
-        return (overlap, over_eig)
-        
 ################################################################################
 # check_data_consistency()
 ################################################################################

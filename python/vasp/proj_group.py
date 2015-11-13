@@ -4,95 +4,6 @@ import numpy as np
 np.set_printoptions(suppress=True)
 
 ################################################################################
-#
-# orthogonalize_projector_matrix()
-#
-################################################################################
-def orthogonalize_projector_matrix(p_matrix):
-    """
-    Orthogonalizes a projector defined by a rectangular matrix `p_matrix`.
-
-    Parameters
-    ----------
-
-    p_matrix (numpy.array[complex]) : matrix `Nm x Nb`, where `Nm` is
-      the number of orbitals, `Nb` number of bands
-
-    Returns
-    -------
-
-    Orthogonalized projector matrix, initial overlap matrix and its eigenvalues.
-    """
-# Overlap matrix O_{m m'} = \sum_{v} P_{m v} P^{*}_{v m'}
-    overlap = np.dot(p_matrix, p_matrix.conj().T)
-# Calculate [O^{-1/2}]_{m m'}
-    eig, eigv = np.linalg.eigh(overlap)
-    assert np.all(eig > 0.0), ("Negative eigenvalues of the overlap matrix:"
-       "projectors are ill-defined")
-    sqrt_eig = np.diag(1.0 / np.sqrt(eig))
-    shalf = np.dot(eigv, np.dot(sqrt_eig, eigv.conj().T))
-# Apply \tilde{P}_{m v} = \sum_{m'} [O^{-1/2}]_{m m'} P_{m' v}
-    p_ortho = np.dot(shalf, p_matrix)
-
-    return (p_ortho, overlap, eig)
-
-################################################################################
-#
-# select_bands()
-#
-################################################################################
-def select_bands(eigvals, emin, emax):
-    """
-    Select a subset of bands lying within a given energy window.
-    The band energies are assumed to be sorted in an ascending order.
-
-    Parameters
-    ----------
-    
-    eigvals (numpy.array) : all eigenvalues
-    emin, emax (float) : energy window
-
-    Returns
-    -------
-
-    ib_win, nb_min, nb_max : 
-    """
-# Sanity check
-    if emin > eigvals.max() or emax < eigvals.min():
-        raise Exception("Energy window does not overlap with the band structure")
-
-    nk, nband, ns_band = eigvals.shape
-    ib_win = np.zeros((nk, ns_band, 2), dtype=np.int32)
-
-    ib_min = 10000000
-    ib_max = 0
-    for isp in xrange(ns_band):
-        for ik in xrange(nk):
-            for ib in xrange(nband):
-                en = eigvals[ik, ib, isp]
-                if en >= emin:
-                    break
-            ib1 = ib
-            for ib in xrange(ib1, nband):
-                en = eigvals[ik, ib, isp]
-                if en > emax:
-                    break
-            else:
-# If we reached the last band add 1 to get the correct bound
-                ib += 1
-            ib2 = ib - 1
-
-            assert ib1 <= ib2, "No bands inside the window for ik = %s"%(ik)
-
-            ib_win[ik, isp, 0] = ib1
-            ib_win[ik, isp, 1] = ib2
-
-            ib_min = min(ib_min, ib1)
-            ib_max = max(ib_max, ib2)
-
-    return ib_win, ib_min, ib_max
-
-################################################################################
 ################################################################################
 #
 # class ProjectorGroup
@@ -125,7 +36,7 @@ class ProjectorGroup:
         self.shells = shells
 
 # Determine the minimum and maximum band numbers
-        ib_win, ib_min, ib_max = select_bands(eigvals, self.emin, self.emax)
+        ib_win, ib_min, ib_max = self.select_bands(eigvals)
         self.ib_win = ib_win
         self.ib_min = ib_min
         self.ib_max = ib_max
@@ -254,7 +165,7 @@ class ProjectorGroup:
                         i1, i2 = blocks[ion]
                         p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
 # Now orthogonalize the obtained block projector
-                p_orth, overl, eig = orthogonalize_projector_matrix(p_mat)
+                p_orth, overl, eig = self.orthogonalize_projector_matrix(p_mat)
 #                print "ik = ", ik
 #                print overl.real
 # Distribute back projectors in the same order
@@ -265,5 +176,93 @@ class ProjectorGroup:
                         i1, i2 = blocks[ion]
                         shell.proj_win[ion, isp, ik, :nlm, :nb] = p_orth[i1:i2, :nb]
 
+################################################################################
+#
+# orthogonalize_projector_matrix()
+#
+################################################################################
+    def orthogonalize_projector_matrix(self, p_matrix):
+        """
+        Orthogonalizes a projector defined by a rectangular matrix `p_matrix`.
+
+        Parameters
+        ----------
+
+        p_matrix (numpy.array[complex]) : matrix `Nm x Nb`, where `Nm` is
+          the number of orbitals, `Nb` number of bands
+
+        Returns
+        -------
+
+        Orthogonalized projector matrix, initial overlap matrix and its eigenvalues.
+        """
+# Overlap matrix O_{m m'} = \sum_{v} P_{m v} P^{*}_{v m'}
+        overlap = np.dot(p_matrix, p_matrix.conj().T)
+# Calculate [O^{-1/2}]_{m m'}
+        eig, eigv = np.linalg.eigh(overlap)
+        assert np.all(eig > 0.0), ("Negative eigenvalues of the overlap matrix:"
+           "projectors are ill-defined")
+        sqrt_eig = np.diag(1.0 / np.sqrt(eig))
+        shalf = np.dot(eigv, np.dot(sqrt_eig, eigv.conj().T))
+# Apply \tilde{P}_{m v} = \sum_{m'} [O^{-1/2}]_{m m'} P_{m' v}
+        p_ortho = np.dot(shalf, p_matrix)
+
+        return (p_ortho, overlap, eig)
+
+################################################################################
+#
+# select_bands()
+#
+################################################################################
+    def select_bands(self, eigvals):
+        """
+        Select a subset of bands lying within a given energy window.
+        The band energies are assumed to be sorted in an ascending order.
+
+        Parameters
+        ----------
+        
+        eigvals (numpy.array) : all eigenvalues
+        emin, emax (float) : energy window
+
+        Returns
+        -------
+
+        ib_win, nb_min, nb_max : 
+        """
+# Sanity check
+        if self.emin > eigvals.max() or self.emax < eigvals.min():
+            raise Exception("Energy window does not overlap with the band structure")
+
+        nk, nband, ns_band = eigvals.shape
+        ib_win = np.zeros((nk, ns_band, 2), dtype=np.int32)
+
+        ib_min = 10000000
+        ib_max = 0
+        for isp in xrange(ns_band):
+            for ik in xrange(nk):
+                for ib in xrange(nband):
+                    en = eigvals[ik, ib, isp]
+                    if en >= self.emin:
+                        break
+                ib1 = ib
+                for ib in xrange(ib1, nband):
+                    en = eigvals[ik, ib, isp]
+                    if en > self.emax:
+                        break
+                else:
+# If we reached the last band add 1 to get the correct bound
+                    ib += 1
+                ib2 = ib - 1
+
+                assert ib1 <= ib2, "No bands inside the window for ik = %s"%(ik)
+
+                ib_win[ik, isp, 0] = ib1
+                ib_win[ik, isp, 1] = ib2
+
+                ib_min = min(ib_min, ib1)
+                ib_max = max(ib_max, ib2)
+
+        return ib_win, ib_min, ib_max
 
 
