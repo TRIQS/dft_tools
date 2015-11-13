@@ -236,13 +236,13 @@ class TestParseFileTmatrix(arraytest.ArrayTestCase):
  [ -3.80200000e-04,  0.00000000e+00,  6.04452000e-02, -1.00000000e-07, -9.98171400e-01],
  [ -5.14500000e-04, -0.00000000e+00, -9.98171400e-01,  0.00000000e+00, -6.04450000e-02]])
 
-        res = self.cpars.parse_file_tmatrix('tmatrix_file.dat')
+        res = self.cpars.parse_file_tmatrix(_rpath + 'tmatrix_file.dat')
         self.assertEqual(res, expected)
 
 # Scenario 2
     def test_wrong_file(self):
         with self.assertRaises(ValueError):
-            self.cpars.parse_file_tmatrix('test1.cfg')
+            self.cpars.parse_file_tmatrix(_rpath + 'test1.cfg')
 
 ################################################################################
 #
