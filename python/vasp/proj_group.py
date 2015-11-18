@@ -154,24 +154,26 @@ class ProjectorGroup:
 
         ndim = i2_bl
         p_mat = np.zeros((ndim, nb_max), dtype=np.complex128)
+# Note that 'ns' and 'nk' are the same for all shells
         for isp in xrange(ns):
             for ik in xrange(nk):
                 nb = self.ib_win[ik, isp, 1] - self.ib_win[ik, isp, 0] + 1
 # Combine all projectors of the group to one block projector
+                p_mat[:, :] = 0.0j  # !!! Clean-up from the last k-point!
                 for ish in self.ishells:
                     shell = self.shells[ish]
                     blocks = bl_map[ish]['bmat_blocks']
+                    nion = shell.nion  # !!!
                     for ion in xrange(nion):
                         i1, i2 = blocks[ion]
                         p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
 # Now orthogonalize the obtained block projector
                 p_orth, overl, eig = self.orthogonalize_projector_matrix(p_mat)
-#                print "ik = ", ik
-#                print overl.real
 # Distribute back projectors in the same order
                 for ish in self.ishells:
                     shell = self.shells[ish]
                     blocks = bl_map[ish]['bmat_blocks']
+                    nion = shell.nion  # !!!
                     for ion in xrange(nion):
                         i1, i2 = blocks[ion]
                         shell.proj_win[ion, isp, ik, :nlm, :nb] = p_orth[i1:i2, :nb]

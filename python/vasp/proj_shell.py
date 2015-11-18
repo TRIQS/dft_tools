@@ -47,11 +47,7 @@ class ProjectorShell:
         self.lm2 = (self.lorb+1)**2
 
         self.ndim = self.extract_tmatrices(sh_pars)
-#        if self.tmatrix is None:
-#            self.ndim = self.lm2 - self.lm1
-#        else:
-## TODO: generalize this to a tmatrix for every ion
-#            self.ndim = self.tmatrix.shape[0]
+        self.nion = len(self.ion_list)
 
 # Pre-select a subset of projectors (this should be an array view => no memory is wasted)
 # !!! This sucks but I have to change the order of 'ib' and 'ilm' indices here
