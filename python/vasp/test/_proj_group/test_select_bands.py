@@ -1,8 +1,14 @@
 
+import os
+import rpath
+_rpath = os.path.dirname(rpath.__file__) + '/'
+
 import numpy as np
 import vaspio
+import elstruct
 from inpconf import ConfigParameters
-from plotools import select_bands
+from proj_shell import ProjectorShell
+from proj_group import ProjectorGroup
 import mytest
 
 ################################################################################
@@ -14,29 +20,34 @@ class TestSelectBands(mytest.MyTestCase):
     """
     Function:
 
-    def select_bands(eigvals, emin, emax)
+    def ProjectorGroup.select_bands(eigvals)
 
     Scenarios:
     - compare output for a correct input
     - **if** emin > max(eigvals) **raise** Exception
     - **if** emax > min(eigvals) **raise** Exception
     """
-# Scenario 1
-    def test_example(self):
-        conf_file = 'example.cfg'
-        pars = ConfigParameters(conf_file)
-        pars.parse_input()
-        vasp_data = vaspio.VaspData('./')
+    def setUp(self):
+        conf_file = _rpath + 'simple.cfg'
+        self.pars = ConfigParameters(conf_file)
+        self.pars.parse_input()
+        vasp_data = vaspio.VaspData(_rpath + 'simple/')
+        self.el_struct = elstruct.ElectronicStructure(vasp_data)
 
         efermi = vasp_data.doscar.efermi
-        eigvals = vasp_data.eigenval.eigs - efermi
-        emin = pars.groups[0]['emin']
-        emax = pars.groups[0]['emax']
-        ib_win, nb_min, nb_max = select_bands(eigvals, emin, emax)
+        self.eigvals = vasp_data.eigenval.eigs - efermi
+        ferw = vasp_data.eigenval.ferw
+
+        self.proj_sh = ProjectorShell(self.pars.shells[0], vasp_data.plocar.plo, vasp_data.plocar.proj_params, 0)
+        self.proj_gr = ProjectorGroup(self.pars.groups[0], [self.proj_sh], self.eigvals, ferw)
+
+# Scenario 1
+    def test_correct(self):
+        ib_win, nb_min, nb_max = self.proj_gr.select_bands(self.eigvals)
 
         nb_min_exp = 3
-        nb_max_exp = 8 
-        ib_win_exp = np.array([[[3, 8]], [[3, 8]], [[3, 7]], [[3, 7]]])
+        nb_max_exp = 8
+        ib_win_exp = np.array([[[3, 8]], [[3, 7]], [[3, 7]], [[3, 7]], [[3, 7]], [[3, 7]], [[3, 7]], [[3, 4]]])
 
         self.assertEqual(nb_min, nb_min_exp)
         self.assertEqual(nb_max, nb_max_exp)
@@ -44,30 +55,16 @@ class TestSelectBands(mytest.MyTestCase):
 
 # Scenario 2
     def test_emin_too_large(self):
-        conf_file = 'example.cfg'
-        pars = ConfigParameters(conf_file)
-        pars.parse_input()
-        vasp_data = vaspio.VaspData('./')
-
-        efermi = vasp_data.doscar.efermi
-        eigvals = vasp_data.eigenval.eigs - efermi
-        emin = 20.0
-        emax = 25.0
-        with self.assertRaisesRegexp(Exception, "Energy window does not overlap"):
-            ib_win, nb_min, nb_max = select_bands(eigvals, emin, emax)
+        self.proj_gr.emin = 20.0
+        self.proj_gr.emax = 25.0
+        with self.assertRaisesRegexp(Exception, "No bands inside the window"):
+            ib_win, nb_min, nb_max = self.proj_gr.select_bands(self.eigvals)
 
 # Scenario 3
     def test_emax_too_small(self):
-        conf_file = 'example.cfg'
-        pars = ConfigParameters(conf_file)
-        pars.parse_input()
-        vasp_data = vaspio.VaspData('./')
-
-        efermi = vasp_data.doscar.efermi
-        eigvals = vasp_data.eigenval.eigs - efermi
-        emin = -50.0
-        emax = -55.0
+        self.proj_gr.emin = -50.0
+        self.proj_gr.emax = -55.0
         with self.assertRaisesRegexp(Exception, "Energy window does not overlap"):
-            ib_win, nb_min, nb_max = select_bands(eigvals, emin, emax)
+            ib_win, nb_min, nb_max = self.proj_gr.select_bands(self.eigvals)
 
 

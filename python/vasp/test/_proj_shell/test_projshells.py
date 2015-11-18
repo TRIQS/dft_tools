@@ -52,8 +52,8 @@ class TestProjectorShell(mytest.MyTestCase):
             for ion in xrange(nion):
                 for isp in xrange(ns):
                     for ik in xrange(nk):
-                        ib1 = self.proj_gr.ib_win[ik, 0, 0]
-                        ib2 = self.proj_gr.ib_win[ik, 0, 1]
+                        ib1 = self.proj_sh.ib_win[ik, 0, 0]
+                        ib2 = self.proj_sh.ib_win[ik, 0, 1]
                         f.write("%i  %i\n"%(ib1, ib2))
                         for ib in xrange(ib2 - ib1 + 1):
                             for ilm in xrange(nlm):
