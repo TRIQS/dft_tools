@@ -17,6 +17,7 @@ class MyTestCase(unittest.TestCase):
         Initializes a custom equality function for comparing numpy arrays.
         """
         super(MyTestCase, self).__init__(*args, **kwargs)
+        np.set_printoptions(suppress=True)
         self.addTypeEqualityFunc(np.ndarray, self.is_arrays_equal)
 
     def is_arrays_equal(self, arr1, arr2, msg=None):
