@@ -282,7 +282,8 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                     f.write(" %i  %i\n"%(ib1, ib2))
                     for ib in xrange(ib1, ib2 + 1):
                         eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
-                        f.write("%15.7f\n"%(eigv_ef))
+                        f_weight = el_struct.ferw[isp, ik, ib]
+                        f.write("%13.8f %12.7f\n"%(eigv_ef, f_weight))
 
 # Projected shells
             f.write("# Projected shells\n")
