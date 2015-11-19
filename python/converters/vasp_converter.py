@@ -29,7 +29,6 @@ try:
     import simplejson as json
 except ImportError:
     import json
-#from plotools import ProjectorGroup, ProjectorShell
 
 class VaspConverter(ConverterTools):
     """
@@ -211,6 +210,7 @@ class VaspConverter(ConverterTools):
 #                raise NotImplementedError("Noncollinear calculations are not implemented")
 #            else:
             hopping = numpy.zeros([n_k, n_spin_blocs, nb_max, nb_max], numpy.complex_)
+            f_weights = numpy.zeros([n_k, n_spin_blocs, nb_max], numpy.complex_)
             band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in xrange(n_spin_blocs)]
             n_orbitals = numpy.zeros([n_k, n_spin_blocs], numpy.int)
 
@@ -222,6 +222,7 @@ class VaspConverter(ConverterTools):
                     n_orbitals[ik, isp] = nb
                     for ib in xrange(nb):
                         hopping[ik, isp, ib, ib] = rf.next()
+                        f_weights[ik, isp, ib] = rf.next()
 
 # Projectors
 #            print n_orbitals
@@ -263,126 +264,6 @@ class VaspConverter(ConverterTools):
 
         rf.close()
 
-#
-#        try:
-#            energy_unit = R.next()                        # read the energy convertion factor
-#            n_k = int(R.next())                           # read the number of k points
-#            k_dep_projection = 1                          
-#            SP = int(R.next())                            # flag for spin-polarised calculation
-#            SO = int(R.next())                            # flag for spin-orbit calculation
-#            charge_below = R.next()                       # total charge below energy window
-#            density_required = R.next()                   # total density required, for setting the chemical potential
-#            symm_op = 1                                   # Use symmetry groups for the k-sum
-#
-#            # the information on the non-correlated shells is not important here, maybe skip:
-#            n_shells = int(R.next())                      # number of shells (e.g. Fe d, As p, O p) in the unit cell, 
-#                                                          # corresponds to index R in formulas
-#            # now read the information about the shells (atom, sort, l, dim):
-#            shell_entries = ['atom', 'sort', 'l', 'dim']
-#            shells = [ {name: int(val) for name, val in zip(shell_entries, R)} for ish in range(n_shells) ]
-#
-#            n_corr_shells = int(R.next())                 # number of corr. shells (e.g. Fe d, Ce f) in the unit cell, 
-#                                                          # corresponds to index R in formulas
-#            # now read the information about the shells (atom, sort, l, dim, SO flag, irep):
-#            corr_shell_entries = ['atom', 'sort', 'l', 'dim', 'SO', 'irep']
-#            corr_shells = [ {name: int(val) for name, val in zip(corr_shell_entries, R)} for icrsh in range(n_corr_shells) ]
-#
-#            # determine the number of inequivalent correlated shells and maps, needed for further reading
-#            n_inequiv_shells, corr_to_inequiv, inequiv_to_corr = ConverterTools.det_shell_equivalence(self,corr_shells)
-#
-#            use_rotations = 1
-#            rot_mat = [numpy.identity(corr_shells[icrsh]['dim'],numpy.complex_) for icrsh in range(n_corr_shells)]
-#           
-#            # read the matrices
-#            rot_mat_time_inv = [0 for i in range(n_corr_shells)]
-#
-#            for icrsh in range(n_corr_shells):
-#                for i in range(corr_shells[icrsh]['dim']):    # read real part:
-#                    for j in range(corr_shells[icrsh]['dim']):
-#                        rot_mat[icrsh][i,j] = R.next()
-#                for i in range(corr_shells[icrsh]['dim']):    # read imaginary part:
-#                    for j in range(corr_shells[icrsh]['dim']):
-#                        rot_mat[icrsh][i,j] += 1j * R.next()
-#
-#                if (SP==1):             # read time inversion flag:
-#                    rot_mat_time_inv[icrsh] = int(R.next())
-#                    
-#            # Read here the info for the transformation of the basis:
-#            n_reps = [1 for i in range(n_inequiv_shells)]
-#            dim_reps = [0 for i in range(n_inequiv_shells)]
-#            T = []
-#            for ish in range(n_inequiv_shells):
-#                n_reps[ish] = int(R.next())   # number of representatives ("subsets"), e.g. t2g and eg
-#                dim_reps[ish] = [int(R.next()) for i in range(n_reps[ish])]   # dimensions of the subsets
-#            
-#                # The transformation matrix:
-#                # is of dimension 2l+1 without SO, and 2*(2l+1) with SO!
-#                ll = 2*corr_shells[inequiv_to_corr[ish]]['l']+1
-#                lmax = ll * (corr_shells[inequiv_to_corr[ish]]['SO'] + 1)
-#                T.append(numpy.zeros([lmax,lmax],numpy.complex_))
-#                
-#                # now read it from file:
-#                for i in range(lmax):
-#                    for j in range(lmax):
-#                        T[ish][i,j] = R.next()
-#                for i in range(lmax):
-#                    for j in range(lmax):
-#                        T[ish][i,j] += 1j * R.next()
-#    
-#            # Spin blocks to be read:
-#            n_spin_blocs = SP + 1 - SO   
-#                 
-#            # read the list of n_orbitals for all k points
-#            n_orbitals = numpy.zeros([n_k,n_spin_blocs],numpy.int)
-#            for isp in range(n_spin_blocs):
-#                for ik in range(n_k):
-#                    n_orbitals[ik,isp] = int(R.next())
-#            
-#            # Initialise the projectors:
-#            proj_mat = numpy.zeros([n_k,n_spin_blocs,n_corr_shells,max([crsh['dim'] for crsh in corr_shells]),max(n_orbitals)],numpy.complex_)
-#
-#            # Read the projectors from the file:
-#            for ik in range(n_k):
-#                for icrsh in range(n_corr_shells):
-#                    n_orb = corr_shells[icrsh]['dim']
-#                    # first Real part for BOTH spins, due to conventions in dmftproj:
-#                    for isp in range(n_spin_blocs):
-#                        for i in range(n_orb):
-#                            for j in range(n_orbitals[ik][isp]):
-#                                proj_mat[ik,isp,icrsh,i,j] = R.next()
-#                    # now Imag part:
-#                    for isp in range(n_spin_blocs):
-#                        for i in range(n_orb):
-#                            for j in range(n_orbitals[ik][isp]):
-#                                proj_mat[ik,isp,icrsh,i,j] += 1j * R.next()
-#          
-#            # now define the arrays for weights and hopping ...
-#            bz_weights = numpy.ones([n_k],numpy.float_)/ float(n_k)  # w(k_index),  default normalisation 
-#            hopping = numpy.zeros([n_k,n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
-#
-#            # weights in the file
-#            for ik in range(n_k) : bz_weights[ik] = R.next()         
-#                
-#            # if the sum over spins is in the weights, take it out again!!
-#            sm = sum(bz_weights)
-#            bz_weights[:] /= sm 
-#
-#            # Grab the H
-#            # we use now the convention of a DIAGONAL Hamiltonian -- convention for Wien2K.
-#            for isp in range(n_spin_blocs):
-#                for ik in range(n_k) :
-#                    n_orb = n_orbitals[ik,isp]
-#                    for i in range(n_orb):
-#                        hopping[ik,isp,i,i] = R.next() * energy_unit
-#            
-#            # keep some things that we need for reading parproj:
-#            things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
-#            for it in things_to_set: setattr(self,it,locals()[it])
-#        except StopIteration : # a more explicit error if the file is corrupted.
-#            raise "Wien2k_converter : reading file %s failed!"%filename
-#
-#        R.close()
-#        # Reading done!
         
         # Save it to the HDF:
         ar = HDFArchive(self.hdf_file,'a')
@@ -400,164 +281,6 @@ class VaspConverter(ConverterTools):
 # TODO: Implement misc_input
 #        self.convert_misc_input(bandwin_file=self.bandwin_file,struct_file=self.struct_file,outputs_file=self.outputs_file,
 #                                misc_subgrp=self.misc_subgrp,SO=self.SO,SP=self.SP,n_k=self.n_k)
-
-
-    def convert_parproj_input(self):
-        """
-        Reads the input for the partial charges projectors from case.parproj, and stores it in the symmpar_subgrp
-        group in the HDF5.
-        """
-
-        if not (mpi.is_master_node()): return
-        mpi.report("Reading input from %s..."%self.parproj_file)
-
-        dens_mat_below = [ [numpy.zeros([self.shells[ish]['dim'],self.shells[ish]['dim']],numpy.complex_) for ish in range(self.n_shells)] 
-                           for isp in range(self.n_spin_blocs) ]
-
-        R = ConverterTools.read_fortran_file(self,self.parproj_file,self.fortran_to_replace)
-
-        n_parproj = [int(R.next()) for i in range(self.n_shells)]
-        n_parproj = numpy.array(n_parproj)
-                
-        # Initialise P, here a double list of matrices:
-        proj_mat_all = numpy.zeros([self.n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max([sh['dim'] for sh in self.shells]),max(self.n_orbitals)],numpy.complex_)
-        
-        rot_mat_all = [numpy.identity(self.shells[ish]['dim'],numpy.complex_) for ish in range(self.n_shells)]
-        rot_mat_all_time_inv = [0 for i in range(self.n_shells)]
-
-        for ish in range(self.n_shells):
-            # read first the projectors for this orbital:
-            for ik in range(self.n_k):
-                for ir in range(n_parproj[ish]):
-
-                    for isp in range(self.n_spin_blocs):
-                        for i in range(self.shells[ish]['dim']):    # read real part:
-                            for j in range(self.n_orbitals[ik][isp]):
-                                proj_mat_all[ik,isp,ish,ir,i,j] = R.next()
-                            
-                    for isp in range(self.n_spin_blocs):
-                        for i in range(self.shells[ish]['dim']):    # read imaginary part:
-                            for j in range(self.n_orbitals[ik][isp]):
-                                proj_mat_all[ik,isp,ish,ir,i,j] += 1j * R.next()
-                                        
-                    
-            # now read the Density Matrix for this orbital below the energy window:
-            for isp in range(self.n_spin_blocs):
-                for i in range(self.shells[ish]['dim']):    # read real part:
-                    for j in range(self.shells[ish]['dim']):
-                        dens_mat_below[isp][ish][i,j] = R.next()
-            for isp in range(self.n_spin_blocs):
-                for i in range(self.shells[ish]['dim']):    # read imaginary part:
-                    for j in range(self.shells[ish]['dim']):
-                        dens_mat_below[isp][ish][i,j] += 1j * R.next()
-                if (self.SP==0): dens_mat_below[isp][ish] /= 2.0
-
-            # Global -> local rotation matrix for this shell:
-            for i in range(self.shells[ish]['dim']):    # read real part:
-                for j in range(self.shells[ish]['dim']):
-                    rot_mat_all[ish][i,j] = R.next()
-            for i in range(self.shells[ish]['dim']):    # read imaginary part:
-                for j in range(self.shells[ish]['dim']):
-                    rot_mat_all[ish][i,j] += 1j * R.next()
-                    
-            if (self.SP):
-                rot_mat_all_time_inv[ish] = int(R.next())
-
-        R.close()
-        # Reading done!
-
-        # Save it to the HDF:
-        ar = HDFArchive(self.hdf_file,'a')
-        if not (self.parproj_subgrp in ar): ar.create_group(self.parproj_subgrp) 
-        # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
-        things_to_save = ['dens_mat_below','n_parproj','proj_mat_all','rot_mat_all','rot_mat_all_time_inv']
-        for it in things_to_save: ar[self.parproj_subgrp][it] = locals()[it]
-        del ar
-
-        # Symmetries are used, so now convert symmetry information for *all* orbitals:
-        self.convert_symmetry_input(orbits=self.shells,symm_file=self.symmpar_file,symm_subgrp=self.symmpar_subgrp,SO=self.SO,SP=self.SP)
-
-
-    def convert_bands_input(self):
-        """
-        Converts the input for momentum resolved spectral functions, and stores it in bands_subgrp in the
-        HDF5.
-        """
-
-        if not (mpi.is_master_node()): return
-        mpi.report("Reading bands input from %s..."%self.band_file)
-
-        R = ConverterTools.read_fortran_file(self,self.band_file,self.fortran_to_replace)
-        try:
-            n_k = int(R.next())
-
-            # read the list of n_orbitals for all k points
-            n_orbitals = numpy.zeros([n_k,self.n_spin_blocs],numpy.int)
-            for isp in range(self.n_spin_blocs):
-                for ik in range(n_k):
-                    n_orbitals[ik,isp] = int(R.next())
-
-            # Initialise the projectors:
-            proj_mat = numpy.zeros([n_k,self.n_spin_blocs,self.n_corr_shells,max([crsh['dim'] for crsh in self.corr_shells]),max(n_orbitals)],numpy.complex_)
-
-            # Read the projectors from the file:
-            for ik in range(n_k):
-                for icrsh in range(self.n_corr_shells):
-                    n_orb = self.corr_shells[icrsh]['dim']
-                    # first Real part for BOTH spins, due to conventions in dmftproj:
-                    for isp in range(self.n_spin_blocs):
-                        for i in range(n_orb):
-                            for j in range(n_orbitals[ik,isp]):
-                                proj_mat[ik,isp,icrsh,i,j] = R.next()
-                    # now Imag part:
-                    for isp in range(self.n_spin_blocs):
-                        for i in range(n_orb):
-                            for j in range(n_orbitals[ik,isp]):
-                                proj_mat[ik,isp,icrsh,i,j] += 1j * R.next()
-
-            hopping = numpy.zeros([n_k,self.n_spin_blocs,max(n_orbitals),max(n_orbitals)],numpy.complex_)
-
-            # Grab the H
-            # we use now the convention of a DIAGONAL Hamiltonian!!!!
-            for isp in range(self.n_spin_blocs):
-                for ik in range(n_k) :
-                    n_orb = n_orbitals[ik,isp]
-                    for i in range(n_orb):
-                        hopping[ik,isp,i,i] = R.next() * self.energy_unit
-
-            # now read the partial projectors:
-            n_parproj = [int(R.next()) for i in range(self.n_shells)]
-            n_parproj = numpy.array(n_parproj)
-            
-            # Initialise P, here a double list of matrices:
-            proj_mat_all = numpy.zeros([n_k,self.n_spin_blocs,self.n_shells,max(n_parproj),max([sh['dim'] for sh in self.shells]),max(n_orbitals)],numpy.complex_)
-
-            for ish in range(self.n_shells):
-                for ik in range(n_k):
-                    for ir in range(n_parproj[ish]):
-                        for isp in range(self.n_spin_blocs):
-                                    
-                            for i in range(self.shells[ish]['dim']):    # read real part:
-                                for j in range(n_orbitals[ik,isp]):
-                                    proj_mat_all[ik,isp,ish,ir,i,j] = R.next()
-                            
-                            for i in range(self.shells[ish]['dim']):    # read imaginary part:
-                                for j in range(n_orbitals[ik,isp]):
-                                    proj_mat_all[ik,isp,ish,ir,i,j] += 1j * R.next()
-
-        except StopIteration : # a more explicit error if the file is corrupted.
-            raise "Wien2k_converter : reading file band_file failed!"
-
-        R.close()
-        # Reading done!
-
-        # Save it to the HDF:
-        ar = HDFArchive(self.hdf_file,'a')
-        if not (self.bands_subgrp in ar): ar.create_group(self.bands_subgrp)
-        # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
-        things_to_save = ['n_k','n_orbitals','proj_mat','hopping','n_parproj','proj_mat_all']
-        for it in things_to_save: ar[self.bands_subgrp][it] = locals()[it]
-        del ar
 
 
     def convert_misc_input(self, bandwin_file, struct_file, outputs_file, misc_subgrp, SO, SP, n_k):
@@ -657,71 +380,6 @@ class VaspConverter(ConverterTools):
         del ar
 
 
-    def convert_transport_input(self):
-        """ 
-        Reads the input files necessary for transport calculations
-        and stores the data in the HDFfile
-        """
-        if not (mpi.is_master_node()): return
-        
-        # Check if SP, SO and n_k are already in h5
-        ar = HDFArchive(self.hdf_file, 'a')
-        if not (self.dft_subgrp in ar): raise IOError, "convert_transport_input: No %s subgroup in hdf file found! Call convert_dmft_input first." %self.dft_subgrp
-        SP = ar[self.dft_subgrp]['SP']
-        SO = ar[self.dft_subgrp]['SO']
-        n_k = ar[self.dft_subgrp]['n_k']
-        del ar
-
-        # Read relevant data from .pmat/up/dn files
-        ###########################################
-        # band_window_optics: Contains the index of the lowest and highest band within the
-        #                     band window (used by optics) for each k-point.
-        # velocities_k: velocity (momentum) matrix elements between all bands in band_window_optics
-        #               and each k-point.
-
-        if (SP == 0 or SO == 1):
-            files = [self.pmat_file]
-        elif SP == 1:
-            files = [self.pmat_file+'up', self.pmat_file+'dn']
-        else: # SO and SP can't both be 1
-            assert 0, "convert_transport_input: Reading velocity file error! Check SP and SO!"
-
-        velocities_k = [[] for f in files]
-        band_window_optics = []
-        for isp, f in enumerate(files):
-            if not os.path.exists(f) : raise IOError, "convert_transport_input: File %s does not exist" %f
-            mpi.report("Reading input from %s..."%f)
-
-            R = ConverterTools.read_fortran_file(self, f, {'D':'E','(':'',')':'',',':' '})
-            band_window_optics_isp = []
-            for ik in xrange(n_k):
-                R.next()
-                nu1 = int(R.next())
-                nu2 = int(R.next())
-                band_window_optics_isp.append((nu1, nu2))
-                n_bands = nu2 - nu1 + 1
-                for _ in range(4): R.next()
-                if n_bands <= 0:
-                    velocity_xyz = numpy.zeros((1, 1, 3), dtype = complex)
-                else:
-                    velocity_xyz = numpy.zeros((n_bands, n_bands, 3), dtype = complex)
-                    for nu_i in range(n_bands):
-                        for nu_j in range(nu_i, n_bands):
-                            for i in range(3):
-                                velocity_xyz[nu_i][nu_j][i] = R.next() + R.next()*1j
-                                if (nu_i != nu_j): velocity_xyz[nu_j][nu_i][i] = velocity_xyz[nu_i][nu_j][i].conjugate()
-                velocities_k[isp].append(velocity_xyz)
-            band_window_optics.append(numpy.array(band_window_optics_isp))
-            R.close() # Reading done!
-
-        # Put data to HDF5 file
-        ar = HDFArchive(self.hdf_file, 'a')
-        if not (self.transp_subgrp in ar): ar.create_group(self.transp_subgrp)
-        # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!!!
-        things_to_save = ['band_window_optics', 'velocities_k']
-        for it in things_to_save: ar[self.transp_subgrp][it] = locals()[it]
-        del ar
-
     def convert_symmetry_input(self, ctrl_head, orbits, symm_subgrp):
         """
         Reads input for the symmetrisations from symm_file, which is case.sympar or case.symqmc.
@@ -738,48 +396,6 @@ class VaspConverter(ConverterTools):
         time_inv = [0]
         mat = [numpy.identity(1)]
         mat_tinv = [numpy.identity(1)]
-#        if not (mpi.is_master_node()): return
-#        mpi.report("Reading input from %s..."%symm_file)
-#
-#        n_orbits = len(orbits)
-#
-#        R = ConverterTools.read_fortran_file(self,symm_file,self.fortran_to_replace)
-#
-#        try:
-#            n_symm = int(R.next())           # Number of symmetry operations
-#            n_atoms = int(R.next())       # number of atoms involved
-#            perm = [ [int(R.next()) for i in range(n_atoms)] for j in range(n_symm) ]    # list of permutations of the atoms
-#            if SP: 
-#                time_inv = [ int(R.next()) for j in range(n_symm) ]           # time inversion for SO coupling
-#            else:
-#                time_inv = [ 0 for j in range(n_symm) ]
-#
-#            # Now read matrices:
-#            mat = []  
-#            for i_symm in range(n_symm):
-#                
-#                mat.append( [ numpy.zeros([orbits[orb]['dim'], orbits[orb]['dim']],numpy.complex_) for orb in range(n_orbits) ] )
-#                for orb in range(n_orbits):
-#                    for i in range(orbits[orb]['dim']):
-#                        for j in range(orbits[orb]['dim']):
-#                            mat[i_symm][orb][i,j] = R.next()            # real part
-#                    for i in range(orbits[orb]['dim']):
-#                        for j in range(orbits[orb]['dim']):
-#                            mat[i_symm][orb][i,j] += 1j * R.next()      # imaginary part
-#
-#            mat_tinv = [numpy.identity(orbits[orb]['dim'],numpy.complex_)
-#                        for orb in range(n_orbits)]
-#
-#            if ((SO==0) and (SP==0)):
-#                # here we need an additional time inversion operation, so read it:
-#                for orb in range(n_orbits):
-#                    for i in range(orbits[orb]['dim']):
-#                        for j in range(orbits[orb]['dim']):
-#                            mat_tinv[orb][i,j] = R.next()            # real part
-#                    for i in range(orbits[orb]['dim']):
-#                        for j in range(orbits[orb]['dim']):
-#                            mat_tinv[orb][i,j] += 1j * R.next()      # imaginary part
-
 
         # Save it to the HDF:
         ar=HDFArchive(self.hdf_file,'a')
