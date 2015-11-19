@@ -138,8 +138,19 @@ class ProjectorGroup:
 # Determine the dimension of the projector matrix
 # and map the blocks to the big matrix
         if self.normion:
-# TODO: add the case of 'normion = True'
-            raise NotImplementedError("'NORMION = True' is not yet implemented")
+            block_maps = []
+            ndim = 0
+            for ish in self.ishells:
+                _shell = self.shells[ish]
+                nion, ns, nk, nlm, nb_max = _shell.proj_win.shape
+                ndim = max(ndim, nlm)
+                for ion in xrange(nion):
+                    i1_bl = 0
+                    i2_bl = nlm
+                    block = {'bmat_range': (i1_bl, i2_bl)}
+                    block['shell_ion'] = (ish, ion)
+                    bl_map = [block]
+                    block_maps.append(bl_map)
 
         else:
             block_maps = []
@@ -165,17 +176,17 @@ class ProjectorGroup:
             for ik in xrange(nk):
                 nb = self.ib_win[ik, isp, 1] - self.ib_win[ik, isp, 0] + 1
 # Combine all projectors of the group to one block projector
-                p_mat[:, :] = 0.0j  # !!! Clean-up from the last k-point!
                 for bl_map in block_maps:
+                    p_mat[:, :] = 0.0j  # !!! Clean-up from the last k-point and block!
                     for ibl, block in enumerate(bl_map):
                         i1, i2 = block['bmat_range']
                         ish, ion = block['shell_ion']
                         shell = self.shells[ish]
                         p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
 # Now orthogonalize the obtained block projector
-                p_orth, overl, eig = self.orthogonalize_projector_matrix(p_mat)
+                    ibl_max = i2
+                    p_orth, overl, eig = self.orthogonalize_projector_matrix(p_mat[:ibl_max, :nb])
 # Distribute projectors back using the same mapping
-                for bl_map in block_maps:
                     for ibl, block in enumerate(bl_map):
                         i1, i2 = block['bmat_range']
                         ish, ion = block['shell_ion']

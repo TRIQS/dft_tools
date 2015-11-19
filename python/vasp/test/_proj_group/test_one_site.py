@@ -24,6 +24,7 @@ class TestProjectorGroup(mytest.MyTestCase):
 
     Scenarios:
     - **test** that orthogonalization is correct
+    - **test** that NORMION = True gives the same result
     """
     def setUp(self):
         conf_file = _rpath + 'example.cfg'
@@ -41,6 +42,23 @@ class TestProjectorGroup(mytest.MyTestCase):
 
 # Scenario 1
     def test_ortho(self):
+        self.proj_gr.orthogonalize()
+
+        dens_mat, overl = self.proj_sh.density_matrix(self.el_struct)
+
+        testout = _rpath + 'projortho.out.test'
+        with open(testout, 'wt') as f:
+            f.write("density matrix: %s\n"%(dens_mat))
+            f.write("overlap matrix: %s\n"%(overl))
+
+        self.assertEqual(overl, np.eye(5))
+
+        expected_file = _rpath + 'projortho.out'
+        self.assertFileEqual(testout, expected_file)
+
+# Scenario 2
+    def test_ortho_normion(self):
+        self.proj_gr.normion = True
         self.proj_gr.orthogonalize()
 
         dens_mat, overl = self.proj_sh.density_matrix(self.el_struct)
