@@ -102,7 +102,7 @@ of them will be ignored by config parser.
 
    In all cases when a division is performed the result must be integer. Otherwise,
    the matrices are considered to be inconsistent.
- - *EMIN*, *EMAX* (float): energy window. Should be given only if no excplicit groups
+ - *EWINDOW* (float, float): energy window. Should be given only if no excplicit groups
    is specified. Otherwise, the values are overriden by group parameters.
 
 
@@ -113,7 +113,12 @@ Defines a group of shells. Note that the group tag can be any string without whi
 It will be used to tag intermediate output files.
 
 **Required parameters:**
- - *SHELLS* ([int]): indices refering to shells forming the group.
- - *EMIN*, *EMAX*: the bottom and top of the energy window with respect to the Fermi level.
 
- 
+ - *SHELLS* ([int]): indices refering to shells forming the group.
+ - *EWINDOW* (float, float): the bottom and top of the energy window with respect to the Fermi level.
+
+**Optional parameters:**
+ - NORMALIZE (True/False): if True, orthogonalizetion is performed (default behavior).
+ - *NORMION* (True/False): if True, orthogonalization is performed on each site
+   separately; if False, all projectors of the group are orthogonalized together.
+
