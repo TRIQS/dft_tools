@@ -100,7 +100,8 @@ class ProjectorGroup:
 
         block_maps, ndim = self.get_block_matrix_map()
 
-        p_mat = np.zeros((ndim, nb_max), dtype=np.complex128)
+        _, ns, nk, _, _ = self.shells[0].proj_win.shape
+        p_mat = np.zeros((ndim, self.nb_max), dtype=np.complex128)
 # Note that 'ns' and 'nk' are the same for all shells
         for isp in xrange(ns):
             for ik in xrange(nk):
@@ -111,6 +112,7 @@ class ProjectorGroup:
                     for ibl, block in enumerate(bl_map):
                         i1, i2 = block['bmat_range']
                         ish, ion = block['shell_ion']
+                        nlm = i2 - i1 + 1
                         shell = self.shells[ish]
                         p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
 # Now orthogonalize the obtained block projector
@@ -120,6 +122,7 @@ class ProjectorGroup:
                     for ibl, block in enumerate(bl_map):
                         i1, i2 = block['bmat_range']
                         ish, ion = block['shell_ion']
+                        nlm = i2 - i1 + 1
                         shell = self.shells[ish]
                         shell.proj_win[ion, isp, ik, :nlm, :nb] = p_orth[i1:i2, :nb]
 
