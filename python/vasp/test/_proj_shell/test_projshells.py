@@ -37,11 +37,10 @@ class TestProjectorShell(mytest.MyTestCase):
 
         efermi = vasp_data.doscar.efermi
         eigvals = vasp_data.eigenval.eigs - efermi
-        ferw = vasp_data.eigenval.ferw
         emin, emax = self.pars.groups[0]['ewindow']
 
         self.proj_sh = ProjectorShell(self.pars.shells[0], vasp_data.plocar.plo, vasp_data.plocar.proj_params, 0)
-        self.proj_gr = ProjectorGroup(self.pars.groups[0], [self.proj_sh], eigvals, ferw)
+        self.proj_gr = ProjectorGroup(self.pars.groups[0], [self.proj_sh], eigvals)
 
 # Scenario 1
     def test_example(self):

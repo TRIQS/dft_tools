@@ -36,10 +36,9 @@ class TestSelectBands(mytest.MyTestCase):
 
         efermi = vasp_data.doscar.efermi
         self.eigvals = vasp_data.eigenval.eigs - efermi
-        ferw = vasp_data.eigenval.ferw
 
         self.proj_sh = ProjectorShell(self.pars.shells[0], vasp_data.plocar.plo, vasp_data.plocar.proj_params, 0)
-        self.proj_gr = ProjectorGroup(self.pars.groups[0], [self.proj_sh], self.eigvals, ferw)
+        self.proj_gr = ProjectorGroup(self.pars.groups[0], [self.proj_sh], self.eigvals)
 
 # Scenario 1
     def test_correct(self):

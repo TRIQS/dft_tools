@@ -86,7 +86,7 @@ def generate_plo(conf_pars, el_struct):
 
     pgroups = []
     for gr_par in conf_pars.groups:
-        pgroup = ProjectorGroup(gr_par, pshells, eigvals, el_struct.ferw)
+        pgroup = ProjectorGroup(gr_par, pshells, eigvals)
         pgroup.orthogonalize()
         print "Density matrix:"
         dm, ov = pshells[pgroup.ishells[0]].density_matrix(el_struct)

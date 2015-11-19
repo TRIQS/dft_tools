@@ -24,7 +24,7 @@ class ProjectorGroup:
     - eigvals (numpy.array) : array of KS eigenvalues
 
     """
-    def __init__(self, gr_pars, shells, eigvals, ferw):
+    def __init__(self, gr_pars, shells, eigvals):
         """
         Constructor
         """

@@ -61,7 +61,7 @@ class TestBlockMap(mytest.MyTestCase):
         for sh_par in self.pars.shells:
             shells.append(ProjectorShell(sh_par, self.mock_plo, self.mock_proj_params, 0))
 
-        proj_gr = ProjectorGroup(self.pars.groups[0], shells, self.mock_eigvals, 0)
+        proj_gr = ProjectorGroup(self.pars.groups[0], shells, self.mock_eigvals)
 
         proj_gr.normion = False
         block_maps, ndim = proj_gr.get_block_matrix_map()
@@ -85,7 +85,7 @@ class TestBlockMap(mytest.MyTestCase):
         for sh_par in self.pars.shells:
             shells.append(ProjectorShell(sh_par, self.mock_plo, self.mock_proj_params, 0))
 
-        proj_gr = ProjectorGroup(self.pars.groups[0], shells, self.mock_eigvals, 0)
+        proj_gr = ProjectorGroup(self.pars.groups[0], shells, self.mock_eigvals)
 
         proj_gr.normion = True
         block_maps, ndim = proj_gr.get_block_matrix_map()
