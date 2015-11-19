@@ -92,6 +92,52 @@ class ProjectorGroup:
         projector arrays. Note that the blocks can comprise several projector arrays
         contained in different projector shells.
 
+        The construction of block maps is performed in 'self.get_block_matrix_map()'.
+        """
+# Quick exit if no normalization is requested
+        if not self.ortho:
+            return
+
+        block_maps, ndim = self.get_block_matrix_map()
+
+        p_mat = np.zeros((ndim, nb_max), dtype=np.complex128)
+# Note that 'ns' and 'nk' are the same for all shells
+        for isp in xrange(ns):
+            for ik in xrange(nk):
+                nb = self.ib_win[ik, isp, 1] - self.ib_win[ik, isp, 0] + 1
+# Combine all projectors of the group to one block projector
+                for bl_map in block_maps:
+                    p_mat[:, :] = 0.0j  # !!! Clean-up from the last k-point and block!
+                    for ibl, block in enumerate(bl_map):
+                        i1, i2 = block['bmat_range']
+                        ish, ion = block['shell_ion']
+                        shell = self.shells[ish]
+                        p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
+# Now orthogonalize the obtained block projector
+                    ibl_max = i2
+                    p_orth, overl, eig = self.orthogonalize_projector_matrix(p_mat[:ibl_max, :nb])
+# Distribute projectors back using the same mapping
+                    for ibl, block in enumerate(bl_map):
+                        i1, i2 = block['bmat_range']
+                        ish, ion = block['shell_ion']
+                        shell = self.shells[ish]
+                        shell.proj_win[ion, isp, ik, :nlm, :nb] = p_orth[i1:i2, :nb]
+
+################################################################################
+#
+# gen_block_matrix_map
+#
+################################################################################
+    def get_block_matrix_map(self):
+        """
+        Generates a map from a set of projectors belonging to different shells
+        and ions onto a set of block projector matrices, each of which is
+        orthonormalized.
+
+        Returns the map and the maximum orbital dimension of the block projector
+        matrix.
+
+
         Mapping is defined as a list of 'block_maps' corresponding to subsets
         of projectors to be orthogonalized. Each subset corresponds to a subset of sites
         and spans all orbital indices. defined by 'bl_map' as
@@ -129,15 +175,9 @@ class ProjectorGroup:
                            ((i2_start, i2_end), (i2_shell, i2_shell.ion1)),
                            ((i2_start, i2_end), (i2_shell, i2_shell.ion2)),
                            ...],
-             
         """
-# Quick exit if no normalization is requested
-        if not self.ortho:
-            return
-
-# Determine the dimension of the projector matrix
-# and map the blocks to the big matrix
         if self.normion:
+# Projectors for each site are mapped onto a separate block matrix
             block_maps = []
             ndim = 0
             for ish in self.ishells:
@@ -153,6 +193,7 @@ class ProjectorGroup:
                     block_maps.append(bl_map)
 
         else:
+# All projectors within a group are combined into one big block matrix
             block_maps = []
             bl_map = []
             i1_bl = 0
@@ -169,29 +210,7 @@ class ProjectorGroup:
             ndim = i2_bl
             block_maps.append(bl_map)
 
-        print block_maps
-        p_mat = np.zeros((ndim, nb_max), dtype=np.complex128)
-# Note that 'ns' and 'nk' are the same for all shells
-        for isp in xrange(ns):
-            for ik in xrange(nk):
-                nb = self.ib_win[ik, isp, 1] - self.ib_win[ik, isp, 0] + 1
-# Combine all projectors of the group to one block projector
-                for bl_map in block_maps:
-                    p_mat[:, :] = 0.0j  # !!! Clean-up from the last k-point and block!
-                    for ibl, block in enumerate(bl_map):
-                        i1, i2 = block['bmat_range']
-                        ish, ion = block['shell_ion']
-                        shell = self.shells[ish]
-                        p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
-# Now orthogonalize the obtained block projector
-                    ibl_max = i2
-                    p_orth, overl, eig = self.orthogonalize_projector_matrix(p_mat[:ibl_max, :nb])
-# Distribute projectors back using the same mapping
-                    for ibl, block in enumerate(bl_map):
-                        i1, i2 = block['bmat_range']
-                        ish, ion = block['shell_ion']
-                        shell = self.shells[ish]
-                        shell.proj_win[ion, isp, ik, :nlm, :nb] = p_orth[i1:i2, :nb]
+        return block_maps, ndim
 
 ################################################################################
 #
