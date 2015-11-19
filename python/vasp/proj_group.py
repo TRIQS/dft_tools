@@ -118,7 +118,7 @@ class ProjectorGroup:
                            ((i2_start, i2_end), (i2_shell, ion)),
                            ...],
 
-          2. Orthogonality is ensured on all sites within the group (NORMION = True).
+          2. Orthogonality is ensured on all sites within the group (NORMION = False).
              The mapping:
 
                  block_maps = [bl_map]
@@ -135,24 +135,30 @@ class ProjectorGroup:
         if not self.ortho:
             return
 
-# TODO: add the case of 'normion = True'
-        assert not self.normion, "'NORMION = True' is not yet implemented"
-
 # Determine the dimension of the projector matrix
 # and map the blocks to the big matrix
-        i1_bl = 0
-        bl_map = [{} for ish in self.ishells]
-        for ish in self.ishells:
-            _shell = self.shells[ish]
-            nion, ns, nk, nlm, nb_max = _shell.proj_win.shape
-            bmat_bl = []  # indices corresponding to a big block matrix
-            for ion in xrange(nion):
-                i2_bl = i1_bl + nlm
-                bmat_bl.append((i1_bl, i2_bl))
-                i1_bl = i2_bl
-            bl_map[ish]['bmat_blocks'] = bmat_bl
+        if self.normion:
+# TODO: add the case of 'normion = True'
+            raise NotImplementedError("'NORMION = True' is not yet implemented")
 
-        ndim = i2_bl
+        else:
+            block_maps = []
+            bl_map = []
+            i1_bl = 0
+            for ish in self.ishells:
+                _shell = self.shells[ish]
+                nion, ns, nk, nlm, nb_max = _shell.proj_win.shape
+                for ion in xrange(nion):
+                    i2_bl = i1_bl + nlm
+                    block = {'bmat_range': (i1_bl, i2_bl)}
+                    block['shell_ion'] = (ish, ion)
+                    bl_map.append(block)
+                    i1_bl = i2_bl
+
+            ndim = i2_bl
+            block_maps.append(bl_map)
+
+        print block_maps
         p_mat = np.zeros((ndim, nb_max), dtype=np.complex128)
 # Note that 'ns' and 'nk' are the same for all shells
         for isp in xrange(ns):
@@ -160,22 +166,20 @@ class ProjectorGroup:
                 nb = self.ib_win[ik, isp, 1] - self.ib_win[ik, isp, 0] + 1
 # Combine all projectors of the group to one block projector
                 p_mat[:, :] = 0.0j  # !!! Clean-up from the last k-point!
-                for ish in self.ishells:
-                    shell = self.shells[ish]
-                    blocks = bl_map[ish]['bmat_blocks']
-                    nion = shell.nion  # !!!
-                    for ion in xrange(nion):
-                        i1, i2 = blocks[ion]
+                for bl_map in block_maps:
+                    for ibl, block in enumerate(bl_map):
+                        i1, i2 = block['bmat_range']
+                        ish, ion = block['shell_ion']
+                        shell = self.shells[ish]
                         p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
 # Now orthogonalize the obtained block projector
                 p_orth, overl, eig = self.orthogonalize_projector_matrix(p_mat)
-# Distribute back projectors in the same order
-                for ish in self.ishells:
-                    shell = self.shells[ish]
-                    blocks = bl_map[ish]['bmat_blocks']
-                    nion = shell.nion  # !!!
-                    for ion in xrange(nion):
-                        i1, i2 = blocks[ion]
+# Distribute projectors back using the same mapping
+                for bl_map in block_maps:
+                    for ibl, block in enumerate(bl_map):
+                        i1, i2 = block['bmat_range']
+                        ish, ion = block['shell_ion']
+                        shell = self.shells[ish]
                         shell.proj_win[ion, isp, ik, :nlm, :nb] = p_orth[i1:i2, :nb]
 
 ################################################################################
