@@ -43,6 +43,7 @@ class TestProjectorGroupTwoSite(mytest.MyTestCase):
 
 # Scenario 1
     def test_ortho(self):
+        self.proj_gr.normion = False
         self.proj_gr.orthogonalize()
 
         dens_mat, overl = self.proj_sh.density_matrix(self.el_struct)
