@@ -1,4 +1,17 @@
+r"""
+    vasp.vaspio
+    ===========
 
+    Input of required VASP data.
+
+    Six VASP files are required:
+      - PROJCAR
+      - LOCPROJ
+      - POSCAR
+      - IBZKPT
+      - EIGENVAL
+      - DOSCAR
+"""
 import numpy as np
 import re
 #import plocar_io.c_plocar_io as c_plocar_io
@@ -486,7 +499,7 @@ class Doscar:
         sline = f.next().split()
         self.efermi = float(sline[3])
 
-
+# TODO: implement output of SYMMCAR in VASP and read it here
 ################################################################
 #
 # Reads SYMMCAR

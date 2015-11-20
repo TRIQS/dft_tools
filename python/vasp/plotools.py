@@ -1,4 +1,14 @@
+r"""
+    vasp.plotools
+    =============
 
+    Set of routines for processing and outputting PLOs.
+
+    This is the main module containing routines responsible for checking
+    the consistency of the input data, generation of projected localized
+    orbitals (PLOs) out of raw VASP projectors, and outputting data
+    required by DFTTools.
+"""
 import itertools as it
 import numpy as np
 from proj_group import ProjectorGroup
@@ -44,8 +54,6 @@ def check_data_consistency(pars, el_struct):
                 errmsg = "Projector for isite = %s, l = %s does not match PROJCAR"%(ion + 1, lshell)
                 raise Exception(errmsg)
         
-
-
 ################################################################################
 #
 # generate_plo()
@@ -88,6 +96,7 @@ def generate_plo(conf_pars, el_struct):
     for gr_par in conf_pars.groups:
         pgroup = ProjectorGroup(gr_par, pshells, eigvals)
         pgroup.orthogonalize()
+# DEBUG output
         print "Density matrix:"
         dm_all, ov_all = pshells[pgroup.ishells[0]].density_matrix(el_struct)
         nimp = 0.0
@@ -104,6 +113,7 @@ def generate_plo(conf_pars, el_struct):
         for io, ov in enumerate(ov_all[0]):
             print "  Site %i"%(io + 1)
             print ov
+# END DEBUG output
         if 'dosmesh' in conf_pars.general:
             print
             print "Evaluating DOS..."
@@ -128,6 +138,18 @@ def generate_plo(conf_pars, el_struct):
 
     return pshells, pgroups
 
+################################################################################
+#
+# output_as_text
+#
+################################################################################
+def output_as_text(pars, el_struct, pshells, pgroups):
+    """
+    Output all information necessary for the converter as text files.
+    """
+    ctrl_output(pars, el_struct, len(pgroups))
+    plo_output(pars, el_struct, pshells, pgroups)
+
 
 # TODO: k-points with weights should be stored once and for all
 ################################################################################
@@ -139,7 +161,6 @@ def kpoints_output(basename, el_struct):
     """
     Outputs k-point data into a text file.
     """
-
     kmesh = el_struct.kmesh
     fname = basename + '.kpoints'
     with open(fname, 'wt') as f:
@@ -316,16 +337,4 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                                     f.write("{0:16.10f}{1:16.10f}\n".format(p.real, p.imag))
                                 f.write("\n")
 
-
-################################################################################
-#
-# output_as_text
-#
-################################################################################
-def output_as_text(pars, el_struct, pshells, pgroups):
-    """
-    Output all information necessary for the converter as text files.
-    """
-    ctrl_output(pars, el_struct, len(pgroups))
-    plo_output(pars, el_struct, pshells, pgroups)
 

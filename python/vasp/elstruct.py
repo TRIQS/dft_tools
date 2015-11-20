@@ -1,4 +1,9 @@
+r"""
+    vasp.elstruct
+    =============
 
+    Internal representation of VASP electronic structure data.
+"""
 import numpy as np
 
 class ElectronicStructure:

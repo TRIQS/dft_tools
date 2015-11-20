@@ -1,4 +1,13 @@
+r"""
+    vasp.main
+    =========
 
+    Main script of PLOVasp.
+
+    Runs routines in proper order to generate and store PLOs.
+
+    Usage: python main.py <conf-file> [<path-to-vasp-calcultaion>]
+"""
 import sys
 import vaspio
 from inpconf import ConfigParameters
@@ -18,11 +27,15 @@ if __name__ == '__main__':
         else:
             vasp_dir = './'
 
-
+# Prepare input-file parameters
     pars = ConfigParameters(filename, verbosity=0)
     pars.parse_input()
+
+# Read VASP data
     vasp_data = vaspio.VaspData(vasp_dir)
     el_struct = ElectronicStructure(vasp_data)
     el_struct.debug_density_matrix()
+
+# Generate and store PLOs
     pshells, pgroups = generate_plo(pars, el_struct)
     output_as_text(pars, el_struct, pshells, pgroups)

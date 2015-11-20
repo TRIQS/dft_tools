@@ -1,7 +1,9 @@
 r"""
+  vasp.inpconfig
+  ==============
+
   Module for parsing and checking an input config-file.
 """
-
 import ConfigParser
 import numpy as np
 import re

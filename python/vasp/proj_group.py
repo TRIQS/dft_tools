@@ -1,4 +1,9 @@
+r"""
+    vasp.proj_group
+    ===============
 
+    Storage and manipulation of projector groups.
+"""
 import numpy as np
 
 np.set_printoptions(suppress=True)

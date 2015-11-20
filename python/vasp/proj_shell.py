@@ -1,4 +1,9 @@
+r"""
+    vasp.proj_shell
+    ===============
 
+    Storage and manipulation on projector shells.
+"""
 import itertools as it
 import numpy as np
 import vasp.atm.c_atm_dos as c_atm_dos
