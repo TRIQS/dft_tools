@@ -95,7 +95,7 @@ Order of operations:
     * distribute back the arrays assuming that the order is preserved
     
 
-.. autoclass:: plotools.ProjectorShell
+.. autoclass:: proj_shell.ProjectorShell
    :members:
 
 
