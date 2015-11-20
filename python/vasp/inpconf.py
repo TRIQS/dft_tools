@@ -66,7 +66,7 @@ class ConfigParameters:
 
         self.gr_optional = {
             'normalize' : ('normalize', self.parse_string_logical, True),
-            'normion' : ('normion', self.parse_string_logical, False)}
+            'normion' : ('normion', self.parse_string_logical, True)}
 
         self.gen_optional = {
             'basename' : ('basename', str, 'vasp'),
