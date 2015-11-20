@@ -89,11 +89,21 @@ def generate_plo(conf_pars, el_struct):
         pgroup = ProjectorGroup(gr_par, pshells, eigvals)
         pgroup.orthogonalize()
         print "Density matrix:"
-        dm, ov = pshells[pgroup.ishells[0]].density_matrix(el_struct)
-        print dm
+        dm_all, ov_all = pshells[pgroup.ishells[0]].density_matrix(el_struct)
+        nimp = 0.0
+        for io, dm in enumerate(dm_all[0]):
+            print "  Site %i"%(io + 1)
+            print dm
+            ndm = dm.trace()
+            nimp += ndm
+            print "    trace: ", ndm
+        print
+        print "  Impurity density:", nimp
         print
         print "Overlap:"
-        print ov
+        for io, ov in enumerate(ov_all[0]):
+            print "  Site %i"%(io + 1)
+            print ov
         if 'dosmesh' in conf_pars.general:
             print
             print "Evaluating DOS..."

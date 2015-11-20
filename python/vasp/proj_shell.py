@@ -49,30 +49,7 @@ class ProjectorShell:
         self.ndim = self.extract_tmatrices(sh_pars)
         self.nion = len(self.ion_list)
 
-# Pre-select a subset of projectors (this should be an array view => no memory is wasted)
-# !!! This sucks but I have to change the order of 'ib' and 'ilm' indices here
-# This should perhaps be done right after the projector array is read from PLOCAR
-#        self.proj_arr = proj_raw[self.ion_list, :, :, :, self.lm1:self.lm2].transpose((0, 1, 2, 4, 3))
-# We want to select projectors from 'proj_raw' and form an array
-#   self.proj_arr[nion, ns, nk, nlm, nb]
-# TODO: think of a smart way of copying the selected projectors
-#       perhaps, by redesigning slightly the structure of 'proj_arr' and 'proj_win'
-#       or by storing only a mapping between site/orbitals and indices of 'proj_raw'
-#        iproj_l = []
-        nion = len(self.ion_list)
-        nlm = self.lm2 - self.lm1
-        _, ns, nk, nb = proj_raw.shape
-        self.proj_arr = np.zeros((nion, ns, nk, nlm, nb), dtype=np.complex128)
-        for io, ion in enumerate(self.ion_list):
-            for m in xrange(nlm):
-# Here we search for the index of the projector with the given isite/l/m indices
-                for ip, par in enumerate(proj_params):
-                    if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
-#                        iproj_l.append(ip)
-                        self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :]
-                        break
-
-#        self.proj_arr = proj_raw[iproj_l, :, :, :].transpose((1, 2, 0, 3))
+        self.extract_projectors(proj_raw, proj_params)
 
 ################################################################################
 #
@@ -90,11 +67,16 @@ class ProjectorShell:
 
         If both of the options are present a warning is issued and 'tmatrices'
         supersedes 'tmatrix'.
+
+        Flag 'self.do_transform' is introduced for the optimization purposes
+        to avoid superfluous matrix multiplications.
         """
         nion = len(self.ion_list)
         nm = self.lm2 - self.lm1
 
         if 'tmatrices' in sh_pars:
+            self.do_transform = True
+
             if 'tmatrix' in sh_pars:
                 mess = "Both TRANSFORM and TRANSFILE are specified, TRANSFORM will be ignored."
                 issue_warning(mess)
@@ -143,6 +125,8 @@ class ProjectorShell:
             return ndim
 
         if 'tmatrix' in sh_pars:
+            self.do_transform = True
+
             raw_matrix = sh_pars['tmatrix']
             nrow, ncol = raw_matrix.shape
 
@@ -167,14 +151,65 @@ class ProjectorShell:
             return ndim
 
 # If no transformation matrices are provided define a default one
+        self.do_transform = False
+
         ns_dim = 2 if self.nc_flag else 1
         ndim = nm * ns_dim
 
+# We still need the matrices for the output
         self.tmatrices = np.zeros((nion, ndim, ndim), dtype=np.complex128)
         for io in xrange(nion):
             self.tmatrices[io, :, :] = np.identity(ndim, dtype=np.complex128)
 
         return ndim
+
+################################################################################
+#
+# extract_projectors
+#
+################################################################################
+    def extract_projectors(self, proj_raw, proj_params):
+        """
+        Extracts projectors for the given shell.
+        
+        Projectors are selected from the raw-projector array 'proj_raw'
+        according to the shell parameters.
+        If necessary the projectors are transformed usin 'self.tmatrices'.
+        """
+        assert self.nc_flag == False, "Non-collinear case is not implemented"
+
+        nion = len(self.ion_list)
+        nlm = self.lm2 - self.lm1
+        _, ns, nk, nb = proj_raw.shape
+
+        if self.do_transform:
+# TODO: implement a non-collinear case
+#       for a non-collinear case 'ndim' is 'ns * nm'
+            ndim = self.tmatrices.shape[1]
+            self.proj_arr = np.zeros((nion, ns, nk, ndim, nb), dtype=np.complex128)
+            for ik in xrange(nk):
+                for io, ion in enumerate(self.ion_list):
+                    proj_k = np.zeros((ns, nlm, nb), dtype=np.complex128)
+                    for m in xrange(nlm):
+# Here we search for the index of the projector with the given isite/l/m indices
+                        for ip, par in enumerate(proj_params):
+                            if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
+                                proj_k[:, m, :] = proj_raw[ip, :, ik, :]
+                                break
+                    for isp in xrange(ns):
+                        self.proj_arr[io, isp, ik, :, :] = np.dot(self.tmatrices[io, :, :], proj_k[isp, :, :])
+
+        else:
+# No transformation: just copy the projectors as they are
+            self.proj_arr = np.zeros((nion, ns, nk, nlm, nb), dtype=np.complex128)
+            for io, ion in enumerate(self.ion_list):
+                for m in xrange(nlm):
+# Here we search for the index of the projector with the given isite/l/m indices
+                    for ip, par in enumerate(proj_params):
+                        if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
+                            self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :]
+                            break
+
 
 ################################################################################
 #
