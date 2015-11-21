@@ -240,14 +240,16 @@ class ProjectorGroup:
 
         Orthogonalized projector matrix, initial overlap matrix and its eigenvalues.
         """
+# TODO: check the precision of the calculations below,
+#       it seems to be inferior to that of Fortran implementation
 # Overlap matrix O_{m m'} = \sum_{v} P_{m v} P^{*}_{v m'}
         overlap = np.dot(p_matrix, p_matrix.conj().T)
 # Calculate [O^{-1/2}]_{m m'}
         eig, eigv = np.linalg.eigh(overlap)
         assert np.all(eig > 0.0), ("Negative eigenvalues of the overlap matrix:"
            "projectors are ill-defined")
-        sqrt_eig = np.diag(1.0 / np.sqrt(eig))
-        shalf = np.dot(eigv, np.dot(sqrt_eig, eigv.conj().T))
+        sqrt_eig = 1.0 / np.sqrt(eig)
+        shalf = np.dot(eigv * sqrt_eig, eigv.conj().T)
 # Apply \tilde{P}_{m v} = \sum_{m'} [O^{-1/2}]_{m m'} P_{m' v}
         p_ortho = np.dot(shalf, p_matrix)
 
