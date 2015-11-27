@@ -6,7 +6,7 @@ r"""
 """
 import itertools as it
 import numpy as np
-import vasp.atm.c_atm_dos as c_atm_dos
+import plovasp.atm.c_atm_dos as c_atm_dos
 
 np.set_printoptions(suppress=True)
 
