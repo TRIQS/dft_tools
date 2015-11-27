@@ -92,7 +92,8 @@ class Plocar:
             vasp_dir += '/'
 
 #        self.params, self.plo, self.ferw = c_plocar_io.read_plocar(vasp_dir + plocar_filename)
-        self.proj_params, self.plo = self.temp_parser(projcar_filename=vasp_dir + "PROJCAR", locproj_filename=vasp_dir + "LOCPROJ")
+#        self.proj_params, self.plo = self.temp_parser(projcar_filename=vasp_dir + "PROJCAR", locproj_filename=vasp_dir + "LOCPROJ")
+        self.proj_params, self.plo = self.locproj_parser(locproj_filename=vasp_dir + "LOCPROJ")
 
     def temp_parser(self, projcar_filename='PROJCAR', locproj_filename='LOCPROJ'):
         r"""
@@ -166,6 +167,73 @@ class Plocar:
 # End of site-block
                 iproj_site += 1
                 line = self.search_for(f, "^ *ISITE")
+
+        print "Read parameters:"
+        for il, par in enumerate(proj_params):
+            print il, " -> ", par
+
+        return proj_params, plo
+
+    def locproj_parser(self, locproj_filename='LOCPROJ'):
+        r"""
+        Parses LOCPROJ (for VASP >= 5.4.2) to get VASP projectors.
+
+        This is a prototype parser that should eventually be written in C for
+        better performance on large files.
+
+        Returns projector parameters (site/orbital indices etc.) and an array
+        with projectors.
+        """
+        orb_labels = ["s", "py", "pz", "px", "dxy", "dyz", "dz2", "dxz", "dx2-y2",
+                      "fz3", "fxz2", "fyz2", "fz(x2-y2)", "fxyz", "fx(x2-3y2)", "fy(3x2-y2)"]
+
+        def lm_to_l_m(lm):
+            l = int(np.sqrt(lm))
+            m = lm - l*l
+            return l, m
+
+# Read the first line of LOCPROJ to get the dimensions
+        with open(locproj_filename, 'rt') as f:
+            line = f.readline()
+            nspin, nk, nband, nproj = map(int, line.split())
+
+            plo = np.zeros((nproj, nspin, nk, nband), dtype=np.complex128)
+            proj_params = [{} for i in xrange(nproj)]
+
+            iproj_site = 0
+            is_first_read = True
+
+# First read the header block with orbital labels
+            line = self.search_for(f, "^ *ISITE")
+            ip = 0
+            while line:
+                sline = line.split()
+                isite = int(sline[1])
+                label = sline[-1]
+                lm = orb_labels.index(label)
+                l, m = lm_to_l_m(lm)
+#                    ip_new = iproj_site * norb + il
+#                    ip_prev = (iproj_site - 1) * norb + il
+                proj_params[ip]['label'] = label
+                proj_params[ip]['isite'] = isite
+                proj_params[ip]['l'] = l
+                proj_params[ip]['m'] = m
+
+                ip += 1
+                line = f.readline().strip()
+
+            assert ip == nproj, "Number of projectors in the header is wrong in LOCPROJ"
+
+            for ispin in xrange(nspin):
+                for ik in xrange(nk):
+                    for ib in xrange(nband):
+                        for ip in xrange(nproj):
+                            line = ""
+                            while not line:
+                                line = f.readline().strip()
+                            sline = line.split()
+                            ctmp = complex(float(sline[4]), float(sline[5]))
+                            plo[ip, ispin, ik, ib] = ctmp
 
         print "Read parameters:"
         for il, par in enumerate(proj_params):
