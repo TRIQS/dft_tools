@@ -102,8 +102,8 @@ def generate_plo(conf_pars, el_struct):
         nimp = 0.0
         for io, dm in enumerate(dm_all[0]):
             print "  Site %i"%(io + 1)
-            print dm
-            ndm = dm.trace()
+            print 2 * dm
+            ndm = 2 * dm.trace()
             nimp += ndm
             print "    trace: ", ndm
         print
