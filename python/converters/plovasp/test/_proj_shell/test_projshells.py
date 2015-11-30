@@ -57,7 +57,7 @@ class TestProjectorShell(mytest.MyTestCase):
                         for ib in xrange(ib2 - ib1 + 1):
                             for ilm in xrange(nlm):
                                 p = self.proj_sh.proj_win[ion, isp, ik, ilm, ib]
-                                f.write("%5i  %s\n"%(ilm+1, p))
+                                f.write("%5i  %f  %f\n"%(ilm+1, p.real, p.imag))
 
         expected_file = _rpath + 'projshells.out'
         self.assertFileEqual(testout, expected_file)
