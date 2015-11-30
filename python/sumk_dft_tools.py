@@ -377,6 +377,11 @@ class SumkDFTTools(SumkDFT):
                             for sp in spn:
                                 Akw[sp][ish,ik,iom] = G_loc[sp].data[iom,ish,ish].imag/(-1.0*numpy.pi)
 
+        # Collect data from mpi
+        for sp in spn:
+            Akw[sp] = mpi.all_reduce(mpi.world, Akw[sp], lambda x,y : x+y)
+        mpi.barrier()
+
         if save_to_file and mpi.is_master_node():
             if ishell is None:
                 for sp in spn: # loop over GF blocs:
