@@ -394,7 +394,7 @@ class SumkDFTTools(SumkDFT):
             else: # ishell is not None
                 for sp in spn:
                     for ish in range(self.shells[ishell]['dim']):
-                        f = open(save_to_file+sp+'_proj'+str(ish)+'.dat','w')   # Open file for storage:
+                        f = open(save_to_file+str(ishell)+'_'+sp+'_proj'+str(ish)+'.dat','w')   # Open file for storage:
                         for ik in range(self.n_k):
                             for iom in range(n_om):
                                 if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
