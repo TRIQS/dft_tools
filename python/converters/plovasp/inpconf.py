@@ -58,8 +58,7 @@ class ConfigParameters:
             'lshell': ('lshell', int)}
 
         self.sh_optional = {
-            'rtransform': ('tmatrix', lambda s: self.parse_string_tmatrix(s, real=True)),
-            'ctransform': ('tmatrix', lambda s: self.parse_string_tmatrix(s, real=False)),
+            'transform': ('tmatrix', lambda s: self.parse_string_tmatrix(s, real=True)),
             'transfile': ('tmatrices', self.parse_file_tmatrix)}
 
         self.gr_required = {
