@@ -89,6 +89,9 @@ class ElectronicStructure:
         nions = len(ions)
         norb = nproj / nions
 
+# Spin factor
+        sp_fac = 2.0 if ns == 1 and not self.nc_flag else 1.0
+
         den_mat = np.zeros((ns, nproj, nproj), dtype=np.float64)
         overlap = np.zeros((ns, nproj, nproj), dtype=np.float64)
 #        ov_min = np.ones((ns, nproj, nproj), dtype=np.float64) * 100.0
@@ -97,7 +100,7 @@ class ElectronicStructure:
             for ik in xrange(nk):
                 kweight = self.kmesh['kweights'][ik]
                 occ = self.ferw[ispin, ik, :]
-                den_mat[ispin, :, :] += np.dot(plo[:, ispin, ik, :] * occ, plo[:, ispin, ik, :].T.conj()).real * kweight
+                den_mat[ispin, :, :] += np.dot(plo[:, ispin, ik, :] * occ, plo[:, ispin, ik, :].T.conj()).real * kweight * sp_fac
                 ov = np.dot(plo[:, ispin, ik, :], plo[:, ispin, ik, :].T.conj()).real
                 overlap[ispin, :, :] += ov * kweight
 #                ov_max = np.maximum(ov, ov_max)
