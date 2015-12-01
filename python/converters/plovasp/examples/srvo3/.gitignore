@@ -1,0 +1,9 @@
+*
+!.gitignore
+!INCAR
+!POSCAR
+!POTCAR
+!KPOINTS
+!plo.cfg
+!run_plovasp.sh
+!conv_example.py
