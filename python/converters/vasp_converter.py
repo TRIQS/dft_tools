@@ -274,8 +274,11 @@ class VaspConverter(ConverterTools):
                           'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
                           'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
         for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
-        del ar
 
+# Store Fermi weights to 'dft_misc_input'
+        if not (self.misc_subgrp in ar): ar.create_group(self.misc_subgrp)
+        ar[self.misc_subgrp]['dft_fermi_weights'] = f_weights
+        del ar
         # Symmetries are used, so now convert symmetry information for *correlated* orbitals:
         self.convert_symmetry_input(ctrl_head, orbits=self.corr_shells, symm_subgrp=self.symmcorr_subgrp)
 # TODO: Implement misc_input
