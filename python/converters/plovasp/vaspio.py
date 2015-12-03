@@ -185,7 +185,7 @@ class Plocar:
         with projectors.
         """
         orb_labels = ["s", "py", "pz", "px", "dxy", "dyz", "dz2", "dxz", "dx2-y2",
-                      "fz3", "fxz2", "fyz2", "fz(x2-y2)", "fxyz", "fx(x2-3y2)", "fy(3x2-y2)"]
+                      "fy(3x2-y2)", "fxyz", "fyz2", "fz3", "fxz2", "fz(x2-y2)", "fx(x2-3y2)"]
 
         def lm_to_l_m(lm):
             l = int(np.sqrt(lm))
@@ -207,9 +207,9 @@ class Plocar:
             line = self.search_for(f, "^ *ISITE")
             ip = 0
             while line:
-                sline = line.split()
-                isite = int(sline[1])
-                label = sline[-1]
+                sline = line.split(':')
+                isite = int(sline[1].split()[0])
+                label = sline[-1].strip()
                 lm = orb_labels.index(label)
                 l, m = lm_to_l_m(lm)
 #                    ip_new = iproj_site * norb + il
