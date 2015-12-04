@@ -195,6 +195,7 @@ class Plocar:
 # Read the first line of LOCPROJ to get the dimensions
         with open(locproj_filename, 'rt') as f:
             line = f.readline()
+            line = line.split("#")[0]
             nspin, nk, nband, nproj = map(int, line.split())
 
             plo = np.zeros((nproj, nspin, nk, nband), dtype=np.complex128)
@@ -224,15 +225,18 @@ class Plocar:
 
             assert ip == nproj, "Number of projectors in the header is wrong in LOCPROJ"
 
+# TODO: one can read eigenvalues and Fermi weights from lines starting with "orbital"
+#       at the moment we ignore them
+            patt = re.compile("^orbital")
             for ispin in xrange(nspin):
                 for ik in xrange(nk):
                     for ib in xrange(nband):
                         for ip in xrange(nproj):
                             line = ""
-                            while not line:
+                            while not line or not re.match(patt, line) is None:
                                 line = f.readline().strip()
                             sline = line.split()
-                            ctmp = complex(float(sline[4]), float(sline[5]))
+                            ctmp = complex(float(sline[1]), float(sline[2]))
                             plo[ip, ispin, ik, ib] = ctmp
 
         print "Read parameters:"
