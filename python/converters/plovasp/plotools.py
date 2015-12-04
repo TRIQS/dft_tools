@@ -310,7 +310,8 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                 f.write("# is = %i\n"%(isp + 1))
                 for ik in xrange(nk):
                     ib1, ib2 = pgroup.ib_win[ik, isp, 0], pgroup.ib_win[ik, isp, 1]
-                    f.write(" %i  %i\n"%(ib1, ib2))
+# Output band indices in Fortran convention!
+                    f.write(" %i  %i\n"%(ib1 + 1, ib2 + 1))
                     for ib in xrange(ib1, ib2 + 1):
                         eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
                         f_weight = el_struct.ferw[isp, ik, ib]
