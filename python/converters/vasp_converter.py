@@ -278,6 +278,7 @@ class VaspConverter(ConverterTools):
 # Store Fermi weights to 'dft_misc_input'
         if not (self.misc_subgrp in ar): ar.create_group(self.misc_subgrp)
         ar[self.misc_subgrp]['dft_fermi_weights'] = f_weights
+        ar[self.misc_subgrp]['band_window'] = band_window
         del ar
         # Symmetries are used, so now convert symmetry information for *correlated* orbitals:
         self.convert_symmetry_input(ctrl_head, orbits=self.corr_shells, symm_subgrp=self.symmcorr_subgrp)
