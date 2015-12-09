@@ -100,10 +100,13 @@ def generate_plo(conf_pars, el_struct):
         print "Density matrix:"
         dm_all, ov_all = pshells[pgroup.ishells[0]].density_matrix(el_struct)
         nimp = 0.0
-        for io, dm in enumerate(dm_all[0]):
+        spin_fac = 2 if dm_all.shape[0] == 1 else 1
+        for io in xrange(dm_all.shape[1]):
             print "  Site %i"%(io + 1)
-            print 2 * dm
-            ndm = 2 * dm.trace()
+            dm = spin_fac * dm_all[:, io, : ,:].sum(0)
+            for row in dm:
+                print ''.join(map("{0:12.7f}".format, row))
+            ndm = dm.trace()
             nimp += ndm
             print "    trace: ", ndm
         print
