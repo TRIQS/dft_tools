@@ -448,7 +448,6 @@ class SumkDFT:
                 broadening = 0.01
             else: # broadening = 2 * \Delta omega, where \Delta omega is the spacing of omega points
                 broadening = 2.0 * ( (mesh[1]-mesh[0])/(mesh[2]-1) )
-        n_iw = 1025 # Default number of Matsubara frequencies
 
         # Are we including Sigma?
         if with_Sigma:
@@ -457,10 +456,16 @@ class SumkDFT:
             if with_dc: sigma_minus_dc = self.add_dc(iw_or_w)
             if iw_or_w == "iw":
                 beta = Sigma_imp[0].mesh.beta   # override beta if Sigma_iw is present
-                n_iw = len(Sigma_imp[0].mesh)
+                mesh = Sigma_imp[0].mesh
+            elif iw_or_w == "w":
+                mesh = Sigma_imp[0].mesh
         else:
-            if (iw_or_w == "w") and (mesh is None):
-                raise ValueError, "lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq."
+            if iw_or_w == "iw":
+                if beta is None: raise ValueError, "lattice_gf: Give the beta for the lattice GfReFreq."
+                mesh = MeshImFreq(beta=beta, S='Fermion', n_max=1025) # Default number of Matsubara frequencies
+            elif iw_or_w == "w":
+                if mesh is None: raise ValueError, "lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq."
+                mesh = MeshReFreq(mesh[0],mesh[1],mesh[2])
 
         # Check if G_latt is present
         set_up_G_latt = False                       # Assume not
@@ -479,12 +484,9 @@ class SumkDFT:
             gf_struct = [ (spn[isp], block_structure[isp]) for isp in range(self.n_spin_blocks[self.SO]) ]
             block_ind_list = [block for block,inner in gf_struct]
             if iw_or_w == "iw":
-               glist = lambda : [ GfImFreq(indices=inner,beta=beta,n_points=n_iw) for block,inner in gf_struct]
+               glist = lambda : [ GfImFreq(indices=inner,mesh=mesh) for block,inner in gf_struct ]
             elif iw_or_w == "w":
-                 if with_Sigma:
-                    glist = lambda : [ GfReFreq(indices=inner,mesh=Sigma_imp[0].mesh) for block,inner in gf_struct]
-                 else:
-                    glist = lambda : [ GfReFreq(indices=inner,window=(mesh[0],mesh[1]),n_points=mesh[2]) for block,inner in gf_struct]
+               glist = lambda : [ GfReFreq(indices=inner,mesh=mesh) for block,inner in gf_struct ]
             G_latt = BlockGf(name_list = block_ind_list, block_list = glist(), make_copies = False)
             G_latt.zero()
 

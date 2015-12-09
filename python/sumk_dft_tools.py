@@ -47,6 +47,7 @@ class SumkDFTTools(SumkDFT):
                           misc_data=misc_data)
 
 
+    # Uses .data of only GfReFreq objects.
     def dos_wannier_basis(self, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True, save_to_file=True):
         """
         Calculates the density of states in the basis of the Wannier functions.
@@ -163,6 +164,7 @@ class SumkDFTTools(SumkDFT):
         return DOS, DOSproj, DOSproj_orb
 
 
+    # Uses .data of only GfReFreq objects.
     def dos_parproj_basis(self, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True, save_to_file=True):
         """
         Calculates the orbitally-resolved DOS.
@@ -290,6 +292,7 @@ class SumkDFTTools(SumkDFT):
         return DOS, DOSproj, DOSproj_orb
 
 
+    # Uses .data of only GfReFreq objects.
     def spaghettis(self,broadening=None,plot_shift=0.0,plot_range=None,ishell=None,mu=None,save_to_file='Akw_'):
         """
         Calculates the correlated band structure using a real-frequency self energy.
@@ -570,6 +573,7 @@ class SumkDFTTools(SumkDFT):
         return vol_c, vol_p
 
 
+    # Uses .data of only GfReFreq objects.
     def transport_distribution(self, beta, directions=['xx'], energy_window=None, Om_mesh=[0.0], with_Sigma=False, n_om=None, broadening=0.0):
         r"""
         Calculates the transport distribution 
