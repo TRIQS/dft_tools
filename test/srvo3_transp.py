@@ -23,6 +23,8 @@ from numpy import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
 from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.sumk_dft_tools import *
+from pytriqs.utility.comparison_tests import *
+from pytriqs.utility.h5diff import h5diff 
 
 beta = 40
 
@@ -43,6 +45,8 @@ SK.transport_distribution(directions=['xx'], broadening=0.0, energy_window=[-0.3
 #SK.save(['Gamma_w','Om_meshr','omega','directions'])
 #SK.load(['Gamma_w','Om_meshr','omega','directions'])
 SK.conductivity_and_seebeck(beta=beta)
-SK.hdf_file = 'srvo3_transp.output.h5'
+SK.hdf_file = 'srvo3_transp.out.h5'
 SK.save(['seebeck','optic_cond'])
 
+if mpi.is_master_node():
+    h5diff("srvo3_transp.out.h5","srvo3_transp.ref.h5") 

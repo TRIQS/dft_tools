@@ -24,6 +24,8 @@ from pytriqs.gf.local import *
 from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
 from pytriqs.operators.util import set_operator_structure
+from pytriqs.utility.comparison_tests import *
+from pytriqs.utility.h5diff import h5diff
 
 # Basic input parameters
 beta = 40
@@ -42,8 +44,11 @@ glist = [ GfImFreq(indices=inner,beta=beta) for block,inner in gf_struct.iterite
 Sigma_iw = BlockGf(name_list = gf_struct.keys(), block_list = glist, make_copies = False)
 
 SK.set_Sigma([Sigma_iw])
-Gloc=SK.extract_G_loc()
+Gloc = SK.extract_G_loc()
 
-ar = HDFArchive('srvo3_Gloc.output.h5','w')
-ar['Gloc'] = Gloc[0]
-del ar
+if mpi.is_master_node():
+    with HDFArchive('srvo3_Gloc.out.h5','w') as ar:
+        ar['Gloc'] = Gloc[0]
+
+if mpi.is_master_node():
+    h5diff("srvo3_Gloc.out.h5","srvo3_Gloc.ref.h5")
