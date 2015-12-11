@@ -227,7 +227,7 @@ class VaspConverter(ConverterTools):
 # Projectors
 #            print n_orbitals
 #            print [crsh['dim'] for crsh in corr_shells]
-            proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), max(n_orbitals)], numpy.complex_)
+            proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
 
 # TODO: implement reading from more than one projector group
 # In 'dmftproj' each ion represents a separate correlated shell.
