@@ -53,7 +53,13 @@ class VaspData:
             self.plocar.from_file(vasp_dir)
             self.poscar.from_file(vasp_dir)
             self.kpoints.from_file(vasp_dir)
-            self.eigenval.from_file(vasp_dir)
+            try:
+                self.eigenval.from_file(vasp_dir)
+            except (IOError, StopIteration):
+                self.eigenval.eigs = None
+                self.eigenval.ferw = None
+                print "!!! WARNING !!!: Error reading from EIGENVAL, trying LOCPROJ"
+                pass
             self.doscar.from_file(vasp_dir)
 
 ################################################################################
@@ -196,9 +202,9 @@ class Plocar:
         with open(locproj_filename, 'rt') as f:
             line = f.readline()
             line = line.split("#")[0]
-            nspin, nk, nband, nproj = map(int, line.split())
+            self.nspin, nk, self.nband, nproj = map(int, line.split())
 
-            plo = np.zeros((nproj, nspin, nk, nband), dtype=np.complex128)
+            plo = np.zeros((nproj, self.nspin, nk, self.nband), dtype=np.complex128)
             proj_params = [{} for i in xrange(nproj)]
 
             iproj_site = 0
@@ -225,16 +231,23 @@ class Plocar:
 
             assert ip == nproj, "Number of projectors in the header is wrong in LOCPROJ"
 
-# TODO: one can read eigenvalues and Fermi weights from lines starting with "orbital"
-#       at the moment we ignore them
+            self.eigs = np.zeros((nk, self.nband, self.nspin))
+            self.ferw = np.zeros((nk, self.nband, self.nspin))
+
             patt = re.compile("^orbital")
-            for ispin in xrange(nspin):
+            for ispin in xrange(self.nspin):
                 for ik in xrange(nk):
-                    for ib in xrange(nband):
+                    for ib in xrange(self.nband):
+                        line = ""
+                        while not line:
+                            line = f.readline().strip()
+                        sline = line.split()
+                        isp_, ik_, ib_ = map(int, sline[1:4])
+                        assert isp_ == ispin + 1 and ik_ == ik + 1 and ib_ == ib + 1, "Inconsistency in reading LOCPROJ"
+                        self.eigs[ik, ib, ispin] = float(sline[4])
+                        self.ferw[ik, ib, ispin] = float(sline[5])
                         for ip in xrange(nproj):
-                            line = ""
-                            while not line or not re.match(patt, line) is None:
-                                line = f.readline().strip()
+                            line = f.readline()
                             sline = line.split()
                             ctmp = complex(float(sline[1]), float(sline[2]))
                             plo[ip, ispin, ik, ib] = ctmp
@@ -432,12 +445,17 @@ class Kpoints:
         print "   {0:>26} {1:d}".format("Total number of k-points:", self.nktot)
 
         self.kpts = np.zeros((self.nktot, 3))
+        self.kwghts = np.zeros((self.nktot))
 
 #   Skip comment line
         line = ibz_file.next()
         for ik in xrange(self.nktot):
             line = ibz_file.next()
-            self.kpts[ik, :] = map(float, line.strip().split()[:3])
+            sline = line.strip().split()
+            self.kpts[ik, :] = map(float, sline[:3])
+            self.kwghts[ik] = float(sline[3])
+
+        self.kwghts /= self.nktot
         
 # Attempt to read tetrahedra
 #   Skip comment line ("Tetrahedra")
@@ -481,6 +499,10 @@ class Eigenval:
     """
     Class containing Kohn-Sham-eigenvalues data from VASP (EIGENVAL file).
     """
+    def __init__(self):
+        self.eigs = None
+        self.ferw = None
+
     def from_file(self, vasp_dir='./', eig_filename='EIGENVAL'):
         """
         Reads eigenvalues from EIGENVAL. Note that the file also

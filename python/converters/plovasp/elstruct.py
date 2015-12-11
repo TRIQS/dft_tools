@@ -36,7 +36,7 @@ class ElectronicStructure:
 
         self.kmesh = {'nktot': self.nktot}
         self.kmesh['kpoints'] = vasp_data.kpoints.kpts
-        self.kmesh['kweights'] = vasp_data.eigenval.kwghts
+        self.kmesh['kweights'] = vasp_data.kpoints.kwghts
         try:
             self.kmesh['ntet'] = vasp_data.kpoints.ntet
             self.kmesh['itet'] = vasp_data.kpoints.itet
@@ -51,33 +51,39 @@ class ElectronicStructure:
 
 # Note that the number of spin-components of projectors might be different from those
 # of bands in case of non-collinear calculations
-        self.nspin = vasp_data.eigenval.ispin
+        self.nspin = vasp_data.plocar.nspin
         self.nc_flag = vasp_data.doscar.ncdij == 4
 
-        self.nband = vasp_data.eigenval.nband
+        self.nband = vasp_data.plocar.nband
 
-        self.eigvals = vasp_data.eigenval.eigs
+# Check that the number of k-points is the same in all files
+        _, ns_plo, nk_plo, nb_plo = vasp_data.plocar.plo.shape
+        assert nk_plo == self.nktot, "PLOCAR is inconsistent with IBZKPT (number of k-points)"
+
+        if not vasp_data.eigenval.eigs is None:
+            print "eigvals from EIGENVAL"
+            self.eigvals = vasp_data.eigenval.eigs
+            self.ferw = vasp_data.eigenval.ferw.transpose((2, 0, 1))
+
+            nk_eig = vasp_data.eigenval.nktot
+            assert nk_eig == self.nktot, "PLOCAR is inconsistent with EIGENVAL (number of k-points)"
+
+# Check that the number of band is the same in PROJCAR and EIGENVAL
+            assert nb_plo == self.nband, "PLOCAR is inconsistent with EIGENVAL (number of bands)"
+        else:
+            print "eigvals from LOCPROJ"
+            self.eigvals = vasp_data.plocar.eigs
+            self.ferw = vasp_data.plocar.ferw.transpose((2, 0, 1))
 
 # For later use it is more convenient to use a different order of indices
 # [see ProjectorGroup.orthogonalization()]
         self.proj_raw = vasp_data.plocar.plo
         self.proj_params = vasp_data.plocar.proj_params
 
-        self.ferw = vasp_data.eigenval.ferw.transpose((2, 0, 1))
-
 # Not needed any more since PROJCAR contains projectors only for a subset of sites
 # Check that the number of atoms is the same in PLOCAR and POSCAR
 #        natom_plo = vasp_data.plocar.params['nion']
 #        assert natom_plo == self.natom, "PLOCAR is inconsistent with POSCAR (number of atoms)"
-
-# Check that the number of k-points is the same in all files
-        _, ns_plo, nk_plo, nb_plo = vasp_data.plocar.plo.shape
-        assert nk_plo == self.nktot, "PLOCAR is inconsistent with IBZKPT (number of k-points)"
-        nk_eig = vasp_data.eigenval.nktot
-        assert nk_eig == self.nktot, "PLOCAR is inconsistent with EIGENVAL (number of k-points)"
-
-# Check that the number of band is the same in PROJCAR and EIGENVAL
-        assert nb_plo == self.nband, "PLOCAR is inconsistent with EIGENVAL (number of bands)"
 
     def debug_density_matrix(self):
         """
