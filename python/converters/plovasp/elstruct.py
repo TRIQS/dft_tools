@@ -47,7 +47,10 @@ class ElectronicStructure:
 # Note that one should not subtract this Fermi level from eigenvalues
 # here because the true Fermi level might be provided by conf-file
 # (for instance, for spaghetti calculations)
-        self.efermi = vasp_data.doscar.efermi
+        try:
+            self.efermi = vasp_data.doscar.efermi
+        except AttributeError:
+            pass
 
 # Note that the number of spin-components of projectors might be different from those
 # of bands in case of non-collinear calculations
@@ -74,6 +77,7 @@ class ElectronicStructure:
             print "eigvals from LOCPROJ"
             self.eigvals = vasp_data.plocar.eigs
             self.ferw = vasp_data.plocar.ferw.transpose((2, 0, 1))
+            self.efermi = vasp_data.plocar.efermi
 
 # For later use it is more convenient to use a different order of indices
 # [see ProjectorGroup.orthogonalization()]

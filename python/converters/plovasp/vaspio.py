@@ -40,7 +40,7 @@ class VaspData:
     """
     Container class for all VASP data.
     """
-    def __init__(self, vasp_dir, read_all=True):
+    def __init__(self, vasp_dir, read_all=True, efermi_required=True):
         self.vasp_dir = vasp_dir
 
         self.plocar = Plocar()
@@ -59,8 +59,16 @@ class VaspData:
                 self.eigenval.eigs = None
                 self.eigenval.ferw = None
                 print "!!! WARNING !!!: Error reading from EIGENVAL, trying LOCPROJ"
-                pass
-            self.doscar.from_file(vasp_dir)
+            try:
+                self.doscar.from_file(vasp_dir)
+            except (IOError, StopIteration):
+                if efermi_required:
+#                    raise Exception("Efermi cannot be read from DOSCAR")
+                    pass
+                else:
+# TODO: This a hack. Find out a way to determine ncdij without DOSCAR
+                    print "!!! WARNING !!!: Error reading from DOSCAR, taking Efermi from config"
+                    self.doscar.ncdij = self.plocar.nspin
 
 ################################################################################
 ################################################################################
@@ -202,7 +210,9 @@ class Plocar:
         with open(locproj_filename, 'rt') as f:
             line = f.readline()
             line = line.split("#")[0]
-            self.nspin, nk, self.nband, nproj = map(int, line.split())
+            sline = line.split()
+            self.nspin, nk, self.nband, nproj = map(int, sline[:4])
+            self.efermi = float(sline[4])
 
             plo = np.zeros((nproj, self.nspin, nk, self.nband), dtype=np.complex128)
             proj_params = [{} for i in xrange(nproj)]

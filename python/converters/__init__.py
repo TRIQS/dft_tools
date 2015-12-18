@@ -22,7 +22,8 @@
 
 from wien2k_converter import Wien2kConverter
 from hk_converter import HkConverter
+from vasp_converter import VaspConverter
 
-__all__ =['Wien2kConverter','HkConverter']
+__all__ =['Wien2kConverter','HkConverter','VaspConverter']
 
 
