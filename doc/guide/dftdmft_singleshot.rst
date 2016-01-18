@@ -145,7 +145,7 @@ Most of these parameters are self-explanatory. The first,
 details on the solver parameters, we refer the user to
 the :ref:`CTHYB solver <triqscthyb:welcome>` documentation.
 
-We assume that the conversion to the hdf5 archive is alreadz done. We
+We assume that the conversion to the hdf5 archive is already done. We
 can check now in this archive, if previous runs are present, or if we have to start
 from scratch::
 
