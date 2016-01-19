@@ -40,8 +40,10 @@ class FleurConverter(ConverterTools):
         assert type(filename)==StringType, "Please provide the DFT files' base name as a string."
         if hdf_filename is None: hdf_filename = filename
         self.hdf_file = hdf_filename+'.h5'
-        self.dft_file = filename+'.ctqmcout'
-        self.parproj_file = filename+'.parproj'
+        #self.dft_file = filename+'.ctqmcout'
+        #self.parproj_file = filename+'.parproj'
+        self.dft_file = 'ctqmcout'
+        self.parproj_file = 'parproj'
         self.dft_subgrp = dft_subgrp
         self.parproj_subgrp = parproj_subgrp
         self.fortran_to_replace = {'D':'E'}
