@@ -50,5 +50,5 @@ if __name__ == '__main__':
         else:
             vasp_dir = './'
 
-    generate_and_output_as_text(conf_filename, vasp_dir)
+    generate_and_output_as_text(filename, vasp_dir)
 
