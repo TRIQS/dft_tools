@@ -6,6 +6,7 @@ Code Structure
    vaspio
    plotools
    converter
+   charge_selfcons
 
 The program consists of three main parts:
  * :doc:`Import of data from VASP files </vaspio>`
