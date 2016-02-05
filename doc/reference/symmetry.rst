@@ -1,6 +1,6 @@
 Symmetry
 ========
 
-.. autoclass:: pytriqs.applications.dft.Symmetry
+.. autoclass:: Symmetry
    :members:
    :special-members:
