@@ -1,5 +1,5 @@
 # where will the python end up in triqs?
-set(python_destination applications/dft)
+set(python_destination pytriqs/applications/dft)
 
 # site_customize for build
 set(package_name "pytriqs.applications")
