@@ -13,14 +13,19 @@ enable_testing()
 # Load TRIQS, including all predefined variables from TRIQS installation
 find_package(TRIQS REQUIRED)
 
-if (NOT ${TRIQS_WITH_PYTHON_SUPPORT})
- MESSAGE(FATAL_ERROR "dft_tools require Python support in TRIQS")
-endif()
-
 # Check that versions are compatible
 if(NOT DFT_TOOLS_VERSION EQUAL TRIQS_VERSION)
   message(FATAL_ERROR "The application version is not compatible with the TRIQS library (TRIQS library version: ${TRIQS_VERSION} while this application version: ${DFT_TOOLS_VERSION})")
 endif()
+if (NOT ${TRIQS_WITH_PYTHON_SUPPORT})
+ MESSAGE(FATAL_ERROR "dft_tools require Python support in TRIQS")
+endif()
+
+# Get hash
+triqs_get_git_hash(${CMAKE_SOURCE_DIR} "DFT_TOOLS")
+if(${GIT_RESULT} EQUAL 0)
+  message(STATUS "Hash: ${DFT_TOOLS_GIT_HASH}")
+endif(${GIT_RESULT} EQUAL 0)
 
 # We want to be installed in the TRIQS tree
 set(CMAKE_INSTALL_PREFIX ${TRIQS_PATH})
