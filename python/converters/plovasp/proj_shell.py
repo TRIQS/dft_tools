@@ -309,6 +309,40 @@ class ProjectorShell:
 
 ################################################################################
 #
+# local_hamiltonian
+#
+################################################################################
+    def local_hamiltonian(self, el_struct, site_diag=True, spin_diag=True):
+        """
+        Returns occupation matrix/matrices for the shell.
+        """
+        nion, ns, nk, nlm, nbtot = self.proj_win.shape
+
+        assert site_diag, "site_diag = False is not implemented"
+        assert spin_diag, "spin_diag = False is not implemented"
+
+        loc_ham = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
+
+#        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=np.complex128)
+        kweights = el_struct.kmesh['kweights']
+        occnums = el_struct.ferw
+        ib1 = self.ib_min
+        ib2 = self.ib_max + 1
+        for isp in xrange(ns):
+            for ik, weight, occ, eigk in it.izip(it.count(), kweights, occnums[isp, :, :],
+                                          el_struct.eigvals[:, ib1:ib2, isp]):
+                for io in xrange(nion):
+                    proj_k = self.proj_win[io, isp, ik, ...]
+                    loc_ham[isp, io, :, :] += np.dot(proj_k * (eigk - el_struct.efermi),
+                                                 proj_k.conj().T).real * weight
+
+#        if not symops is None:
+#            occ_mats = symmetrize_matrix_set(occ_mats, symops, ions, perm_map)
+
+        return loc_ham
+
+################################################################################
+#
 # density_of_states
 #
 ################################################################################
