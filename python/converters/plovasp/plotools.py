@@ -141,6 +141,13 @@ def generate_plo(conf_pars, el_struct):
         for io, ov in enumerate(ov_all[0]):
             print "  Site %i"%(io + 1)
             print ov
+        print
+        print "Local Hamiltonian:"
+        loc_ham = pshells[pgroup.ishells[0]].local_hamiltonian(el_struct)
+        for io in xrange(loc_ham.shape[1]):
+            print "  Site %i"%(io + 1)
+            for row in loc_ham[:, io, :, :].sum(0):
+                print ''.join(map("{0:12.7f}".format, row))
 # END DEBUG output
         if 'dosmesh' in conf_pars.general:
             print
