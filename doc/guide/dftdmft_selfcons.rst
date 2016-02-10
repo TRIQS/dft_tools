@@ -56,10 +56,10 @@ We need also the correlation energy, which we evaluate by the Migdal formula::
   correnerg = 0.5 * (S.G_iw * S.Sigma_iw).total_density()
 
 Other ways of calculating the correlation energy are possible, for
-instance a direct measurment of the expectation value of the
-interacting hamiltonian. However, the Migdal formula works always,
+instance a direct measurement of the expectation value of the
+interacting Hamiltonian. However, the Migdal formula works always,
 independent of the solver that is used to solve the impurity problem.
-From this value, we substract the double counting energy::
+From this value, we subtract the double counting energy::
 
   correnerg -= SK.dc_energ[0]
 
@@ -104,13 +104,13 @@ number of nodes to be used:
 
 In that case, you will run on 64 computing cores. As standard setting,
 we use `mpirun` as the proper MPI execution statement. If you happen
-to have a differnet, non-standard MPI setup, you have to give the
+to have a different, non-standard MPI setup, you have to give the
 proper MPI execution statement, in the `run_lapw` script (see the  
 corresponding :program:`Wien2k` documentation).
 
 In many cases it is advisable to start from a converged one-shot 
 calculation. For practical purposes, you keep the number of DMFT loops
-within one DFT cycle low, or even to `loops=1`. If you encouter
+within one DFT cycle low, or even to `loops=1`. If you encounter
 unstable convergence, you have to adjust the parameters such as
 the number of DMFT loops, or some mixing of the self energy to improve
 the convergence. 

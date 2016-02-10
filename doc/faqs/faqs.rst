@@ -10,7 +10,7 @@ A hack solution is as follows:
 1) `x lapw1 -band`
 2) edit in2 file: replace 'TOT' with 'QTL', 'TETRA' with 'ROOT'
 3) `x lapw2 -almd -band`
-4) `dmftproj -band` (add the fermi energy to file, it can be found by running `grep :FER *.scf`)
+4) `dmftproj -band` (add the Fermi energy to file, it can be found by running `grep :FER *.scf`)
 
 How do I plot the output of `spaghettis`?
 -----------------------------------------
@@ -31,7 +31,7 @@ However, we are working on reading directly the `case.mommat2` file.
 No module named pytriqs.*** error when running a script
 -------------------------------------------------------
 
-Make sure that have propaly build, tested and installed TRIQS and DFTTools
+Make sure that have properly build, tested and installed TRIQS and DFTTools
 using, make, make test and make install. Additionally, you should always
 use pytriqs to call your scripts, e.g. pytriqs yourscript.py
 

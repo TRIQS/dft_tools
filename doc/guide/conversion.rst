@@ -15,7 +15,7 @@ Interface with Wien2k
 
 We assume that the user has obtained a self-consistent solution of the
 Kohn-Sham equations. We further have to require that the user is
-familiar with the main inout/output files of Wien2k, and how to run
+familiar with the main in/output files of Wien2k, and how to run
 the DFT code.
 
 Conversion for the DMFT self-consistency cycle
@@ -31,7 +31,7 @@ We note that any other flag for lapw2, such as -c or -so (for
 spin-orbit coupling) has to be added also to this line. This creates
 some files that we need for the Wannier orbital construction.
 
-The orbital construction itself is done by the fortran program
+The orbital construction itself is done by the Fortran program
 :program:`dmftproj`. For an extensive manual to this program see
 :download:`TutorialDmftproj.pdf <images_scripts/TutorialDmftproj.pdf>`.
 Here we will only describe only the basic steps.
@@ -79,7 +79,7 @@ following 3 to 5 lines:
 
 These lines have to be repeated for each inequivalent atom.
 
-The last line gives the energy window, relativ to the Fermi energy,
+The last line gives the energy window, relative to the Fermi energy,
 that is used for the projective Wannier functions. Note that, in
 accordance with Wien2k, we give energies in Rydberg units!
 
@@ -207,7 +207,7 @@ The lines of this header define
    2 3. Thiw would mean, 2 irreps (eg and t2g), of dimension 2 and 3,
    resp. 
 
-After these header lines, the file has to contain the hamiltonian
+After these header lines, the file has to contain the Hamiltonian
 matrix in orbital space. The standard convention is that you give for
 each 
 :math:`\mathbf{k}`-point first the matrix of the real part, then the

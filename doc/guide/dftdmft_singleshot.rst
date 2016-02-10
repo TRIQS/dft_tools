@@ -107,7 +107,7 @@ execution. For the convenience of the user, we provide also two
 working python scripts in this documentation. One for a calculation
 using Kanamori definitions (:download:`dft_dmft_cthyb.py
 <images_scripts/dft_dmft_cthyb.py>`) and one with a
-rotational-invariant Slater interaction hamiltonian (:download:`dft_dmft_cthyb_slater.py
+rotational-invariant Slater interaction Hamiltonian (:download:`dft_dmft_cthyb_slater.py
 <images_scripts/dft_dmft_cthyb.py>`). The user has to adapt these
 scripts to his own needs.
 
@@ -165,7 +165,7 @@ from scratch::
   previous_present = mpi.bcast(previous_present)
 
 
-You can see in this code snipet, that all results of this calculation
+You can see in this code snippet, that all results of this calculation
 will be stored in a separate subgroup in the hdf5 file, called
 `dmft_output`. Removing this subgroup allows you to reset your
 calculation to the starting point easily.
@@ -178,7 +178,7 @@ The next step is to initialise the  :class:`Solver <pytriqs.applications.impurit
 of two steps
 
 #. Calculating the multi-band interaction matrix, and setting up the
-   interaction hamiltonian
+   interaction Hamiltonian
 #. Setting up the solver class
 
 The first step is done using methods of
@@ -199,13 +199,13 @@ other choices (Slater interaction matrix for instance), and other
 parameters, we refer to the reference manual 
 of the :ref:`TRIQS <triqslibs:welcome>` library.
 
-Next, we construct the hamiltonian and the solver::
+Next, we construct the Hamiltonian and the solver::
   
   h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
   S = Solver(beta=beta, gf_struct=gf_struct)
 
 As you see, we take only density-density interactions into
-account. Other choices for the hamiltonian are
+account. Other choices for the Hamiltonian are
 
 * h_int_kanamori
 * h_int_slater

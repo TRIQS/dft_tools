@@ -73,7 +73,7 @@ This program produces the following files:
 
  * :file:`Ce-gamma.ctqmcout` and :file:`Ce-gamma.symqmc` containing projector operators and symmetry operations for orthonormalized Wannier orbitals, respectively.
  * :file:`Ce-gamma.parproj` and :file:`Ce-gamma.sympar` containing projector operators and symmetry operations for uncorrelated states, respectively. These files are needed for projected density-of-states or spectral-function calculations.
- * :file:`Ce-gamma.oubwin` needed for the charge desity recalculation in the case of fully self-consistent DFT+DMFT run (see below).
+ * :file:`Ce-gamma.oubwin` needed for the charge density recalculation in the case of fully self-consistent DFT+DMFT run (see below).
 
 Now we have all necessary input from :program:`Wien2k` for running DMFT calculations. 
 
@@ -101,9 +101,9 @@ The Hubbard-I initialization `Solver` has also optional parameters one may use:
 
   * `n_msb`: the number of Matsubara frequencies used. The default is `n_msb=1025`.
   * `use_spin_orbit`: if set 'True' the solver is run with spin-orbit coupling included. To perform actual DFT+DMFT calculations with spin-orbit one should also run   :program:`Wien2k` and :program:`dmftproj` in spin-polarized mode and with spin-orbit included. By default, `use_spin_orbit=False`.
-  * `Nmoments`: the number of moments used to describe high-ferquency tails of the Hubbard-I Green's function and self-energy. By default `Nmoments = 5`
+  * `Nmoments`: the number of moments used to describe high-frequency tails of the Hubbard-I Green's function and self-energy. By default `Nmoments = 5`
 
-The `Solver.solve(U_int, J_hund)` statement has two necessary parameters, the Hubbard U parameter `U_int` and Hund's rule coupling `J_hund`. Notice that the solver constructs the full 4-index `U`-matrix by default, and the `U_int` parameter is in fact the Slatter `F0` integral. Other optional parameters are:
+The `Solver.solve(U_int, J_hund)` statement has two necessary parameters, the Hubbard U parameter `U_int` and Hund's rule coupling `J_hund`. Notice that the solver constructs the full 4-index `U`-matrix by default, and the `U_int` parameter is in fact the Slater `F0` integral. Other optional parameters are:
 
   * `T`: matrix that transforms the interaction matrix from complex spherical harmonics to a symmetry adapted basis. By default, the complex spherical harmonics basis is used and `T=None`.
   * `verbosity`: tunes output from the solver. If `verbosity=0` only basic information is printed, if `verbosity=1` the ground state atomic occupancy and its energy are printed, if `verbosity=2` additional information is printed for all occupancies that were diagonalized. By default, `verbosity=0`. 
