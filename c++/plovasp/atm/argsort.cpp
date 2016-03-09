@@ -18,25 +18,50 @@
 * TRIQS. If not, see <http://www.gnu.org/licenses/>.
 *
 *******************************************************************************/
-#ifndef __C_DOS_TETRA3D_H__
-#define __C_DOS_TETRA3D_H__
+#include <cstdlib>
 
-#include <Python.h>
-#include <numpy/arrayobject.h>
+int cmp(const void *a, const void *b)
+{
+  return (**(const double **)a) < (**(const double **)b) ? -1 : 1;
+}
 
-static PyObject *tetra_DOS3D(PyObject *self, PyObject *args);
+int icmp(const void *a, const void *b)
+{
+  return (**(const int **)a) - (**(const int **)b);
+}
 
-//void tet_dos3d(double en, double *eigk, int strd_eigk,
-//                 npy_int64 *itt, int ntet, int *strd_itt,
-//                 double *cti, int *strd_cti);
-void tet_dos3d(double en, PyArrayObject *py_eigk,
-                 PyArrayObject *py_itt, int ntet,
-                 PyArrayObject *py_cti);
-int dos_corner_weights(double en, double *eigs, int *inds,
-                 double *ci);
+void argsort(double *arr, int *inds, double **ptrs, const int n)
+{
+  int i;
+  
+  for (i=0; i < n; i++)
+  {
+   ptrs[i] = arr + i;
+  }
 
-int dos_reorder(double en, double *e, int *inds);
+  qsort(ptrs, n, sizeof(double *), cmp);
 
-static const double small = 2.5e-2, tol = 1e-8;
+  for (i=0; i < n; i++)
+  {
+   inds[i] = (int)(ptrs[i] - arr);
+  }
+}
 
-#endif
+void iargsort(int *iarr, int *inds, int **ptrs, const int n)
+{
+  int i;
+  
+  for (i=0; i < n; i++)
+  {
+   ptrs[i] = iarr + i;
+  }
+
+  qsort(ptrs, n, sizeof(int *), icmp);
+
+  for (i=0; i < n; i++)
+  {
+   inds[i] = (int)(ptrs[i] - iarr);
+  }
+}
+
+
