@@ -1,8 +1,8 @@
 
-import vaspio
-from inpconf import ConfigParameters
-from plotools import check_data_consistency
-from elstruct import ElectronicStructure
+import applications.dft.converters.plovasp.vaspio
+from applications.dft.converters.plovasp.inpconf import ConfigParameters
+from applications.dft.converters.plovasp.plotools import check_data_consistency
+from applications.dft.converters.plovasp.elstruct import ElectronicStructure
 import mytest
 
 ################################################################################
