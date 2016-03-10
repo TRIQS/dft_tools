@@ -7,7 +7,7 @@ _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import mytest
 import numpy as np
-from vaspio import Eigenval
+from applications.dft.converters.plovasp.vaspio import Eigenval
 
 ################################################################################
 #
