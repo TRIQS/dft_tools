@@ -29,6 +29,6 @@ if __name__ == '__main__':
     else:
         print "Failed tests:"
         for failure in results.failures:
-            print failurep[0].__str__()
+            print failure[0].__str__()
         raise SystemExit(1)
 

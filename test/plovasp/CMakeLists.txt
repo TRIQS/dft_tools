@@ -5,7 +5,8 @@ set(TestSuites
     plotools
     proj_group
     proj_shell
-    vaspio)
+    vaspio
+    atm)
     
 FILE(COPY ${TestSuites} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 FILE(COPY run_suite.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
