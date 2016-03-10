@@ -29,12 +29,6 @@ r"""
 
     Storage and manipulation on projector shells.
 """
-import itertools as it
-import numpy as np
-import plovasp.atm.c_atm_dos as c_atm_dos
-
-np.set_printoptions(suppress=True)
-
 def issue_warning(message):
     """
     Issues a warning.
@@ -42,6 +36,17 @@ def issue_warning(message):
     print
     print "  !!! WARNING !!!: " + message
     print
+
+import itertools as it
+import numpy as np
+try:
+    import atm
+    atmlib_presnet = True
+except ImportError:
+    issue_warning("Error importing ATM libray, DOS calculation will fail!")
+    atmlib_present = False
+
+np.set_printoptions(suppress=True)
 
 ################################################################################
 ################################################################################
@@ -352,6 +357,7 @@ class ProjectorShell:
         """
         nion, ns, nk, nlm, nbtot = self.proj_win.shape
 
+        assert atmlib_present, "ATM library was not imported; cannot calculate DOS"
 # There is a problem with data storage structure of projectors that will
 # make life more complicated. The problem is that band-indices of projectors
 # for different k-points do not match because we store 'nb_max' values starting
@@ -385,7 +391,7 @@ class ProjectorShell:
             for ib, eigk in enumerate(el_struct.eigvals[:, self.ib_min:self.ib_max+1, isp].T):
                 for ie, e in enumerate(emesh):
                     eigk_ef = eigk - el_struct.efermi
-                    cti = c_atm_dos.dos_weights_3d(eigk_ef, e, itt)
+                    cti = atm.dos_weights_3d(eigk_ef, e, itt)
                     for im in xrange(nlm):
                         for io in xrange(nion):
                             dos[ie, isp, io, im] += np.sum((cti * w_k[itt[1:, :], ib, isp, io, im].real).sum(0) * itt[0, :])
