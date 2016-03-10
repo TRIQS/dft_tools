@@ -8,3 +8,5 @@ triqs_add_test_hdf(sumkdft_basic " -d 1.e-6" )
 triqs_add_test_hdf(srvo3_Gloc "  -d 1.e-6" )
 triqs_add_test_hdf(srvo3_transp " -d 1.e-6" )
 triqs_add_test_hdf(sigma_from_file " -d 1.e-6" )
+
+add_subdirectory(plovasp)
