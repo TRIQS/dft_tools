@@ -27,7 +27,7 @@
 from types import *
 import numpy
 from pytriqs.archive import *
-from pytriqs.applications.dft.converters.converter_tools import *
+from converter_tools import *
 import os.path
 try:
     import simplejson as json
