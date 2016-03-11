@@ -1,4 +1,3 @@
-
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -20,11 +19,12 @@
 #
 ################################################################################
 
-from wien2k_converter import Wien2kConverter
-from hk_converter import HkConverter
-from vasp_converter import VaspConverter
-from wannier90_converter import Wannier90Converter
+version = "@DFT_TOOLS_VERSION@"
+triqs_hash = "@TRIQS_GIT_HASH@"
+cthyb_hash = "@CTHYB_GIT_HASH@"
 
-__all__ =['Wien2kConverter','HkConverter','Wannier90Converter','VaspConverter']
+def show_version():
+  print "\nYou are using the dft_tools version %s\n"%version
 
-
+def show_git_hash():
+  print "\nYou are using the dft_tools git hash %s based on triqs git hash %s\n"%(cthyb_hash, triqs_hash)

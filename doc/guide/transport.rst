@@ -1,6 +1,6 @@
 .. _Transport:
 
-Transport calculations
+Transport calculations test
 ======================
 
 Formalism
@@ -65,7 +65,10 @@ The basics steps to calculate the matrix elements of the momentum operator with 
     6) Run `x optic`. 
 
 Additionally the input file :file:`case.inop` is required. A detail description on how to setup this file can be found in the Wien2k user guide [#userguide]_ on page 166.
-Here the energy window can be chosen according to the window used for :program:`dmftproj`. However, keep in mind that energies have to be specified in absolute values! Furthermore it is important to set line 6 to ON for printing the matrix elements to the :file:`.pmat` file.
+The optics energy window should be chosen according to the window used for :program:`dmftproj`. Note that the current version of the transport code uses only the smaller
+of those two windows. However, keep in mind that the optics energy window has to be specified in absolute values and NOT relative to the Fermi energy! 
+You can read off the Fermi energy from the :file:`case.scf2` file. Please do not set the optional parameter NBvalMAX in :file:`case.inop`.
+Furthermore it is necessary to set line 6 to "ON" and put a "1" in the following line to enable the printing of the matrix elements to :file:`case.pmat`.
 
 
 Using the transport code
@@ -86,7 +89,7 @@ reads the required data of the Wien2k output and stores it in the `dft_transp_in
 Additionally we need to read and set the self energy, the chemical potential and the double counting::
 
     ar = HDFArchive('case.h5', 'a')
-    SK.put_Sigma(Sigma_imp = [ar['dmft_output']['Sigma_w']])
+    SK.set_Sigma([ar['dmft_output']['Sigma_w']])
     chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
     SK.set_mu(chemical_potential)
     SK.set_dc(dc_imp,dc_energ)

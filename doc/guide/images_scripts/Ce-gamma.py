@@ -2,7 +2,6 @@ from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
 from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
-
 import os
 dft_filename = os.getcwd().rpartition('/')[2]
 
@@ -10,14 +9,12 @@ beta = 40
 U_int = 6.00
 J_hund = 0.70
 Loops =  5                       # Number of DMFT sc-loops
-Mix = 0.7                        # Mixing factor in QMC
+mixing = 0.7                     # Mixing factor
 DC_type = 0                      # 0...FLL, 1...Held, 2... AMF, 3...Lichtenstein
 chemical_potential_init=0.0      # initial chemical potential
 
-HDFfilename = dft_filename+'.h5'
-
 # Convert DMFT input:
-Converter = Wien2kConverter(filename=filename)
+Converter = Wien2kConverter(filename=dft_filename)
 Converter.convert_dft_input()
 mpi.barrier()
 
@@ -25,7 +22,7 @@ mpi.barrier()
 previous_runs = 0
 previous_present = False
 if mpi.is_master_node():
-    f = HDFArchive(filename+'.h5','a')
+    f = HDFArchive(dft_filename+'.h5','a')
     if 'dmft_output' in f:
         ar = f['dmft_output']
         if 'iterations' in ar:
@@ -53,11 +50,11 @@ if previous_present:
         ar = HDFArchive(dft_filename+'.h5','a')
         S.Sigma << ar['dmft_output']['Sigma']
         del ar
-        chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
+        SK.chemical_potential,SK.dc_imp,SK.dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
     S.Sigma << mpi.bcast(S.Sigma)
-    SK.set_mu(chemical_potential)
-    SK.set_dc(dc_imp,dc_energ)
-    
+    SK.chemical_potential = mpi.bcast(SK.chemical_potential)
+    SK.dc_imp = mpi.bcast(SK.dc_imp)
+    SK.dc_energ = mpi.bcast(SK.dc_energ)
 
 # DMFT loop:
 for iteration_number in range(1,Loops+1):
@@ -65,7 +62,7 @@ for iteration_number in range(1,Loops+1):
         itn = iteration_number + previous_runs
        
         # put Sigma into the SumK class:
-        SK.put_Sigma(Sigma_imp = [ S.Sigma ])
+        SK.set_Sigma([ S.Sigma ])
 
         # Compute the SumK, possibly fixing mu by dichotomy
         chemical_potential = SK.calc_mu( precision = 0.000001 )
@@ -78,7 +75,7 @@ for iteration_number in range(1,Loops+1):
         if ((iteration_number==1)and(previous_present==False)):
             dc_value_init=U_int/2.0
             dm=S.G.density()
-	        SK.calc_dc( dm, U_interact = U_int, J_hund = J_hund, orb = 0, use_dc_formula = DC_type, use_dc_value=dc_value_init)
+	    SK.calc_dc( dm, U_interact = U_int, J_hund = J_hund, orb = 0, use_dc_formula = DC_type, use_dc_value=dc_value_init)
 
         # calculate non-interacting atomic level positions:
         eal = SK.eff_atomic_levels()[0]
@@ -89,11 +86,11 @@ for iteration_number in range(1,Loops+1):
 
         # Now mix Sigma and G with factor Mix, if wanted:
         if (iteration_number>1 or previous_present):
-            if (mpi.is_master_node() and (sigma_mix<1.0)):
+            if (mpi.is_master_node() and (mixing<1.0)):
                 ar = HDFArchive(dft_filename+'.h5','a')
-                mpi.report("Mixing Sigma and G with factor %s"%sigma_mix)
-                S.Sigma << sigma_mix * S.Sigma + (1.0-sigma_mix) * ar['dmft_output']['Sigma']
-                S.G << sigma_mix * S.G + (1.0-sigma_mix) * ar['dmft_output']['G']
+                mpi.report("Mixing Sigma and G with factor %s"%mixing)
+                S.Sigma << mixing * S.Sigma + (1.0-mixing) * ar['dmft_output']['Sigma']
+                S.G << mixing * S.G + (1.0-mixing) * ar['dmft_output']['G']
                 del ar
             S.G << mpi.bcast(S.G)
             S.Sigma << mpi.bcast(S.Sigma)
@@ -104,8 +101,8 @@ for iteration_number in range(1,Loops+1):
         SK.calc_dc( dm, U_interact = U_int, J_hund = J_hund, orb = 0, use_dc_formula = DC_type )
 
         # correlation energy calculations:
-        correnerg = 0.5 * (S.G * S.Sigma).total_density()
-        mpi.report("Corr. energy = %s"%correnerg)
+        SK.correnerg = 0.5 * (S.G * S.Sigma).total_density()
+        mpi.report("Corr. energy = %s"%SK.correnerg)
 
         # store the impurity self-energy, GF as well as correlation energy in h5
         if mpi.is_master_node():
@@ -145,7 +142,7 @@ mpi.report("Trace of Density Matrix: %s"%d)
 
 # store correlation energy contribution to be read by Wien2ki and then included to DFT+DMFT total energy
 if (mpi.is_master_node()):
-    correnerg -= DCenerg[0]
+    SK.correnerg -= SK.dc_energ[0]
     f=open(dft_filename+'.qdmft','a')
-    f.write("%.16f\n"%correnerg)
+    f.write("%.16f\n"%SK.correnerg)
     f.close()

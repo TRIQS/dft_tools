@@ -22,14 +22,18 @@
 
 from pytriqs.archive import *
 from pytriqs.applications.dft.sumk_dft_tools import SumkDFTTools
-
+import pytriqs.utility.mpi as mpi
+from pytriqs.utility.comparison_tests import *
+from pytriqs.utility.h5diff import h5diff 
 
 SK = SumkDFTTools(hdf_file = 'SrVO3.h5')
 
 dm = SK.density_matrix(method = 'using_gf', beta = 40)
 dm_pc = SK.partial_charges(beta=40,with_Sigma=False,with_dc=False)
 
-ar = HDFArchive('sumkdft_basic.output.h5','w')
-ar['dm'] = dm
-ar['dm_pc'] = dm_pc
-del ar
+with HDFArchive('sumkdft_basic.out.h5','w') as ar:
+    ar['dm'] = dm
+    ar['dm_pc'] = dm_pc
+
+if mpi.is_master_node():
+    h5diff('sumkdft_basic.out.h5','sumkdft_basic.ref.h5') 

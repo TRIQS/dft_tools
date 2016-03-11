@@ -14,24 +14,22 @@ ommax=6.0
 N_om=2001
 broadening = 0.02
 
-HDFfilename = dft_filename+'.h5'
-
 # Convert DMFT input:
 Converter = Wien2kConverter(filename=dft_filename,repacking=True)
 Converter.convert_dft_input()
 Converter.convert_parproj_input()
-
-
 
 # Init the SumK class
 SK = SumkDFTTools(hdf_file=dft_filename+'.h5',use_dft_blocks=False)
 
 # load old chemical potential and DC
 if mpi.is_master_node():
-    chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
-SK.set_mu(chemical_potential)
-SK.set_dc(dc_imp,dc_energ)
-    
+    SK.chemical_potential,SK.dc_imp,SK.dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
+
+SK.chemical_potential = mpi.bcast(SK.chemical_potential)
+SK.dc_imp = mpi.bcast(SK.dc_imp)
+SK.dc_energ = mpi.bcast(SK.dc_energ)
+
 if (mpi.is_master_node()):
     print 'DC after reading SK: ',SK.dc_imp[0]
 
@@ -47,7 +45,7 @@ S.set_atomic_levels( eal = eal )
 
 # Run the solver to get GF and self-energy on the real axis
 S.GF_realomega(ommin=ommin, ommax = ommax, N_om=N_om,U_int=U_int,J_hund=J_hund)
-SK.put_Sigma(Sigma_imp = [S.Sigma])
+SK.set_Sigma([S.Sigma])
 
 # compute DOS
 SK.dos_parproj_basis(broadening=broadening)

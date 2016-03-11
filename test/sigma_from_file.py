@@ -1,7 +1,29 @@
+################################################################################
+#
+# TRIQS: a Toolbox for Research in Interacting Quantum Systems
+#
+# Copyright (C) 2011 by M. Aichhorn, L. Pourovskii, V. Vildosola
+#
+# TRIQS is free software: you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# TRIQS is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# TRIQS. If not, see <http://www.gnu.org/licenses/>.
+#
+################################################################################
+
 from pytriqs.archive import *
 from pytriqs.gf.local import *
 from pytriqs.gf.local.tools import *
 from pytriqs.applications.dft.sumk_dft_tools import *
+from pytriqs.utility.comparison_tests import *
 import numpy as np
 
 # Read self energy from hdf file
@@ -24,9 +46,9 @@ a_list = [a for a,al in SK.gf_struct_solver[0].iteritems()]
 g_list = [read_gf_from_txt([['Sigma_' + a + '.dat']], a)  for a in a_list]
 Sigma_txt = BlockGf(name_list = a_list, block_list = g_list, make_copies=False)
 
-SK.put_Sigma(Sigma_imp = [Sigma_txt])
+SK.set_Sigma([Sigma_txt])
 
-SK.hdf_file = 'sigma_from_file.output.h5'
+SK.hdf_file = 'sigma_from_file.out.h5'
 SK.save(['Sigma_imp_w'])
 
 if ((Sigma_txt - Sigma_hdf).real < 1e-6) & ((Sigma_txt - Sigma_hdf).imag < 1e-6):

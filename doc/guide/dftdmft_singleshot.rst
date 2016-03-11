@@ -50,7 +50,7 @@ iterations and the self-consistency condition::
   n_loops = 5
   for iteration_number in range(n_loops) :            # start the DMFT loop
 
-          SK.put_Sigma(Sigma_imp = [ S.Sigma ])              # Put self energy to the SumK class
+          SK.set_Sigma([ S.Sigma ])                          # Put self energy to the SumK class
           chemical_potential = SK.calc_mu()                  # calculate the chemical potential for the given density
           S.G_iw << SK.extract_G_loc()[0]                    # extract the local Green function
           S.G0_iw << inverse(S.Sigma_iw + inverse(S.G_iw))   # finally get G0, the input for the Solver
@@ -107,7 +107,7 @@ execution. For the convenience of the user, we provide also two
 working python scripts in this documentation. One for a calculation
 using Kanamori definitions (:download:`dft_dmft_cthyb.py
 <images_scripts/dft_dmft_cthyb.py>`) and one with a
-rotational-invariant Slater interaction hamiltonian (:download:`dft_dmft_cthyb_slater.py
+rotational-invariant Slater interaction Hamiltonian (:download:`dft_dmft_cthyb_slater.py
 <images_scripts/dft_dmft_cthyb.py>`). The user has to adapt these
 scripts to his own needs.
 
@@ -145,7 +145,7 @@ Most of these parameters are self-explanatory. The first,
 details on the solver parameters, we refer the user to
 the :ref:`CTHYB solver <triqscthyb:welcome>` documentation.
 
-We assume that the conversion to the hdf5 archive is alreadz done. We
+We assume that the conversion to the hdf5 archive is already done. We
 can check now in this archive, if previous runs are present, or if we have to start
 from scratch::
 
@@ -165,7 +165,7 @@ from scratch::
   previous_present = mpi.bcast(previous_present)
 
 
-You can see in this code snipet, that all results of this calculation
+You can see in this code snippet, that all results of this calculation
 will be stored in a separate subgroup in the hdf5 file, called
 `dmft_output`. Removing this subgroup allows you to reset your
 calculation to the starting point easily.
@@ -178,7 +178,7 @@ The next step is to initialise the  :class:`Solver <pytriqs.applications.impurit
 of two steps
 
 #. Calculating the multi-band interaction matrix, and setting up the
-   interaction hamiltonian
+   interaction Hamiltonian
 #. Setting up the solver class
 
 The first step is done using methods of
@@ -199,13 +199,13 @@ other choices (Slater interaction matrix for instance), and other
 parameters, we refer to the reference manual 
 of the :ref:`TRIQS <triqslibs:welcome>` library.
 
-Next, we construct the hamiltonian and the solver::
+Next, we construct the Hamiltonian and the solver::
   
   h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
   S = Solver(beta=beta, gf_struct=gf_struct)
 
 As you see, we take only density-density interactions into
-account. Other choices for the hamiltonian are
+account. Other choices for the Hamiltonian are
 
 * h_int_kanamori
 * h_int_slater
@@ -239,7 +239,7 @@ refinements::
       if mpi.is_master_node(): print "Iteration = ", iteration_number
   
       SK.symm_deg_gf(S.Sigma_iw,orb=0)                        # symmetrise Sigma
-      SK.put_Sigma(Sigma_imp = [ S.Sigma_iw ])                # put Sigma into the SumK class
+      SK.set_Sigma([ S.Sigma_iw ])                            # put Sigma into the SumK class
       chemical_potential = SK.calc_mu( precision = prec_mu )  # find the chemical potential for given density
       S.G_iw << SK.extract_G_loc()[0]                         # calc the local Green function
       mpi.report("Total charge of Gloc : %.6f"%S.G_iw.total_density())

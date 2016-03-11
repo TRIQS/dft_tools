@@ -47,6 +47,7 @@ class SumkDFTTools(SumkDFT):
                           misc_data=misc_data)
 
 
+    # Uses .data of only GfReFreq objects.
     def dos_wannier_basis(self, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True, save_to_file=True):
         """
         Calculates the density of states in the basis of the Wannier functions.
@@ -163,6 +164,7 @@ class SumkDFTTools(SumkDFT):
         return DOS, DOSproj, DOSproj_orb
 
 
+    # Uses .data of only GfReFreq objects.
     def dos_parproj_basis(self, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True, save_to_file=True):
         """
         Calculates the orbitally-resolved DOS.
@@ -290,6 +292,7 @@ class SumkDFTTools(SumkDFT):
         return DOS, DOSproj, DOSproj_orb
 
 
+    # Uses .data of only GfReFreq objects.
     def spaghettis(self,broadening=None,plot_shift=0.0,plot_range=None,ishell=None,mu=None,save_to_file='Akw_'):
         """
         Calculates the correlated band structure using a real-frequency self energy.
@@ -377,6 +380,11 @@ class SumkDFTTools(SumkDFT):
                             for sp in spn:
                                 Akw[sp][ish,ik,iom] = G_loc[sp].data[iom,ish,ish].imag/(-1.0*numpy.pi)
 
+        # Collect data from mpi
+        for sp in spn:
+            Akw[sp] = mpi.all_reduce(mpi.world, Akw[sp], lambda x,y : x+y)
+        mpi.barrier()
+
         if save_to_file and mpi.is_master_node():
             if ishell is None:
                 for sp in spn: # loop over GF blocs:
@@ -394,7 +402,7 @@ class SumkDFTTools(SumkDFT):
             else: # ishell is not None
                 for sp in spn:
                     for ish in range(self.shells[ishell]['dim']):
-                        f = open(save_to_file+sp+'_proj'+str(ish)+'.dat','w')   # Open file for storage:
+                        f = open(save_to_file+str(ishell)+'_'+sp+'_proj'+str(ish)+'.dat','w')   # Open file for storage:
                         for ik in range(self.n_k):
                             for iom in range(n_om):
                                 if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
@@ -565,6 +573,7 @@ class SumkDFTTools(SumkDFT):
         return vol_c, vol_p
 
 
+    # Uses .data of only GfReFreq objects.
     def transport_distribution(self, beta, directions=['xx'], energy_window=None, Om_mesh=[0.0], with_Sigma=False, n_om=None, broadening=0.0):
         r"""
         Calculates the transport distribution 
