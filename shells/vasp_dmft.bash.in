@@ -1,0 +1,85 @@
+#/bin/bash
+
+MPIRUN_CMD=mpirun
+
+show_help()
+{
+echo "
+Usage: vasp_dmft [-n <number of cores>] -i <number of iterations> [-p <path to VASP directory>] [<dmft_script.py>]
+
+       If the number of cores is note specified it is set to 1 by default.
+
+       <dmft_script.py> must provide an importable function 'dmft_cycle()' which is invoked
+       once per DFT+DMFT iteration. If the script name is omitted the default name 
+       'csc_dmft.py' is used.
+
+       If the path to VASP directory is not specified it must be provided by a
+       variable VASP_DIR.
+"
+}
+
+while getopts ":n:i:" opt; do
+  case $opt in
+     n)
+#        echo "Option: Ncpu, argument: $OPTARG"
+        if [ -n "$OPTARG" ]; then
+           NPROC=$OPTARG
+#           echo "Number of cores: $NPROC"
+        fi
+        ;;
+     i)
+#        echo "Option: Niter"
+        if [ -n "$OPTARG" ]; then
+           NITER=$OPTARG
+#           echo "Number of iterations: $NITER"
+        fi
+        ;;
+     p)
+        if [ -n "$OPTARG" ]; then
+           VASP_DIR=$OPTARG
+        fi
+        ;;
+      :)
+        echo "  Error: Option -$OPTARG requires an argument" >&2
+        show_help
+        exit 1
+        ;;
+     \?)
+        echo "  Error: Invalid option -$OPTARG" >&2
+  esac
+done
+
+if [ -z "$NITER" ]; then
+  echo "  Error: Number of iterations must be specified with option -i" >&2
+  show_help
+  exit 1
+fi
+
+if [ -z "$VASP_DIR" ]; then
+  echo "  Error: A path to VASP directory must be given either with option -p or by setting variable VASP_DIR" >&2
+  show_help
+  exit 1
+fi
+
+if [ -z "$NPROC" ]; then
+  echo "  Number of cores not specified, setting to 1"
+  NPROC=1
+fi
+
+shift $((OPTIND-1))
+
+if [ -z "$1" ]; then
+  DMFT_SCRIPT=csc_dmft.py
+else
+  DMFT_SCRIPT=$1
+fi
+
+echo "  Number of cores: $NPROC"
+echo "  Number of iterations: $NITER"
+echo "  Script name: $DMFT_SCRIPT"
+
+rm -f vasp.lock
+stdbuf -o 0 $MPIRUN_CMD -np $NPROC "$VASP_DIR/vasp" &
+
+$MPIRUN_CMD -np $NPROC pytriqs -m pytriqs.applications.dft.converters.plovasp.sc_dmft $(jobs -p) $DMFT_SCRIPT || kill %1
+

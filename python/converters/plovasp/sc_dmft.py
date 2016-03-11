@@ -31,7 +31,6 @@ import sys
 import time
 import pytriqs.utility.mpi as mpi
 import converters.plovasp.main as plovasp
-from test_ham_hf import dmft_cycle
 
 debug = True
 #
@@ -167,13 +166,19 @@ def run_all(vasp_pid):
 
     mpi.report("***Done")
 
-
-if __name__ == '__main__':
+def main():
     try:
         vasp_pid = int(sys.argv[1])
     except (ValueError, KeyError):
         if mpi.is_master_node():
             print "VASP process pid must be provided as the first argument"
+        raise
+
+    try:
+        dmft_script = re.sub("\.py$", "", sys.argv[2])
+    except:
+        if mpi.is_master_node():
+            print "User-defined DMFT script must be provided as the second argument"
         raise
 #    if len(sys.argv) > 1:
 #        vasp_path = sys.argv[1]
@@ -186,4 +191,9 @@ if __name__ == '__main__':
 #            raise
     signal.signal(signal.SIGINT, sigint_handler)
 
+    from dmft_script import dmft_cycle
+
     run_all(vasp_pid)
+
+if __name__ == '__main__':
+    main()
