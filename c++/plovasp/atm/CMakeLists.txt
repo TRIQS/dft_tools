@@ -5,5 +5,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/c++/plovasp/atm ${TRIQS_INCLUDE_
 
 #add_executable(test_atm test2py.cpp)
 #target_link_libraries(test_atm atm_c)
+install(TARGETS atm_c DESTINATION lib)
 
 add_subdirectory(test)
