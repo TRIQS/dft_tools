@@ -8,7 +8,4 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/sitecustomize.py ${CMAKE_CURRENT_BINARY
 # make a local pytriqs copy
 triqs_prepare_local_pytriqs(${python_destination})
 
-# to be able to run from toplevel
-execute_process(COMMAND ln -fs ${CMAKE_BINARY_DIR}/fortran/vertex/vertex.so ${CMAKE_BINARY_DIR}/pytriqs/${python_destination})
-
 add_subdirectory(converters/plovasp)

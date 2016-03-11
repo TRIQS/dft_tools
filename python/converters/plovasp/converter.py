@@ -63,9 +63,15 @@ def generate_and_output_as_text(conf_filename, vasp_dir):
     output_as_text(pars, el_struct, pshells, pgroups)
 
 def main():
+    """
+    This function should not be called directly but via a bash script
+    'plovasp' invoking the main function as follows:
+
+      pytriqs -m applications.dft.converters.plovasp.converter $@
+    """
     narg = len(sys.argv)
     if narg < 2:
-        raise SystemExit("  Usage: python main.py <conf-file> [<path-to-vasp-calcultaion>]")
+        raise SystemExit("  Usage: plovasp <conf-file> [<path-to-vasp-calcultaion>]")
     else:
         filename = sys.argv[1]
         if narg > 2:
@@ -79,3 +85,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
