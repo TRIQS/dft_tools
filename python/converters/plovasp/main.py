@@ -62,7 +62,7 @@ def generate_and_output_as_text(conf_filename, vasp_dir):
     pshells, pgroups = generate_plo(pars, el_struct)
     output_as_text(pars, el_struct, pshells, pgroups)
 
-if __name__ == '__main__':
+def main():
     narg = len(sys.argv)
     if narg < 2:
         raise SystemExit("  Usage: python main.py <conf-file> [<path-to-vasp-calcultaion>]")
@@ -77,3 +77,5 @@ if __name__ == '__main__':
 
     generate_and_output_as_text(filename, vasp_dir)
 
+if __name__ == '__main__':
+    main()
