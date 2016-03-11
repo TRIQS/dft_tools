@@ -2,7 +2,7 @@
 import os
 
 import numpy as np
-import applications.dft.converters.plovasp.atm as atm
+import pytriqs.applications.dft.converters.plovasp.atm as atm
 import mytest
 
 ################################################################################

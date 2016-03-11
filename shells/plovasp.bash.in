@@ -1,4 +1,4 @@
 #!/bin/bash
 
-pytriqs -m applications.dft.converters.plovasp.converter $@
+pytriqs -m pytriqs.applications.dft.converters.plovasp.converter $@
 

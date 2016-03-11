@@ -7,7 +7,7 @@ _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import mytest
 import numpy as np
-from applications.dft.converters.plovasp.vaspio import Poscar
+from pytriqs.applications.dft.converters.plovasp.vaspio import Poscar
 
 ################################################################################
 #

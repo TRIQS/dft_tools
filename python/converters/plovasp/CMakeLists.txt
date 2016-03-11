@@ -1,4 +1,4 @@
-set(python_destination applications/dft/converters/plovasp)
+set(python_destination pytriqs/applications/dft/converters/plovasp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${TRIQS_INCLUDE_ALL})
 triqs_python_extension(atm ${python_destination})

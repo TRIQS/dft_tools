@@ -4,11 +4,11 @@ import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import numpy as np
-import applications.dft.converters.plovasp.vaspio as vaspio
-import applications.dft.converters.plovasp.elstruct as elstruct
-from applications.dft.converters.plovasp.inpconf import ConfigParameters
-from applications.dft.converters.plovasp.proj_shell import ProjectorShell
-from applications.dft.converters.plovasp.proj_group import ProjectorGroup
+import pytriqs.applications.dft.converters.plovasp.vaspio as vaspio
+import pytriqs.applications.dft.converters.plovasp.elstruct as elstruct
+from pytriqs.applications.dft.converters.plovasp.inpconf import ConfigParameters
+from pytriqs.applications.dft.converters.plovasp.proj_shell import ProjectorShell
+from pytriqs.applications.dft.converters.plovasp.proj_group import ProjectorGroup
 import mytest
 
 ################################################################################

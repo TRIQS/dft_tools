@@ -1,8 +1,8 @@
 
-import applications.dft.converters.plovasp.vaspio
-from applications.dft.converters.plovasp.inpconf import ConfigParameters
-from applications.dft.converters.plovasp.plotools import check_data_consistency
-from applications.dft.converters.plovasp.elstruct import ElectronicStructure
+import pytriqs.applications.dft.converters.plovasp.vaspio
+from pytriqs.applications.dft.converters.plovasp.inpconf import ConfigParameters
+from pytriqs.applications.dft.converters.plovasp.plotools import check_data_consistency
+from pytriqs.applications.dft.converters.plovasp.elstruct import ElectronicStructure
 import mytest
 
 ################################################################################
