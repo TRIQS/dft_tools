@@ -1163,7 +1163,7 @@ class SumkDFT:
         return self.chemical_potential
  
 
-    def calc_density_correction(self, filename='dens_mat.dat'):
+    def calc_density_correction(self, filename=None, dm_type='wien2k'):
         r"""
         Calculates the charge density correction and stores it into a file.
         
@@ -1188,11 +1188,37 @@ class SumkDFT:
 
         """
 
-        assert type(filename) == StringType, "calc_density_correction: filename has to be a string!"
+#        assert type(filename) == StringType, "calc_density_correction: filename has to be a string!"
+        assert dm_type in ('vasp', 'wien2k'), "'dm_type' must be either 'vasp' or 'wienk'"
 
+        if filename is None:
+            if dm_type == 'wien2k':
+                filename = 'dens_mat.dat'
+            elif dm_type == 'vasp':
+                filename = 'GAMMA'
+        
         ntoi = self.spin_names_to_ind[self.SO]
         spn = self.spin_block_names[self.SO]
         dens = {sp: 0.0 for sp in spn}
+        band_en_correction = 0.0
+
+# Fetch Fermi weights and energy window band indices
+        if dm_type == 'vasp':
+            fermi_weights = 0
+            band_window = 0
+            if mpi.is_master_node():
+                ar = HDFArchive(self.hdf_file,'r')
+                fermi_weights = ar['dft_misc_input']['dft_fermi_weights']
+                band_window = ar['dft_misc_input']['band_window']
+                del ar
+            fermi_weights = mpi.bcast(fermi_weights)
+            band_window = mpi.bcast(band_window)
+
+# Convert Fermi weights to a density matrix
+            dens_mat_dft = {}
+            for sp in spn:
+                dens_mat_dft[sp] = [fermi_weights[ik, ntoi[sp], :].astype(numpy.complex_) for ik in xrange(self.n_k)]
+
 
         # Set up deltaN:
         deltaN = {}
@@ -1205,6 +1231,17 @@ class SumkDFT:
             for bname,gf in G_latt_iw:
                 deltaN[bname][ik] = G_latt_iw[bname].density()
                 dens[bname] += self.bz_weights[ik] * G_latt_iw[bname].total_density()
+                if dm_type == 'vasp':
+# In 'vasp'-mode subtract the DFT density matrix
+                    diag_inds = numpy.diag_indices(self.n_orbitals[ik, ntoi[bname]])
+                    deltaN[bname][ik][diag_inds] -= dens_mat_dft[bname][ik]
+                    dens[bname] -= self.bz_weights[ik] * dens_mat_dft[bname][ik].sum().real
+                    isp = ntoi[bname]
+                    b1, b2 = self.band_window[isp][ik, :2]
+                    nb = b2 - b1 + 1
+                    assert nb == self.n_orbitals[ik, ntoi[bname]], "Number of bands is inconsistent at ik = %s"%(ik)
+                    band_en_correction += numpy.dot(deltaN[bname][ik], self.hopping[ik, isp, :nb, :nb]).trace().real * self.bz_weights[ik]
+
 
         # mpi reduce:
         for bname in deltaN:
@@ -1212,51 +1249,77 @@ class SumkDFT:
                 deltaN[bname][ik] = mpi.all_reduce(mpi.world, deltaN[bname][ik], lambda x,y : x+y)
             dens[bname] = mpi.all_reduce(mpi.world, dens[bname], lambda x,y : x+y)
         mpi.barrier()
+        band_en_correction = mpi.all_reduce(mpi.world, band_en_correction, lambda x,y : x+y)
 
         # now save to file:
-        if mpi.is_master_node():
-            if self.SP == 0:
-                f = open(filename,'w')
-            else:
-                f = open(filename+'up','w')
-                f1 = open(filename+'dn','w')
-            # write chemical potential (in Rydberg):
-            f.write("%.14f\n"%(self.chemical_potential/self.energy_unit))
-            if self.SP != 0: f1.write("%.14f\n"%(self.chemical_potential/self.energy_unit))
-            # write beta in rydberg-1
-            f.write("%.14f\n"%(G_latt_iw.mesh.beta*self.energy_unit))
-            if self.SP != 0: f1.write("%.14f\n"%(G_latt_iw.mesh.beta*self.energy_unit))
+        if dm_type == 'wien2k':
+            if mpi.is_master_node():
+                if self.SP == 0:
+                    f = open(filename,'w')
+                else:
+                    f = open(filename+'up','w')
+                    f1 = open(filename+'dn','w')
+                # write chemical potential (in Rydberg):
+                f.write("%.14f\n"%(self.chemical_potential/self.energy_unit))
+                if self.SP != 0: f1.write("%.14f\n"%(self.chemical_potential/self.energy_unit))
+                # write beta in rydberg-1
+                f.write("%.14f\n"%(G_latt_iw.mesh.beta*self.energy_unit))
+                if self.SP != 0: f1.write("%.14f\n"%(G_latt_iw.mesh.beta*self.energy_unit))
 
-            if self.SP == 0: # no spin-polarization
+                if self.SP == 0: # no spin-polarization
 
-                for ik in range(self.n_k):
-                    f.write("%s\n"%self.n_orbitals[ik,0])
-                    for inu in range(self.n_orbitals[ik,0]):
-                        for imu in range(self.n_orbitals[ik,0]):
-                            valre = (deltaN['up'][ik][inu,imu].real + deltaN['down'][ik][inu,imu].real) / 2.0
-                            valim = (deltaN['up'][ik][inu,imu].imag + deltaN['down'][ik][inu,imu].imag) / 2.0
-                            f.write("%.14f  %.14f "%(valre,valim))
-                        f.write("\n")
-                    f.write("\n")
-                f.close()
-
-            elif self.SP == 1: # with spin-polarization
-
-                # dict of filename: (spin index, block_name)
-                if self.SO == 0: to_write = {f: (0, 'up'), f1: (1, 'down')}
-                if self.SO == 1: to_write = {f: (0, 'ud'), f1: (0, 'ud')}
-                for fout in to_write.iterkeys():
-                    isp, sp = to_write[fout]
                     for ik in range(self.n_k):
-                        fout.write("%s\n"%self.n_orbitals[ik,isp])
-                        for inu in range(self.n_orbitals[ik,isp]):
-                            for imu in range(self.n_orbitals[ik,isp]):
-                                fout.write("%.14f  %.14f "%(deltaN[sp][ik][inu,imu].real,deltaN[sp][ik][inu,imu].imag))
-                            fout.write("\n")
-                        fout.write("\n")
-                    fout.close()
+                        f.write("%s\n"%self.n_orbitals[ik,0])
+                        for inu in range(self.n_orbitals[ik,0]):
+                            for imu in range(self.n_orbitals[ik,0]):
+                                valre = (deltaN['up'][ik][inu,imu].real + deltaN['down'][ik][inu,imu].real) / 2.0
+                                valim = (deltaN['up'][ik][inu,imu].imag + deltaN['down'][ik][inu,imu].imag) / 2.0
+                                f.write("%.14f  %.14f "%(valre,valim))
+                            f.write("\n")
+                        f.write("\n")
+                    f.close()
 
-        return deltaN, dens
+                elif self.SP == 1: # with spin-polarization
+
+                    # dict of filename: (spin index, block_name)
+                    if self.SO == 0: to_write = {f: (0, 'up'), f1: (1, 'down')}
+                    if self.SO == 1: to_write = {f: (0, 'ud'), f1: (0, 'ud')}
+                    for fout in to_write.iterkeys():
+                        isp, sp = to_write[fout]
+                        for ik in range(self.n_k):
+                            fout.write("%s\n"%self.n_orbitals[ik,isp])
+                            for inu in range(self.n_orbitals[ik,isp]):
+                                for imu in range(self.n_orbitals[ik,isp]):
+                                    fout.write("%.14f  %.14f "%(deltaN[sp][ik][inu,imu].real,deltaN[sp][ik][inu,imu].imag))
+                                fout.write("\n")
+                            fout.write("\n")
+                        fout.close()
+        elif dm_type == 'vasp':
+            assert self.SP == 0, "Spin-polarized density matrix is not implemented"
+
+            if mpi.is_master_node():
+                with open(filename, 'w') as f:
+                    f.write(" %i  -1  ! Number of k-points, default number of bands\n"%(self.n_k))
+                    for ik in xrange(self.n_k):
+                        ib1 = band_window[0][ik, 0]
+                        ib2 = band_window[0][ik, 1]
+                        f.write(" %i  %i  %i\n"%(ik + 1, ib1, ib2))
+                        for inu in xrange(self.n_orbitals[ik, 0]):
+                            for imu in xrange(self.n_orbitals[ik, 0]):
+                                valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
+                                valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
+                                f.write(" %.14f  %.14f"%(valre, valim))
+                            f.write("\n")
+        else:
+            raise NotImplementedError("Unknown density matrix type: '%s'"%(dm_type))
+
+        res = deltaN, dens
+
+        if dm_type == 'vasp':
+            res += (band_en_correction,)
+
+        return res
+
 
 ################
 # FIXME LEAVE UNDOCUMENTED
