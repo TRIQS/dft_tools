@@ -287,24 +287,42 @@ class ProjectorShell:
         """
         nion, ns, nk, nlm, nbtot = self.proj_win.shape
 
-        assert site_diag, "site_diag = False is not implemented"
+#        assert site_diag, "site_diag = False is not implemented"
         assert spin_diag, "spin_diag = False is not implemented"
 
-        occ_mats = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
-        overlaps = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
+        if site_diag:
+            occ_mats = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
+            overlaps = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
+        else:
+            ndim = nion * nlm
+            occ_mats = np.zeros((ns, 1, ndim, ndim), dtype=np.float64)
+            overlaps = np.zeros((ns, 1, ndim, ndim), dtype=np.float64)
 
 #        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=np.complex128)
         kweights = el_struct.kmesh['kweights']
         occnums = el_struct.ferw
         ib1 = self.ib_min
         ib2 = self.ib_max + 1
-        for isp in xrange(ns):
-            for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
-                for io in xrange(nion):
-                    proj_k = self.proj_win[io, isp, ik, ...]
-                    occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
+        if site_diag:
+            for isp in xrange(ns):
+                for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
+                    for io in xrange(nion):
+                        proj_k = self.proj_win[io, isp, ik, ...]
+                        occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
+                                                     proj_k.conj().T).real * weight
+                        overlaps[isp, io, :, :] += np.dot(proj_k,
+                                                     proj_k.conj().T).real * weight
+        else:
+            proj_k = np.zeros((ndim, nbtot), dtype=np.complex128)
+            for isp in xrange(ns):
+                for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
+                    for io in xrange(nion):
+                        i1 = io * nlm
+                        i2 = (io + 1) * nlm
+                        proj_k[i1:i2, :] = self.proj_win[io, isp, ik, ...]
+                    occ_mats[isp, 0, :, :] += np.dot(proj_k * occ[ib1:ib2],
                                                  proj_k.conj().T).real * weight
-                    overlaps[isp, io, :, :] += np.dot(proj_k,
+                    overlaps[isp, 0, :, :] += np.dot(proj_k,
                                                  proj_k.conj().T).real * weight
 
 #        if not symops is None:
