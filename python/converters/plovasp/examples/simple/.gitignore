@@ -1,1 +1,7 @@
-vasp.*
+*
+!example.cfg
+!INCAR
+!KPOINTS
+!POSCAR
+!POTCAR
+!conv_example.py
