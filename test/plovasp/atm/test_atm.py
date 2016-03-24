@@ -2,7 +2,7 @@
 import os
 
 import numpy as np
-import pytriqs.applications.dft.converters.plovasp.atm as atm
+from pytriqs.applications.dft.converters.plovasp.atm import dos_tetra_weights_3d
 import mytest
 
 ################################################################################
@@ -25,7 +25,7 @@ class TestProjectorShell(mytest.MyTestCase):
         en = -0.55
         itt = np.array([[1, 0, 1, 2, 3]]).T
 
-        res = atm.dos_tetra_weights_3d(eigs, en, itt)[:, 0]
+        res = dos_tetra_weights_3d(eigs, en, itt)[:, 0]
 
         r_should = np.zeros(4)
         r_should[0] = 0.000309016992226;
