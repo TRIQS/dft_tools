@@ -32,6 +32,12 @@ endif(${GIT_RESULT} EQUAL 0)
 set(CMAKE_INSTALL_PREFIX ${TRIQS_PATH})
 
 add_subdirectory(fortran/dmftproj) 
+
+# Add the compiling options (-D... ) for C++
+message(STATUS "TRIQS : Adding compilation flags detected by the library (C++11/14, libc++, etc...) ")
+add_definitions(${TRIQS_CXX_DEFINITIONS})
+
+add_subdirectory(c++)
 add_subdirectory(python)
 add_subdirectory(shells)
 add_subdirectory(test)
