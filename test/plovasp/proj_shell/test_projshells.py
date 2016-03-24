@@ -4,8 +4,8 @@ import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import numpy as np
-import pytriqs.applications.dft.converters.plovasp.vaspio as vaspio
-import pytriqs.applications.dft.converters.plovasp.elstruct as elstruct
+from pytriqs.applications.dft.converters.plovasp.vaspio import VaspData
+from pytriqs.applications.dft.converters.plovasp.elstruct import ElectronicStructure
 from pytriqs.applications.dft.converters.plovasp.inpconf import ConfigParameters
 from pytriqs.applications.dft.converters.plovasp.proj_shell import ProjectorShell
 from pytriqs.applications.dft.converters.plovasp.proj_group import ProjectorGroup
@@ -32,11 +32,13 @@ class TestProjectorShell(mytest.MyTestCase):
         conf_file = _rpath + 'example.cfg'
         self.pars = ConfigParameters(conf_file)
         self.pars.parse_input()
-        vasp_data = vaspio.VaspData(_rpath + 'one_site/')
-        self.el_struct = elstruct.ElectronicStructure(vasp_data)
+        vasp_data = VaspData(_rpath + 'one_site/')
+        self.el_struct = ElectronicStructure(vasp_data)
 
-        efermi = vasp_data.doscar.efermi
-        eigvals = vasp_data.eigenval.eigs - efermi
+#        efermi = vasp_data.doscar.efermi
+#        eigvals = vasp_data.eigenval.eigs - efermi
+        efermi = self.el_struct.efermi
+        eigvals = self.el_struct.eigvals - efermi
         emin, emax = self.pars.groups[0]['ewindow']
 
         self.proj_sh = ProjectorShell(self.pars.shells[0], vasp_data.plocar.plo, vasp_data.plocar.proj_params, 0)

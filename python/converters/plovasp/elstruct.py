@@ -80,7 +80,7 @@ class ElectronicStructure:
 # Note that the number of spin-components of projectors might be different from those
 # of bands in case of non-collinear calculations
         self.nspin = vasp_data.plocar.nspin
-        self.nc_flag = vasp_data.doscar.ncdij == 4
+        self.nc_flag = vasp_data.plocar.ncdij == 4
 
         self.nband = vasp_data.plocar.nband
 
@@ -88,7 +88,10 @@ class ElectronicStructure:
         _, ns_plo, nk_plo, nb_plo = vasp_data.plocar.plo.shape
         assert nk_plo == self.nktot, "PLOCAR is inconsistent with IBZKPT (number of k-points)"
 
-        if not vasp_data.eigenval.eigs is None:
+# FIXME: Reading from EIGENVAL is obsolete and should be
+#        removed completely.
+#        if not vasp_data.eigenval.eigs is None:
+        if False:
             print "eigvals from EIGENVAL"
             self.eigvals = vasp_data.eigenval.eigs
             self.ferw = vasp_data.eigenval.ferw.transpose((2, 0, 1))

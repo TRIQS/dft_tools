@@ -1,7 +1,7 @@
 # load triqs helper to set up tests
 set(TestSuites
     inpconf
-    plocar_io
+#    plocar_io
     plotools
     proj_group
     proj_shell

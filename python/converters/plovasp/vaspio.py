@@ -236,7 +236,10 @@ class Plocar:
             line = f.readline()
             line = line.split("#")[0]
             sline = line.split()
-            self.nspin, nk, self.nband, nproj = map(int, sline[:4])
+            self.ncdij, nk, self.nband, nproj = map(int, sline[:4])
+            self.nspin = 1 if self.ncdij == 1 else 2
+            self.nspin_band = 2 if self.ncdij == 2 else 1
+
             self.efermi = float(sline[4])
 
             plo = np.zeros((nproj, self.nspin, nk, self.nband), dtype=np.complex128)
@@ -266,10 +269,12 @@ class Plocar:
 
             assert ip == nproj, "Number of projectors in the header is wrong in LOCPROJ"
 
-            self.eigs = np.zeros((nk, self.nband, self.nspin))
-            self.ferw = np.zeros((nk, self.nband, self.nspin))
+            self.eigs = np.zeros((nk, self.nband, self.nspin_band))
+            self.ferw = np.zeros((nk, self.nband, self.nspin_band))
 
             patt = re.compile("^orbital")
+# FIXME: fix spin indices for NCDIJ = 4 (non-collinear)
+            assert self.ncdij < 4, "Non-collinear case is not implemented"
             for ispin in xrange(self.nspin):
                 for ik in xrange(nk):
                     for ib in xrange(self.nband):
