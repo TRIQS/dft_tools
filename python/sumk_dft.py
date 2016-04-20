@@ -561,7 +561,7 @@ class SumkDFT:
             for icrsh in range(self.n_corr_shells):
                 for bname,gf in SK_Sigma_imp[icrsh]: gf << self.rotloc(icrsh,gf,direction='toGlobal')
 
-    def extract_G_loc(self, mu=None, with_Sigma=True, with_dc=True):
+    def extract_G_loc(self, mu=None, iw_or_w='iw', with_Sigma=True, with_dc=True, broadening=None):
         r"""
         Extracts the local downfolded Green function by the Brillouin-zone integration of the lattice Green's function.
 
@@ -573,6 +573,10 @@ class SumkDFT:
                      If True then the local GF is calculated with the self-energy self.Sigma_imp.
         with_dc : boolean, optional
                   If True then the double-counting correction is subtracted from the self-energy in calculating the GF.
+        broadening : float, optional
+                     Imaginary shift for the axis along which the real-axis GF is calculated.
+                     If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
+                     Only relevant for real-frequency GF.
 
         Returns
         -------
@@ -583,19 +587,31 @@ class SumkDFT:
         """
 
         if mu is None: mu = self.chemical_potential
-        G_loc = [ self.Sigma_imp_iw[icrsh].copy() for icrsh in range(self.n_corr_shells) ]   # this list will be returned
+        
+        if iw_or_w == "iw": 
+            G_loc = [ self.Sigma_imp_iw[icrsh].copy() for icrsh in range(self.n_corr_shells) ]   # this list will be returned
+            beta = G_loc[0].mesh.beta
+            G_loc_inequiv = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = G_loc[0].mesh)) for block,inner in self.gf_struct_solver[ish].iteritems() ],
+                        make_copies = False) for ish in range(self.n_inequiv_shells)  ]
+        elif iw_or_w == "w": 
+            G_loc = [ self.Sigma_imp_w[icrsh].copy() for icrsh in range(self.n_corr_shells) ]   # this list will be returned
+            mesh = G_loc[0].mesh
+            G_loc_inequiv = [ BlockGf( name_block_generator = [ (block,GfReFreq(indices = inner, mesh = mesh)) for block,inner in self.gf_struct_solver[ish].iteritems() ],
+                         make_copies = False) for ish in range(self.n_inequiv_shells)  ]
+        
         for icrsh in range(self.n_corr_shells): G_loc[icrsh].zero()                          # initialize to zero
-        beta = G_loc[0].mesh.beta
 
         ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):
-
-            G_latt_iw = self.lattice_gf(ik=ik, mu=mu, iw_or_w="iw", with_Sigma=with_Sigma, with_dc=with_dc, beta=beta)
-            G_latt_iw *= self.bz_weights[ik]
+            if iw_or_w == 'iw':
+                G_latt = self.lattice_gf(ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, beta=beta)
+            elif iw_or_w == 'w':
+                G_latt = self.lattice_gf(ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening, mesh=mesh)
+            G_latt *= self.bz_weights[ik]
 
             for icrsh in range(self.n_corr_shells):
                 tmp = G_loc[icrsh].copy()                  # init temporary storage
-                for bname,gf in tmp: tmp[bname] << self.downfold(ik,icrsh,bname,G_latt_iw[bname],gf)
+                for bname,gf in tmp: tmp[bname] << self.downfold(ik,icrsh,bname,G_latt[bname],gf)
                 G_loc[icrsh] += tmp
 
         # Collect data from mpi
@@ -613,8 +629,6 @@ class SumkDFT:
                 for bname,gf in G_loc[icrsh]: G_loc[icrsh][bname] << self.rotloc(icrsh,gf,direction='toLocal')
 
         # transform to CTQMC blocks:
-        G_loc_inequiv = [ BlockGf( name_block_generator = [ (block,GfImFreq(indices = inner, mesh = G_loc[0].mesh)) for block,inner in self.gf_struct_solver[ish].iteritems() ],
-                        make_copies = False) for ish in range(self.n_inequiv_shells)  ]
         for ish in range(self.n_inequiv_shells):
             for block,inner in self.gf_struct_solver[ish].iteritems():
                 for ind1 in inner:
@@ -1072,14 +1086,14 @@ class SumkDFT:
             for bl in degsh: gf_to_symm[bl] << ss
 
 
-    def total_density(self, mu=None, with_Sigma=True, with_dc=True):
+    def total_density(self, mu=None, iw_or_w="iw", with_Sigma=True, with_dc=True, broadening=None):
         r"""
         Calculates the total charge within the energy window for a given chemical potential. 
         The chemical potential is either given by parameter `mu` or, if it is not specified,
         taken from `self.chemical_potential`.
 
         The total charge is calculated from the trace of the GF in the Bloch basis.
-        By deafult, a full interacting GF is used. To use the non-interacting GF, set
+        By default, a full interacting GF is used. To use the non-interacting GF, set
         parameter `with_Sigma = False`.
 
         The number of bands within the energy windows generally depends on `k`. The trace is
@@ -1088,7 +1102,7 @@ class SumkDFT:
         Since in general n_orbitals depends on k, the calculation is done in the following order:
         ..math:: n_{tot} = \sum_{k} n(k),
           with
-        ..math:: n(k) = Tr G_{\nu\nu'}(k, i\omega_{n}).
+        ..math:: n(k) = Tr G_{\nu\nu'}(k, i\omega_{n}). 
 
         The calculation is done in the global coordinate system, if distinction is made between local/global.
 
@@ -1096,11 +1110,18 @@ class SumkDFT:
         ----------
         mu : float, optional
              Input chemical potential. If not specified, `self.chemical_potential` is used instead.
+        iw_or_w : string, optional
+                  - `iw_or_w` = 'iw' for a imaginary-frequency self-energy
+                  - `iw_or_w` = 'w' for a real-frequency self-energy
         with_Sigma : boolean, optional
              If `True` the full interacing GF is evaluated, otherwise the self-energy is not
              included and the charge would correspond to a non-interacting system.
         with_dc : boolean, optional
              Whether or not to subtract the double-counting term from the self-energy.
+        broadening : float, optional
+                     Imaginary shift for the axis along which the real-axis GF is calculated.
+                     If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
+                     Only relevant for real-frequency GF.
 
         Returns
         -------
@@ -1112,8 +1133,8 @@ class SumkDFT:
         dens = 0.0
         ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):
-            G_latt_iw = self.lattice_gf(ik=ik, mu=mu, iw_or_w="iw", with_Sigma=with_Sigma, with_dc=with_dc)
-            dens += self.bz_weights[ik] * G_latt_iw.total_density()
+            G_latt = self.lattice_gf(ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening)
+            dens += self.bz_weights[ik] * G_latt.total_density()
         # collect data from mpi:
         dens = mpi.all_reduce(mpi.world, dens, lambda x,y : x+y)
         mpi.barrier()
@@ -1134,7 +1155,7 @@ class SumkDFT:
         self.chemical_potential = mu
 
 
-    def calc_mu(self, precision=0.01):
+    def calc_mu(self, precision=0.01, iw_or_w='iw',broadening=None):
         r"""
         Searches for the chemical potential that gives the DFT total charge.
         A simple bisection method is used.
@@ -1143,6 +1164,13 @@ class SumkDFT:
         ----------
         precision : float, optional
                     A desired precision of the resulting total charge.
+        iw_or_w : string, optional
+                  - `iw_or_w` = 'iw' for a imaginary-frequency self-energy
+                  - `iw_or_w` = 'w' for a real-frequency self-energy
+        broadening : float, optional
+                     Imaginary shift for the axis along which the real-axis GF is calculated.
+                     If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
+                     Only relevant for real-frequency GF.
 
         Returns
         -------
@@ -1151,7 +1179,7 @@ class SumkDFT:
              within specified precision.
 
         """
-        F = lambda mu : self.total_density(mu=mu)
+        F = lambda mu : self.total_density(mu=mu,iw_or_w=iw_or_w,broadening=broadening)
         density = self.density_required - self.charge_below
 
         self.chemical_potential = dichotomy.dichotomy(function = F,
