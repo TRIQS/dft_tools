@@ -611,6 +611,9 @@ class SumkDFTTools(SumkDFT):
         if mpi.is_master_node():
             ar = HDFArchive(self.hdf_file, 'r')
             if not (self.transp_data in ar): raise IOError, "transport_distribution: No %s subgroup in hdf file found! Call convert_transp_input first." %self.transp_data
+            # check if outputs file was converted
+            if not ('n_symmetries' in ar['dft_misc_input']): raise IOError,  "transport_distribution: n_symmetries missing. Check if case.outputs file is present and call convert_misc_input() or convert_dft_input()."    
+        
         self.read_transport_input_from_hdf()
         
         if mpi.is_master_node():
