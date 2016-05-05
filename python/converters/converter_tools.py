@@ -24,6 +24,9 @@ import pytriqs.utility.mpi as mpi
 
 class ConverterTools:
 
+    def __init__(self):
+        pass
+
     def read_fortran_file(self,filename,to_replace):
         """
         Returns a generator that yields all numbers in the Fortran file as float, with possible replacements.
