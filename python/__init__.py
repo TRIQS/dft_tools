@@ -1,5 +1,5 @@
 
-################################################################################
+##########################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
 #
@@ -18,11 +18,12 @@
 # You should have received a copy of the GNU General Public License along with
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+##########################################################################
 
 from sumk_dft import SumkDFT
 from symmetry import Symmetry
 from sumk_dft_tools import SumkDFTTools
 from converters import *
 
-__all__=['SumkDFT','Symmetry','SumkDFTTools','Wien2kConverter','HkConverter']
+__all__ = ['SumkDFT', 'Symmetry', 'SumkDFTTools',
+           'Wien2kConverter', 'HkConverter']

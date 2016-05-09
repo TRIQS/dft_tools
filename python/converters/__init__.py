@@ -1,5 +1,5 @@
 
-################################################################################
+##########################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
 #
@@ -18,12 +18,10 @@
 # You should have received a copy of the GNU General Public License along with
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+##########################################################################
 
 from wien2k_converter import Wien2kConverter
 from hk_converter import HkConverter
 from wannier90_converter import Wannier90Converter
 
-__all__ =['Wien2kConverter','HkConverter','Wannier90Converter']
-
-
+__all__ = ['Wien2kConverter', 'HkConverter', 'Wannier90Converter']
