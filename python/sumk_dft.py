@@ -1252,6 +1252,7 @@ class SumkDFT:
                Total charge :math:`n_{tot}`.
 
         """
+
         if mu is None:
             mu = self.chemical_potential
         dens = 0.0
