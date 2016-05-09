@@ -1,7 +1,7 @@
 .. _Transport:
 
 Transport calculations test
-======================
+============================
 
 Formalism
 ---------
