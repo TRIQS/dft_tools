@@ -24,13 +24,14 @@
 #
 ################################################################################
 
-import os
 import errno
+import os
+import re
+import time
 import signal
 import sys
-import time
 import pytriqs.utility.mpi as mpi
-import converters.plovasp.main as plovasp
+import converter
 
 debug = True
 #
@@ -87,7 +88,7 @@ class bcolors:
 #
 # Main self-consistent cycle
 #
-def run_all(vasp_pid):
+def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter):
     """
     """
     mpi.report("  Waiting for VASP lock to appear...")
@@ -96,6 +97,7 @@ def run_all(vasp_pid):
 
     vasp_running = True
 
+    iter = 0
     while vasp_running:
         if debug: print bcolors.RED + "rank %s"%(mpi.rank) + bcolors.ENDC
         mpi.report("  Waiting for VASP lock to disappear...")
@@ -107,14 +109,23 @@ def run_all(vasp_pid):
                 mpi.report("  VASP stopped")
                 vasp_running = False
                 break
-
+# Tell VASP to stop if the maximum number of iterations is reached
+        iter += 1
+        if iter = n_iter:
+            if mpi.is_master_node():
+                print "\n  Maximum number of iterations reached."
+                print "  Aborting VASP iterations...\n"
+                f_stop = open('STOPCAR', 'wt')
+                f_stop.write("LABORT = .TRUE.\n")
+                f_stop.close()
+        
         if debug: print bcolors.MAGENTA + "rank %s"%(mpi.rank) + bcolors.ENDC
         err = 0
         exc = None
         try:
             if debug: print bcolors.BLUE + "plovasp: rank %s"%(mpi.rank) + bcolors.ENDC
             if mpi.is_master_node():
-                plovasp.generate_and_output_as_text('plo.cfg', vasp_dir='./')
+                converter.generate_and_output_as_text(cfg_file, vasp_dir='./')
 # Read energy from OSZICAR
                 dft_energy = get_dft_energy()
         except Exception, exc:
@@ -167,19 +178,34 @@ def run_all(vasp_pid):
     mpi.report("***Done")
 
 def main():
+    import importlib
     try:
         vasp_pid = int(sys.argv[1])
     except (ValueError, KeyError):
         if mpi.is_master_node():
-            print "VASP process pid must be provided as the first argument"
+            print "ERROR: VASP process pid must be provided as the first argument"
         raise
 
     try:
-        dmft_script = re.sub("\.py$", "", sys.argv[2])
+        n_iter = int(sys.argv[2])
+    except (ValueError, KeyError):
+        if mpi.is_master_node():
+            print "ERROR: Number of iterations must be provided as the second argument"
+        raise
+
+    try:
+        dmft_script = re.sub("\.py$", "", sys.argv[3])
     except:
         if mpi.is_master_node():
-            print "User-defined DMFT script must be provided as the second argument"
+            print "ERROR: User-defined DMFT script must be provided as the third argument"
         raise
+
+# Optional parameter: config-file name
+    try:
+        cfg_file = sys.argv[4]
+    except KeyError:
+        cfg_file = 'plo.cfg'
+
 #    if len(sys.argv) > 1:
 #        vasp_path = sys.argv[1]
 #    else:
@@ -191,9 +217,9 @@ def main():
 #            raise
     signal.signal(signal.SIGINT, sigint_handler)
 
-    from dmft_script import dmft_cycle
+    dmft_mod = importlib.import_module(dmft_script)
 
-    run_all(vasp_pid)
+    run_all(vasp_pid, dmft_mod.dmft_cycle, cfg_file, n_iter)
 
 if __name__ == '__main__':
     main()
