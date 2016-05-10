@@ -1233,8 +1233,9 @@ class SumkDFT:
                 dens[bname] += self.bz_weights[ik] * G_latt_iw[bname].total_density()
                 if dm_type == 'vasp':
 # In 'vasp'-mode subtract the DFT density matrix
-                    diag_inds = numpy.diag_indices(self.n_orbitals[ik, ntoi[bname]])
-                    deltaN[bname][ik][diag_inds] -= dens_mat_dft[bname][ik]
+                    nb = self.n_orbitals[ik, ntoi[bname]]
+                    diag_inds = numpy.diag_indices(nb)
+                    deltaN[bname][ik][diag_inds] -= dens_mat_dft[bname][ik][:nb]
                     dens[bname] -= self.bz_weights[ik] * dens_mat_dft[bname][ik].sum().real
                     isp = ntoi[bname]
                     b1, b2 = self.band_window[isp][ik, :2]
