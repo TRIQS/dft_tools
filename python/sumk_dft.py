@@ -943,7 +943,7 @@ class SumkDFT:
 
         Returns
         -------
-        eff_atlevels : gf_struct_solver like
+        eff_atlevels : gf_struct_sumk like
                        Effective local Hamiltonian :math:`H^{loc}_{m m'}` for each correlated shell.
 
         """
