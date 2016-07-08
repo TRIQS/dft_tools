@@ -1223,9 +1223,12 @@ class SumkDFT:
         therefore calculated separately for each `k`-point.
 
         Since in general n_orbitals depends on k, the calculation is done in the following order:
-        ..math:: n_{tot} = \sum_{k} n(k),
-          with
-        ..math:: n(k) = Tr G_{\nu\nu'}(k, i\omega_{n}). 
+
+        .. math:: n_{tot} = \sum_{k} n(k),
+
+        with
+
+        .. math:: n(k) = Tr G_{\nu\nu'}(k, i\omega_{n}). 
 
         The calculation is done in the global coordinate system, if distinction is made between local/global.
 

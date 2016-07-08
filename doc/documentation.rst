@@ -1,4 +1,4 @@
-.. module:: pytriqs.applications.dft_tools
+.. module:: pytriqs.applications.dft
 
 .. _documentation:
 
@@ -11,6 +11,7 @@ Basic notions
 .. toctree::
    :maxdepth: 2
 
+   basicnotions/first
    basicnotions/dft_dmft
    basicnotions/structure
 
@@ -23,6 +24,7 @@ User guide
 
    guide/conversion
    guide/dftdmft_singleshot
+   guide/SrVO3
    guide/dftdmft_selfcons
    guide/analysis
    guide/full_tutorial

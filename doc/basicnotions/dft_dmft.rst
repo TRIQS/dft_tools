@@ -1,3 +1,5 @@
+.. _dftplusdmft:
+
 Introduction to DFT+DMFT
 ========================
 
@@ -8,7 +10,7 @@ terms it states that electrons in a crystal form bands of allowed
 states in momentum space. These states are then filled by the
 electrons according to Pauli's principle up the Fermi level. With this
 simple picture one can explain the electronic band structure of simple
-materials such as elementary copper or aluminium. 
+materials such as elementary copper or aluminum.
 
 Following this principle one can easily classify all existing
 materials into metals and insulators, with semiconductors being
@@ -17,9 +19,8 @@ spectrum. Following this band theory, a system is a metal if there is
 an odd number of electrons in the valence bands, since this leads to a
 partially filled band, cutting the Fermi energy and, thus, producing a
 Fermi surface, i.e metallic behavior. On the other hand, an even
-number of electrons leads to 
-completely filled bands with a finite excitation gap to the conduction
-bands, i.e. insulating behavior. 
+number of electrons leads to completely filled bands with a finite
+excitation gap to the conduction bands, i.e. insulating behavior.
 
 This classification works pretty well for a large class of
 materials, where the electronic band structures are reproduced by
@@ -41,7 +42,7 @@ current
 because of the strong Coulomb repulsion between the electrons. With
 reference to Sir Nevill Mott, who contributed substantially to the
 explanation of this effect in the 1930's, these materials are in
-general reffered to as Mott insulators.
+general referred to as Mott insulators.
 
 Density-functional theory in a (very small) nutshell
 ----------------------------------------------------
@@ -63,7 +64,7 @@ that is discussed in the literature on DFT, let us just note that the
 main result of DFT calculations are the Kohn-Sham energies
 :math:`\varepsilon_{\nu\mathbf{k}}` and the Kohn-Sham orbitals :math:`\psi_{\nu\mathbf{k}}(\mathbf{r})`. 
 This set of equations is exact, however, the exchange correlation
-potential :math:`V_{xc}(\mathbf{r})` is not known explicitely. In
+potential :math:`V_{xc}(\mathbf{r})` is not known explicitly. In
 order to do actual calculations, it needs to be approximated in some
 way. The local density approximation is one of the most famous
 approximations used in this context. This approximation works well for
@@ -75,7 +76,7 @@ From DFT to DMFT
 
 In order to extend our calculations to strong correlations, we need to
 go from a description by bands to a description in terms of
-(localised) orbitals: Wannier functions.
+(localized) orbitals: Wannier functions.
 
 In principle, Wannier functions :math:`\chi_{\mu\sigma}(\mathbf{r})`
 are nothing else than a Fourier transform of the Bloch basis set from
@@ -88,7 +89,7 @@ where we introduced also the spin degree of freedom :math:`\sigma`. The
 unitary matrix :math:`U_{\mu\nu}` is not uniquely defined, but allows for a
 certain amount of freedom in the calculation of Wannier function. A
 very popular choice is the constraint that the resulting Wannier
-functions should be maximally localised in space. Another route,
+functions should be maximally localized in space. Another route,
 computationally much lighter and more stable, are projective Wannier
 functions. This scheme is used for the Wien2k interface in this
 package.
@@ -98,7 +99,7 @@ A central quantity in this scheme is the projection operator
 :math:`\nu` a Bloch band index. 
 Its definition and how it is calculated can be found in the original
 literature or in the extensive documentation of the
-:program:`dmftproj` program shipped with :program:`dft_tools`.
+:program:`dmftproj` program shipped with :program:`DFTTools`.
 
 Using projective Wannier functions for DMFT
 -------------------------------------------
@@ -121,7 +122,7 @@ with the DFT Green function
 
 This non-interacting Green function :math:`G^0_{mn}(i\omega)` defines,
 together with the interaction Hamiltonian, the Anderson impurity
-model. The DMFT self-consitency cycle can now be formulated as
+model. The DMFT self-consistency cycle can now be formulated as
 follows:
 
 #. Take :math:`G^0_{mn}(i\omega)` and the interaction Hamiltonian and
@@ -173,9 +174,9 @@ Full charge self-consistency
 
 The feedback of the electronic correlations to the Kohn-Sham orbitals
 is included by the interacting density matrix. With going into the
-details, it basically consists of calculating the Kohn Sham density
+details, it basically consists of calculating the Kohn-Sham density
 :math:`\rho(\mathbf{r})` in the presence of this interacting density
-matrix. This new density now defines a new Kohn Sham
+matrix. This new density now defines a new Kohn-Sham
 exchange-correlation potential, which in turn leads to new
 :math:`\varepsilon_{\nu\mathbf{k}}`,
 :math:`\psi_{\nu\mathbf{k}}(\mathbf{r})`, and projectors
@@ -186,4 +187,4 @@ step 3, before the local lattice Green
 function is downfolded again into orbital space.
 
 How all these calculations can be done in practice with this
-:program:`dft_tools` package is subject of the user guide in this documentation.
+:program:`DFTTools` package is subject of the user guide in this documentation.

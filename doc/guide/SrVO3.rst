@@ -55,20 +55,21 @@ And next, we can initialize the :class:`SumkDFT <dft.sumk_dft.SumkDFT>` class::
 Initializing the solver
 -----------------------
 
-We also have to specify the :ref:`CTHYB solver <triqscthyb:welcome>` related settings. The
-minimal parameters for a SrVO3 DMFT calculation on 16 cores are::
+We also have to specify the :ref:`CTHYB solver <triqscthyb:welcome>` related settings.
+We assume that the DMFT script for SrVO3 is executed on 16 cores. A sufficient set 
+of parameters for a first guess is::
 
   p = {}
   # solver
   p["random_seed"] = 123 * mpi.rank + 567
   p["length_cycle"] = 200
-  p["n_warmup_cycles"] = 50000
-  p["n_cycles"] = 500000
+  p["n_warmup_cycles"] = 100000
+  p["n_cycles"] = 1000000
   # tail fit
   p["perform_tail_fit"] = True
   p["fit_max_moment"] = 4
-  p["fit_min_n"] = 60
-  p["fit_max_n"] = 140
+  p["fit_min_n"] = 30
+  p["fit_max_n"] = 60
 
 Here we use a tail fit to deal with numerical noise of higher Matsubara frequencies.
 For other options and more details on the solver parameters, we refer the user to
@@ -180,17 +181,26 @@ This is all we need for the DFT+DMFT calculation.
 You can see in this code snippet, that all results of this calculation
 will be stored in a separate subgroup in the hdf5 file, called `dmft_output`.
 Note that this script performs 15 DMFT cycles, but does not check for
-convergence. Of course, it is possible to build in convergence criterias.
+convergence. Of course, it would be possible to build in convergence criteria.
 A simple check for convergence can be also done if you store multiple quantities
 of each iteration and analyze the convergence by hand. In general, it is advisable
 to start with a lower statistics (less measurements), but then increase it at a
 point close to converged results (e.g. after a few initial iterations). This helps
 to keep computational costs low during the first iterations.
 
+Using the Kanamori Hamiltonian and the parameters above (but on 16 cores), 
+your self energy after the **first iteration** should look like the 
+self energy shown below.
+
+.. image:: images_scripts/SrVO3_Sigma_iw_it1.png
+    :width: 700
+    :align: center
+
+
 .. _tailfit:
 
-Tail fit paramters
-------------------
+Tail fit parameters
+-------------------
 
 A good way to identify suitable tail fit parameters is by "human inspection".
 Therefore disabled the tail fitting first::
