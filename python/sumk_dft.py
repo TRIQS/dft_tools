@@ -867,13 +867,8 @@ class SumkDFT:
 
                 ntoi = self.spin_names_to_ind[self.SO]
                 spn = self.spin_block_names[self.SO]
-                unchangedsize = all(
-                    [self.n_orbitals[ik, ntoi[sp]] == self.n_orbitals[0, ntoi[sp]] for sp in spn])
-                if unchangedsize:
-                    dim = self.n_orbitals[0, ntoi[sp]]
-                else:
-                    dim = self.n_orbitals[ik, ntoi[sp]]
-                MMat = [numpy.zeros([dim, dim], numpy.complex_) for sp in spn]
+                dims = {sp:self.n_orbitals[ik, ntoi[sp]] for sp in spn}
+                MMat = [numpy.zeros([dims[sp], dims[sp]], numpy.complex_) for sp in spn]
 
                 for isp, sp in enumerate(spn):
                     ind = ntoi[sp]
