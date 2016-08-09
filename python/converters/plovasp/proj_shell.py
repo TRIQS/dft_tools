@@ -41,7 +41,7 @@ import itertools as it
 import numpy as np
 try:
     import atm
-    atmlib_presnet = True
+    atmlib_present = True
 except ImportError:
     issue_warning("Error importing ATM libray, DOS calculation will fail!")
     atmlib_present = False
