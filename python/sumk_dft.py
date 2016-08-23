@@ -29,6 +29,7 @@ from pytriqs.archive import *
 from symmetry import *
 from sets import Set
 from itertools import product
+from warnings import warn
 
 
 class SumkDFT:
@@ -491,6 +492,8 @@ class SumkDFT:
                 mesh = Sigma_imp[0].mesh
             elif iw_or_w == "w":
                 mesh = Sigma_imp[0].mesh
+                if broadening>0 and mpi.is_master_node():
+                    warn('lattice_gf called with Sigma and broadening > 0 (broadening = {}). You might want to explicitly set the broadening to 0.'.format(broadening))
         else:
             if iw_or_w == "iw":
                 if beta is None:
@@ -666,8 +669,9 @@ class SumkDFT:
                 G_latt = self.lattice_gf(
                     ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, beta=beta)
             elif iw_or_w == 'w':
+                mesh_parameters = (G_loc[0].mesh.omega_min,G_loc[0].mesh.omega_max,len(G_loc[0].mesh))
                 G_latt = self.lattice_gf(
-                    ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening, mesh=mesh)
+                    ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening, mesh=mesh_parameters)
             G_latt *= self.bz_weights[ik]
 
             for icrsh in range(self.n_corr_shells):
