@@ -121,7 +121,7 @@ class HkConverter(ConverterTools):
             # corresponds to index R in formulas
             # now read the information about the shells (atom, sort, l, dim, SO
             # flag, irep):
-            corr_shell_entries = ['atom', 'sort', 'l', 'dim', 'SO', 'irep']
+            corr_shell_entries = ['atom', 'sort', 'l', 'dim','SO','irep']
             corr_shells = [{name: int(val) for name, val in zip(
                 corr_shell_entries, R)} for icrsh in range(n_corr_shells)]
 
