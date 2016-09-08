@@ -372,11 +372,12 @@ class SumkDFTTools(SumkDFT):
             subgrp=self.bands_data, things_to_read=things_to_read)
         if not value_read:
             return value_read
-        things_to_read = ['rot_mat_all', 'rot_mat_all_time_inv']
-        value_read = self.read_input_from_hdf(
-            subgrp=self.parproj_data, things_to_read=things_to_read)
-        if not value_read:
-            return value_read
+        if ishell is not None:
+            things_to_read = ['rot_mat_all', 'rot_mat_all_time_inv']
+            value_read = self.read_input_from_hdf(
+                subgrp=self.parproj_data, things_to_read=things_to_read)
+            if not value_read:
+                return value_read
 
         if mu is None:
             mu = self.chemical_potential
