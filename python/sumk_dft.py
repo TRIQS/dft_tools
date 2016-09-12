@@ -715,16 +715,16 @@ class SumkDFT:
         # return only the inequivalent shells:
         return G_loc_inequiv
 
-    def analyse_block_structure(self, threshold=0.00001, include_shells=None, dm=None):
+    def analyse_block_structure(self, threshold=0.00001, include_shells=None, dm=None, hloc=None):
         r"""
         Determines the block structure of local Green's functions by analysing the structure of 
-        the corresponding density matrices. The resulting block structures for correlated shells
-        are stored in self.gf_struct_solver list.
+        the corresponding density matrices and the local Hamiltonian. The resulting block structures 
+        for correlated shells are stored in self.gf_struct_solver list.
 
         Parameters
         ----------
         threshold : real, optional
-                    If the difference between density matrix elements is below threshold,
+                    If the difference between density matrix / hloc elements is below threshold,
                     they are considered to be equal.
         include_shells : list of integers, optional
                          List of correlated shells to be analysed.
@@ -733,6 +733,10 @@ class SumkDFT:
              List of density matrices from which block stuctures are to be analysed.
              Each density matrix is a dict {block names: 2d numpy arrays}.
              If not provided, dm will be calculated from the DFT Hamiltonian by a simple-point BZ integration.
+        hloc : list of dict, optional
+               List of local Hamiltonian matrices from which block stuctures are to be analysed
+               Each Hamiltonian is a dict {block names: 2d numpy arrays}.
+               If not provided, it will be calculated using eff_atomic_levels.
         """
 
         self.gf_struct_solver = [{} for ish in range(self.n_inequiv_shells)]
@@ -745,6 +749,10 @@ class SumkDFT:
             dm = self.density_matrix(method='using_point_integration')
         dens_mat = [dm[self.inequiv_to_corr[ish]]
                     for ish in range(self.n_inequiv_shells)]
+        if hloc is None:
+            hloc = self.eff_atomic_levels()
+        H_loc = [hloc[self.inequiv_to_corr[ish]]
+                 for ish in range(self.n_inequiv_shells)]
 
         if include_shells is None:
             include_shells = range(self.n_inequiv_shells)
@@ -754,13 +762,14 @@ class SumkDFT:
                 n_orb = self.corr_shells[self.inequiv_to_corr[ish]]['dim']
                 # gives an index list of entries larger that threshold
                 dmbool = (abs(dens_mat[ish][sp]) > threshold)
+                hlocbool = (abs(H_loc[ish][sp]) > threshold)
 
                 # Determine off-diagonal entries in upper triangular part of
                 # density matrix
                 offdiag = Set([])
                 for i in range(n_orb):
                     for j in range(i + 1, n_orb):
-                        if dmbool[i, j]:
+                        if dmbool[i, j] or hlocbool[i, j]:
                             offdiag.add((i, j))
 
                 # Determine the number of non-hybridising blocks in the gf
