@@ -116,6 +116,20 @@ class ElectronicStructure:
 # Check that the number of atoms is the same in PLOCAR and POSCAR
 #        natom_plo = vasp_data.plocar.params['nion']
 #        assert natom_plo == self.natom, "PLOCAR is inconsistent with POSCAR (number of atoms)"
+        self.structure = {'a_brav': vasp_data.poscar.a_brav}
+        self.structure['nqtot'] = vasp_data.poscar.nq
+        self.structure['ntypes'] = vasp_data.poscar.ntypes
+        self.structure['nq_types'] = vasp_data.poscar.nions
+# Concatenate coordinates grouped by type into one array
+        self.structure['qcoords'] = np.vstack(vasp_data.poscar.q_types)
+        self.structure['type_of_ion'] = vasp_data.poscar.type_of_ion
+# FIXME: This can be removed if ion coordinates are stored in a continuous array
+## Construct a map to access coordinates by index
+#        self.structure['ion_index'] = []
+#        for isort, nq in enumerate(self.structure['nq_types']):
+#            for iq in xrange(nq):
+#                self.structure['ion_index'].append((isort, iq))
+
 
     def debug_density_matrix(self):
         """

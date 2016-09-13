@@ -68,7 +68,7 @@ class ProjectorShell:
     - proj_raw (numpy.array) : array of raw projectors
 
     """
-    def __init__(self, sh_pars, proj_raw, proj_params, nc_flag):
+    def __init__(self, sh_pars, proj_raw, proj_params, kmesh, structure, nc_flag):
         self.lorb = sh_pars['lshell']
         self.ion_list = sh_pars['ion_list']
         self.user_index = sh_pars['user_index']
@@ -84,7 +84,7 @@ class ProjectorShell:
         self.ndim = self.extract_tmatrices(sh_pars)
         self.nion = len(self.ion_list)
 
-        self.extract_projectors(proj_raw, proj_params)
+        self.extract_projectors(proj_raw, proj_params, kmesh, structure)
 
 ################################################################################
 #
@@ -203,7 +203,7 @@ class ProjectorShell:
 # extract_projectors
 #
 ################################################################################
-    def extract_projectors(self, proj_raw, proj_params):
+    def extract_projectors(self, proj_raw, proj_params, kmesh, structure):
         """
         Extracts projectors for the given shell.
         
@@ -223,13 +223,16 @@ class ProjectorShell:
             ndim = self.tmatrices.shape[1]
             self.proj_arr = np.zeros((nion, ns, nk, ndim, nb), dtype=np.complex128)
             for ik in xrange(nk):
+                kp = kmesh['kpoints'][ik]
                 for io, ion in enumerate(self.ion_list):
                     proj_k = np.zeros((ns, nlm, nb), dtype=np.complex128)
+                    qcoord = structure['qcoords'][ion]
+                    kphase = np.exp(-2.0j * np.pi * np.dot(kp, qcoord))
                     for m in xrange(nlm):
 # Here we search for the index of the projector with the given isite/l/m indices
                         for ip, par in enumerate(proj_params):
                             if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
-                                proj_k[:, m, :] = proj_raw[ip, :, ik, :]
+                                proj_k[:, m, :] = proj_raw[ip, :, ik, :] * kphase
                                 break
                     for isp in xrange(ns):
                         self.proj_arr[io, isp, ik, :, :] = np.dot(self.tmatrices[io, :, :], proj_k[isp, :, :])
@@ -238,11 +241,15 @@ class ProjectorShell:
 # No transformation: just copy the projectors as they are
             self.proj_arr = np.zeros((nion, ns, nk, nlm, nb), dtype=np.complex128)
             for io, ion in enumerate(self.ion_list):
+                qcoord = structure['qcoords'][ion]
                 for m in xrange(nlm):
 # Here we search for the index of the projector with the given isite/l/m indices
                     for ip, par in enumerate(proj_params):
                         if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
-                            self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :]
+                            for ik in xrange(nk):
+                                kp = kmesh['kpoints'][ik]
+                                kphase = np.exp(-2.0j * np.pi * np.dot(kp, qcoord))
+                                self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :] * kphase
                             break
 
 

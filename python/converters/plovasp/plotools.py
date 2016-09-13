@@ -109,7 +109,7 @@ def generate_plo(conf_pars, el_struct):
     print "  Generating %i shell%s..."%(nshell, '' if nshell == 1 else 's')
     pshells = []
     for sh_par in conf_pars.shells:
-        pshell = ProjectorShell(sh_par, proj_raw, el_struct.proj_params, el_struct.nc_flag)
+        pshell = ProjectorShell(sh_par, proj_raw, el_struct.proj_params, el_struct.kmesh, el_struct.structure, el_struct.nc_flag)
         print
         print "    Shell         : %s"%(pshell.user_index)
         print "    Orbital l     : %i"%(pshell.lorb)
