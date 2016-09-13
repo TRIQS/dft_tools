@@ -27,12 +27,13 @@ from pytriqs.gf.local import *
 import pytriqs.utility.mpi as mpi
 from pytriqs.archive import *
 from symmetry import *
+from block_structure import BlockStructure
 from sets import Set
 from itertools import product
 from warnings import warn
 
 
-class SumkDFT:
+class SumkDFT(object):
     """This class provides a general SumK method for combining ab-initio code and pytriqs."""
 
     def __init__(self, hdf_file, h_field=0.0, use_dft_blocks=False,
@@ -53,6 +54,9 @@ class SumkDFT:
         use_dft_blocks : boolean, optional
                          If True, the local Green's function matrix for each spin is divided into smaller blocks 
                           with the block structure determined from the DFT density matrix of the corresponding correlated shell.
+
+                         Alternatively and additionally, the block structure can be analyzed using :meth:`analyse_block_structure <dft.sumk_dft.SumkDFT.analyse_block_structure>`
+                         and manipulated using the SumkDFT.block_structre attribute (see :class:`BlockStructure <dft.block_structure.BlockStructure>`).
         dft_data : string, optional
                    Name of hdf5 subgroup in which DFT data for projector and lattice Green's function construction are stored.
         symmcorr_data : string, optional
@@ -111,6 +115,8 @@ class SumkDFT:
                 for isp in range(self.n_spin_blocks[iso]):
                     self.spin_names_to_ind[iso][
                         self.spin_block_names[iso][isp]] = isp * self.SP
+
+            self.block_structure = BlockStructure()
 
             # GF structure used for the local things in the k sums
             # Most general form allowing for all hybridisation, i.e. largest
@@ -221,6 +227,9 @@ class SumkDFT:
         if not subgrp in ar:
             ar.create_group(subgrp)
         for it in things_to_save:
+            if it in [ "gf_struct_sumk", "gf_struct_solver",
+                    "solver_to_sumk", "sumk_to_solver", "solver_to_sumk_block"]:
+                warn("It is not recommended to save '{}' individually. Save 'block_structure' instead.".format(it))
             try:
                 ar[subgrp][it] = getattr(self, it)
             except:
@@ -719,7 +728,7 @@ class SumkDFT:
         r"""
         Determines the block structure of local Green's functions by analysing the structure of 
         the corresponding density matrices and the local Hamiltonian. The resulting block structures 
-        for correlated shells are stored in self.gf_struct_solver list.
+        for correlated shells are stored in the :class:`SumkDFT.block_structure <dft.block_structure.BlockStructure>` attribute.
 
         Parameters
         ----------
@@ -1505,3 +1514,35 @@ class SumkDFT:
         atomlst = [shells[i]['atom'] for i in range(len(shells))]
         n_atoms = len(set(atomlst))
         return n_atoms
+
+    # The following methods are here to ensure backward-compatibility
+    # after introducing the block_structure class
+    def __get_gf_struct_sumk(self):
+        return self.block_structure.gf_struct_sumk
+    def __set_gf_struct_sumk(self,value):
+        self.block_structure.gf_struct_sumk = value
+    gf_struct_sumk = property(__get_gf_struct_sumk,__set_gf_struct_sumk)
+
+    def __get_gf_struct_solver(self):
+        return self.block_structure.gf_struct_solver
+    def __set_gf_struct_solver(self,value):
+        self.block_structure.gf_struct_solver = value
+    gf_struct_solver = property(__get_gf_struct_solver,__set_gf_struct_solver)
+
+    def __get_solver_to_sumk(self):
+        return self.block_structure.solver_to_sumk
+    def __set_solver_to_sumk(self,value):
+        self.block_structure.solver_to_sumk = value
+    solver_to_sumk = property(__get_solver_to_sumk,__set_solver_to_sumk)
+
+    def __get_sumk_to_solver(self):
+        return self.block_structure.sumk_to_solver
+    def __set_sumk_to_solver(self,value):
+        self.block_structure.sumk_to_solver = value
+    sumk_to_solver = property(__get_sumk_to_solver,__set_sumk_to_solver)
+
+    def __get_solver_to_sumk_block(self):
+        return self.block_structure.solver_to_sumk_block
+    def __set_solver_to_sumk_block(self,value):
+        self.block_structure.solver_to_sumk_block = value
+    solver_to_sumk_block = property(__get_solver_to_sumk_block,__set_solver_to_sumk_block)
