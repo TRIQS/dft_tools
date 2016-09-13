@@ -854,7 +854,7 @@ class SumkDFTTools(SumkDFT):
     def transport_coefficient(self, direction, iq, n, beta, method=None):
         r"""
         Calculates the transport coefficient A_n in a given direction for a given :math:`\Omega`. The required members (Gamma_w, directions, Om_mesh) have to be obtained first
-        by calling the function :meth:`transport_distribution <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools.transport_distribution>`. For n>0 A is set to NaN if :math:`\Omega` is not 0.0. 
+        by calling the function :meth:`transport_distribution <dft.sumk_dft_tools.SumkDFTTools.transport_distribution>`. For n>0 A is set to NaN if :math:`\Omega` is not 0.0. 
 
         Parameters
         ----------
@@ -918,9 +918,9 @@ class SumkDFTTools(SumkDFT):
     def conductivity_and_seebeck(self, beta, method=None):
         r"""
         Calculates the Seebeck coefficient and the optical conductivity by calling 
-        :meth:`transport_coefficient <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools.transport_coefficient>`. 
+        :meth:`transport_coefficient <dft.sumk_dft_tools.SumkDFTTools.transport_coefficient>`. 
         The required members (Gamma_w, directions, Om_mesh) have to be obtained first by calling the function 
-        :meth:`transport_distribution <pytriqs.applications.dft.sumk_dft_tools.SumkDFTTools.transport_distribution>`. 
+        :meth:`transport_distribution <dft.sumk_dft_tools.SumkDFTTools.transport_distribution>`. 
 
         Parameters
         ----------

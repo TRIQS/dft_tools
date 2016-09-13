@@ -49,7 +49,7 @@ Learn how to use :ref:`TRIQS <triqslibs:welcome>` (and the :ref:`CTHYB <triqscth
 As :program:`DFTTools` is a :ref:`TRIQS <triqslibs:welcome>` based application
 it is beneficial to invest a few hours to become familiar with
 the :ref:`TRIQS <triqslibs:welcome>` basics first. The
-`TRIQS tutorial <https://triqs.ipht.cnrs.fr/1.x/tutorials.html>`_ covers
+:ref:`TRIQS tutorial <triqslibs:tutorials>` covers
 the most important aspects of :ref:`TRIQS <triqslibs:welcome>`. We recommend
 downloading our hands-on training in the form of ipython notebooks from
 the `tutorials repository on GitHub <https://github.com/TRIQS/tutorials>`_.

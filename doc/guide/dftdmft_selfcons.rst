@@ -16,7 +16,7 @@ Wien2k + dmftproj
 
 In order to do charge self-consistent calculations, we have to tell the band structure program about the
 changes in the charge density due to correlation effects. In the following, we discuss how to use the 
-:ref:`TRIQS <triqslibs:welcome>` tools in combination with the :program:`Wien2k` program.
+:ref:`TRIQS <triqslibs:install>` tools in combination with the :program:`Wien2k` program.
 
 We can use the DMFT script as introduced in section :ref:`singleshot`,
 with just a few simple 
