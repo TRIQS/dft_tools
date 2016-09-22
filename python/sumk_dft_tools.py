@@ -107,7 +107,7 @@ class SumkDFTTools(SumkDFT):
                 dim = self.corr_shells[self.inequiv_to_corr[ish]]['dim']
                 DOSproj[ish][sp] = numpy.zeros([n_om], numpy.float_)
                 DOSproj_orb[ish][sp] = numpy.zeros(
-                    [n_om, dim, dim], numpy.float_)
+                    [n_om, dim, dim], numpy.complex_)
 
         ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):
@@ -155,7 +155,7 @@ class SumkDFTTools(SumkDFT):
                     DOSproj[ish][bname][iom] -= gf.data[iom,
                                                         :, :].imag.trace() / numpy.pi
                 DOSproj_orb[ish][bname][
-                    :, :, :] -= gf.data[:, :, :].imag / numpy.pi
+                    :, :, :] += (1.0j*(gf-gf.conjugate().transpose())/2.0/numpy.pi).data[:,:,:]
 
         # Write to files
         if save_to_file and mpi.is_master_node():
@@ -179,8 +179,8 @@ class SumkDFTTools(SumkDFT):
                             f = open('DOS_wann_' + sp + '_proj' + str(ish) +
                                      '_' + str(i) + '_' + str(j) + '.dat', 'w')
                             for iom in range(n_om):
-                                f.write("%s    %s\n" % (
-                                    om_mesh[iom], DOSproj_orb[ish][sp][iom, i, j]))
+                                f.write("%s    %s    %s\n" % (
+                                    om_mesh[iom], DOSproj_orb[ish][sp][iom, i, j].real,DOSproj_orb[ish][sp][iom, i, j].imag))
                             f.close()
 
         return DOS, DOSproj, DOSproj_orb
@@ -259,7 +259,7 @@ class SumkDFTTools(SumkDFT):
                 dim = self.shells[ish]['dim']
                 DOSproj[ish][sp] = numpy.zeros([n_om], numpy.float_)
                 DOSproj_orb[ish][sp] = numpy.zeros(
-                    [n_om, dim, dim], numpy.float_)
+                    [n_om, dim, dim], numpy.complex_)
 
         ikarray = numpy.array(range(self.n_k))
         for ik in mpi.slice_array(ikarray):
@@ -308,7 +308,7 @@ class SumkDFTTools(SumkDFT):
                     DOSproj[ish][bname][iom] -= gf.data[iom,
                                                         :, :].imag.trace() / numpy.pi
                 DOSproj_orb[ish][bname][
-                    :, :, :] -= gf.data[:, :, :].imag / numpy.pi
+                    :, :, :] += (1.0j*(gf-gf.conjugate().transpose())/2.0/numpy.pi).data[:,:,:]
 
         # Write to files
         if save_to_file and mpi.is_master_node():
@@ -332,8 +332,8 @@ class SumkDFTTools(SumkDFT):
                             f = open('DOS_parproj_' + sp + '_proj' + str(ish) +
                                      '_' + str(i) + '_' + str(j) + '.dat', 'w')
                             for iom in range(n_om):
-                                f.write("%s    %s\n" % (
-                                    om_mesh[iom], DOSproj_orb[ish][sp][iom, i, j]))
+                                f.write("%s    %s    %s\n" % (
+                                    om_mesh[iom], DOSproj_orb[ish][sp][iom, i, j].real,DOSproj_orb[ish][sp][iom, i, j].imag))
                             f.close()
 
         return DOS, DOSproj, DOSproj_orb
