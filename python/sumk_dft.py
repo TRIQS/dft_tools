@@ -760,8 +760,8 @@ class SumkDFT(object):
                     for ish in range(self.n_inequiv_shells)]
         if hloc is None:
             hloc = self.eff_atomic_levels()
-        H_loc = [hloc[self.inequiv_to_corr[ish]]
-                 for ish in range(self.n_inequiv_shells)]
+        H_loc = [hloc[self.corr_to_inequiv[ish]]
+                 for ish in range(self.n_corr_shells)]
 
         if include_shells is None:
             include_shells = range(self.n_inequiv_shells)
@@ -961,7 +961,8 @@ class SumkDFT(object):
         Returns
         -------
         eff_atlevels : gf_struct_sumk like
-                       Effective local Hamiltonian :math:`H^{loc}_{m m'}` for each correlated shell.
+                       Effective local Hamiltonian :math:`H^{loc}_{m m'}` for each
+                       inequivalent correlated shell.
 
         """
 
