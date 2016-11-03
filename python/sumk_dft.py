@@ -1300,7 +1300,7 @@ class SumkDFT(object):
         """
         self.chemical_potential = mu
 
-    def calc_mu(self, precision=0.01, iw_or_w='iw', broadening=None):
+    def calc_mu(self, precision=0.01, iw_or_w='iw', broadening=None, delta=0.5):
         r"""
         Searches for the chemical potential that gives the DFT total charge.
         A simple bisection method is used.
@@ -1330,7 +1330,7 @@ class SumkDFT(object):
 
         self.chemical_potential = dichotomy.dichotomy(function=F,
                                                       x_init=self.chemical_potential, y_value=density,
-                                                      precision_on_y=precision, delta_x=0.5, max_loops=100,
+                                                      precision_on_y=precision, delta_x=delta, max_loops=100,
                                                       x_name="Chemical Potential", y_name="Total Density",
                                                       verbosity=3)[0]
 
