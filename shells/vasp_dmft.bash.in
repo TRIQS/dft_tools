@@ -18,7 +18,7 @@ Usage: vasp_dmft [-n <number of cores>] -i <number of iterations> [-p <path to V
 "
 }
 
-while getopts ":n:i:" opt; do
+while getopts ":n:i:p:" opt; do
   case $opt in
      n)
 #        echo "Option: Ncpu, argument: $OPTARG"
@@ -79,7 +79,7 @@ echo "  Number of iterations: $NITER"
 echo "  Script name: $DMFT_SCRIPT"
 
 rm -f vasp.lock
-stdbuf -o 0 $MPIRUN_CMD -np $NPROC "$VASP_DIR/vasp" &
+stdbuf -o 0 $MPIRUN_CMD -np $NPROC "$VASP_DIR" &
 
 PYTRIQS=@CMAKE_INSTALL_PREFIX@/bin/pytriqs
 
