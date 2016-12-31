@@ -383,7 +383,7 @@ class Poscar:
         try:
 # Old v4.6 format: no element names
             self.nions = map(int, sline.split())
-            self.el_names = ['El%i'%(i) for i in xrange(len(nions))]
+            self.el_names = ['El%i'%(i) for i in xrange(len(self.nions))]
         except ValueError:
 # New v5.x format: read element names first
             self.el_names = sline.split()
