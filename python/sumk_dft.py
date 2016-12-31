@@ -1238,7 +1238,7 @@ class SumkDFT:
                     deltaN[bname][ik][diag_inds] -= dens_mat_dft[bname][ik][:nb]
                     dens[bname] -= self.bz_weights[ik] * dens_mat_dft[bname][ik].sum().real
                     isp = ntoi[bname]
-                    b1, b2 = self.band_window[isp][ik, :2]
+                    b1, b2 = band_window[isp][ik, :2]
                     nb = b2 - b1 + 1
                     assert nb == self.n_orbitals[ik, ntoi[bname]], "Number of bands is inconsistent at ik = %s"%(ik)
                     band_en_correction += numpy.dot(deltaN[bname][ik], self.hopping[ik, isp, :nb, :nb]).trace().real * self.bz_weights[ik]
