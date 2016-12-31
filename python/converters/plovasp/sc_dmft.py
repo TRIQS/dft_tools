@@ -111,7 +111,7 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter):
                 break
 # Tell VASP to stop if the maximum number of iterations is reached
         iter += 1
-        if iter = n_iter:
+        if iter == n_iter:
             if mpi.is_master_node():
                 print "\n  Maximum number of iterations reached."
                 print "  Aborting VASP iterations...\n"
