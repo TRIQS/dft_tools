@@ -227,12 +227,13 @@ class ProjectorShell:
                 for io, ion in enumerate(self.ion_list):
                     proj_k = np.zeros((ns, nlm, nb), dtype=np.complex128)
                     qcoord = structure['qcoords'][ion]
-                    kphase = np.exp(-2.0j * np.pi * np.dot(kp, qcoord))
+#                    kphase = np.exp(-2.0j * np.pi * np.dot(kp, qcoord))
+#                    kphase = 1.0
                     for m in xrange(nlm):
 # Here we search for the index of the projector with the given isite/l/m indices
                         for ip, par in enumerate(proj_params):
                             if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
-                                proj_k[:, m, :] = proj_raw[ip, :, ik, :] * kphase
+                                proj_k[:, m, :] = proj_raw[ip, :, ik, :]  #* kphase
                                 break
                     for isp in xrange(ns):
                         self.proj_arr[io, isp, ik, :, :] = np.dot(self.tmatrices[io, :, :], proj_k[isp, :, :])
@@ -246,10 +247,12 @@ class ProjectorShell:
 # Here we search for the index of the projector with the given isite/l/m indices
                     for ip, par in enumerate(proj_params):
                         if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
-                            for ik in xrange(nk):
-                                kp = kmesh['kpoints'][ik]
-                                kphase = np.exp(-2.0j * np.pi * np.dot(kp, qcoord))
-                                self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :] * kphase
+                            self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :]
+#                            for ik in xrange(nk):
+#                                kp = kmesh['kpoints'][ik]
+##                                kphase = np.exp(-2.0j * np.pi * np.dot(kp, qcoord))
+#                                kphase = 1.0
+#                                self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :] # * kphase
                             break
 
 
