@@ -25,7 +25,7 @@ raw projectors. Note, however, that DFTtools does not support projector
 groups at the moment but this feature might appear in future releases.
 
 A set of projectors defined on sites realted to each other either by symmetry
-or by sort along with a set of `l`, `m` quantum numbers forms a
+or by sort along with a set of :math:`l`, :math:`m` quantum numbers forms a
 `projector shell`. There could be several projectors shells in a
 projector group, implying that they will be normalized within
 the same energy window.
@@ -45,13 +45,97 @@ A PLOVasp input file can contain three types of sections:
 #. **[General]**: includes parameters that are independent
    of a particular projector set, such as the Fermi level, additional 
    output (e.g. the density of states), etc.
-
 #. **[Group <Ng>]**: describes projector groups, i.e. a set of
    projectors sharing the same energy window and normalization type.
    At the moment, DFTtools support only one projector group, therefore
    there should be no more than one projector group.
-
 #. **[Shell <Ns>]**: contains parameters of a projector shell labelled
    with `<Ns>`. If there is only one group section and one shell section,
    the group section can be omitted and its required parameters can be
    given inside the single shell section.
+
+Section [General]
+"""""""""""""""""
+
+The entire section is optional and it contains three parameters:
+
+*  **BASENAME** (string): provides a base name for output files.
+   Default filenames are :file:`vasp.*`.
+*  **DOSMESH** ([float float] integer): if this parameter is given
+   projected density of states for each projected orbital will be
+   evaluated and stored to files :file:`pdos_<n>.dat`, where `n` is the
+   orbital number. The energy
+   mesh is defined by three numbers: `EMIN` `EMAX` `NPOINTS`. The first two
+   can be omitted in which case they are taken to be equal to the projector
+   energy window. **Important note**: at the moment this option works
+   only if the tetrahedron integration method (`ISMEAR = -4` or `-5`)
+   is used in VASP to produce `LOCPROJ`.
+*  **EFERMI** (float): provides the Fermi level. This value overrides
+   the one extracted from VASP output files.
+   
+There are no required parameters in this section.
+
+Section [Shell]
+"""""""""""""""
+
+This section specifies a projector shell. Each shell section must be
+labeled by an index, e.g. `[Shell 1]`. These indices can then be referenced
+in a `[Group]` section.
+
+In each `[Shell]` section two parameters are required:
+
+*  **IONS** (list of integer): indices of sites included in the shell.
+   The sites can be given either by a list of integers `IONS = 5 6 7 8`
+   or by a range `IONS = 5..8`. The site indices must be compatible with
+   POSCAR file.
+*  **LSHELL** (integer): :math:`l` quantum number of the desired local states.
+
+It is important that a given combination of site indices and local states
+given by `LSHELL` must be present in LOCPROJ file.
+
+There are additional optional parameters that allow one to transform
+the local states:
+
+*  **TRANSFORM** (matrix): local transformation matrix applied to all states
+   in the projector shell. The matrix is defined by (multiline) block
+   of floats, with each line corresponding to a row. The number of columns
+   must be equal to :math:`2 l + 1`, with :math:`l` given by `LSHELL`. Only real matrices
+   are allowed. This parameter can be useful to select certain subset of
+   orbitals or perform a simple global rotation.
+*  **TRANSFILE** (string): name of the file containing transformation
+   matrices for each site. This option allows for a full-fledged functionality
+   when it comes to local state transformations. The format of this file
+   is described in :ref:`_transformation_file`.
+
+Section [Group]
+"""""""""""""""
+
+Each defined projector shell must be part of a projector group. In the current
+implementation of DFTtools only a single group is supported which can be
+labeled by any integer, e.g. `[Group 1]`. This implies that all projector shells
+must be included in this group.
+
+Required parameters for any group are the following:
+
+*  **SHELLS** (list of integers): indices of projector shells included in the group.
+   All defined shells must be grouped.
+*  **EWINDOW** (float float): the energy window specified by two floats: bottom
+   and top. All projectors in the current group are going to be normalized within
+   this window.
+
+Optional group parameters:
+
+*  **NORMALIZE** (True/False): specifies whether projectors in the group are
+   to be noramlized. The default value is **True**.
+*  **NORMION** (True/False): specifies whether projectors are normalized on
+   a per-site (per-ion) basis. That is, if `NORMION = True` the orthogonality
+   condition will be enforced on each site separately but the Wannier functions
+   on different sites will not be orthogonal. If `NORMION = False` Wannier functions
+   on different sites included in the group will be orthogonal to each other.
+   
+
+.. _transformation_file
+
+File of transformation matrices
+"""""""""""""""""""""""""""""""
+
