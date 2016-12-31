@@ -33,6 +33,13 @@ import sys
 import pytriqs.utility.mpi as mpi
 import converter
 
+xch = sys.excepthook
+def excepthook(typ, value, traceback):
+    xch(typ, value, traceback)
+    if mpi.MPI.COMM_WORLD.size > 1:
+        mpi.MPI.COMM_WORLD.Abort(1)
+sys.excepthook = excepthook
+
 debug = True
 #
 # Helper functions
@@ -41,7 +48,11 @@ def sigint_handler(signal, frame):
     raise SystemExit(1)
 
 def is_vasp_lock_present():
-    return os.path.isfile('./vasp.lock')
+    res_bool = False
+    if mpi.is_master_node():
+        res_bool = os.path.isfile('./vasp.lock')
+    res_bool = mpi.bcast(res_bool)
+    return res_bool
 
 def is_vasp_running(vasp_pid):
     """
@@ -122,34 +133,15 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter):
         if debug: print bcolors.MAGENTA + "rank %s"%(mpi.rank) + bcolors.ENDC
         err = 0
         exc = None
-        try:
-            if debug: print bcolors.BLUE + "plovasp: rank %s"%(mpi.rank) + bcolors.ENDC
-            if mpi.is_master_node():
-                converter.generate_and_output_as_text(cfg_file, vasp_dir='./')
-# Read energy from OSZICAR
-                dft_energy = get_dft_energy()
-        except Exception, exc:
-            err = 1
-
-        err = mpi.bcast(err)
-        if err:
-            if mpi.is_master_node():
-                raise exc
-            else:
-                raise SystemExit(1)
-
+        if debug: print bcolors.BLUE + "plovasp: rank %s"%(mpi.rank) + bcolors.ENDC
+        if mpi.is_master_node():
+            converter.generate_and_output_as_text(cfg_file, vasp_dir='./')
+            # Read energy from OSZICAR
+            dft_energy = get_dft_energy()
         mpi.barrier()
 
-        try:
-            if debug: print bcolors.GREEN + "rank %s"%(mpi.rank) + bcolors.ENDC
-            corr_energy, dft_dc = dmft_cycle()
-        except:
-            if mpi.is_master_node():
-                print "  master forwarding the exception..."
-                raise
-            else:
-                print "  rank %i exiting..."%(mpi.rank)
-                raise SystemExit(1)
+        if debug: print bcolors.GREEN + "rank %s"%(mpi.rank) + bcolors.ENDC
+        corr_energy, dft_dc = dmft_cycle()
         mpi.barrier()
 
         if mpi.is_master_node():
