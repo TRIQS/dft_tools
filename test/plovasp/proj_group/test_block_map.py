@@ -48,6 +48,10 @@ class TestBlockMap(mytest.MyTestCase):
                 self.mock_proj_params[ip]['l'] = 1
                 self.mock_proj_params[ip]['m'] = im
                 ip += 1
+# Mock k-mesh
+        self.mock_kmesh = {'kpoints': np.zeros((1, 3))}
+# Mock structure
+        self.mock_struct = {'qcoords': np.zeros((4, 3))}
 
 # Scenario 1
     def test_normion_false(self):
@@ -57,7 +61,7 @@ class TestBlockMap(mytest.MyTestCase):
 
         shells = []
         for sh_par in self.pars.shells:
-            shells.append(ProjectorShell(sh_par, self.mock_plo, self.mock_proj_params, 0))
+            shells.append(ProjectorShell(sh_par, self.mock_plo, self.mock_proj_params, self.mock_kmesh, self.mock_struct, 0))
 
         proj_gr = ProjectorGroup(self.pars.groups[0], shells, self.mock_eigvals)
 
@@ -81,7 +85,7 @@ class TestBlockMap(mytest.MyTestCase):
 
         shells = []
         for sh_par in self.pars.shells:
-            shells.append(ProjectorShell(sh_par, self.mock_plo, self.mock_proj_params, 0))
+            shells.append(ProjectorShell(sh_par, self.mock_plo, self.mock_proj_params, self.mock_kmesh, self.mock_struct, 0))
 
         proj_gr = ProjectorGroup(self.pars.groups[0], shells, self.mock_eigvals)
 

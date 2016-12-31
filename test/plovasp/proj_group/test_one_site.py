@@ -35,8 +35,10 @@ class TestProjectorGroup(mytest.MyTestCase):
 
         efermi = self.el_struct.efermi
         self.eigvals = self.el_struct.eigvals - efermi
+        struct = self.el_struct.structure
+        kmesh = self.el_struct.kmesh
 
-        self.proj_sh = ProjectorShell(self.pars.shells[0], vasp_data.plocar.plo, vasp_data.plocar.proj_params, 0)
+        self.proj_sh = ProjectorShell(self.pars.shells[0], vasp_data.plocar.plo, vasp_data.plocar.proj_params, kmesh, struct, 0)
         self.proj_gr = ProjectorGroup(self.pars.groups[0], [self.proj_sh], self.eigvals)
 
 # Scenario 1
