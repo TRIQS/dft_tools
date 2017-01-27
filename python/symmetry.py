@@ -1,5 +1,5 @@
 
-################################################################################
+##########################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
 #
@@ -18,13 +18,15 @@
 # You should have received a copy of the GNU General Public License along with
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
-################################################################################
+##########################################################################
 
-import copy,numpy
+import copy
+import numpy
 from types import *
 from pytriqs.gf.local import *
 from pytriqs.archive import *
 import pytriqs.utility.mpi as mpi
+
 
 class Symmetry:
     """
@@ -33,10 +35,10 @@ class Symmetry:
     rotational matrices for each symmetry operation.
     """
 
-    def __init__(self, hdf_file, subgroup = None):
+    def __init__(self, hdf_file, subgroup=None):
         """
         Initialises the class.
-        
+
         Parameters
         ----------
         hdf_file : string
@@ -46,69 +48,80 @@ class Symmetry:
                    the data is stored at the root of the hdf5 archive.
         """
 
-        assert type(hdf_file) == StringType, "Symmetry: hdf_file must be a filename."
+        assert type(
+            hdf_file) == StringType, "Symmetry: hdf_file must be a filename."
         self.hdf_file = hdf_file
-        things_to_read = ['n_symm','n_atoms','perm','orbits','SO','SP','time_inv','mat','mat_tinv']
-        for it in things_to_read: setattr(self,it,0)
+        things_to_read = ['n_symm', 'n_atoms', 'perm',
+                          'orbits', 'SO', 'SP', 'time_inv', 'mat', 'mat_tinv']
+        for it in things_to_read:
+            setattr(self, it, 0)
 
         if mpi.is_master_node():
-            #Read the stuff on master:
-            ar = HDFArchive(hdf_file,'r')
+            # Read the stuff on master:
+            ar = HDFArchive(hdf_file, 'r')
             if subgroup is None:
                 ar2 = ar
             else:
                 ar2 = ar[subgroup]
 
-            for it in things_to_read: setattr(self,it,ar2[it])
+            for it in things_to_read:
+                setattr(self, it, ar2[it])
             del ar2
             del ar
 
         # Broadcasting
-        for it in things_to_read: setattr(self,it,mpi.bcast(getattr(self,it)))
+        for it in things_to_read:
+            setattr(self, it, mpi.bcast(getattr(self, it)))
 
         # now define the mapping of orbitals:
         # self.orb_map[iorb] = jorb gives the permutation of the orbitals as given in the list, when the
         # permutation of the atoms is done:
         self.n_orbits = len(self.orbits)
-        self.orb_map = [ [0 for iorb in range(self.n_orbits)] for i_symm in range(self.n_symm) ]
+        self.orb_map = [[0 for iorb in range(
+            self.n_orbits)] for i_symm in range(self.n_symm)]
         for i_symm in range(self.n_symm):
             for iorb in range(self.n_orbits):
                 srch = copy.deepcopy(self.orbits[iorb])
-                srch['atom'] = self.perm[i_symm][self.orbits[iorb]['atom']-1]
+                srch['atom'] = self.perm[i_symm][self.orbits[iorb]['atom'] - 1]
                 self.orb_map[i_symm][iorb] = self.orbits.index(srch)
 
-
-    def symmetrize(self,obj):
+    def symmetrize(self, obj):
         """
         Symmetrizes a given object. 
-        
+
         Parameters
         ----------
         obj : list
               object to symmetrize. It has to be given as list, where its length is determined by the number 
               of equivalent members of the object. Two types of objects are supported:
-              
+
               - BlockGf : list of Green's functions,
               - Matrices : The format is taken from density matrices as obtained from Green's functions (DictType).
-              
+
         Returns
         -------
         symm_obj : list
                    Symmetrized object, of the same type as input object.
         """
 
-        assert isinstance(obj,list), "symmetrize: obj has to be a list of objects."
-        assert len(obj) == self.n_orbits, "symmetrize: obj has to be a list of the same length as defined in the init."
+        assert isinstance(
+            obj, list), "symmetrize: obj has to be a list of objects."
+        assert len(
+            obj) == self.n_orbits, "symmetrize: obj has to be a list of the same length as defined in the init."
 
-        if isinstance(obj[0],BlockGf):
-            symm_obj = [ obj[i].copy() for i in range(len(obj)) ]        # here the result is stored, it is a BlockGf!
-            for iorb in range(self.n_orbits): symm_obj[iorb].zero()      # set to zero
+        if isinstance(obj[0], BlockGf):
+            # here the result is stored, it is a BlockGf!
+            symm_obj = [obj[i].copy() for i in range(len(obj))]
+            for iorb in range(self.n_orbits):
+                symm_obj[iorb].zero()      # set to zero
         else:
-            # if not a BlockGf, we assume it is a matrix (density matrix), has to be complex since self.mat is complex!
-            symm_obj = [ copy.deepcopy(obj[i]) for i in range(len(obj)) ]
+            # if not a BlockGf, we assume it is a matrix (density matrix), has
+            # to be complex since self.mat is complex!
+            symm_obj = [copy.deepcopy(obj[i]) for i in range(len(obj))]
             for iorb in range(self.n_orbits):
                 if type(symm_obj[iorb]) == DictType:
-                    for ii in symm_obj[iorb]: symm_obj[iorb][ii] *= 0.0
+                    for ii in symm_obj[iorb]:
+                        symm_obj[iorb][ii] *= 0.0
                 else:
                     symm_obj[iorb] *= 0.0
 
@@ -118,12 +131,15 @@ class Symmetry:
                 dim = self.orbits[iorb]['dim']
                 jorb = self.orb_map[i_symm][iorb]
 
-                if isinstance(obj[0],BlockGf):
+                if isinstance(obj[0], BlockGf):
 
                     tmp = obj[iorb].copy()
-                    if self.time_inv[i_symm]: tmp << tmp.transpose()
-                    for bname,gf in tmp: tmp[bname].from_L_G_R(self.mat[i_symm][iorb],tmp[bname],self.mat[i_symm][iorb].conjugate().transpose())
-                    tmp *= 1.0/self.n_symm
+                    if self.time_inv[i_symm]:
+                        tmp << tmp.transpose()
+                    for bname, gf in tmp:
+                        tmp[bname].from_L_G_R(self.mat[i_symm][iorb], tmp[bname], self.mat[
+                                              i_symm][iorb].conjugate().transpose())
+                    tmp *= 1.0 / self.n_symm
                     symm_obj[jorb] += tmp
 
                 else:
@@ -131,17 +147,17 @@ class Symmetry:
                     if type(obj[iorb]) == DictType:
                         for ii in obj[iorb]:
                             if self.time_inv[i_symm] == 0:
-                                symm_obj[jorb][ii] += numpy.dot(numpy.dot(self.mat[i_symm][iorb],obj[iorb][ii]),
+                                symm_obj[jorb][ii] += numpy.dot(numpy.dot(self.mat[i_symm][iorb], obj[iorb][ii]),
                                                                 self.mat[i_symm][iorb].conjugate().transpose()) / self.n_symm
                             else:
-                                symm_obj[jorb][ii] += numpy.dot(numpy.dot(self.mat[i_symm][iorb],obj[iorb][ii].conjugate()),
+                                symm_obj[jorb][ii] += numpy.dot(numpy.dot(self.mat[i_symm][iorb], obj[iorb][ii].conjugate()),
                                                                 self.mat[i_symm][iorb].conjugate().transpose()) / self.n_symm
                     else:
                         if self.time_inv[i_symm] == 0:
-                            symm_obj[jorb] += numpy.dot(numpy.dot(self.mat[i_symm][iorb],obj[iorb]),
+                            symm_obj[jorb] += numpy.dot(numpy.dot(self.mat[i_symm][iorb], obj[iorb]),
                                                         self.mat[i_symm][iorb].conjugate().transpose()) / self.n_symm
                         else:
-                            symm_obj[jorb] += numpy.dot(numpy.dot(self.mat[i_symm][iorb],obj[iorb].conjugate()),
+                            symm_obj[jorb] += numpy.dot(numpy.dot(self.mat[i_symm][iorb], obj[iorb].conjugate()),
                                                         self.mat[i_symm][iorb].conjugate().transpose()) / self.n_symm
 
 # Markus: This does not what it is supposed to do, check how this should work (keep for now)

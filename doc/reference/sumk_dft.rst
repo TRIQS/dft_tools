@@ -2,7 +2,7 @@ SumK DFT
 ========
 
 
-.. autoclass:: sumk_dft.SumkDFT
+.. autoclass:: dft.sumk_dft.SumkDFT
    :members:
    :special-members:
    :show-inheritance:

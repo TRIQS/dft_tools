@@ -1,11 +1,11 @@
-.. index:: DFT Tools
+.. index:: DFTTools
 
 .. module:: pytriqs.applications.dft
 
-.. _dfttools:
+.. _dft:
 
-DFT Tools
-=========
+DFTTools
+========
 
 This :ref:`TRIQS-based <triqslibs:welcome>`-based application is aimed
 at ab-initio calculations for 

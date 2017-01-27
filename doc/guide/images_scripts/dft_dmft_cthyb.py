@@ -6,10 +6,10 @@ from pytriqs.gf.local import *
 from pytriqs.applications.dft.sumk_dft import *
 
 dft_filename='SrVO3'
-U = U.0
+U = 4.0
 J = 0.65
 beta = 40
-loops = 10                       # Number of DMFT sc-loops
+loops = 15                       # Number of DMFT sc-loops
 sigma_mix = 1.0                  # Mixing factor of Sigma after solution of the AIM
 delta_mix = 1.0                  # Mixing factor of Delta as input for the AIM
 dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
@@ -20,9 +20,14 @@ h_field = 0.0
 # Solver parameters
 p = {}
 p["max_time"] = -1
-p["length_cycle"] = 50
-p["n_warmup_cycles"] = 50
-p["n_cycles"] = 5000
+p["random_seed"] = 123 * mpi.rank + 567
+p["length_cycle"] = 200
+p["n_warmup_cycles"] = 100000
+p["n_cycles"] = 1000000
+p["perfrom_tail_fit"] = True
+p["fit_max_moments"] = 4
+p["fit_min_n"] = 30
+p["fit_max_n"] = 60
 
 # If conversion step was not done, we could do it here. Uncomment the lines it you want to do this.
 #from pytriqs.applications.dft.converters.wien2k_converter import *
@@ -141,6 +146,5 @@ for iteration_number in range(1,loops+1):
     dm = S.G_iw.density() # compute the density matrix of the impurity problem
     SK.calc_dc(dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
 
-    # Save stuff into the dft_output group of hdf5 archive in case of rerun:
+    # Save stuff into the user_data group of hdf5 archive in case of rerun:
     SK.save(['chemical_potential','dc_imp','dc_energ'])
-

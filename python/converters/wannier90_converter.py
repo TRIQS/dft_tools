@@ -91,7 +91,8 @@ class Wannier90Converter(ConverterTools):
         self.dft_subgrp = dft_subgrp
         self.symmcorr_subgrp = symmcorr_subgrp
         self.fortran_to_replace = {'D': 'E'}
-        # threshold below which matrix elements from wannier90 should be considered equal
+        # threshold below which matrix elements from wannier90 should be
+        # considered equal
         self._w90zero = 2.e-6
 
         # Checks if h5 file is there and repacks it if wanted:
@@ -114,12 +115,14 @@ class Wannier90Converter(ConverterTools):
             return
         mpi.report("Reading input from %s..." % self.inp_file)
 
-        # R is a generator : each R.Next() will return the next number in the file
+        # R is a generator : each R.Next() will return the next number in the
+        # file
         R = ConverterTools.read_fortran_file(
             self, self.inp_file, self.fortran_to_replace)
         shell_entries = ['atom', 'sort', 'l', 'dim']
         corr_shell_entries = ['atom', 'sort', 'l', 'dim', 'SO', 'irep']
-        # First, let's read the input file with the parameters needed for the conversion
+        # First, let's read the input file with the parameters needed for the
+        # conversion
         try:
             # read k - point mesh generation option
             kmesh_mode = int(R.next())
@@ -135,7 +138,8 @@ class Wannier90Converter(ConverterTools):
             # and the data will be copied from corr_shells into shells (see below)
             # number of corr. shells (e.g. Fe d, Ce f) in the unit cell,
             n_corr_shells = int(R.next())
-            # now read the information about the correlated shells (atom, sort, l, dim, SO flag, irep):
+            # now read the information about the correlated shells (atom, sort,
+            # l, dim, SO flag, irep):
             corr_shells = [{name: int(val) for name, val in zip(
                 corr_shell_entries, R)} for icrsh in range(n_corr_shells)]
         except StopIteration:  # a more explicit error if the file is corrupted.
@@ -147,7 +151,7 @@ class Wannier90Converter(ConverterTools):
         # Set or derive some quantities
         # Wannier90 does not use symmetries to reduce the k-points
         # the following might change in future versions
-        symm_op = 0                     
+        symm_op = 0
         # copy corr_shells into shells (see above)
         n_shells = n_corr_shells
         shells = []
@@ -166,7 +170,8 @@ class Wannier90Converter(ConverterTools):
         mpi.report(
             "Total number of WFs expected in the correlated shells: %d" % dim_corr_shells)
 
-        # determine the number of inequivalent correlated shells and maps, needed for further processing
+        # determine the number of inequivalent correlated shells and maps,
+        # needed for further processing
         n_inequiv_shells, corr_to_inequiv, inequiv_to_corr = ConverterTools.det_shell_equivalence(
             self, corr_shells)
         mpi.report("Number of inequivalent shells: %d" % n_inequiv_shells)
@@ -176,7 +181,8 @@ class Wannier90Converter(ConverterTools):
         mpi.report("Mapping: " + format(shells_map))
 
         # build the k-point mesh, if its size was given on input (kmesh_mode >= 0),
-        # otherwise it is built according to the data in the hr file (see below)
+        # otherwise it is built according to the data in the hr file (see
+        # below)
         if kmesh_mode >= 0:
             n_k, k_mesh, bz_weights = self.kmesh_build(nki, kmesh_mode)
             self.n_k = n_k
@@ -197,7 +203,8 @@ class Wannier90Converter(ConverterTools):
         # TODO: generalise to SP=1 (only partially done)
         rot_mat_time_inv = [0 for i in range(n_corr_shells)]
 
-        # Second, let's read the file containing the Hamiltonian in WF basis produced by Wannier90
+        # Second, let's read the file containing the Hamiltonian in WF basis
+        # produced by Wannier90
         for isp in range(n_spin):
             # begin loop on isp
 
@@ -212,20 +219,24 @@ class Wannier90Converter(ConverterTools):
             mpi.report(
                 "The Hamiltonian in MLWF basis is extracted from %s ..." % hr_file)
             nr, rvec, rdeg, nw, hamr = self.read_wannier90hr(hr_file)
-            # number of R vectors, their indices, their degeneracy, number of WFs, H(R)
+            # number of R vectors, their indices, their degeneracy, number of
+            # WFs, H(R)
             mpi.report("... done: %d R vectors, %d WFs found" % (nr, nw))
 
             if isp == 0:
-                # set or check some quantities that must be the same for both spins
+                # set or check some quantities that must be the same for both
+                # spins
                 self.nrpt = nr
 
                 # k-point grid: (if not defined before)
                 if kmesh_mode == -1:
-                    # the size of the k-point mesh is determined from the largest R vector
+                    # the size of the k-point mesh is determined from the
+                    # largest R vector
                     nki = [2 * rvec[:, idir].max() + 1 for idir in range(3)]
                     # it will be the same as in the win only when nki is odd, because of the
                     # wannier90 convention: if we have nki k-points along the i-th direction,
-                    # then we should get 2*(nki/2)+nki%2 R points along that direction
+                    # then we should get 2*(nki/2)+nki%2 R points along that
+                    # direction
                     n_k, k_mesh, bz_weights = self.kmesh_build(nki)
                 self.n_k = n_k
                 self.k_mesh = k_mesh
@@ -237,33 +248,41 @@ class Wannier90Converter(ConverterTools):
                 self.nwfs = nw
                 # check that the total number of WFs makes sense
                 if self.nwfs < dim_corr_shells:
-                    mpi.report("ERROR: number of WFs in the file smaller than number of correlated orbitals!")
+                    mpi.report(
+                        "ERROR: number of WFs in the file smaller than number of correlated orbitals!")
                 elif self.nwfs > dim_corr_shells:
-                    # NOTE: correlated shells must appear before uncorrelated ones inside the file
+                    # NOTE: correlated shells must appear before uncorrelated
+                    # ones inside the file
                     mpi.report("Number of WFs larger than correlated orbitals:\n" +
                                "WFs from %d to %d treated as uncorrelated" % (dim_corr_shells + 1, self.nwfs))
                 else:
-                    mpi.report("Number of WFs equal to number of correlated orbitals")
+                    mpi.report(
+                        "Number of WFs equal to number of correlated orbitals")
 
-                # we assume spin up and spin down always have same total number of WFs
+                # we assume spin up and spin down always have same total number
+                # of WFs
                 n_orbitals = numpy.ones(
                     [self.n_k, n_spin], numpy.int) * self.nwfs
 
             else:
                 # consistency check between the _up and _down file contents
                 if nr != self.nrpt:
-                    mpi.report("Different number of R vectors for spin-up/spin-down!")
+                    mpi.report(
+                        "Different number of R vectors for spin-up/spin-down!")
                 if nw != self.nwfs:
-                    mpi.report("Different number of WFs for spin-up/spin-down!")
+                    mpi.report(
+                        "Different number of WFs for spin-up/spin-down!")
 
             hamr_full.append(hamr)
             # FIXME: when do we actually need deepcopy()?
             # hamr_full.append(deepcopy(hamr))
 
             for ir in range(nr):
-                # checks if the Hamiltonian is real (it should, if wannierisation worked fine)
+                # checks if the Hamiltonian is real (it should, if
+                # wannierisation worked fine)
                 if numpy.abs((hamr[ir].imag.max()).max()) > self._w90zero:
-                    mpi.report("H(R) has large complex components at R %d" % ir)
+                    mpi.report(
+                        "H(R) has large complex components at R %d" % ir)
                 # copy the R=0 block corresponding to the correlated shells
                 # into another variable (needed later for finding rot_mat)
                 if rvec[ir, 0] == 0 and rvec[ir, 1] == 0 and rvec[ir, 2] == 0:
@@ -273,17 +292,22 @@ class Wannier90Converter(ConverterTools):
             if not numpy.allclose(ham_corr0.transpose().conjugate(), ham_corr0, atol=self._w90zero, rtol=1.e-9):
                 raise ValueError("H(R=0) matrix is not Hermitian!")
 
-            # find rot_mat symmetries by diagonalising the on-site Hamiltonian of the first spin
+            # find rot_mat symmetries by diagonalising the on-site Hamiltonian
+            # of the first spin
             if isp == 0:
-                use_rotations, rot_mat = self.find_rot_mat(n_corr_shells, corr_shells, shells_map, ham_corr0)
+                use_rotations, rot_mat = self.find_rot_mat(
+                    n_corr_shells, corr_shells, shells_map, ham_corr0)
             else:
                 # consistency check
-                use_rotations_, rot_mat_ = self.find_rot_mat(n_corr_shells, corr_shells, shells_map, ham_corr0)
+                use_rotations_, rot_mat_ = self.find_rot_mat(
+                    n_corr_shells, corr_shells, shells_map, ham_corr0)
                 if (use_rotations and not use_rotations_):
-                    mpi.report("Rotations cannot be used for spin component n. %d" % isp)
+                    mpi.report(
+                        "Rotations cannot be used for spin component n. %d" % isp)
                 for icrsh in range(n_corr_shells):
                     if not numpy.allclose(rot_mat_[icrsh], rot_mat[icrsh], atol=self._w90zero, rtol=1.e-15):
-                        mpi.report("Rotations for spin component n. %d do not match!" % isp)
+                        mpi.report(
+                            "Rotations for spin component n. %d do not match!" % isp)
         # end loop on isp
 
         mpi.report("The k-point grid has dimensions: %d, %d, %d" % tuple(nki))
@@ -292,11 +316,14 @@ class Wannier90Converter(ConverterTools):
             bz_weights = 0.5 * bz_weights
 
         # Third, compute the hoppings in reciprocal space
-        hopping = numpy.zeros([self.n_k, n_spin, numpy.max(n_orbitals), numpy.max(n_orbitals)], numpy.complex_)
+        hopping = numpy.zeros([self.n_k, n_spin, numpy.max(
+            n_orbitals), numpy.max(n_orbitals)], numpy.complex_)
         for isp in range(n_spin):
-            # make Fourier transform H(R) -> H(k) : it can be done one spin at a time
+            # make Fourier transform H(R) -> H(k) : it can be done one spin at
+            # a time
             hamk = self.fourier_ham(self.nwfs, hamr_full[isp])
-            # copy the H(k) in the right place of hoppings... is there a better way to do this??
+            # copy the H(k) in the right place of hoppings... is there a better
+            # way to do this??
             for ik in range(self.n_k):
                 #hopping[ik,isp,:,:] = deepcopy(hamk[ik][:,:])*energy_unit
                 hopping[ik, isp, :, :] = hamk[ik][:, :] * energy_unit
@@ -309,7 +336,8 @@ class Wannier90Converter(ConverterTools):
         # Projectors simply consist in identity matrix blocks selecting those MLWFs that
         # correspond to the specific correlated shell indexed by icrsh.
         # NOTE: we assume that the correlated orbitals appear at the beginning of the H(R)
-        # file and that the ordering of MLWFs matches the corr_shell info from the input.
+        # file and that the ordering of MLWFs matches the corr_shell info from
+        # the input.
         for icrsh in range(n_corr_shells):
             norb = corr_shells[icrsh]['dim']
             proj_mat[:, :, icrsh, 0:norb, iorb:iorb +
@@ -320,7 +348,8 @@ class Wannier90Converter(ConverterTools):
         ar = HDFArchive(self.hdf_file, 'a')
         if not (self.dft_subgrp in ar):
             ar.create_group(self.dft_subgrp)
-        # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
+        # The subgroup containing the data. If it does not exist, it is
+        # created. If it exists, the data is overwritten!
         things_to_save = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                           'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
                           'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
@@ -373,7 +402,8 @@ class Wannier90Converter(ConverterTools):
         except ValueError:
             mpi.report("Could not read number of WFs or R vectors")
 
-        # allocate arrays to save the R vector indexes and degeneracies and the Hamiltonian
+        # allocate arrays to save the R vector indexes and degeneracies and the
+        # Hamiltonian
         rvec_idx = numpy.zeros((nrpt, 3), dtype=int)
         rvec_deg = numpy.zeros(nrpt, dtype=int)
         h_of_r = [numpy.zeros((num_wf, num_wf), dtype=numpy.complex_)
@@ -383,7 +413,8 @@ class Wannier90Converter(ConverterTools):
         currpos = 2
         try:
             ir = 0
-            # read the degeneracy of the R vectors (needed for the Fourier transform)
+            # read the degeneracy of the R vectors (needed for the Fourier
+            # transform)
             while ir < nrpt:
                 currpos += 1
                 for x in hr_data[currpos].split():
@@ -540,7 +571,8 @@ class Wannier90Converter(ConverterTools):
         kmesh = numpy.zeros((nkpt, 3), dtype=float)
         ii = 0
         for ix, iy, iz in product(range(msize[0]), range(msize[1]), range(msize[2])):
-            kmesh[ii, :] = [float(ix) / msize[0], float(iy) / msize[1], float(iz) / msize[2]]
+            kmesh[ii, :] = [float(ix) / msize[0], float(iy) /
+                            msize[1], float(iz) / msize[2]]
             ii += 1
         # weight is equal for all k-points because wannier90 uses uniform grid on whole BZ
         # (normalization is always 1 and takes into account spin degeneracy)
@@ -568,11 +600,13 @@ class Wannier90Converter(ConverterTools):
         """
 
         twopi = 2 * numpy.pi
-        h_of_k = [numpy.zeros((norb, norb), dtype=numpy.complex_) for ik in range(self.n_k)]
+        h_of_k = [numpy.zeros((norb, norb), dtype=numpy.complex_)
+                  for ik in range(self.n_k)]
         ridx = numpy.array(range(self.nrpt))
         for ik, ir in product(range(self.n_k), ridx):
             rdotk = twopi * numpy.dot(self.k_mesh[ik], self.rvec[ir])
-            factor = (math.cos(rdotk) + 1j * math.sin(rdotk)) / float(self.rdeg[ir])
+            factor = (math.cos(rdotk) + 1j * math.sin(rdotk)) / \
+                float(self.rdeg[ir])
             h_of_k[ik][:, :] += factor * h_of_r[ir][:, :]
 
         return h_of_k

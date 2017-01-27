@@ -21,7 +21,7 @@ Wien2k + dmftproj
   :ref:`conversion`, or the extensive :download:`dmftproj manual<images_scripts/TutorialDmftproj.pdf>`.
 
 In the following, we discuss how to use the 
-:ref:`TRIQS <triqslibs:welcome>` tools in combination with the :program:`Wien2k` program.
+:ref:`TRIQS <triqslibs:install>` tools in combination with the :program:`Wien2k` program.
 
 We can use the DMFT script as introduced in section :ref:`singleshot`,
 with just a few simple 

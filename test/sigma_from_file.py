@@ -51,5 +51,4 @@ SK.set_Sigma([Sigma_txt])
 SK.hdf_file = 'sigma_from_file.out.h5'
 SK.save(['Sigma_imp_w'])
 
-if ((Sigma_txt - Sigma_hdf).real < 1e-6) & ((Sigma_txt - Sigma_hdf).imag < 1e-6):
-        print 'Conversion: HDF -> TRIQS -> TXT -> TRIQS successful!'
+assert_block_gfs_are_close(Sigma_txt, Sigma_hdf)

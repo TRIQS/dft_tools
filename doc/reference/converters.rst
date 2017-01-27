@@ -17,7 +17,7 @@ H(k) Converter
    :special-members:
 
 Wannier90 Converter
---------------
+-------------------
 .. autoclass:: dft.converters.wannier90_converter.Wannier90Converter
    :members:
    :special-members:

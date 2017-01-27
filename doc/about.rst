@@ -14,14 +14,16 @@ Olivier Parcollet (CEA Saclay).  A first step has been the definition of the
 framework and the construction of the projective Wannier functions as input for
 the DMFT calculations [#dft_tools1]_.  This has been followed by the introduction
 of full charge self-consistency [#dft_tools2]_, necessary for total energy
-calculations.
+calculations. The package at hand is fully implemented as an application
+based on the TRIQS library [#dft_tools3]_.
 
-**Developers**: M. Aichhorn, L. Pourovskii, V. Vildosola, C. Martins, P. Seth, M. Zingl
+**Developers**: M. Aichhorn, L. Pourovskii, P.Seth, V. Vildosola, M. Zingl, O. E. Peil, X. Deng, J. Mravlje, G. Kraberger, C. Martins, M. Ferrero, O. Parcollet
 
 **Related papers**:
 
 .. [#dft_tools1] `M. Aichhorn, L. Pourovskii, V. Vildosola, M. Ferrero, O. Parcollet, T. Miyake, A. Georges, and S. Biermann, Phys. Rev. B 80, 085101 (2009) <http://link.aps.org/doi/10.1103/PhysRevB.80.085101>`_ (:download:`bibtex file <dft_tools1.bib>`)
 .. [#dft_tools2] `M. Aichhorn, L. Pourovskii, and A. Georges, Phys. Rev. B 84, 054529 (2011) <http://link.aps.org/doi/10.1103/PhysRevB.84.054529>`_ (:download:`bibtex file <dft_tools2.bib>`)
+.. [#dft_tools3] `M. Aichhorn, L. Pourovskii, P.Seth, V. Vildosola, M. Zingl, O. E. Peil, X. Deng, J. Marvlje, G. Kraberger, C. Martins, M. Ferrero, and O. Parcollet, Commt. Phys. Commun. 204, 200 (2016) <http://www.sciencedirect.com/science/article/pii/S0010465516300728>`_ (:download:`bibtex file <dft_tools3.bib>`)
 
 This application is a part of our scientific work and we would appreciate if
 projects using it will include a citation to the above relevant papers.  In

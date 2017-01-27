@@ -14,5 +14,8 @@ triqs_add_python_test(sumkdft_basic)
 triqs_add_python_test(srvo3_Gloc)
 triqs_add_python_test(srvo3_transp)
 triqs_add_python_test(sigma_from_file)
+triqs_add_python_test(blockstructure)
 
+# VASP converter tests
 add_subdirectory(plovasp)
+

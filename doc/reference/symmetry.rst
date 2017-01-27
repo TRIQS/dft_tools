@@ -1,6 +1,6 @@
 Symmetry
 ========
 
-.. autoclass:: Symmetry
+.. autoclass:: dft.Symmetry
    :members:
    :special-members:
