@@ -1,7 +1,13 @@
 .. _full_charge_selfcons:
 
-Full charge self consistency
+Full charge self-consistency
 ============================
+
+In order to do charge self-consistent calculations, we have to tell the band structure program about the
+changes in the charge density due to correlation effects. The feedback of the charge density is generally
+program-dependent and the procedure for running charge self-consistent calculations has to be adopted
+accordingly for a given band structure program. Below we describe two implementations based on Wien2k
+and VASP codes.
 
 Wien2k + dmftproj
 -----------------
@@ -14,8 +20,7 @@ Wien2k + dmftproj
   construct the Wannier functions. For this step, see either sections
   :ref:`conversion`, or the extensive :download:`dmftproj manual<images_scripts/TutorialDmftproj.pdf>`.
 
-In order to do charge self-consistent calculations, we have to tell the band structure program about the
-changes in the charge density due to correlation effects. In the following, we discuss how to use the 
+In the following, we discuss how to use the 
 :ref:`TRIQS <triqslibs:welcome>` tools in combination with the :program:`Wien2k` program.
 
 We can use the DMFT script as introduced in section :ref:`singleshot`,
@@ -118,6 +123,26 @@ the convergence.
 In the section :ref:`DFTDMFTtutorial` we will see in a detailed
 example how such a self-consistent calculation is performed from scratch.
 
+VASP + PLOVasp
+--------------
+
+.. warning::
+  This is a preliminary documentation valid for the alpha-version of the interface.
+  Modifications to the implementation might be introduced before the final release.
+
+Unlike Wien2k implementation the charge self-consistent DMFT cycle
+in the framework of PLOVasp interface is controlled by an external script.
+Because of the specific way the DFT self-consistency is implemented in VASP
+the latter has to run parallel to the DMFT script, with the synchronisation being
+ensured by a lock file. PLOVasp interface provides a shell-script :program:`vasp_dmft.sh`
+which takes care of the process management. The user must, however, specify a path
+to VASP code and provide the DMFT Python-script.
+
+The user-provided script is almost the same as for Wien2k charge self-consistent
+calculations with the main difference that its functionality (apart from
+the lines importing other modules) should be placed inside a function `dmft_cycle()`
+which will be called every DMFT cycle. Another difference is the way
+function `calc_density_correction()` works.
 
 Other DFT codes
 ---------------

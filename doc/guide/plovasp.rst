@@ -139,3 +139,16 @@ Optional group parameters:
 File of transformation matrices
 """""""""""""""""""""""""""""""
 
+.. warning::
+  The description below applies only to collinear cases (i.e. without spin-orbit
+  coupling). In this case the matrices are spin-independent.
+
+The file specified by option `TRANSFILE` contains transformation matrices
+for each ion.  Each line must contain a series of floats whose number is either equal to
+the number of orbitals :math:`N_{orb}` (in this case the transformation matrices
+are assumed to be real) or to :math:`2 N_{orb}` (for the complex transformation matrices).
+The number of lines :math:`N` must be a multiple of the number of ions :math:`N_{ion}`
+and the ratio :math:`N / N_{ion}`, then, gives the dimension of the transformed
+orbital space. The lines with floats can be separated by any number of empty or
+comment lines which are ignored.
+

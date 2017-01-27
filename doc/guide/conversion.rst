@@ -184,14 +184,19 @@ steps, including the conversion.
 Interface with VASP
 ---------------------
 
+.. warning::
+  The VASP interface is in the alpha-version and the VASP part of it is not
+  yet publicly released. The documentation may, thus, be subject to changes
+  before the final release.
+
 The interface with VASP relies on new options introduced since
 version 5.4.x. The output of raw (non-normalized) projectors is
 controlled by an INCAR option LOCPROJ whose complete syntax is described in
 VASP documentaion.
 
 The definition of a projector set starts with specifying which sites
-and which local states we are going to projecto onto.
-This information is provided using option LOCPROJ
+and which local states we are going to project onto.
+This information is provided by option LOCPROJ
 
   | `LOCPROJ = <sites> : <shells> : <projector type>`
 
