@@ -1,9 +1,0 @@
-
-from distutils.core import setup, Extension
-import numpy
-
-c_locproj_io_mod = Extension('c_locproj_io', sources=['c_locproj_io.c'],
-    include_dirs=[numpy.get_include()])
-
-setup(ext_modules=[c_locproj_io_mod])
-
