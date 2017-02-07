@@ -5,6 +5,7 @@ Module defining a custom TestCase with extra functionality.
 import unittest
 import numpy as np
 import difflib
+from pytriqs.utility.h5diff import h5diff
 
 class MyTestCase(unittest.TestCase):
     """
@@ -54,4 +55,16 @@ class MyTestCase(unittest.TestCase):
         if diff:
             return self.fail("Files '%s' and '%s' differ"%(file1, file2))
 
+    def assertH5FileEqual(self, file1, file2):
+        """
+        Compares two files using difflib.
+        Empty lines are ignored.
+        Files are assumed to be relatively small;
+        the data is truncated for files larger than MAX_SIZE bytes.
+        """
+        try:
+            h5diff(file1, file2, precision=1e-6)
+        except RuntimeError as err:
+            if "FAILED" in err:
+                return self.fail("Files '%s' and '%s' differ"%(file1, file2))
 

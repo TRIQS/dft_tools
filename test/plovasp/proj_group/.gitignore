@@ -1,2 +1,3 @@
 *.pyc
 *.test
+*.test.h5

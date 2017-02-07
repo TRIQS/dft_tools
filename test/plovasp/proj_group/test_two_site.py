@@ -9,6 +9,7 @@ from pytriqs.applications.dft.converters.plovasp.elstruct import ElectronicStruc
 from pytriqs.applications.dft.converters.plovasp.inpconf import ConfigParameters
 from pytriqs.applications.dft.converters.plovasp.proj_shell import ProjectorShell
 from pytriqs.applications.dft.converters.plovasp.proj_group import ProjectorGroup
+from pytriqs.archive import HDFArchive
 import mytest
 
 ################################################################################
@@ -50,16 +51,23 @@ class TestProjectorGroupTwoSite(mytest.MyTestCase):
 
         dens_mat, overl = self.proj_sh.density_matrix(self.el_struct)
 
-        testout = _rpath + 'projortho_2site.out.test'
-        with open(testout, 'wt') as f:
-            f.write("density matrix: %s\n"%(dens_mat))
-            f.write("overlap matrix: %s\n"%(overl))
+#        testout = _rpath + 'projortho_2site.out.test'
+#        with open(testout, 'wt') as f:
+#            f.write("density matrix: %s\n"%(dens_mat))
+#            f.write("overlap matrix: %s\n"%(overl))
+        testout = _rpath + 'projortho_2site.test.h5'
+        with HDFArchive(testout, 'w') as h5test:
+            h5test['density_matrix'] = dens_mat
+            h5test['overlap_matrix'] = overl
 
+# FIXME: redundant
         self.assertEqual(overl[0, 0, ...], np.eye(5))
         self.assertEqual(overl[0, 1, ...], np.eye(5))
 
-        expected_file = _rpath + 'projortho_2site.out'
-        self.assertFileEqual(testout, expected_file)
+#        expected_file = _rpath + 'projortho_2site.out'
+#        self.assertFileEqual(testout, expected_file)
+        expected_file = _rpath + 'projortho_2site.out.h5'
+        self.assertH5FileEqual(testout, expected_file)
 
 # Scenario 2
     def test_ortho_normion(self):
@@ -68,15 +76,22 @@ class TestProjectorGroupTwoSite(mytest.MyTestCase):
 
         dens_mat, overl = self.proj_sh.density_matrix(self.el_struct)
 
-        testout = _rpath + 'projortho_normion.out.test'
-        with open(testout, 'wt') as f:
-            f.write("density matrix: %s\n"%(dens_mat))
-            f.write("overlap matrix: %s\n"%(overl))
+#        testout = _rpath + 'projortho_normion.out.test'
+#        with open(testout, 'wt') as f:
+#            f.write("density matrix: %s\n"%(dens_mat))
+#            f.write("overlap matrix: %s\n"%(overl))
+        testout = _rpath + 'projortho_normion.test.h5'
+        with HDFArchive(testout, 'w') as h5test:
+            h5test['density_matrix'] = dens_mat
+            h5test['overlap_matrix'] = overl
 
+# FIXME: redundant
         self.assertEqual(overl[0, 0, ...], np.eye(5))
         self.assertEqual(overl[0, 1, ...], np.eye(5))
 
-        expected_file = _rpath + 'projortho_normion.out'
-        self.assertFileEqual(testout, expected_file)
+#        expected_file = _rpath + 'projortho_normion.out'
+#        self.assertFileEqual(testout, expected_file)
+        expected_file = _rpath + 'projortho_normion.out.h5'
+        self.assertH5FileEqual(testout, expected_file)
 
 
