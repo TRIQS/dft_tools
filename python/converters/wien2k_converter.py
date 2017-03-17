@@ -315,7 +315,7 @@ class Wien2kConverter(ConverterTools):
 
         # Initialise P, here a double list of matrices:
         proj_mat_all = numpy.zeros([self.n_k, self.n_spin_blocs, self.n_shells, max(
-            n_parproj), max([sh['dim'] for sh in self.shells]), max(self.n_orbitals)], numpy.complex_)
+            n_parproj), max([sh['dim'] for sh in self.shells]), numpy.max(self.n_orbitals)], numpy.complex_)
 
         rot_mat_all = [numpy.identity(
             self.shells[ish]['dim'], numpy.complex_) for ish in range(self.n_shells)]

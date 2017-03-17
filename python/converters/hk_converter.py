@@ -172,7 +172,7 @@ class HkConverter(ConverterTools):
 
             # Initialise the projectors:
             proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max(
-                [crsh['dim'] for crsh in corr_shells]), max(n_orbitals)], numpy.complex_)
+                [crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
 
             # Read the projectors from the file:
             for ik in range(n_k):
@@ -195,8 +195,8 @@ class HkConverter(ConverterTools):
             # now define the arrays for weights and hopping ...
             # w(k_index),  default normalisation
             bz_weights = numpy.ones([n_k], numpy.float_) / float(n_k)
-            hopping = numpy.zeros([n_k, n_spin_blocs, max(
-                n_orbitals), max(n_orbitals)], numpy.complex_)
+            hopping = numpy.zeros([n_k, n_spin_blocs, numpy.max(
+                n_orbitals), numpy.max(n_orbitals)], numpy.complex_)
 
             if (weights_in_file):
                 # weights in the file
