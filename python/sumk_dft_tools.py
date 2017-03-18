@@ -770,8 +770,8 @@ class SumkDFTTools(SumkDFT):
                         for iL in g.indices:
                             for iR in g.indices:
                                 for iom in xrange(n_om):
-                                    g.data[iom, iL, iR] = Sigma_save[
-                                        i].data[ioffset + iom, iL, iR]
+                                    g.data[iom, int(iL), int(iR)] = Sigma_save[
+                                        i].data[ioffset + iom, int(iL), int(iR)]
         else:
             assert n_om is not None, "transport_distribution: Number of omega points (n_om) needed to calculate transport distribution!"
             assert energy_window is not None, "transport_distribution: Energy window needed to calculate transport distribution!"
@@ -844,7 +844,7 @@ class SumkDFTTools(SumkDFT):
                                     continue
 
                                 self.Gamma_w[direction][iq, iw] += (numpy.dot(numpy.dot(numpy.dot(vel_R[v_i, v_i, dir_to_int[direction[0]]],
-                                                                                                  A_kw[isp][A_i, A_i, iw + iOm_mesh[iq]]), vel_R[v_i, v_i, dir_to_int[direction[1]]]),
+                                                                                                  A_kw[isp][A_i, A_i, int(iw + iOm_mesh[iq])]), vel_R[v_i, v_i, dir_to_int[direction[1]]]),
                                                                               A_kw[isp][A_i, A_i, iw]).trace().real * self.bz_weights[ik])
 
         for direction in self.directions:
