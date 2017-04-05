@@ -117,12 +117,12 @@ array<double, 2> dos_tetra_weights_3d(array<double, 1> eigk, double en, array<lo
       ci_sum += ci[i];
 
     flag = dos_tet_weights(en, eigs, inds, &ct);
-    if(fabs(ct - ci_sum) > tol)
+    if(std::abs(ct - ci_sum) > tol)
       {
         std::cout << "  *** Error in weights: it = " << it <<" flag = " << flag << ", en = " << en;
         for(i = 0; i < 4; i++)
           std::cout << ", e[" << i << "] = " << eigs[i];
-        std::cout << ",    c_diff = " << fabs(ct - ci_sum) << std::endl;
+        std::cout << ",    c_diff = " << std::abs(ct - ci_sum) << std::endl;
 
         TRIQS_RUNTIME_ERROR << "  Failed consistency check";
       }  
@@ -172,12 +172,12 @@ array<double, 2> dos_tetra_weights_3d(array<double, 1> eigk, double en, array<lo
 //      ci_sum += ci[i];
 //
 //    flag = dos_tet_weights(en, eigs, inds, &ct);
-//    if(fabs(ct - ci_sum) > tol)
+//    if(std::abs(ct - ci_sum) > tol)
 //      {
 //        std::cout << "  *** Error in weights: it = " << it <<" flag = " << flag << ", en = " << en;
 //        for(i = 0; i < 4; i++)
 //          std::cout << ", e[" << i << "] = " << eigs[i];
-//        std::cout << ",    c_diff = " << fabs(ct - ci_sum) << std::endl;
+//        std::cout << ",    c_diff = " << std::abs(ct - ci_sum) << std::endl;
 //        return;
 //      }  
 //#endif
@@ -252,12 +252,12 @@ int dos_tet_weights(double en, double *eigs, int *inds,
   {
 // E1 <= E <= E2
   case 1:
-    if(fabs(e2 - e1) > tol && fabs(e3 - e1) > tol && fabs(e4 - e1) > tol)
+    if(std::abs(e2 - e1) > tol && std::abs(e3 - e1) > tol && std::abs(e4 - e1) > tol)
       *ct = 3.0 * (en - e1) * (en - e1) / ((e2 - e1) * (e3 - e1) * (e4 - e1));
     else
     {
-      s = fmin(fabs(e1 - e2), fabs(e3 - e1));
-      s = fmin(fabs(s), fabs(e4 - e1));
+      s = fmin(std::abs(e1 - e2), std::abs(e3 - e1));
+      s = fmin(std::abs(s), std::abs(e4 - e1));
       s /= 100.0;
       s = fmax(std::abs(s), 1.0e-20) * I;
 
@@ -268,15 +268,15 @@ int dos_tet_weights(double en, double *eigs, int *inds,
 
 // E2 <= E <= E3
   case 2:
-    if(fabs(e4 - e2) > tol && fabs(e3 - e2) > tol && fabs(e4 - e1) > tol && fabs(e3 - e1) > tol)
+    if(std::abs(e4 - e2) > tol && std::abs(e3 - e2) > tol && std::abs(e4 - e1) > tol && std::abs(e3 - e1) > tol)
       *ct = 3.0 * (
           (e3 - en) * (en - e2) / ((e4 - e2) * (e3 - e2) * (e3 - e1)) +
           (e4 - en) * (en - e1) / ((e4 - e1) * (e4 - e2) * (e3 - e1)));
     else
     {
-      s = fmin(fabs(e3 - e2), fabs(e3 - e1));
-      s = fmin(fabs(s), fabs(e4 - e1));
-      s = fmin(fabs(s), fabs(e4 - e2));
+      s = fmin(std::abs(e3 - e2), std::abs(e3 - e1));
+      s = fmin(std::abs(s), std::abs(e4 - e1));
+      s = fmin(std::abs(s), std::abs(e4 - e2));
       s /= 100.0;
       s = fmax(std::abs(s), 1.0e-20) * I;
 
@@ -288,12 +288,12 @@ int dos_tet_weights(double en, double *eigs, int *inds,
 
 // E3 <= E <= E4
   case 3:
-    if(fabs(e4 - e2) > tol && fabs(e4 - e3) > tol && fabs(e4 - e1) > tol)
+    if(std::abs(e4 - e2) > tol && std::abs(e4 - e3) > tol && std::abs(e4 - e1) > tol)
       *ct = 3.0 * (e4 - en) * (e4 - en) / ((e4 - e1) * (e4 - e2) * (e4 - e3));
     else
     {
-      s = fmin(fabs(e4 - e2), fabs(e4 - e1));
-      s = fmin(fabs(s), fabs(e4 - e3));
+      s = fmin(std::abs(e4 - e2), std::abs(e4 - e1));
+      s = fmin(std::abs(s), std::abs(e4 - e3));
       s /= 100.0;
       s = fmax(std::abs(s), 1.0e-20) * I;
 
@@ -332,7 +332,7 @@ int dos_reorder(double en, double *e, int *inds)
   for(i = 0; i < 4; i++)
     e[i] = e_tmp[inds[i]];
  
-  if((e[0] <= en && en <= e[3]) && fabs(e[3] - e[0]) < tol) return 6;
+  if((e[0] <= en && en <= e[3]) && std::abs(e[3] - e[0]) < tol) return 6;
   if(e[0] <= en && en <= e[1]) return 1;
   if(e[1] <= en && en <= e[2]) return 2;
   if(e[2] <= en && en <= e[3]) return 3;
@@ -432,12 +432,12 @@ static double F(double en, double e1, double e2, double e3, double e4)
 {
   std::complex<double> s;
 
-  if(fabs(e1 - e3) > tol && fabs(e4 - e2) > tol)
+  if(std::abs(e1 - e3) > tol && std::abs(e4 - e2) > tol)
     return (e1 - en) * (en - e2) / ((e1 - e3) * (e4 - e2));
   else
   {
 // Regularization to avoid division by zero
-    s = fmin(fabs(e3 - e1), fabs(e4 - e2));
+    s = fmin(std::abs(e3 - e1), std::abs(e4 - e2));
     s /= 100.0;
     s = fmax(std::abs(s), 1.0e-20) * I;
    
@@ -449,12 +449,12 @@ static double K2(double en, double e1, double e2, double e3)
 {
   std::complex<double> s;
 
-  if(fabs(e1 - e3) > tol && fabs(e1 - e2) > tol)
+  if(std::abs(e1 - e3) > tol && std::abs(e1 - e2) > tol)
     return (en - e1) / ((e2 - e1) * (e3 - e1));
   else
   {
 // Regularization to avoid division by zero
-    s = fmin(fabs(e3 - e1), fabs(e1 - e2));
+    s = fmin(std::abs(e3 - e1), std::abs(e1 - e2));
     s /= 100.0;
     s = fmax(std::abs(s), 1.0e-20) * I;
    
@@ -466,12 +466,12 @@ static double K1(double en, double e1, double e2)
 {
   std::complex<double> s;
 
-  if(fabs(e1 - e2) > tol)
+  if(std::abs(e1 - e2) > tol)
     return (e1 - en) / ((e2 - e1) * (e2 - e1));
   else
   {
 // Regularization to avoid division by zero
-    s = fabs(e1 - e2);
+    s = std::abs(e1 - e2);
     s /= 100.0;
     s = fmax(std::abs(s), 1.0e-20) * I;
    
