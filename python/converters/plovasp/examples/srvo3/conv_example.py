@@ -1,6 +1,6 @@
 
 import numpy as np
-from pytriqs.gf.local import *
+from pytriqs.gf import *
 #from sumk_dft import SumkDFT
 from sumk_dft_tools import SumkDFTTools
 from converters.vasp_converter import VaspConverter

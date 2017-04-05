@@ -1,6 +1,6 @@
 import copy
 import numpy as np
-from pytriqs.gf.local import GfImFreq, BlockGf
+from pytriqs.gf import GfImFreq, BlockGf
 from ast import literal_eval
 from warnings import warn
 

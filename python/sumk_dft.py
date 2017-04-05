@@ -23,7 +23,7 @@
 from types import *
 import numpy
 import pytriqs.utility.dichotomy as dichotomy
-from pytriqs.gf.local import *
+from pytriqs.gf import *
 import pytriqs.utility.mpi as mpi
 from pytriqs.archive import *
 from symmetry import *
@@ -593,13 +593,13 @@ class SumkDFT(object):
             Sigma_imp) == self.n_inequiv_shells, "put_Sigma: give exactly one Sigma for each inequivalent corr. shell!"
 
         # init self.Sigma_imp_(i)w:
-        if all(type(gf) == GfImFreq for bname, gf in Sigma_imp[0]):
+        if all( (isinstance(gf, Gf) and isinstance (gf.mesh, MeshImFreq)) for bname, gf in Sigma_imp[0]):
             # Imaginary frequency Sigma:
             self.Sigma_imp_iw = [BlockGf(name_block_generator=[(block, GfImFreq(indices=inner, mesh=Sigma_imp[0].mesh))
                                                                for block, inner in self.gf_struct_sumk[icrsh]], make_copies=False)
                                  for icrsh in range(self.n_corr_shells)]
             SK_Sigma_imp = self.Sigma_imp_iw
-        elif all(type(gf) == GfReFreq for bname, gf in Sigma_imp[0]):
+        elif all( isinstance(gf, Gf) and isinstance (gf.mesh, MeshReFreq) for bname, gf in Sigma_imp[0]):
             # Real frequency Sigma:
             self.Sigma_imp_w = [BlockGf(name_block_generator=[(block, GfReFreq(indices=inner, mesh=Sigma_imp[0].mesh))
                                                               for block, inner in self.gf_struct_sumk[icrsh]], make_copies=False)

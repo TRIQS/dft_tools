@@ -20,7 +20,7 @@
 ################################################################################
 
 from pytriqs.archive import *
-from pytriqs.gf.local import *
+from pytriqs.gf import *
 from pytriqs.applications.dft.sumk_dft import *
 from pytriqs.applications.dft.converters.wien2k_converter import *
 from pytriqs.operators.util import set_operator_structure

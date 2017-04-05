@@ -1,6 +1,6 @@
 # Version number of the application
-set (DFT_TOOLS_VERSION "1.4")
-set (DFT_TOOLS_RELEASE "1.4.0")
+set (DFT_TOOLS_VERSION "1.5")
+set (DFT_TOOLS_RELEASE "1.5.0")
 
 # Append triqs installed files to the cmake load path
 list(APPEND CMAKE_MODULE_PATH ${TRIQS_PATH}/share/triqs/cmake)
