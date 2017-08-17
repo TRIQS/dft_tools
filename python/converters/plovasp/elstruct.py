@@ -137,7 +137,7 @@ class ElectronicStructure:
         """
         plo = self.proj_raw
         nproj, ns, nk, nb = plo.shape
-        ions = list(set([param['isite'] for param in self.proj_params]))
+        ions = sorted(list(set([param['isite'] for param in self.proj_params])))
         nions = len(ions)
         norb = nproj / nions
 
