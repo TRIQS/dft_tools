@@ -208,12 +208,12 @@ Therefore disabled the tail fitting first::
     p["perform_tail_fit"] = False
 
 and perform only one DMFT iteration. The resulting self energy can be tail fitted by hand::
-
-    for name, sig in S.Sigma_iw:
-        S.Sigma_iw[name].fit_tail(fit_n_moments = 4, fit_min_n = 60, fit_max_n = 140)
+    
+    Sigma_iw_fit = S.Sigma_iw.copy()
+    Sigma_iw_fit << tail_fit(S.Sigma_iw, fit_max_moment = 4, fit_min_n = 40, fit_max_n = 160)[0]
 
 Plot the self energy and adjust the tail fit parameters such that you obtain a
-proper fit. The :meth:`fit_tail function <pytriqs.gf.local.tools.tail_fit>` is part
+proper fit. The :meth:`tail_fit function <pytriqs.gf.local.tools.tail_fit>` is part
 of the :ref:`TRIQS <triqslibs:welcome>` library.
 
 For a self energy which is going to zero for :math:`i\omega \rightarrow 0` our suggestion is
