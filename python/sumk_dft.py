@@ -1478,6 +1478,7 @@ class SumkDFT(object):
                                 for imu in range(self.n_orbitals[ik, isp]):
                                     fout.write("%.14f  %.14f " % (deltaN[sp][ik][
                                                inu, imu].real, deltaN[sp][ik][inu, imu].imag))
+                                fout.write("\n")
                             fout.write("\n")
                         fout.close()
         elif dm_type == 'vasp':
