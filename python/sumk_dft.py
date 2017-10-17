@@ -521,7 +521,7 @@ class SumkDFT(object):
             set_up_G_latt = True
         else:                                       # Check that existing GF is consistent
             G_latt = getattr(self, "G_latt_" + iw_or_w)
-            GFsize = [gf.N1 for bname, gf in G_latt]
+            GFsize = [gf.target_shape[0] for bname, gf in G_latt]
             unchangedsize = all([self.n_orbitals[ik, ntoi[spn[isp]]] == GFsize[
                                 isp] for isp in range(self.n_spin_blocks[self.SO])])
             if not unchangedsize:
