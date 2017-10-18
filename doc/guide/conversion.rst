@@ -258,7 +258,8 @@ In addition to the more complicated Wien2k converter,
 :program:`DFTTools` contains also a light converter. It takes only
 one inputfile, and creates the necessary hdf outputfile for
 the DMFT calculation. The header of this input file has a defined
-format, an example is the following:
+format, an example is the following (do not use the text/comments in your
+input file):
 
 .. literalinclude:: images_scripts/case.hk
 
@@ -376,7 +377,7 @@ Once these two files are available, one can use the converter as follows::
     Converter.convert_dft_input()
 
 The converter input :file:`seedname.inp` is a simple text file with
-the following format:
+the following format (do not use the text/comments in your input file):
 
 .. literalinclude:: images_scripts/LaVO3_w90.inp
 
@@ -401,7 +402,13 @@ Currently implemented options are:
 Inside :file:`seedname.inp`, it is crucial to correctly specify the
 correlated shell structure, which depends on the contents of the
 :program:`wannier90` output :file:`seedname_hr.dat` and on the order
-of the MLWFs contained in it.
+of the MLWFs contained in it. In this example we have four lines for the
+four V atoms. The MLWFs were constructed for the t\ :sub:`2g` subspace, and thus
+we set ``l`` to 2 and ``dim`` to 3 for all V atoms. Further the spin-orbit coupling (``SO``)
+is set to 0 and ``irep`` to 0.
+As in this example all 4 V atoms are equivalent we set ``sort`` to 0. We note
+that, e.g., for a magnetic DMFT calculation the correlated atoms can be made
+inequivalent at this point by using different values for ``sort``.
 
 The number of MLWFs must be equal to, or greater than the total number
 of correlated orbitals (i.e., the sum of all ``dim`` in :file:`seedname.inp`).
@@ -414,7 +421,7 @@ the first indices correspond to the correlated shells (in our example,
 the V-t\ :sub:`2g` shells). Therefore, the MLWFs corresponding to the
 uncorrelated shells (if present) must be listed **after** those of the 
 correlated shells.
-With the :program:`wannier90` code, this can be achieved this by listing the
+With the :program:`wannier90` code, this can be achieved by listing the
 projections for the uncorrelated shells after those for the correlated shells.
 In our `Pnma`-LaVO\ :sub:`3` example, for instance, we could use::
 
