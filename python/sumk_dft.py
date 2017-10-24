@@ -1362,15 +1362,15 @@ class SumkDFT(object):
         """
         assert dm_type in ('vasp', 'wien2k'), "'dm_type' must be either 'vasp' or 'wienk'"
 
-        assert type(filename) == StringType, ("calc_density_correction: "
-                                              "filename has to be a string!")
-
         if filename is None:
             if dm_type == 'wien2k':
                 filename = 'dens_mat.dat'
             elif dm_type == 'vasp':
                 filename = 'GAMMA'
-        
+
+        assert type(filename) == StringType, ("calc_density_correction: "
+                                              "filename has to be a string!")
+
         ntoi = self.spin_names_to_ind[self.SO]
         spn = self.spin_block_names[self.SO]
         dens = {sp: 0.0 for sp in spn}
