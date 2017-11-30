@@ -3,6 +3,9 @@
 
 #configure_file(${CMAKE_SOURCE_DIR}/cmake/sitecustomize.py ${CMAKE_CURRENT_BINARY_DIR}/sitecustomize.py @ONLY)
 
+# The std for all targets
+add_compile_options(-std=c++1z)
+
 # add version file
 configure_file(version.py.in version.py)
 

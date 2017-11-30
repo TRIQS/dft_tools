@@ -30,9 +30,6 @@ message(STATUS "Git hash: ${DFT_TOOLS_GIT_HASH}")
 # We want to be installed in the TRIQS tree
 set(CMAKE_INSTALL_PREFIX ${TRIQS_PATH})
 
-# The std for all targets
-add_compile_options(-std=c++1z)
-
 add_subdirectory(fortran/dmftproj) 
 
 # Add the compiling options (-D... ) for C++
