@@ -7,7 +7,7 @@ _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import mytest
 import numpy as np
-from pytriqs.applications.dft.converters.plovasp.vaspio import Kpoints
+from triqs_dft_tools.converters.plovasp.vaspio import Kpoints
 
 ################################################################################
 #

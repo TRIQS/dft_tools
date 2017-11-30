@@ -22,9 +22,10 @@
 from pytriqs.archive import *
 from pytriqs.gf import *
 from pytriqs.gf.tools import *
-from pytriqs.applications.dft.sumk_dft_tools import *
 from pytriqs.utility.comparison_tests import *
 import numpy as np
+
+from triqs_dft_tools.sumk_dft_tools import SumkDFTTools
 
 # Read self energy from hdf file
 ar = HDFArchive('SrVO3_Sigma.h5','r')

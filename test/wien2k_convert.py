@@ -21,10 +21,11 @@
 ################################################################################
 
 from pytriqs.archive import *
-from pytriqs.applications.dft.converters import Wien2kConverter
 from pytriqs.utility.comparison_tests import *
 from pytriqs.utility.h5diff import h5diff 
 import pytriqs.utility.mpi as mpi
+
+from triqs_dft_tools.converters import Wien2kConverter
 
 Converter = Wien2kConverter(filename='SrVO3')
 Converter.hdf_file = 'wien2k_convert.out.h5'

@@ -7,7 +7,7 @@ _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import arraytest
 import numpy as np
-from pytriqs.applications.dft.converters.plovasp.inpconf import ConfigParameters
+from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 
 ################################################################################
 #

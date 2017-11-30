@@ -1,11 +1,22 @@
-set(python_destination pytriqs/applications/dft/converters/plovasp)
+
+set(python_destination plovasp)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${TRIQS_INCLUDE_ALL})
-triqs_python_extension(atm ${python_destination})
-target_link_libraries(atm atm_c ${TRIQS_LIBRARY_ALL})
-triqs_set_rpath_for_target(atm)
+add_cpp2py_module(atm)
+target_link_libraries(atm atm_c)
 
-# This we need in order for tests to work
-add_custom_command(TARGET atm POST_BUILD COMMAND ln -fs ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}/atm.so ${CMAKE_BINARY_DIR}/python/dft/converters/plovasp)
+set(PYTHON_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/atm_desc.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/converter.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/elstruct.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/inpconf.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/plotools.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/proj_group.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/proj_shell.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/sc_dmft.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/vaspio.py)
 
-install (TARGETS atm DESTINATION ${TRIQS_PYTHON_LIB_DEST_ROOT}/${python_destination})
+set(PYTHON_LIB_DEST ${CPP2PY_PYTHON_LIB_DEST_ROOT}/triqs_dft_tools)
+install(FILES ${PYTHON_SOURCES} DESTINATION ${PYTHON_LIB_DEST}/converters/plovasp)
+install (TARGETS atm DESTINATION ${PYTHON_LIB_DEST}/converters/plovasp)
