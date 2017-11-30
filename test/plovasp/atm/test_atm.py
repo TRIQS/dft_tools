@@ -2,7 +2,7 @@
 import os
 
 import numpy as np
-from pytriqs.applications.dft.converters.plovasp.atm import dos_tetra_weights_3d
+from triqs_dft_tools.converters.plovasp.atm import dos_tetra_weights_3d
 import mytest
 
 ################################################################################

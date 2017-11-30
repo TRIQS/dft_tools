@@ -21,10 +21,11 @@
 ################################################################################
 
 
-from pytriqs.applications.dft.converters import *
 from pytriqs.archive import *
 from pytriqs.utility.h5diff import h5diff
 import pytriqs.utility.mpi as mpi
+
+from triqs_dft_tools.converters import Wannier90Converter
 
 Converter = Wannier90Converter(seedname='LaVO3-Pnma',hdf_filename='w90_convert.out.h5')
 

@@ -6,7 +6,35 @@ set(SOURCES modules.f dmftproj.f readcomline.f set_ang_trans.f setsym.f
 
 # The main target and what to link with...
 add_executable(dmftproj ${SOURCES})
+
+# ---------------------------------------------------------------------
+# ------ No 1. failed test to get Lapack libs from triqs
+# ---------------------------------------------------------------------
+
+# -- trying to TRIQS_LIBRARY_LAPACK from the triqs target
+# -- results in ${TRIQS_LIBRARY_LAPACK} == TRIQS_LIBRARY_LAPACK-NOTFOUND
+#get_target_property(TRIQS_LIBRARY_LAPACK triqs TRIQS_LIBRARY_LAPACK)
+
+# -- when doing nothing ${TRIQS_LIBRARY_LAPACK} is just empty
+message(STATUS "Lapack libraries linked with dmftproj: ${TRIQS_LIBRARY_LAPACK}")
+
 target_link_libraries(dmftproj ${TRIQS_LIBRARY_LAPACK})
+
+# ---------------------------------------------------------------------
+# ------ No 2. failed test to get Lapack libs from triqs
+# ---------------------------------------------------------------------
+
+#target_link_libraries(dmftproj triqs) # does not work due to "-stdlib=" flag..
+
+# ---------------------------------------------------------------------
+# BEGIN Workaround only working on Mac
+# ---------------------------------------------------------------------
+
+target_link_libraries(dmftproj "-framework Accelerate")
+
+# ---------------------------------------------------------------------
+# END Workaround
+# ---------------------------------------------------------------------
 
 # where to install
 install (TARGETS dmftproj DESTINATION bin)

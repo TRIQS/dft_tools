@@ -19,9 +19,10 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
+
+import os
 from pytriqs.cmake_info import hdf5_command_path
 import pytriqs.utility.mpi as mpi
-
 
 class ConverterTools:
 
@@ -73,7 +74,7 @@ class ConverterTools:
         mpi.report("Repacking the file %s" % self.hdf_file)
 
         retcode = subprocess.call(
-            [hdf5_command_path + "/h5repack", "-i%s" % self.hdf_file, "-otemphgfrt.h5"])
+            [os.path.join(hdf5_command_path, "h5repack"), "-i%s" % self.hdf_file, "-otemphgfrt.h5"])
         if retcode != 0:
             mpi.report("h5repack failed!")
         else:

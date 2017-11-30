@@ -12,6 +12,5 @@ FILE(COPY ${TestSuites} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 FILE(COPY run_suite.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 foreach(test_suite ${TestSuites})
-    add_test(${test_suite}
-      ${PythonBuildExecutable} run_suite.py ${test_suite})
+  add_test(NAME ${test_suite} COMMAND python run_suite.py ${test_suite})
 endforeach(test_suite ${TestSuites})
