@@ -1,6 +1,6 @@
 # Generated automatically using the command :
 # c++2py.py -m atm -o atm --moduledoc "Analytical Tetrahedron Method for DOS" ../../../c++/plovasp/atm/dos_tetra3d.hpp
-from wrap_generator import *
+from cpp2py.wrap_generator import *
 
 # The module
 module = module_(full_name = "atm", doc = "Analytical Tetrahedron Method for calculating DOS", app_name = "atm")

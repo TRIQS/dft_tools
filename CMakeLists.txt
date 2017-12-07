@@ -2,45 +2,49 @@
 set (DFT_TOOLS_VERSION "1.5")
 set (DFT_TOOLS_RELEASE "1.5.0")
 
-# Append triqs installed files to the cmake load path
-list(APPEND CMAKE_MODULE_PATH ${TRIQS_PATH}/share/triqs/cmake)
+# Default to Release build type
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Type of build" FORCE)
+endif()
+message( STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} -------------")
 
-# start configuration 
+# start configuration
 cmake_minimum_required(VERSION 2.8)
 project(dft_tools CXX Fortran)
-set(CMAKE_BUILD_TYPE Release)
-enable_testing()
 
-# Load TRIQS, including all predefined variables from TRIQS installation
-find_package(TRIQS REQUIRED)
+# Use shared libraries
+set(BUILD_SHARED_LIBS ON)
 
-# Check that versions are compatible
-if(NOT DFT_TOOLS_VERSION EQUAL TRIQS_VERSION)
-  message(FATAL_ERROR "The application version is not compatible with the TRIQS library (TRIQS library version: ${TRIQS_VERSION} while this application version: ${DFT_TOOLS_VERSION})")
-endif()
+# Load TRIQS and Cpp2Py
+find_package(TRIQS 1.5 EXACT REQUIRED)
+find_package(Cpp2Py REQUIRED)
+
 if (NOT ${TRIQS_WITH_PYTHON_SUPPORT})
  MESSAGE(FATAL_ERROR "dft_tools require Python support in TRIQS")
 endif()
 
-# Get hash
-triqs_get_git_hash(${CMAKE_SOURCE_DIR} "DFT_TOOLS")
-if(${GIT_RESULT} EQUAL 0)
-  message(STATUS "Hash: ${DFT_TOOLS_GIT_HASH}")
-endif(${GIT_RESULT} EQUAL 0)
+# Default Install directory to TRIQS_ROOT if not given. Checks an absolute name is given.
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTALL_PREFIX}))
+  message(STATUS " No install prefix given (or invalid). Defaulting to TRIQS_ROOT")
+  set(CMAKE_INSTALL_PREFIX ${TRIQS_ROOT} CACHE PATH "default install path" FORCE)
+endif()
+message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} -------------")
 
-# We want to be installed in the TRIQS tree
-set(CMAKE_INSTALL_PREFIX ${TRIQS_PATH})
+# Macro defined in TRIQS which picks the hash of repo.
+triqs_get_git_hash_of_source_dir(DFT_TOOLS_GIT_HASH)
+message(STATUS "Git hash: ${DFT_TOOLS_GIT_HASH}")
 
 add_subdirectory(fortran/dmftproj) 
 
 # Add the compiling options (-D... ) for C++
 message(STATUS "TRIQS : Adding compilation flags detected by the library (C++11/14, libc++, etc...) ")
-add_definitions(${TRIQS_CXX_DEFINITIONS})
 
 add_subdirectory(c++)
 add_subdirectory(python)
 add_subdirectory(shells)
 add_subdirectory(test)
+
+
 option(BUILD_DOC "Build documentation" OFF)
 if(${BUILD_DOC})
   if(NOT TRIQS_WITH_DOCUMENTATION)
