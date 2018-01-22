@@ -1,5 +1,5 @@
 # load triqs helper to set up tests
-set(TestSuites
+set(all_tests
     inpconf
 #    plocar_io
     plotools
@@ -8,10 +8,11 @@ set(TestSuites
     vaspio
     atm)
     
-FILE(COPY ${TestSuites} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+FILE(COPY ${all_tests} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 FILE(COPY run_suite.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-foreach(test_suite ${TestSuites})
-    add_test(${test_suite}
-      ${PythonBuildExecutable} run_suite.py ${test_suite})
-endforeach(test_suite ${TestSuites})
+foreach(t ${all_tests})
+  add_test(NAME ${t} COMMAND python run_suite.py ${t})
+endforeach()
+
+set_property(TEST ${all_tests} PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH} )
