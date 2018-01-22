@@ -21,8 +21,8 @@
 
 from pytriqs.archive import *
 from pytriqs.gf import *
-from pytriqs.applications.dft.sumk_dft import *
-from pytriqs.applications.dft.converters.wien2k_converter import *
+from sumk_dft import *
+from converters.wien2k_converter import *
 from pytriqs.operators.util import set_operator_structure
 from pytriqs.utility.comparison_tests import *
 from pytriqs.utility.h5diff import h5diff

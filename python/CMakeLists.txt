@@ -4,7 +4,14 @@ set(PYTHON_LIB_DEST ${CPP2PY_PYTHON_LIB_DEST_ROOT}/pytriqs/cthyb)
 
 # site_customize for build
 set(package_name "pytriqs.applications")
-configure_file(${CMAKE_SOURCE_DIR}/cmake/sitecustomize.py ${CMAKE_CURRENT_BINARY_DIR}/sitecustomize.py @ONLY)
+
+# Create a temporary copy of the python modules so that we can run before installation with the test
+FILE(GLOB_RECURSE all_py_files RELATIVE ${CMAKE_SOURCE_DIR}/python *.py )
+foreach(f ${all_py_files})
+ configure_file(${f} ${f} COPYONLY)
+endforeach()
+
+#configure_file(${CMAKE_SOURCE_DIR}/cmake/sitecustomize.py ${CMAKE_CURRENT_BINARY_DIR}/sitecustomize.py @ONLY)
 
 # VASP converter
 add_subdirectory(converters/plovasp)

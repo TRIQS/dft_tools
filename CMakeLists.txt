@@ -42,9 +42,22 @@ message(STATUS "TRIQS : Adding compilation flags detected by the library (C++11/
 add_subdirectory(c++)
 add_subdirectory(python)
 add_subdirectory(shells)
-add_subdirectory(test)
 
+#------------------------
+# tests
+#------------------------
+ 
+enable_testing()
+ 
+option(Build_Tests "Build the tests of the library " ON)
+if (Build_Tests)
+  message(STATUS "-------- Preparing tests  -------------")
+ add_subdirectory(test)
+endif()
 
+#------------------------
+# Documentation
+#------------------------
 option(BUILD_DOC "Build documentation" OFF)
 if(${BUILD_DOC})
   if(NOT TRIQS_WITH_DOCUMENTATION)

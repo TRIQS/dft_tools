@@ -22,7 +22,7 @@
 from pytriqs.archive import *
 from pytriqs.gf import *
 from pytriqs.gf.tools import *
-from pytriqs.applications.dft.sumk_dft_tools import *
+from sumk_dft_tools import *
 from pytriqs.utility.comparison_tests import *
 import numpy as np
 

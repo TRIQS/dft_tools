@@ -21,7 +21,7 @@
 ################################################################################
 
 
-from pytriqs.applications.dft.converters import *
+from converters import *
 from pytriqs.archive import *
 from pytriqs.utility.h5diff import h5diff
 import pytriqs.utility.mpi as mpi
