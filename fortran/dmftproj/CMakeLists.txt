@@ -6,7 +6,8 @@ set(SOURCES modules.f dmftproj.f readcomline.f set_ang_trans.f setsym.f
 
 # The main target and what to link with...
 add_executable(dmftproj ${SOURCES})
-target_link_libraries(dmftproj "-framework Accelerate") #${TRIQS_LIBRARY_LAPACK})
+find_package(LAPACK)
+target_link_libraries(dmftproj ${LAPACK_LIBRARIES})
 
 # where to install
 install (TARGETS dmftproj DESTINATION bin)
