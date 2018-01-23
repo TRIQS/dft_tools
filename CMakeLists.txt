@@ -10,7 +10,7 @@ message( STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} -------------")
 
 # start configuration
 cmake_minimum_required(VERSION 2.8)
-project(dft_tools CXX Fortran)
+project(dft_tools C CXX Fortran)
 
 # Use shared libraries
 set(BUILD_SHARED_LIBS ON)
