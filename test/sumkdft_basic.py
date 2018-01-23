@@ -21,7 +21,7 @@
 ################################################################################
 
 from pytriqs.archive import *
-from pytriqs.applications.dft.sumk_dft_tools import SumkDFTTools
+from sumk_dft_tools import SumkDFTTools
 import pytriqs.utility.mpi as mpi
 from pytriqs.utility.comparison_tests import *
 from pytriqs.utility.h5diff import h5diff 

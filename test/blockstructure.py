@@ -1,8 +1,8 @@
-from pytriqs.applications.dft.sumk_dft import *
+from sumk_dft import *
 from pytriqs.utility.h5diff import h5diff
 from pytriqs.gf import *
 from pytriqs.utility.comparison_tests import assert_block_gfs_are_close
-from pytriqs.applications.dft import BlockStructure
+from block_structure import BlockStructure
 
 SK = SumkDFT('blockstructure.in.h5',use_dft_blocks=True)
 

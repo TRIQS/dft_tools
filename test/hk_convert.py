@@ -21,10 +21,11 @@
 ################################################################################
 
 
-from pytriqs.applications.dft.converters import *
 from pytriqs.archive import *
 from pytriqs.utility.h5diff import h5diff
 import pytriqs.utility.mpi as mpi
+
+from converters import *
 
 Converter = HkConverter(filename='hk_convert_hamiltonian.hk',hdf_filename='hk_convert.out.h5')
 
