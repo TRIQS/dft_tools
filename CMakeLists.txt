@@ -60,7 +60,7 @@ endif()
 #------------------------
 option(BUILD_DOC "Build documentation" OFF)
 if(${BUILD_DOC})
-  if(NOT TRIQS_WITH_DOCUMENTATION)
+  if(NOT ${TRIQS_WITH_DOCUMENTATION})
     message("Error: TRIQS library has not been compiled with its documentation")
   endif()
   add_subdirectory(doc)
