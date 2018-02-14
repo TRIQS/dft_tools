@@ -28,6 +28,9 @@ from sumk_dft import SumkDFT
 from scipy.integrate import *
 from scipy.interpolate import *
 
+if not hasattr(numpy, 'full'):
+    # polyfill full for older numpy:
+    numpy.full = lambda a, f: numpy.zeros(a) + f
 
 class SumkDFTTools(SumkDFT):
     """
