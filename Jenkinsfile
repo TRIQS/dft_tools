@@ -68,12 +68,15 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
 	      "PYTHONPATH=$installDir/lib/python2.7/site-packages",
 	      "CMAKE_PREFIX_PATH=$installDir/share/cmake"]) {
 	    deleteDir()
-	    sh """#!/bin/bash -ex
-	      cmake $workDir -DTRIQS_ROOT=$installDir
-	      make -j2
-	      make test
-	      make install
-	    """
+	    sh "cmake $workDir -DTRIQS_ROOT=$installDir"
+	    sh "make -j2"
+	    try {
+	      sh "make test"
+	    } catch (exc) {
+	      archiveArtifacts(artifacts: 'Testing/Temporary/LastTest.log')
+	      throw exc
+	    }
+	    sh "make install"
 	  } }
 	  // zip(zipFile: "osx-${platform}.zip", archive: true, dir: installDir)
 	}
