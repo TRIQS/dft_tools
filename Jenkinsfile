@@ -65,7 +65,6 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
 	      "PATH=$installDir/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin",
 	      "CPATH=$installDir/include",
 	      "LIBRARY_PATH=$installDir/lib",
-	      "PYTHONPATH=$installDir/lib/python2.7/site-packages",
 	      "CMAKE_PREFIX_PATH=$installDir/share/cmake"]) {
 	    deleteDir()
 	    sh "cmake $workDir -DTRIQS_ROOT=$installDir"
