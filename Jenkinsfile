@@ -1,9 +1,12 @@
+def triqsProject = '/TRIQS/triqs/' + env.BRANCH_NAME.replaceAll('/', '%2F')
+
 properties([
   disableConcurrentBuilds(),
+  buildDiscarder(logRotator(numToKeepStr: '10', daysToKeepStr: '30')),
   pipelineTriggers([
     upstream(
       threshold: 'SUCCESS',
-      upstreamProjects: '/TRIQS/triqs/' + env.BRANCH_NAME.replaceAll('/', '%2F')
+      upstreamProjects: triqsProject
     )
   ])
 ])
@@ -25,6 +28,54 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
 	  '''
 	  /* build and tag */
 	  def img = docker.build("flatironinstitute/dft_tools:${env.BRANCH_NAME}-${env.STAGE_NAME}")
+	}
+      }
+    }
+  }
+}
+
+def osxPlatforms = [
+  ["gcc", ['CC=gcc-7', 'CXX=g++-7']],
+  ["clang", ['CC=/usr/local/opt/llvm/bin/clang', 'CXX=/usr/local/opt/llvm/bin/clang++', 'CXXFLAGS=-I/usr/local/opt/llvm/include', 'LDFLAGS=-L/usr/local/opt/llvm/lib']]
+]
+for (int i = 0; i < osxPlatforms.size(); i++) {
+  def platformEnv = osxPlatforms[i]
+  def platform = platformEnv[0]
+  platforms["osx-$platform"] = { ->
+    stage("osx-$platform") {
+      timeout(time: 1, unit: 'HOURS') {
+	node('osx && triqs') {
+	  def workDir = pwd()
+	  def tmpDir = pwd(tmp:true)
+	  def buildDir = "$tmpDir/build"
+	  def installDir = "$tmpDir/install"
+
+	  dir(installDir) {
+	    deleteDir()
+	  }
+
+	  copyArtifacts(projectName: triqsProject, selector: upstream(fallbackToLastSuccessful: true), filter: "osx-${platform}.zip")
+	  unzip(zipFile: "osx-${platform}.zip", dir: installDir)
+	  /* fixup zip-stripped permissions (JENKINS-13128) */
+	  sh "chmod +x $installDir/bin/*"
+
+	  checkout scm
+
+	  dir(buildDir) { withEnv(platformEnv[1]+[
+	      "PATH=$installDir/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin",
+	      "CPATH=$installDir/include",
+	      "LIBRARY_PATH=$installDir/lib",
+	      "PYTHONPATH=$installDir/lib/python2.7/site-packages",
+	      "CMAKE_PREFIX_PATH=$installDir/share/cmake"]) {
+	    deleteDir()
+	    sh """#!/bin/bash -ex
+	      cmake $workDir -DTRIQS_ROOT=$installDir
+	      make -j2
+	      make test
+	      make install
+	    """
+	  } }
+	  // zip(zipFile: "osx-${platform}.zip", archive: true, dir: installDir)
 	}
       }
     }
