@@ -83,4 +83,31 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
   } }
 }
 
-parallel platforms
+try {
+  parallel platforms
+} catch (err) {
+  emailext(
+    subject: "\$PROJECT_NAME - Build # \$BUILD_NUMBER - FAILED",
+    body: """\$PROJECT_NAME - Build # \$BUILD_NUMBER - FAILED
+
+$err
+
+Check console output at \$BUILD_URL to view full results.
+
+Building \$BRANCH_NAME for \$CAUSE
+\$JOB_DESCRIPTION
+
+Chages:
+\$CHANGES
+
+End of build log:
+\${BUILD_LOG,maxLines=60}
+    """,
+    to: 'mzingl@flatironinstitute.org, hstrand@flatironinstitute.org, nils.wentzell@gmail.com, dsimon@flatironinstitute.org',
+    recipientProviders: [
+      [$class: 'DevelopersRecipientProvider'],
+    ],
+    replyTo: '$DEFAULT_REPLYTO'
+  )
+  throw err
+}
