@@ -1,5 +1,5 @@
 def triqsBranch = env.CHANGE_TARGET ?: env.BRANCH_NAME
-def triqsProject = '/TRIQS/triqs/' + upstreamBranch.replaceAll('/', '%2F')
+def triqsProject = '/TRIQS/triqs/' + triqsBranch.replaceAll('/', '%2F')
 
 properties([
   disableConcurrentBuilds(),
