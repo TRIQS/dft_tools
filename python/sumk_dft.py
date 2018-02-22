@@ -1610,3 +1610,9 @@ class SumkDFT(object):
     def __set_solver_to_sumk_block(self,value):
         self.block_structure.solver_to_sumk_block = value
     solver_to_sumk_block = property(__get_solver_to_sumk_block,__set_solver_to_sumk_block)
+
+    def __get_deg_shells(self):
+        return self.block_structure.deg_shells
+    def __set_deg_shells(self,value):
+        self.block_structure.deg_shells = value
+    deg_shells = property(__get_deg_shells,__set_deg_shells)
