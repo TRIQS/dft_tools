@@ -11,6 +11,10 @@ properties([
   ])
 ])
 
+node {
+  sh("printenv")
+}
+
 def platforms = [:]
 
 def dockerPlatforms = ["ubuntu-clang", "ubuntu-gcc", "centos-gcc"]
