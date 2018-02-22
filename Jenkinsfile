@@ -20,17 +20,16 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
   platforms[platform] = { -> stage(platform) {
     timeout(time: 1, unit: 'HOURS') {
       node('docker') {
-	def srcDir = pwd()
-	def buildDir = '$BUILD/dft_tools'
-
 	checkout scm
-
-	docker.image("flatironinstitute/triqs:${triqsBranch}-${env.STAGE_NAME}").inside('-u 1000:1000') {
-	  sh "mkdir $buildDir && cd $buildDir && cmake $srcDir -DTRIQS_ROOT=\$INSTALL -DCMAKE_INSTALL_PREFIX=$buildDir/install"
-	  sh "make -C $buildDir -j2"
-	  sh "make -C $buildDir test"
-	  sh "make -C $buildDir install"
-	}
+	/* construct a Dockerfile for this base */
+	sh """
+	  ( echo "FROM flatironinstitute/triqs:${triqsBranch}-${env.STAGE_NAME}" ; sed '0,/^FROM /d' Dockerfile ) > Dockerfile.jenkins
+	  mv -f Dockerfile.jenkins Dockerfile
+	"""
+	/* build and tag */
+	def img = docker.build("flatironinstitute/dft_tools:${env.BRANCH_NAME}-${env.STAGE_NAME}")
+	/* but we don't need the tag so clean it up (alternatively, could refacter to run in container) */
+	sh "docker rmi ${img.imageName()}"
       }
     }
   } }
