@@ -20,22 +20,16 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
   platforms[platform] = { -> stage(platform) {
     timeout(time: 1, unit: 'HOURS') {
       node('docker') {
-	docker.image("flatironinstitute/triqs:${triqsBranch}-${env.STAGE_NAME}").inside {
-	  def srcDir = pwd()
+	def srcDir = pwd()
+	def buildDir = '$BUILD/dft_tools'
 
-	  checkout scm
+	checkout scm
 
-	  dir("$srcDir/build") {
-	    sh "cmake $srcDir -DTRIQS_ROOT=\$INSTALL -DCMAKE_INSTALL_PREFIX=$srcDir/install"
-	    sh "make -j2"
-	    try {
-	      sh "make test && false"
-	    } catch (exc) {
-	      archiveArtifacts(artifacts: 'Testing/Temporary/LastTest.log')
-	      throw exc
-	    }
-	    sh "make install"
-	  }
+	docker.image("flatironinstitute/triqs:${triqsBranch}-${env.STAGE_NAME}").inside('-u 1000:1000') {
+	  sh "mkdir $buildDir && cd $buildDir && cmake $srcDir -DTRIQS_ROOT=\$INSTALL -DCMAKE_INSTALL_PREFIX=$buildDir/install"
+	  sh "make -C $buildDir -j2"
+	  sh "make -C $buildDir test"
+	  sh "make -C $buildDir install"
 	}
       }
     }
