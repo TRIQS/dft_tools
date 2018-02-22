@@ -22,13 +22,12 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
       timeout(time: 1, unit: 'HOURS') {
 	docker.image("flatironinstitute/triqs:${triqsBranch}-${env.STAGE_NAME}").inside {
 	  def srcDir = pwd()
-	  def tmpDir = pwd(tmp:true)
-	  def buildDir = "$tmpDir/build"
+	  def buildDir = "$srcDir/build"
 
 	  checkout scm
 
 	  dir(buildDir) {
-	    sh "cmake $srcDir/dft_tools -DTRIQS_ROOT=\$INSTALL"
+	    sh "cmake $srcDir -DTRIQS_ROOT=\$INSTALL"
 	    sh "make -j2"
 	    sh "make test"
 	    sh "make install"
