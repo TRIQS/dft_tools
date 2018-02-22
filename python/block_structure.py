@@ -2,6 +2,7 @@ import copy
 import numpy as np
 from pytriqs.gf import GfImFreq, BlockGf
 from ast import literal_eval
+import pytriqs.utility.mpi as mpi
 from warnings import warn
 
 class BlockStructure(object):
@@ -298,12 +299,21 @@ class BlockStructure(object):
             the structure of that G
         ish : int
             shell index
-        show_warnings : bool
+        show_warnings : bool or float
             whether to show warnings when elements of the Green's
             function get thrown away
+            if float, set the threshold for the magnitude of an element
+            about to be thrown away to trigger a warning
+            (default: 1.e-10)
         **kwargs :
             options passed to the constructor for the new Gf
         """
+
+        warning_threshold = 1.e-10
+        if isinstance(show_warnings, float):
+            warning_threshold = show_warnings
+            show_warnings = True
+
         G_new = self.create_gf(ish=ish,**kwargs)
         for block in G_struct.gf_struct_solver[ish].keys():
             for i1 in G_struct.gf_struct_solver[ish][block]:
@@ -314,14 +324,16 @@ class BlockStructure(object):
                     i2_sol = self.sumk_to_solver[ish][i2_sumk]
                     if i1_sol[0] is None or i2_sol[0] is None:
                         if show_warnings:
-                            warn(('Element {},{} of block {} of G is not present '+
-                                'in the new structure').format(i1,i2,block))
+                            if mpi.is_master_node():
+                                warn(('Element {},{} of block {} of G is not present '+
+                                    'in the new structure').format(i1,i2,block))
                         continue
                     if i1_sol[0]!=i2_sol[0]:
-                        if show_warnings:
-                            warn(('Element {},{} of block {} of G is approximated '+
-                                'to zero to match the new structure.').format(
-                                    i1,i2,block))
+                        if show_warnings and np.max(np.abs(G[block][i1,i2].data)) > warning_threshold:
+                            if mpi.is_master_node():
+                                warn(('Element {},{} of block {} of G is approximated '+
+                                    'to zero to match the new structure. Max abs value: {}').format(
+                                        i1,i2,block,np.max(np.abs(G[block][i1,i2].data))))
                         continue
                     G_new[i1_sol[0]][i1_sol[1],i2_sol[1]] = \
                             G[block][i1,i2]
