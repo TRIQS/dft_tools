@@ -1,4 +1,4 @@
-def triqsProject = '/TRIQS/triqs/' + (env.CHANGE_TARGET_XXX || env.BRANCH_NAME).replaceAll('/', '%2F')
+def triqsProject = '/TRIQS/triqs/' + (env.CHANGE_TARGET || env.BRANCH_NAME).replaceAll('/', '%2F')
 
 properties([
   disableConcurrentBuilds(),
@@ -10,10 +10,6 @@ properties([
     )
   ])
 ])
-
-node {
-  sh("printenv")
-}
 
 def platforms = [:]
 
