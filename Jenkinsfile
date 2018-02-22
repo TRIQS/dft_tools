@@ -1,4 +1,5 @@
-def triqsProject = '/TRIQS/triqs/' + (env.CHANGE_TARGET || env.BRANCH_NAME).replaceAll('/', '%2F')
+def upstream = env.CHANGE_TARGET ?: env.BRANCH_NAME
+def triqsProject = '/TRIQS/triqs/' + upstream.replaceAll('/', '%2F')
 
 properties([
   disableConcurrentBuilds(),
@@ -22,10 +23,10 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
 	node('docker') {
 	  checkout scm
 	  /* construct a Dockerfile for this base */
-	  sh '''
-	    ( echo "FROM flatironinstitute/triqs:$BRANCH_NAME-$STAGE_NAME" ; sed '0,/^FROM /d' Dockerfile ) > Dockerfile.jenkins
+	  sh """
+	    ( echo "FROM flatironinstitute/triqs:${upstream}-${env.STAGE_NAME}" ; sed '0,/^FROM /d' Dockerfile ) > Dockerfile.jenkins
 	    mv -f Dockerfile.jenkins Dockerfile
-	  '''
+	  """
 	  /* build and tag */
 	  def img = docker.build("flatironinstitute/dft_tools:${env.BRANCH_NAME}-${env.STAGE_NAME}")
 	}
