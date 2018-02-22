@@ -20,15 +20,19 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
   platforms[platform] = { ->
     stage(platform) {
       timeout(time: 1, unit: 'HOURS') {
-	node('docker') {
+	docker.image("flatironinstitute/triqs:${triqsBranch}-${env.STAGE_NAME}").inside {
+	  def srcDir = pwd()
+	  def tmpDir = pwd(tmp:true)
+	  def buildDir = "$tmpDir/build"
+
 	  checkout scm
-	  /* construct a Dockerfile for this base */
-	  sh """
-	    ( echo "FROM flatironinstitute/triqs:${triqsBranch}-${env.STAGE_NAME}" ; sed '0,/^FROM /d' Dockerfile ) > Dockerfile.jenkins
-	    mv -f Dockerfile.jenkins Dockerfile
-	  """
-	  /* build and tag */
-	  def img = docker.build("flatironinstitute/dft_tools:${env.BRANCH_NAME}-${env.STAGE_NAME}")
+
+	  dir(buildDir) {
+	    sh "cmake $srcDir/dft_tools -DTRIQS_ROOT=\$INSTALL"
+	    sh "make -j2"
+	    sh "make test"
+	    sh "make install"
+	  }
 	}
       }
     }
@@ -46,7 +50,7 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
     stage("osx-$platform") {
       timeout(time: 1, unit: 'HOURS') {
 	node('osx && triqs') {
-	  def workDir = pwd()
+	  def srcDir = pwd()
 	  def tmpDir = pwd(tmp:true)
 	  def buildDir = "$tmpDir/build"
 	  def installDir = "$tmpDir/install"
@@ -68,7 +72,7 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
 	      "LIBRARY_PATH=$installDir/lib",
 	      "CMAKE_PREFIX_PATH=$installDir/share/cmake"]) {
 	    deleteDir()
-	    sh "cmake $workDir -DTRIQS_ROOT=$installDir"
+	    sh "cmake $srcDir -DTRIQS_ROOT=$installDir"
 	    sh "make -j2"
 	    try {
 	      sh "make test"
