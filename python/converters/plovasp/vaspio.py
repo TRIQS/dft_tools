@@ -363,7 +363,7 @@ class Poscar:
 
 # Read scale
         sline = readline_remove_comments()
-        ascale = float(sline[0])
+        ascale = float(sline)
 # Read lattice vectors
         self.a_brav = np.zeros((3, 3))
         for ia in xrange(3):
