@@ -25,12 +25,15 @@ import numpy
 import pytriqs.utility.dichotomy as dichotomy
 from pytriqs.gf import *
 import pytriqs.utility.mpi as mpi
+from pytriqs.utility.comparison_tests import assert_arrays_are_close
 from pytriqs.archive import *
 from symmetry import *
 from block_structure import BlockStructure
 from sets import Set
 from itertools import product
 from warnings import warn
+from scipy import compress
+from scipy.optimize import minimize
 
 
 class SumkDFT(object):
@@ -848,6 +851,366 @@ class SumkDFT(object):
                             elif (ind1 < 0) and (ind2 < 0):
                                 self.deg_shells[ish].append([block1, block2])
 
+    def analyse_block_structure_from_gf(self, G, threshold=1.e-5, include_shells=None, analyse_deg_shells = True):
+        r"""
+        Determines the block structure of local Green's functions by analysing
+        the structure of the corresponding non-interacting Green's function.
+        The resulting block structures for correlated shells are
+        stored in the :class:`SumkDFT.block_structure <dft.block_structure.BlockStructure>`
+        attribute.
+
+        This is a safer alternative to analyse_block_structure, because
+        the full non-interacting Green's function is taken into account
+        and not just the density matrix and Hloc.
+
+        Parameters
+        ----------
+        G : list of BlockGf of GfImFreq or GfImTime
+            the non-interacting Green's function for each inequivalent correlated shell
+        threshold : real, optional
+                    If the difference between matrix elements is below threshold,
+                    they are considered to be equal.
+        include_shells : list of integers, optional
+                         List of correlated shells to be analysed.
+                         If include_shells is not provided all correlated shells will be analysed.
+        analyse_deg_shells : bool
+                             Whether to call the analyse_deg_shells function
+                             after having finished the block structure analysis
+
+        Returns
+        -------
+        G : list of BlockGf of GfImFreq or GfImTime
+            the Green's function transformed into the new block structure
+        """
+
+        # make a GfImTime from the supplied G
+        if isinstance(G[0]._first(), GfImFreq):
+            gf = [BlockGf(name_block_generator = [(name, GfImTime(beta=block.mesh.beta,
+                indices=block.indices,n_points=len(block.mesh)+1)) for name, block in g_sh])
+                for g_sh in G]
+            for ish in range(len(gf)):
+                for name, g in gf[ish]:
+                    g.set_from_inverse_fourier(G[ish][name])
+        else:
+            assert isinstance(G[0]._first(), GfImTime), "G must be a BlockGf of either GfImFreq or GfImTime"
+            gf = G
+
+        # initialize the variables
+        self.gf_struct_solver = [{} for ish in range(self.n_inequiv_shells)]
+        self.sumk_to_solver = [{} for ish in range(self.n_inequiv_shells)]
+        self.solver_to_sumk = [{} for ish in range(self.n_inequiv_shells)]
+        self.solver_to_sumk_block = [{}
+                                     for ish in range(self.n_inequiv_shells)]
+
+        # the maximum value of each matrix element of each block and shell
+        max_gf = [{name:numpy.max(numpy.abs(g.data),0) for name, g in gf[ish]} for ish in range(self.n_inequiv_shells)]
+
+        if include_shells is None:
+            # include all shells
+            include_shells = range(self.n_inequiv_shells)
+
+        for ish in include_shells:
+            for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]:
+                n_orb = self.corr_shells[self.inequiv_to_corr[ish]]['dim']
+
+                # gives an index list of entries larger that threshold
+                maxgf_bool = (abs(max_gf[ish][sp]) > threshold)
+
+                # Determine off-diagonal entries in upper triangular part of the
+                # Green's function
+                offdiag = Set([])
+                for i in range(n_orb):
+                    for j in range(i + 1, n_orb):
+                        if maxgf_bool[i, j]:
+                            offdiag.add((i, j))
+
+                # Determine the number of non-hybridising blocks in the gf
+                blocs = [[i] for i in range(n_orb)]
+                while len(offdiag) != 0:
+                    pair = offdiag.pop()
+                    for b1, b2 in product(blocs, blocs):
+                        if (pair[0] in b1) and (pair[1] in b2):
+                            if blocs.index(b1) != blocs.index(b2):     # In separate blocks?
+                                # Merge two blocks
+                                b1.extend(blocs.pop(blocs.index(b2)))
+                                break                                  # Move on to next pair in offdiag
+
+                # Set the gf_struct for the solver accordingly
+                num_blocs = len(blocs)
+                for i in range(num_blocs):
+                    blocs[i].sort()
+                    self.gf_struct_solver[ish].update(
+                        [('%s_%s' % (sp, i), range(len(blocs[i])))])
+
+                # Construct sumk_to_solver taking (sumk_block, sumk_index) --> (solver_block, solver_inner)
+                # and solver_to_sumk taking (solver_block, solver_inner) -->
+                # (sumk_block, sumk_index)
+                for i in range(num_blocs):
+                    for j in range(len(blocs[i])):
+                        block_sumk = sp
+                        inner_sumk = blocs[i][j]
+                        block_solv = '%s_%s' % (sp, i)
+                        inner_solv = j
+                        self.sumk_to_solver[ish][(block_sumk, inner_sumk)] = (
+                            block_solv, inner_solv)
+                        self.solver_to_sumk[ish][(block_solv, inner_solv)] = (
+                            block_sumk, inner_sumk)
+                        self.solver_to_sumk_block[ish][block_solv] = block_sumk
+
+        # transform G to the new structure
+        full_structure = BlockStructure.full_structure(
+            [{sp:range(self.corr_shells[self.inequiv_to_corr[ish]]['dim'])
+                for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]}
+                for ish in range(self.n_inequiv_shells)],None)
+        G_transformed = [
+            self.block_structure.convert_gf(G[ish],
+                full_structure, ish, beta=G[ish].mesh.beta, show_warnings=threshold)
+            for ish in range(self.n_inequiv_shells)]
+
+        if analyse_deg_shells:
+            self.analyse_deg_shells(G_transformed, threshold, include_shells)
+        return G_transformed
+
+    def analyse_deg_shells(self, G, threshold=1.e-5, include_shells=None):
+        r"""
+        Determines the degenerate shells of local Green's functions by analysing
+        the structure of the corresponding non-interacting Green's function.
+        The results are stored in the
+        :class:`SumkDFT.block_structure <dft.block_structure.BlockStructure>`
+        attribute.
+
+        Parameters
+        ----------
+        G : list of BlockGf of GfImFreq or GfImTime
+            the non-interacting Green's function for each inequivalent correlated shell
+        threshold : real, optional
+                    If the difference between matrix elements is below threshold,
+                    they are considered to be equal.
+        include_shells : list of integers, optional
+                         List of correlated shells to be analysed.
+                         If include_shells is not provided all correlated shells will be analysed.
+        """
+
+        # initialize
+        self.deg_shells = [[] for ish in range(self.n_inequiv_shells)]
+
+        # helper function
+        def null(A, eps=1e-15):
+            """ Calculate the null-space of matrix A """
+            u, s, vh = numpy.linalg.svd(A)
+            null_mask = (s <= eps)
+            null_space = compress(null_mask, vh, axis=0)
+            return null_space.conjugate().transpose()
+
+        # make a GfImTime from the supplied G
+        if isinstance(G[0]._first(), GfImFreq):
+            gf = [BlockGf(name_block_generator = [(name, GfImTime(beta=block.mesh.beta,
+                indices=block.indices,n_points=len(block.mesh)+1)) for name, block in g_sh])
+                for g_sh in G]
+            for ish in range(len(gf)):
+                for name, g in gf[ish]:
+                    g.set_from_inverse_fourier(G[ish][name])
+        else:
+            assert isinstance(G[0]._first(), GfImTime), "G must be a BlockGf of either GfImFreq or GfImTime"
+            gf = G
+
+        if include_shells is None:
+            # include all shells
+            include_shells = range(self.n_inequiv_shells)
+
+        # We consider two blocks equal, if their Green's functions obey
+        # maybe_conjugate1( v1^dagger G1 v1 ) = maybe_conjugate2( v2^dagger G2 v2 )
+        # where maybe_conjugate is a function that conjugates the Green's
+        # function if the flag 'conjugate' is set and the v are unitary
+        # matrices
+        #
+        # for each pair of blocks, we check whether there is a transformation
+        # maybe_conjugate( T G1 T^dagger ) = G2
+        # where our goal is to find T
+        # we just try whether there is such a T with and without conjugation
+        for ish in include_shells:
+            for block1 in self.gf_struct_solver[ish].iterkeys():
+                for block2 in self.gf_struct_solver[ish].iterkeys():
+                    if block1==block2: continue
+
+                    # check if the blocks are already present in the deg_shells
+                    ind1 = -1
+                    ind2 = -2
+                    for n, ind in enumerate(self.deg_shells[ish]):
+                        if block1 in ind:
+                            ind1 = n
+                            v1 = ind[block1]
+                        if block2 in ind:
+                            ind2 = n
+                            v2 = ind[block2]
+
+                    # if both are already present, go to the next pair of blocks
+                    if ind1 >= 0 and ind2 >= 0:
+                        continue
+
+                    gf1 = gf[ish][block1]
+                    gf2 = gf[ish][block2]
+
+                    # the two blocks have to have the same shape
+                    if gf1.target_shape != gf2.target_shape:
+                        continue
+
+                    # Instead of directly comparing the two blocks, we
+                    # compare its eigenvalues. As G(tau) is Hermitian,
+                    # they are real and the eigenvector matrix is unitary.
+                    # Thus, if the eigenvalues are equal we can transform
+                    # one block to make it equal to the other (at least
+                    # for tau=0).
+
+                    e1 = numpy.linalg.eigvalsh(gf1.data[0])
+                    e2 = numpy.linalg.eigvalsh(gf2.data[0])
+                    if numpy.any(abs(e1-e2) > threshold): continue
+
+                    for conjugate in [False,True]:
+                        if conjugate:
+                            gf2 = gf2.conjugate()
+
+                        # we want T gf1 T^dagger = gf2
+                        # while for a given tau, T could be calculated
+                        # by diagonalizing gf1 and gf2, this does not
+                        # work for all taus simultaneously because of
+                        # numerical imprecisions
+
+                        # rather, we rewrite the equation to
+                        # T gf1 = gf2 T
+                        # which is the Sylvester equation.
+                        # For that equation, one can use the Kronecker
+                        # product to get a linear problem, which consists
+                        # of finding the null space of M vec T = 0.
+
+                        M = numpy.kron(numpy.eye(*gf1.target_shape),gf2.data[0])-numpy.kron(gf1.data[0].transpose(),numpy.eye(*gf1.target_shape))
+                        N = null(M, threshold)
+
+                        # now we get the intersection of the null spaces
+                        # of all values of tau
+                        for i in range(1,len(gf1.data)):
+                            M = numpy.kron(numpy.eye(*gf1.target_shape),gf2.data[i])-numpy.kron(gf1.data[i].transpose(),numpy.eye(*gf1.target_shape))
+                            # transform M into current null space
+                            M = numpy.dot(M, N)
+                            N = numpy.dot(N, null(M, threshold))
+                            if numpy.size(N) == 0:
+                                break
+
+                        # no intersection of the null spaces -> no symmetry
+                        if numpy.size(N) == 0: continue
+
+                        # reshape N: it then has the indices matrix, matrix, number of basis vectors of the null space
+                        N = N.reshape(gf1.target_shape[0], gf1.target_shape[1], -1).transpose([1, 0, 2])
+
+                        """
+                        any matrix in the null space can now be constructed as
+                        M = 0
+                        for i in range(N.shape[-1]):
+                            M += y[i]*N[:,:,i]
+                        with coefficients (complex numbers) y[i].
+
+                        We want to get a set of coefficients y so that M is unitary.
+                        Unitary means M M^dagger = 1.
+                        Thus,
+                            sum  y[i] N[:,:,i] y[j].conjugate() N[:,:,j].conjugate().transpose() = eye.
+                        The object N[:,:,i] N[:,:,j] is a four-index object which we call Z.
+                        """
+                        Z = numpy.einsum('aci,bcj->abij', N, N.conjugate())
+
+                        """
+                        function chi2
+                        This function takes a real parameter vector y and reinterprets it as complex.
+                        Then, it calculates the chi2 of
+                            sum  y[i] N[:,:,i] y[j].conjugate() N[:,:,j].conjugate().transpose() - eye.
+                        """
+                        def chi2(y):
+                            # reinterpret y as complex number
+                            y = y.view(numpy.complex_)
+                            ret = 0.0
+                            for a in range(Z.shape[0]):
+                                for b in range(Z.shape[1]):
+                                    ret += numpy.abs(numpy.dot(y, numpy.dot(Z[a, b], y.conjugate()))
+                                                  - (1.0 if a == b else 0.0))**2
+                            return ret
+
+                        # use the minimization routine from scipy
+                        res = minimize(chi2, numpy.ones(2 * N.shape[-1]))
+
+                        # if the minimization fails, there is probably no symmetry
+                        if not res.success: continue
+                        # check if the minimization returned zero within the tolerance
+                        if res.fun > threshold: continue
+
+                        # reinterpret the solution as a complex number
+                        y = res.x.view(numpy.complex_)
+
+                        # reconstruct the T matrix
+                        T = numpy.zeros(N.shape[:-1], dtype=numpy.complex_)
+                        for i in range(len(y)):
+                            T += N[:, :, i] * y[i]
+
+                        # transform gf1 using T
+                        G_transformed = gf1.copy()
+                        G_transformed.from_L_G_R(T, gf1, T.conjugate().transpose())
+
+                        # it does not make sense to check the tails for an
+                        # absolute error because it will usually not hold;
+                        # we could just check the relative error
+                        # (here, we ignore it, reasoning that if the data
+                        # is the same, the tails have to coincide as well)
+                        try:
+                            assert_arrays_are_close(G_transformed.data, gf2.data, threshold)
+                        except (RuntimeError, AssertionError):
+                            # the symmetry does not hold
+                            continue
+
+                        # Now that we have found a valid T, we have to
+                        # rewrite it to match the convention that
+                        # C1(v1^dagger G1 v1) = C2(v2^dagger G2 v2),
+                        # where C conjugates if the flag is True
+
+                        # For each group of degenerate shells, the list
+                        # SK.deg_shells[ish] contains a dict. The keys
+                        # of the dict are the block names, the values
+                        # are tuples. The first entry of the tuple is
+                        # the transformation matrix v, the second entry
+                        # is the conjugation flag
+
+                        # the second block is already present
+                        # set v1 and C1 so that they are compatible with
+                        # C(T gf1 T^dagger) = gf2
+                        # and with
+                        # C1(v1^dagger G1 v1) = C2(v2^dagger G2 v2)
+                        if (ind1 < 0) and (ind2 >= 0):
+                            if conjugate:
+                                self.deg_shells[ish][ind2][block1] = numpy.dot(T.conjugate().transpose(), v2[0].conjugate()), not v2[1]
+                            else:
+                                self.deg_shells[ish][ind2][block1] = numpy.dot(T.conjugate().transpose(), v2[0]), v2[1]
+                        # the first block is already present
+                        # set v2 and C2 so that they are compatible with
+                        # C(T gf1 T^dagger) = gf2
+                        # and with
+                        # C1(v1^dagger G1 v1) = C2(v2^dagger G2 v2)
+                        elif (ind1 >= 0) and (ind2 < 0):
+                            if conjugate:
+                                self.deg_shells[ish][ind1][block2] = numpy.dot(T.conjugate(), v1[0].conjugate()), not v1[1]
+                            else:
+                                self.deg_shells[ish][ind1][block2] = numpy.dot(T, v1[0]), v1[1]
+                        # the blocks are not already present
+                        # we arbitrarily choose v1=eye and C1=False and
+                        # set v2 and C2 so that they are compatible with
+                        # C(T gf1 T^dagger) = gf2
+                        # and with
+                        # C1(v1^dagger G1 v1) = C2(v2^dagger G2 v2)
+                        elif (ind1 < 0) and (ind2 < 0):
+                            d = dict()
+                            d[block1] = numpy.eye(*gf1.target_shape), False
+                            if conjugate:
+                                d[block2] = T.conjugate(), True
+                            else:
+                                d[block2] = T, False
+                            self.deg_shells[ish].append(d)
+
     def density_matrix(self, method='using_gf', beta=40.0):
         """Calculate density matrices in one of two ways.
 
@@ -1616,3 +1979,38 @@ class SumkDFT(object):
     def __set_deg_shells(self,value):
         self.block_structure.deg_shells = value
     deg_shells = property(__get_deg_shells,__set_deg_shells)
+
+# a helper function
+def conjugate_in_tau(gf_im_freq, in_place=False):
+    """ Calculate the conjugate in tau of a GfImFreq
+
+    Parameters
+    ----------
+    gf_im_freq : GfImFreq of BlockGf
+        the Green's function
+    in_place : whether to modify the gf_im_freq object (True) or return a copy (False)
+
+    Returns
+    -------
+    ret : GfImFreq of BlockGf
+        the Green's function that has been FT to G(tau), conjugated, and
+        FT back
+    """
+    if in_place:
+        ret = gf_im_freq
+    else:
+        ret = gf_im_freq.copy()
+    if isinstance(ret, BlockGf):
+        for name, gf in ret:
+            conjugate_in_tau(gf, in_place=True)
+    else:
+        """ there is an easier way to do this, namely to make
+            ret.data[:,:,:] = gf_im_freq.data[::-1,:,:].conjugate()
+            ret.tail.data[:,:,:] = gf_im_freq.tail.data.conjugate()
+            but this relies on symmetric Matsubara meshes and is maybe
+            not safe enough"""
+        G_tau = GfImTime(beta=gf_im_freq.mesh.beta,
+                    indices=gf_im_freq.indices,n_points=len(gf_im_freq.mesh)+1)
+        G_tau.set_from_inverse_fourier(gf_im_freq)
+        ret.set_from_fourier(G_tau.conjugate())
+    return ret
