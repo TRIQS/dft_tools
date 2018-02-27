@@ -376,10 +376,10 @@ class BlockStructure(object):
                     if not compare(x,y):
                         return False
                 return True
-            elif isinstance(one,int):
+            elif isinstance(one,(int,bool, str, np.bool_)):
                 return one==two
-            elif isinstance(one,str):
-                return one==two
+            elif isinstance(one,np.ndarray):
+                return np.all(one==two)
             elif isinstance(one,dict):
                 if set(one.keys()) != set(two.keys()):
                     return False
@@ -391,7 +391,8 @@ class BlockStructure(object):
             return False
 
         for prop in [ "gf_struct_sumk", "gf_struct_solver",
-                "solver_to_sumk", "sumk_to_solver", "solver_to_sumk_block"]:
+                "solver_to_sumk", "sumk_to_solver", "solver_to_sumk_block",
+                "deg_shells"]:
             if not compare(getattr(self,prop),getattr(other,prop)):
                 return False
         return True
