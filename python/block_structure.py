@@ -451,8 +451,18 @@ class BlockStructure(object):
                 keys = sorted(element[ish].keys(),key=keyfun)
                 for k in keys:
                     s+='  '+str(k)+str(element[ish][k])+'\n'
-
-        s+= "deg_shells "+str( self.deg_shells)+'\n'
+        s += "deg_shells\n"
+        for ish in range(len(self.deg_shells)):
+            s+=' shell '+str(ish)+'\n'
+            for l in range(len(self.deg_shells[ish])):
+                s+='  equivalent group '+str(l)+'\n'
+                if isinstance(self.deg_shells[ish][l],dict):
+                    for key, val in self.deg_shells[ish][l].iteritems():
+                        s+='   '+key+('*' if val[1] else '')+':\n'
+                        s+='    '+str(val[0]).replace('\n','\n    ')+'\n'
+                else:
+                    for key in self.deg_shells[ish][l]:
+                        s+='   '+key+'\n'
         return s
 
 from pytriqs.archive.hdf_archive_schemes import register_class
