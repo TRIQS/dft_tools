@@ -366,7 +366,8 @@ class BlockStructure(object):
     def __eq__(self,other):
         def compare(one,two):
             if type(one)!=type(two):
-                return False
+                if not (isinstance(one, (bool, np.bool_)) and isinstance(two, (bool, np.bool_))):
+                    return False
             if one is None and two is None:
                 return True
             if isinstance(one,list) or isinstance(one,tuple):
