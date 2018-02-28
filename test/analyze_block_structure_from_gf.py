@@ -2,7 +2,7 @@ from pytriqs.gf import *
 from sumk_dft import SumkDFT, conjugate_in_tau
 from scipy.linalg import expm
 import numpy as np
-from pytriqs.utility.comparison_tests import assert_gfs_are_close, assert_arrays_are_close
+from pytriqs.utility.comparison_tests import assert_gfs_are_close, assert_arrays_are_close, assert_block_gfs_are_close
 from pytriqs.archive import *
 import itertools
 
@@ -138,16 +138,40 @@ for conjugate in conjugate_values:
         G[0]['ud'][i:i+2,i:i+2] << inverse(Omega-delta)
     G[0]['ud'] << inverse(inverse(G[0]['ud']) - Hloc)
 
+    # for testing symm_deg_gf below, we need this
+    # we construct it so that for every group of degenerate blocks of G[0], the
+    # mean of the blocks of G_noisy is equal to G[0]
+    G_noisy = G[0].copy()
+    noise1 = np.random.randn(*delta.target_shape)
+    G_noisy['ud'][:2,:2].data[:,:,:] += noise1
+    G_noisy['ud'][2:4,2:4].data[:,:,:] -= noise1/2.0
+    G_noisy['ud'][4:6,4:6].data[:,:,:] -= noise1/2.0
+    noise2 = np.random.randn(*delta.target_shape)
+    G_noisy['ud'][6:8,6:8].data[:,:,:] += noise2
+    G_noisy['ud'][8:,8:].data[:,:,:] -= noise2
+
+    # for testing backward-compatibility in symm_deg_gf, we need the
+    # un-transformed Green's functions
+    G_pre_transform = G[0].copy()
+    G_noisy_pre_transform = G_noisy.copy()
+
     # transform each block using a random transformation matrix
     for i in range(0,10,2):
         T = get_random_transformation(2)
         G[0]['ud'][i:i+2,i:i+2].from_L_G_R(T, G[0]['ud'][i:i+2,i:i+2], T.conjugate().transpose())
+        G_noisy['ud'][i:i+2,i:i+2].from_L_G_R(T, G_noisy['ud'][i:i+2,i:i+2], T.conjugate().transpose())
         # if that block shall be conjugated, go ahead and do it
         if conjugate[i//2]:
             conjugate_in_tau(G[0]['ud'][i:i+2,i:i+2], in_place=True)
+            conjugate_in_tau(G_noisy['ud'][i:i+2,i:i+2], in_place=True)
 
     # analyse the block structure
     G_new = SK.analyse_block_structure_from_gf(G)
+
+    # transform G_noisy etc. to the new block structure
+    G_noisy = SK.block_structure.convert_gf(G_noisy, block_structure1, beta = G_noisy.mesh.beta)
+    G_pre_transform = SK.block_structure.convert_gf(G_pre_transform, block_structure1, beta = G_noisy.mesh.beta)
+    G_noisy_pre_transform = SK.block_structure.convert_gf(G_noisy_pre_transform, block_structure1, beta = G_noisy.mesh.beta)
 
     assert len(SK.deg_shells[0]) == 2, "wrong number of equivalent groups found"
     assert sorted([len(d) for d in SK.deg_shells[0]]) == [2,3], "wrong number of members in the equivalent groups found"
@@ -177,3 +201,30 @@ for conjugate in conjugate_values:
         for i in range(len(normalized_gfs)):
             for j in range(i+1,len(normalized_gfs)):
                 assert_gfs_are_close(normalized_gfs[i], normalized_gfs[j])
+
+    # now we check symm_deg_gf
+    # symmetrizing the GF as is has to leave it unchanged
+    G_new_symm = G_new[0].copy()
+    SK.symm_deg_gf(G_new_symm, 0)
+    assert_block_gfs_are_close(G_new[0], G_new_symm)
+
+    # symmetrizing the noisy GF, which was carefully constructed,
+    # has to give the same result as G_new[0]
+    SK.symm_deg_gf(G_noisy, 0)
+    assert_block_gfs_are_close(G_new[0], G_noisy)
+
+    # check backward compatibility of symm_deg_gf
+    # first, construct the old format of the deg shells
+    for ish in range(len(SK.deg_shells)):
+        for gr in range(len(SK.deg_shells[ish])):
+            SK.deg_shells[ish][gr] = SK.deg_shells[ish][gr].keys()
+
+    # symmetrizing the GF as is has to leave it unchanged
+    G_new_symm << G_pre_transform
+    SK.symm_deg_gf(G_new_symm, 0)
+    assert_block_gfs_are_close(G_new_symm, G_pre_transform)
+
+    # symmetrizing the noisy GF pre transform, which was carefully constructed,
+    # has to give the same result as G_pre_transform
+    SK.symm_deg_gf(G_noisy_pre_transform, 0)
+    assert_block_gfs_are_close(G_noisy_pre_transform, G_pre_transform)

@@ -1575,20 +1575,56 @@ class SumkDFT(object):
         Parameters
         ----------
         gf_to_symm : gf_struct_solver like
-                     Input GF.
+                     Input and output GF (i.e., it gets overwritten)
         orb : int
               Index of an inequivalent shell.
 
         """
 
+        # when reading block_structures written with older versions from
+        # an h5 file, self.deg_shells might be None
+        if self.deg_shells is None: return
+
         for degsh in self.deg_shells[orb]:
-            ss = gf_to_symm[degsh[0]].copy()
-            ss.zero()
+            # ss will hold the averaged orbitals in the basis where the
+            # blocks are all equal
+            # i.e. maybe_conjugate(v^dagger gf v)
+            ss = None
             n_deg = len(degsh)
-            for bl in degsh:
-                ss += gf_to_symm[bl] / (1.0 * n_deg)
-            for bl in degsh:
-                gf_to_symm[bl] << ss
+            for key in degsh:
+                if ss is None:
+                    ss = gf_to_symm[key].copy()
+                    ss.zero()
+                    helper = ss.copy()
+                # get the transformation matrix
+                if isinstance(degsh, dict):
+                    v, C = degsh[key]
+                else:
+                    # for backward compatibility, allow degsh to be a list
+                    v = numpy.eye(*ss.target_shape)
+                    C = False
+                # the helper is in the basis where the blocks are all equal
+                helper.from_L_G_R(v.conjugate().transpose(), gf_to_symm[key], v)
+                if C:
+                    conjugate_in_tau(helper, in_place=True)
+                # average over all shells
+                ss += helper / (1.0 * n_deg)
+            # now put back the averaged gf to all shells
+            for key in degsh:
+                if isinstance(degsh, dict):
+                    v, C = degsh[key]
+                else:
+                    # for backward compatibility, allow degsh to be a list
+                    v = numpy.eye(*ss.target_shape)
+                    C = False
+                if C:
+                    # we could also use
+                    # gf_to_symm[key].from_L_G_R(v, conjugate_in_tau(ss), v.conjugate().transpose())
+                    # but this is less memory-intensive:
+                    gf_to_symm[key].from_L_G_R(v.conjugate(), ss, v.transpose())
+                    conjugate_in_tau(gf_to_symm[key], in_place=True)
+                else:
+                    gf_to_symm[key].from_L_G_R(v, ss, v.conjugate().transpose())
 
     def total_density(self, mu=None, iw_or_w="iw", with_Sigma=True, with_dc=True, broadening=None):
         r"""
