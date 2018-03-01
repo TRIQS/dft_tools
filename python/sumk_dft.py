@@ -884,7 +884,7 @@ class SumkDFT(object):
         """
 
         # make a GfImTime from the supplied G
-        if isinstance(G[0]._first(), GfImFreq):
+        if all(isinstance(g_sh._first(), GfImFreq) for g_sh in G):
             gf = [BlockGf(name_block_generator = [(name, GfImTime(beta=block.mesh.beta,
                 indices=block.indices,n_points=len(block.mesh)+1)) for name, block in g_sh])
                 for g_sh in G]
@@ -892,7 +892,7 @@ class SumkDFT(object):
                 for name, g in gf[ish]:
                     g.set_from_inverse_fourier(G[ish][name])
         else:
-            assert isinstance(G[0]._first(), GfImTime), "G must be a BlockGf of either GfImFreq or GfImTime"
+            assert all(isinstance(g_sh._first(), GfImTime) for g_sh in G), "G must be a BlockGf of either GfImFreq or GfImTime"
             gf = G
 
         # initialize the variables
@@ -1003,7 +1003,7 @@ class SumkDFT(object):
             return null_space.conjugate().transpose()
 
         # make a GfImTime from the supplied G
-        if isinstance(G[0]._first(), GfImFreq):
+        if all(isinstance(g_sh._first(), GfImFreq) for g_sh in G):
             gf = [BlockGf(name_block_generator = [(name, GfImTime(beta=block.mesh.beta,
                 indices=block.indices,n_points=len(block.mesh)+1)) for name, block in g_sh])
                 for g_sh in G]
@@ -1011,7 +1011,7 @@ class SumkDFT(object):
                 for name, g in gf[ish]:
                     g.set_from_inverse_fourier(G[ish][name])
         else:
-            assert isinstance(G[0]._first(), GfImTime), "G must be a BlockGf of either GfImFreq or GfImTime"
+            assert all(isinstance(g_sh._first(), GfImTime) for g_sh in G), "G must be a BlockGf of either GfImFreq or GfImTime"
             gf = G
 
         if include_shells is None:
