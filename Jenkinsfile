@@ -1,5 +1,7 @@
+def projectName = "dft_tools"
 def triqsBranch = env.CHANGE_TARGET ?: env.BRANCH_NAME
 def triqsProject = '/TRIQS/triqs/' + triqsBranch.replaceAll('/', '%2F')
+def documentationPlatform = "ubuntu-clang"
 
 properties([
   disableConcurrentBuilds(),
@@ -17,21 +19,21 @@ def platforms = [:]
 def dockerPlatforms = ["ubuntu-clang", "ubuntu-gcc", "centos-gcc"]
 for (int i = 0; i < dockerPlatforms.size(); i++) {
   def platform = dockerPlatforms[i]
-  platforms[platform] = { -> stage(platform) {
-    timeout(time: 1, unit: 'HOURS') {
-      node('docker') {
-        checkout scm
-        /* construct a Dockerfile for this base */
-        sh """
-          ( echo "FROM flatironinstitute/triqs:${triqsBranch}-${env.STAGE_NAME}" ; sed '0,/^FROM /d' Dockerfile ) > Dockerfile.jenkins
-          mv -f Dockerfile.jenkins Dockerfile
-        """
-        /* build and tag */
-        def img = docker.build("flatironinstitute/dft_tools:${env.BRANCH_NAME}-${env.STAGE_NAME}")
-        /* but we don't need the tag so clean it up (alternatively, could refacter to run in container) */
+  platforms[platform] = { -> node('docker') {
+    stage(platform) { timeout(time: 1, unit: 'HOURS') {
+      checkout scm
+      /* construct a Dockerfile for this base */
+      sh """
+        ( echo "FROM flatironinstitute/triqs:${triqsBranch}-${env.STAGE_NAME}" ; sed '0,/^FROM /d' Dockerfile ) > Dockerfile.jenkins
+        mv -f Dockerfile.jenkins Dockerfile
+      """
+      /* build and tag */
+      def img = docker.build("flatironinstitute/${projectName}:${env.BRANCH_NAME}-${env.STAGE_NAME}", "--build-arg BUILD_DOC=${platform==documentationPlatform} .")
+      if (env.BRANCH_NAME.startsWith("PR-") || platform != documentationPlatform) {
+        /* but we don't need the tag so clean it up (except for documentation) */
         sh "docker rmi ${img.imageName()}"
       }
-    }
+    } }
   } }
 }
 
@@ -42,51 +44,70 @@ def osxPlatforms = [
 for (int i = 0; i < osxPlatforms.size(); i++) {
   def platformEnv = osxPlatforms[i]
   def platform = platformEnv[0]
-  platforms["osx-$platform"] = { -> stage("osx-$platform") {
-    timeout(time: 1, unit: 'HOURS') {
-      node('osx && triqs') {
-        def srcDir = pwd()
-        def tmpDir = pwd(tmp:true)
-        def buildDir = "$tmpDir/build"
-        def installDir = "$tmpDir/install"
+  platforms["osx-$platform"] = { -> node('osx && triqs') {
+    stage("osx-$platform") { timeout(time: 1, unit: 'HOURS') {
+      def srcDir = pwd()
+      def tmpDir = pwd(tmp:true)
+      def buildDir = "$tmpDir/build"
+      def installDir = "$tmpDir/install"
 
-        dir(installDir) {
-          deleteDir()
-        }
-
-        copyArtifacts(projectName: triqsProject, selector: upstream(fallbackToLastSuccessful: true), filter: "osx-${platform}.zip")
-        unzip(zipFile: "osx-${platform}.zip", dir: installDir)
-        /* fixup zip-stripped permissions (JENKINS-13128) */
-        sh "chmod +x $installDir/bin/*"
-
-        checkout scm
-
-        dir(buildDir) { withEnv(platformEnv[1]+[
-            "PATH=$installDir/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin",
-            "CPATH=$installDir/include",
-            "LIBRARY_PATH=$installDir/lib",
-            "CMAKE_PREFIX_PATH=$installDir/share/cmake"]) {
-          deleteDir()
-          sh "cmake $srcDir -DTRIQS_ROOT=$installDir"
-          sh "make -j2"
-          try {
-            sh "make test"
-          } catch (exc) {
-            archiveArtifacts(artifacts: 'Testing/Temporary/LastTest.log')
-            throw exc
-          }
-          sh "make install"
-        } }
-        // zip(zipFile: "osx-${platform}.zip", archive: true, dir: installDir)
+      dir(installDir) {
+        deleteDir()
       }
-    }
+
+      copyArtifacts(projectName: triqsProject, selector: upstream(fallbackToLastSuccessful: true), filter: "osx-${platform}.zip")
+      unzip(zipFile: "osx-${platform}.zip", dir: installDir)
+      /* fixup zip-stripped permissions (JENKINS-13128) */
+      sh "chmod +x $installDir/bin/*"
+
+      checkout scm
+
+      dir(buildDir) { withEnv(platformEnv[1]+[
+          "PATH=$installDir/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin",
+          "CPATH=$installDir/include",
+          "LIBRARY_PATH=$installDir/lib",
+          "CMAKE_PREFIX_PATH=$installDir/share/cmake"]) {
+        deleteDir()
+        sh "cmake $srcDir -DTRIQS_ROOT=$installDir"
+        sh "make -j2"
+        try {
+          sh "make test"
+        } catch (exc) {
+          archiveArtifacts(artifacts: 'Testing/Temporary/LastTest.log')
+          throw exc
+        }
+        sh "make install"
+      } }
+      // zip(zipFile: "osx-${platform}.zip", archive: true, dir: installDir)
+    } }
   } }
 }
 
 try {
   parallel platforms
+  if (!env.BRANCH_NAME.startsWith("PR-")) {
+    node("docker") {
+      stage("documentation") { timeout(time: 1, unit: 'HOURS') {
+        def workDir = pwd()
+        dir("$workDir/gh-pages") {
+          def subdir = env.BRANCH_NAME
+          git(url: "ssh://git@github.com/TRIQS/${projectName}.git", branch: "gh-pages", credentialsId: "ssh", changelog: false)
+          sh "rm -rf ${subdir}"
+          docker.image("flatironinstitute/${projectName}:${env.BRANCH_NAME}-${documentationPlatform}").inside() {
+            sh "cp -rp \$INSTALL/share/doc/${projectName} ${subdir}"
+          }
+          sh "git add -A ${subdir}"
+          sh """
+            git commit --author='Flatiron Jenkins <jenkins@flatironinstitute.org>' --allow-empty -m 'Generated documentation for ${env.BRANCH_NAME}' -m "`git --git-dir ${workDir}/.git rev-parse HEAD`"
+          """
+          // note: credentials used above don't work (need JENKINS-28335)
+          sh "git push origin gh-pages"
+        }
+      } }
+    }
+  }
 } catch (err) {
-  emailext(
+  if (env.BRANCH_NAME != "jenkins") emailext(
     subject: "\$PROJECT_NAME - Build # \$BUILD_NUMBER - FAILED",
     body: """\$PROJECT_NAME - Build # \$BUILD_NUMBER - FAILED
 
