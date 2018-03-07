@@ -1,6 +1,9 @@
 # generate the conf.py
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in ${CMAKE_CURRENT_BINARY_DIR}/conf.py @ONLY)
 
+set(EXT_FOR_DOC "rst png txt css_t conf css js gif jpg py html bib sh")
+execute_process(COMMAND cp_rs ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${EXT_FOR_DOC})
+
 # ---------------------------------
 # Top Sphinx target
 # ---------------------------------
