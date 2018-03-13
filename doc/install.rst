@@ -83,7 +83,7 @@ Finally, you will have to change the calls to :program:`python_with_DMFT` to
 
  
 Version compatibility 
---------------------- 
+---------------------
  
 Be careful that the version of the TRIQS library and of the dft tools must be 
 compatible (more information on the :ref:`TRIQS website <triqslibs:welcome>`. 
@@ -97,3 +97,18 @@ Checkout the version of the code that you want, for instance::
      $ git co 1.2 
  
 Then follow the steps 2 to 5 described above to compile the code. 
+
+Custom CMake options
+--------------------
+
+Functionality of ``dft_tools`` can be tweaked using extra compile-time options passed to CMake::
+
+    cmake -DOPTION1=value1 -DOPTION2=value2 ... ../cthyb.src
+
++---------------------------------------------------------------+-----------------------------------------------+
+| Options                                                       | Syntax                                        |
++===============================================================+===============================================+
+| Disable testing (not recommended)                             | -DBuild_Tests=OFF                             |
++---------------------------------------------------------------+-----------------------------------------------+
+| Build the documentation locally                               | -DBuild_Documentation=ON                      |
++---------------------------------------------------------------+-----------------------------------------------+
