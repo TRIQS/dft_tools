@@ -28,7 +28,7 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
         mv -f Dockerfile.jenkins Dockerfile
       """
       /* build and tag */
-      def img = docker.build("flatironinstitute/${projectName}:${env.BRANCH_NAME}-${env.STAGE_NAME}", "--build-arg BUILD_DOC=${platform==documentationPlatform} .")
+      def img = docker.build("flatironinstitute/${projectName}:${env.BRANCH_NAME}-${env.STAGE_NAME}", "--build-arg Build_Documentation=${platform==documentationPlatform} .")
       if (env.BRANCH_NAME.startsWith("PR-") || platform != documentationPlatform) {
         /* but we don't need the tag so clean it up (except for documentation) */
         sh "docker rmi ${img.imageName()}"
