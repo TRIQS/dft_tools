@@ -1,5 +1,5 @@
 from pytriqs.gf import *
-from sumk_dft import SumkDFT, conjugate_in_tau
+from sumk_dft import SumkDFT
 from scipy.linalg import expm
 import numpy as np
 from pytriqs.utility.comparison_tests import assert_gfs_are_close, assert_arrays_are_close, assert_block_gfs_are_close
@@ -68,7 +68,7 @@ for d in SK.deg_shells[0]:
         normalized_gf = G_new[0][key].copy()
         normalized_gf.from_L_G_R(d[key][0].conjugate().transpose(), G_new[0][key], d[key][0])
         if d[key][1]:
-            conjugate_in_tau(normalized_gf, in_place=True)
+            normalized_gf << normalized_gf.transpose()
         normalized_gfs.append(normalized_gf)
     for i in range(len(normalized_gfs)):
         for j in range(i+1,len(normalized_gfs)):
@@ -162,8 +162,8 @@ for conjugate in conjugate_values:
         G_noisy['ud'][i:i+2,i:i+2].from_L_G_R(T, G_noisy['ud'][i:i+2,i:i+2], T.conjugate().transpose())
         # if that block shall be conjugated, go ahead and do it
         if conjugate[i//2]:
-            conjugate_in_tau(G[0]['ud'][i:i+2,i:i+2], in_place=True)
-            conjugate_in_tau(G_noisy['ud'][i:i+2,i:i+2], in_place=True)
+            G[0]['ud'][i:i+2,i:i+2] << G[0]['ud'][i:i+2,i:i+2].transpose()
+            G_noisy['ud'][i:i+2,i:i+2] << G_noisy['ud'][i:i+2,i:i+2].transpose()
 
     # analyse the block structure
     G_new = SK.analyse_block_structure_from_gf(G)
@@ -196,7 +196,7 @@ for conjugate in conjugate_values:
             normalized_gf = G_new[0][key].copy()
             normalized_gf.from_L_G_R(d[key][0].conjugate().transpose(), G_new[0][key], d[key][0])
             if d[key][1]:
-                conjugate_in_tau(normalized_gf, in_place=True)
+                normalized_gf << normalized_gf.transpose()
             normalized_gfs.append(normalized_gf)
         for i in range(len(normalized_gfs)):
             for j in range(i+1,len(normalized_gfs)):

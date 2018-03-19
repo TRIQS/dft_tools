@@ -883,7 +883,7 @@ class SumkDFT(object):
             the Green's function transformed into the new block structure
         """
 
-        # make a GfImTime from the supplied G
+        # make a GfImTime from the supplied GfImFreq
         if all(isinstance(g_sh._first(), GfImFreq) for g_sh in G):
             gf = [BlockGf(name_block_generator = [(name, GfImTime(beta=block.mesh.beta,
                 indices=block.indices,n_points=len(block.mesh)+1)) for name, block in g_sh])
@@ -891,9 +891,37 @@ class SumkDFT(object):
             for ish in range(len(gf)):
                 for name, g in gf[ish]:
                     g.set_from_inverse_fourier(G[ish][name])
-        else:
-            assert all(isinstance(g_sh._first(), GfImTime) for g_sh in G), "G must be a BlockGf of either GfImFreq or GfImTime"
+        # keep a GfImTime from the supplied GfImTime
+        elif all(isinstance(g_sh._first(), GfImTime) for g_sh in G):
             gf = G
+        # make a spectral function from the supplied GfReFreq
+        elif all(isinstance(g_sh._first(), GfReFreq) for g_sh in G):
+            gf = [g_sh.copy() for g_sh in G]
+            for ish in range(len(gf)):
+                for name, g in gf[ish]:
+                    g << 1.0j*(g-g.conjugate().transpose())/2.0/numpy.pi
+        elif all(isinstance(g_sh._first(), GfReTime) for g_sh in G):
+            def get_delta_from_mesh(mesh):
+                w0 = None
+                for w in mesh:
+                    if w0 is None:
+                        w0 = w
+                    else:
+                        return w-w0
+            gf = [BlockGf(
+                name_block_generator = [(name,
+                    GfReFreq(
+                        window=(-numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh)), numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh))),
+                        n_points=len(block.mesh),
+                        indices=block.indices)) for name, block in g_sh])
+                for g_sh in G]
+
+            for ish in range(len(gf)):
+                for name, g in gf[ish]:
+                    g.set_from_fourier(G[ish][name])
+                    g << 1.0j*(g-g.conjugate().transpose())/2.0/numpy.pi
+        else:
+            raise Exception("G must be a list of BlockGf of either GfImFreq, GfImTime, GfReFreq or GfReTime")
 
         # initialize the variables
         self.gf_struct_solver = [{} for ish in range(self.n_inequiv_shells)]
@@ -964,7 +992,8 @@ class SumkDFT(object):
                 for ish in range(self.n_inequiv_shells)],None)
         G_transformed = [
             self.block_structure.convert_gf(G[ish],
-                full_structure, ish, beta=G[ish].mesh.beta, show_warnings=threshold)
+                full_structure, ish, mesh=G[ish].mesh.copy(), show_warnings=threshold,
+                gf_function=type(G[ish]._first()))
             for ish in range(self.n_inequiv_shells)]
 
         if analyse_deg_shells:
@@ -1002,7 +1031,7 @@ class SumkDFT(object):
             null_space = compress(null_mask, vh, axis=0)
             return null_space.conjugate().transpose()
 
-        # make a GfImTime from the supplied G
+        # make a GfImTime from the supplied GfImFreq
         if all(isinstance(g_sh._first(), GfImFreq) for g_sh in G):
             gf = [BlockGf(name_block_generator = [(name, GfImTime(beta=block.mesh.beta,
                 indices=block.indices,n_points=len(block.mesh)+1)) for name, block in g_sh])
@@ -1010,9 +1039,37 @@ class SumkDFT(object):
             for ish in range(len(gf)):
                 for name, g in gf[ish]:
                     g.set_from_inverse_fourier(G[ish][name])
-        else:
-            assert all(isinstance(g_sh._first(), GfImTime) for g_sh in G), "G must be a BlockGf of either GfImFreq or GfImTime"
+        # keep a GfImTime from the supplied GfImTime
+        elif all(isinstance(g_sh._first(), GfImTime) for g_sh in G):
             gf = G
+        # make a spectral function from the supplied GfReFreq
+        elif all(isinstance(g_sh._first(), GfReFreq) for g_sh in G):
+            gf = [g_sh.copy() for g_sh in G]
+            for ish in range(len(gf)):
+                for name, g in gf[ish]:
+                    g << 1.0j*(g-g.conjugate().transpose())/2.0/numpy.pi
+        elif all(isinstance(g_sh._first(), GfReTime) for g_sh in G):
+            def get_delta_from_mesh(mesh):
+                w0 = None
+                for w in mesh:
+                    if w0 is None:
+                        w0 = w
+                    else:
+                        return w-w0
+            gf = [BlockGf(
+                name_block_generator = [(name,
+                    GfReFreq(
+                        window=(-numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh)), numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh))),
+                        n_points=len(block.mesh),
+                        indices=block.indices)) for name, block in g_sh])
+                for g_sh in G]
+
+            for ish in range(len(gf)):
+                for name, g in gf[ish]:
+                    g.set_from_fourier(G[ish][name])
+                    g << 1.0j*(g-g.conjugate().transpose())/2.0/numpy.pi
+        else:
+            raise Exception("G must be a list of BlockGf of either GfImFreq, GfImTime, GfReFreq or GfReTime")
 
         if include_shells is None:
             # include all shells
@@ -1606,7 +1663,7 @@ class SumkDFT(object):
                 # the helper is in the basis where the blocks are all equal
                 helper.from_L_G_R(v.conjugate().transpose(), gf_to_symm[key], v)
                 if C:
-                    conjugate_in_tau(helper, in_place=True)
+                    helper << helper.transpose()
                 # average over all shells
                 ss += helper / (1.0 * n_deg)
             # now put back the averaged gf to all shells
@@ -1618,11 +1675,7 @@ class SumkDFT(object):
                     v = numpy.eye(*ss.target_shape)
                     C = False
                 if C:
-                    # we could also use
-                    # gf_to_symm[key].from_L_G_R(v, conjugate_in_tau(ss), v.conjugate().transpose())
-                    # but this is less memory-intensive:
-                    gf_to_symm[key].from_L_G_R(v.conjugate(), ss, v.transpose())
-                    conjugate_in_tau(gf_to_symm[key], in_place=True)
+                    gf_to_symm[key].from_L_G_R(v, ss.transpose(), v.conjugate().transpose())
                 else:
                     gf_to_symm[key].from_L_G_R(v, ss, v.conjugate().transpose())
 
@@ -2015,38 +2068,3 @@ class SumkDFT(object):
     def __set_deg_shells(self,value):
         self.block_structure.deg_shells = value
     deg_shells = property(__get_deg_shells,__set_deg_shells)
-
-# a helper function
-def conjugate_in_tau(gf_im_freq, in_place=False):
-    """ Calculate the conjugate in tau of a GfImFreq
-
-    Parameters
-    ----------
-    gf_im_freq : GfImFreq of BlockGf
-        the Green's function
-    in_place : whether to modify the gf_im_freq object (True) or return a copy (False)
-
-    Returns
-    -------
-    ret : GfImFreq of BlockGf
-        the Green's function that has been FT to G(tau), conjugated, and
-        FT back
-    """
-    if in_place:
-        ret = gf_im_freq
-    else:
-        ret = gf_im_freq.copy()
-    if isinstance(ret, BlockGf):
-        for name, gf in ret:
-            conjugate_in_tau(gf, in_place=True)
-    else:
-        """ there is an easier way to do this, namely to make
-            ret.data[:,:,:] = gf_im_freq.data[::-1,:,:].conjugate()
-            ret.tail.data[:,:,:] = gf_im_freq.tail.data.conjugate()
-            but this relies on symmetric Matsubara meshes and is maybe
-            not safe enough"""
-        G_tau = GfImTime(beta=gf_im_freq.mesh.beta,
-                    indices=gf_im_freq.indices,n_points=len(gf_im_freq.mesh)+1)
-        G_tau.set_from_inverse_fourier(gf_im_freq)
-        ret.set_from_fourier(G_tau.conjugate())
-    return ret
