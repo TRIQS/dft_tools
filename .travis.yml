@@ -1,0 +1,51 @@
+
+language: cpp
+sudo: required
+dist: trusty
+
+compiler:
+  - gcc
+    #  - clang
+
+before_install:
+  - sudo add-apt-repository 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-5.0 main' -y
+  - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+  - sudo apt-get update
+  - sudo apt-get install -y --allow-unauthenticated g++-7 clang-5.0
+  - export LIBRARY_PATH=/usr/lib/llvm-5.0/lib:$LIBRARY_PATH
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7
+  - sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-5.0 60 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-5.0
+  - sudo apt-get install -y --allow-unauthenticated libboost-all-dev cmake git libgfortran3 gfortran openmpi-bin openmpi-common openmpi-doc libopenmpi-dev libblas-dev liblapack-dev libfftw3-dev libgmp-dev hdf5-tools libhdf5-serial-dev python-h5py python-dev python-numpy python-scipy python-jinja2 python-virtualenv python-matplotlib python-tornado python-zmq python-mpi4py python-mako clang-format-5.0 libclang-5.0-dev python-clang-5.0 python-sphinx libjs-mathjax valgrind libnfft3-dev
+
+install: true
+
+script:
+  # ===== Set up Cpp2Py
+  - git clone https://github.com/triqs/cpp2py
+  - mkdir cpp2py/build && cd cpp2py/build
+  - git checkout master
+  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DPYTHON_INTERPRETER=/usr/bin/python -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/root_install
+  - make -j8 install
+  - cd $TRAVIS_BUILD_DIR
+  - source root_install/share/cpp2pyvars.sh
+  # ===== Set up TRIQS
+  - git clone https://github.com/TRIQS/triqs --branch unstable
+  - mkdir triqs/build && cd triqs/build
+  - git checkout unstable
+  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/root_install -DCMAKE_BUILD_TYPE=Debug
+  - make -j8 install
+  - cd $TRAVIS_BUILD_DIR
+  - source root_install/share/triqsvars.sh
+  # ===== Set up CTINT and Test using fsanitize=address
+  - mkdir build && cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DGTAU_IS_COMPLEX=ON -DINTERACTION_IS_COMPLEX=ON -DCMAKE_CXX_FLAGS='-fsanitize=address -fno-omit-frame-pointer -fuse-ld=gold -Wno-register -Wno-macro-redefined'
+  - make -j8
+  - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-5.0/bin/llvm-symbolizer
+  - export ASAN_OPTIONS=symbolize=1:detect_leaks=0
+  - export CTEST_OUTPUT_ON_FAILURE=1
+  - cd test/c++ && ctest
+  - if [ "$CXX" = g++ ]; then export LD_PRELOAD=/usr/lib/gcc/x86_64-linux-gnu/7/libasan.so; elif [ "$CXX" = clang++ ]; then export LD_PRELOAD=/usr/lib/llvm-5.0/lib/clang/5.0.1/lib/linux/libclang_rt.asan-x86_64.so; fi
+  - cd ../python && ctest
+  - cd ../../
+  - unset LD_PRELOAD
