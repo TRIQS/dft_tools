@@ -30,16 +30,25 @@ execute_process(COMMAND cp_rs ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY
 
 add_custom_target(docs_cpp2rst)
 
+get_property(TRIQS_INCLUDE_DIRS TARGET triqs PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+get_property(APP4TRIQS_INCLUDE_DIRS TARGET app4triqs_c PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+
+set(CPP2RST_INCLUDE_DIRS ${TRIQS_INCLUDE_DIRS} ${APP4TRIQS_INCLUDE_DIRS})
+foreach(I ${CPP2RST_INCLUDE_DIRS})
+  set (CPP2RST_INCLUDE_COMMAND ${CPP2RST_INCLUDE_COMMAND} --includes ${I})
+endforeach()
+
 macro(generate_docs header_file)
   add_custom_command (TARGET docs_cpp2rst
-                      COMMAND c++2rst
-		      ${header_file}
-		      -N app4triqs
-		      --output_directory ${CMAKE_CURRENT_BINARY_DIR}/cpp2rst_generated
-		      --cxxflags="-std=c++17"
-		      -I ${CMAKE_SOURCE_DIR}/c++
-		      -I ${TRIQS_ROOT}/include
-		      2>&1 >> cpp2rst.log
+			COMMAND c++2rst
+			${header_file}
+			-N app4triqs
+			--output_directory ${CMAKE_CURRENT_BINARY_DIR}/cpp2rst_generated
+			${CPP2RST_INCLUDE_COMMAND}
+			--cxxflags="-std=c++17"
+			-I ${CMAKE_SOURCE_DIR}/c++
+			-I ${TRIQS_ROOT}/include
+			2>&1 >> cpp2rst.log
 		      )
 endmacro(generate_docs)
 

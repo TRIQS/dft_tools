@@ -29,4 +29,4 @@ html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = 'TRIQSIntdoc'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('http://ipht.cea.fr/triqs', None)}
+intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('https://triqs.ipht.cnrs.fr/unstable', None)}

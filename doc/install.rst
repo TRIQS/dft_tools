@@ -43,8 +43,8 @@ Version compatibility
 
 Be careful that the version of the TRIQS library and of the solver must be
 compatible (more information on the :ref:`TRIQS website <triqslibs:versions>`).
-As the TRILEX project is currently still in alpha phase (unstable), it can
-only be compiled against the unstable branch of triqs.
+As app4triqs is still in alpha phase (unstable), it can only be compiled against the
+unstable branch of triqs.
 
 Custom CMake options
 --------------------

@@ -1,12 +1,24 @@
+.. _contents:
 
-Table of contents
-=================
+Documentation
+=============
+
+Contents
+--------
 
 .. toctree::
    :maxdepth: 5
 
    index
-   documentation
    install
    issues
    about
+
+Reference manual
+----------------
+
+.. toctree::
+   :maxdepth: 5
+
+   cpp2rst_generated/app4triqs/toto
+   cpp2rst_generated/app4triqs/chain

@@ -1,0 +1,20 @@
+# Multiple inclusion guard
+if (NOT APP4TRIQS_FOUND) 
+set(APP4TRIQS_FOUND True)
+
+# version
+set(APP4TRIQS_VERSION @APP4TRIQS_VERSION@)
+set(APP4TRIQS_GIT_HASH @APP4TRIQS_GIT_HASH@)
+
+# Root of the installation 
+set(APP4TRIQS_ROOT  @CMAKE_INSTALL_PREFIX@)
+
+# include the exported targets of this project 
+include(@CMAKE_INSTALL_PREFIX@/share/cmake/app4triqs-targets.cmake)
+
+MESSAGE(STATUS "Found APP4TRIQSConfig.cmake with version ${APP4TRIQS_VERSION}, hash = ${APP4TRIQS_GIT_HASH}")
+
+# Documentation
+set(APP4TRIQS_WITH_DOCUMENTATION @Build_Documentation@)
+
+endif (NOT APP4TRIQS_FOUND) 
