@@ -1,11 +1,12 @@
 # See ../triqs/packaging for other options
 FROM flatironinstitute/triqs:master-ubuntu-clang
 
-COPY . ${SRC}/dft_tools
-WORKDIR ${BUILD}/dft_tools
+ARG APPNAME=dft_tools
+COPY . $SRC/$APPNAME
+WORKDIR $BUILD/$APPNAME
 RUN chown build .
 USER build
-ARG Build_Documentation=0
-RUN cmake ${SRC}/dft_tools -DTRIQS_ROOT=${INSTALL} -DBuild_Documentation=${Build_Documentation} && make -j2 && make test
+ARG BUILD_DOC=0
+RUN cmake $SRC/$APPNAME -DTRIQS_ROOT=${INSTALL} -DBuild_Documentation=${BUILD_DOC} && make -j2 && make test
 USER root
 RUN make install
