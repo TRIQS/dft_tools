@@ -1,5 +1,8 @@
-def app4triqsBranch = env.CHANGE_TARGET ?: env.BRANCH_NAME
-def app4triqsProject = '/TRIQS/app4triqs/' + app4triqsBranch.replaceAll('/', '%2F')
+def projectName = "app4triqs"
+def documentationPlatform = "ubuntu-clang"
+def triqsBranch = env.CHANGE_TARGET ?: env.BRANCH_NAME
+def triqsProject = '/TRIQS/triqs/' + triqsBranch.replaceAll('/', '%2F')
+def publish = !env.BRANCH_NAME.startsWith("PR-") && projectName != "app4triqs"
 
 properties([
   disableConcurrentBuilds(),
@@ -7,31 +10,33 @@ properties([
   pipelineTriggers([
     upstream(
       threshold: 'SUCCESS',
-      upstreamProjects: app4triqsProject
+      upstreamProjects: triqsProject
     )
   ])
 ])
 
+/* map of all builds to run, populated below */
 def platforms = [:]
 
 def dockerPlatforms = ["ubuntu-clang", "ubuntu-gcc", "centos-gcc"]
+/* .each is currently broken in jenkins */
 for (int i = 0; i < dockerPlatforms.size(); i++) {
   def platform = dockerPlatforms[i]
-  platforms[platform] = { -> stage(platform) {
-    timeout(time: 1, unit: 'HOURS') {
-      node('docker') {
+  platforms[platform] = { -> node('docker') {
+    stage(platform) { timeout(time: 1, unit: 'HOURS') {
         checkout scm
         /* construct a Dockerfile for this base */
         sh """
-          ( echo "FROM flatironinstitute/app4triqs:${app4triqsBranch}-${env.STAGE_NAME}" ; sed '0,/^FROM /d' Dockerfile ) > Dockerfile.jenkins
+        ( echo "FROM flatironinstitute/triqs:${triqsBranch}-${env.STAGE_NAME}" ; sed '0,/^FROM /d' Dockerfile ) > Dockerfile.jenkins
           mv -f Dockerfile.jenkins Dockerfile
         """
         /* build and tag */
-        def img = docker.build("flatironinstitute/app4triqs:${env.BRANCH_NAME}-${env.STAGE_NAME}")
-        /* but we don't need the tag so clean it up (alternatively, could refacter to run in container) */
-        sh "docker rmi ${img.imageName()}"
-      }
+      def img = docker.build("flatironinstitute/${projectName}:${env.BRANCH_NAME}-${env.STAGE_NAME}", "--build-arg BUILD_DOC=${platform==documentationPlatform} .")
+      if (!publish || platform != documentationPlatform) {
+        /* but we don't need the tag so clean it up (except for documentation) */
+        sh "docker rmi --no-prune ${img.imageName()}"
     }
+  } }
   } }
 }
 
@@ -42,51 +47,73 @@ def osxPlatforms = [
 for (int i = 0; i < osxPlatforms.size(); i++) {
   def platformEnv = osxPlatforms[i]
   def platform = platformEnv[0]
-  platforms["osx-$platform"] = { -> stage("osx-$platform") {
-    timeout(time: 1, unit: 'HOURS') {
-      node('osx && triqs') {
-        def srcDir = pwd()
-        def tmpDir = pwd(tmp:true)
-        def buildDir = "$tmpDir/build"
-        def installDir = "$tmpDir/install"
-
-        dir(installDir) {
-          deleteDir()
-        }
-
-        copyArtifacts(projectName: app4triqsProject, selector: upstream(fallbackToLastSuccessful: true), filter: "osx-${platform}.zip")
-        unzip(zipFile: "osx-${platform}.zip", dir: installDir)
-        /* fixup zip-stripped permissions (JENKINS-13128) */
-        sh "chmod +x $installDir/bin/*"
-
-        checkout scm
-
-        dir(buildDir) { withEnv(platformEnv[1]+[
-            "PATH=$installDir/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin",
-            "CPATH=$installDir/include",
-            "LIBRARY_PATH=$installDir/lib",
-            "CMAKE_PREFIX_PATH=$installDir/share/cmake"]) {
-          deleteDir()
-          sh "cmake $srcDir -DTRIQS_ROOT=$installDir"
-          sh "make -j2"
-          try {
-            sh "make test"
-          } catch (exc) {
-            archiveArtifacts(artifacts: 'Testing/Temporary/LastTest.log')
-            throw exc
-          }
-          sh "make install"
-        } }
-        // zip(zipFile: "osx-${platform}.zip", archive: true, dir: installDir)
+  platforms["osx-$platform"] = { -> node('osx && triqs') {
+    stage("osx-$platform") { timeout(time: 1, unit: 'HOURS') {
+      def srcDir = pwd()
+      def tmpDir = pwd(tmp:true)
+      def buildDir = "$tmpDir/build"
+      def installDir = "$tmpDir/install"
+      def triqsDir = "${env.HOME}/install/triqs/${triqsBranch}/${platform}"
+      dir(installDir) {
+        deleteDir()
       }
-    }
+
+      checkout scm
+      dir(buildDir) { withEnv(platformEnv[1]+[
+        "PATH=$triqsDir/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin",
+        "CPATH=$triqsDir/include",
+        "LIBRARY_PATH=$triqsDir/lib",
+        "CMAKE_PREFIX_PATH=$triqsDir/share/cmake"]) {
+        deleteDir()
+      sh "cmake $srcDir -DCMAKE_INSTALL_PREFIX=$installDir -DTRIQS_ROOT=$triqsDir"
+      sh "make -j3"
+        try {
+          sh "make test"
+        } catch (exc) {
+          archiveArtifacts(artifacts: 'Testing/Temporary/LastTest.log')
+          throw exc
+        }
+        sh "make install"
+      } }
+    } }
   } }
 }
 
 try {
   parallel platforms
+  if (publish) { node("docker") {
+    stage("publish") { timeout(time: 1, unit: 'HOURS') {
+      def commit = sh(returnStdout: true, script: "git rev-parse HEAD").trim()
+      def workDir = pwd()
+      dir("$workDir/gh-pages") {
+        def subdir = env.BRANCH_NAME
+        git(url: "ssh://git@github.com/TRIQS/${projectName}.git", branch: "gh-pages", credentialsId: "ssh", changelog: false)
+        sh "rm -rf ${subdir}"
+        docker.image("flatironinstitute/${projectName}:${env.BRANCH_NAME}-${documentationPlatform}").inside() {
+          sh "cp -rp \$INSTALL/share/doc/${projectName} ${subdir}"
+        }
+        sh "git add -A ${subdir}"
+        sh """
+          git commit --author='Flatiron Jenkins <jenkins@flatironinstitute.org>' --allow-empty -m 'Generated documentation for ${env.BRANCH_NAME}' -m '${env.BUILD_TAG} ${commit}'
+        """
+        // note: credentials used above don't work (need JENKINS-28335)
+        sh "git push origin gh-pages"
+      }
+      dir("$workDir/docker") { try {
+        git(url: "ssh://git@github.com/TRIQS/docker.git", branch: env.BRANCH_NAME, credentialsId: "ssh", changelog: false)
+        sh "echo '160000 commit ${commit}\t${projectName}' | git update-index --index-info"
+        sh """
+          git commit --author='Flatiron Jenkins <jenkins@flatironinstitute.org>' --allow-empty -m 'Autoupdate ${projectName}' -m '${env.BUILD_TAG}'
+        """
+        // note: credentials used above don't work (need JENKINS-28335)
+        sh "git push origin ${env.BRANCH_NAME}"
+      } catch (err) {
+        echo "Failed to update docker repo"
+      } }
+    } }
+  } }
 } catch (err) {
-  emailext(
+  if (env.BRANCH_NAME != "jenkins") emailext(
     subject: "\$PROJECT_NAME - Build # \$BUILD_NUMBER - FAILED",
     body: """\$PROJECT_NAME - Build # \$BUILD_NUMBER - FAILED
 
