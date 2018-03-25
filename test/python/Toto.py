@@ -20,7 +20,7 @@ class test_toto(unittest.TestCase):
     def test_h5(self):
         
         a=Toto(0)
-        with HDFArchive("f.h5",'a') as A:
+        with HDFArchive("f.h5",'w') as A:
             A["a"] = a
         with HDFArchive("f.h5",'r') as A:
             a_read = A["a"]

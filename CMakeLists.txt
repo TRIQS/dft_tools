@@ -11,11 +11,11 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message( STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} --------")
 
-# Use shared libraries
-set(BUILD_SHARED_LIBS ON)
+# Build static libraries
+set(BUILD_SHARED_LIBS OFF)
 
 # Enable compiler warnings for the whole project
-add_definitions(-Wall)
+add_definitions(-Wall -fPIC)
 
 # Load Dependencies
 find_package(TRIQS ${APP4TRIQS_VERSION} EXACT REQUIRED)
@@ -31,9 +31,6 @@ message(STATUS "-------- INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} --------")
 # Fetch the git hash of app4triqs
 triqs_get_git_hash_of_source_dir(APP4TRIQS_GIT_HASH)
 message(STATUS "app4triqs git hash: ${APP4TRIQS_GIT_HASH}")
-
-# Set up the rpath for all compiled executables
-triqs_set_rpath_for_all_targets()
 
 # Build and install the app4triqs library
 add_subdirectory(c++/app4triqs)

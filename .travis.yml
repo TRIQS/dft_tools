@@ -21,25 +21,24 @@ before_install:
 install: true
 
 script:
+  - export INSTALL_DIR=$HOME/root_install # We should install outside the repository
   # ===== Set up Cpp2Py
   - git clone https://github.com/triqs/cpp2py
   - mkdir cpp2py/build && cd cpp2py/build
-  - git checkout master
-  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DPYTHON_INTERPRETER=/usr/bin/python -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/root_install
+  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DPYTHON_INTERPRETER=/usr/bin/python -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
   - make -j8 install
-  - cd $TRAVIS_BUILD_DIR
-  - source root_install/share/cpp2pyvars.sh
+  - source $INSTALL_DIR/share/cpp2pyvars.sh
   # ===== Set up TRIQS
+  - cd $TRAVIS_BUILD_DIR
   - git clone https://github.com/TRIQS/triqs --branch unstable
   - mkdir triqs/build && cd triqs/build
-  - git checkout unstable
-  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$TRAVIS_BUILD_DIR/root_install -DCMAKE_BUILD_TYPE=Debug
+  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
   - make -j8 install
-  - cd $TRAVIS_BUILD_DIR
-  - source root_install/share/triqsvars.sh
+  - source $INSTALL_DIR/share/triqsvars.sh
   # ===== Set up CTINT and Test with Sanitizer Checks
+  - cd $TRAVIS_BUILD_DIR
   - mkdir build && cd build
-  - cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DASAN=ON -DUBSAN=ON
+  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DASAN=ON -DUBSAN=ON
   - export UBSAN_SYMBOLIZER_PATH=/usr/lib/llvm-5.0/bin/llvm-symbolizer
   - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-5.0/bin/llvm-symbolizer
   - export ASAN_OPTIONS=symbolize=1:detect_leaks=0

@@ -1,10 +1,12 @@
-file(GLOB_RECURSE sources *.cpp *.hpp)
+file(GLOB_RECURSE sources *.cpp)
 add_library(app4triqs_c ${sources})
 
+# Link against triqs and use headers with SYSTEM flag for better warning messages
 target_link_libraries(app4triqs_c PUBLIC triqs)
-target_compile_options(app4triqs_c PUBLIC -std=c++17)
-target_include_directories(app4triqs_c PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/c++>)
 target_include_directories(app4triqs_c SYSTEM PUBLIC ${TRIQS_ROOT}/include)
+
+target_compile_options(app4triqs_c PUBLIC -std=c++17 -fPIC)
+target_include_directories(app4triqs_c PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/c++>)
 target_compile_definitions(app4triqs_c PRIVATE
 				APP4TRIQS_GIT_HASH=${APP4TRIQS_GIT_HASH}
 			    	TRIQS_GIT_HASH=${TRIQS_GIT_HASH}
@@ -36,7 +38,6 @@ if(CPPCHECK_EXECUTABLE)
   message(STATUS "cppcheck found: ${CPPCHECK_EXECUTABLE}")
   add_custom_command(
 	TARGET app4triqs_c
-	COMMAND echo "--- Running cppcheck ---\n"
 	COMMAND ${CPPCHECK_EXECUTABLE}
 	--enable=warning,style,performance,portability
         --std=c++14
@@ -44,8 +45,7 @@ if(CPPCHECK_EXECUTABLE)
         --verbose
         --quiet
         ${sources}
-	COMMAND echo "------------------------\n"
- )
+  )
 else()
   message(STATUS "cppcheck not found in $PATH. Please consider installing cppcheck for additional checks!")
 endif()

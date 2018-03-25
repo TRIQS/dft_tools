@@ -3,16 +3,16 @@
 
 using namespace app4triqs;
 
-TEST(Toto, Add) {
+TEST(Toto, Add) { // NOLINT
 
   toto a(0);
   toto b(2);
 
   auto c = a + b;
-  EXPECT_EQ(c, b);
+  EXPECT_EQ(c, b); // NOLINT
 }
 
-TEST(Toto, H5) {
+TEST(Toto, H5) { // NOLINT
 
   toto a(0);
   { // Local scope for file
@@ -26,7 +26,7 @@ TEST(Toto, H5) {
     h5_read(f, "a", a2);
   }
 
-  EXPECT_EQ(a, a2);
+  EXPECT_EQ(a, a2); // NOLINT
 }
 
-MAKE_MAIN;
+MAKE_MAIN; // NOLINT
