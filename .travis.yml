@@ -5,7 +5,7 @@ dist: trusty
 
 compiler:
   - gcc
-  - clang
+  #- clang
 
 before_install:
   - sudo add-apt-repository 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-5.0 main' -y
