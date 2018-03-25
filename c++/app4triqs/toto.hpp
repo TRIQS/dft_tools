@@ -14,20 +14,22 @@ namespace app4triqs {
     int i = 0.0;
 
     public:
-    toto() = default;
-
-    // Copy construction
-    toto(toto const &) = default;
-    toto(toto &&)      = default;
+    toto()  = default;
 
     /**
      * Construct from integer
      *
      * @param i_ a scalar
      */
-    toto(int i_) : i(i_) {}
+    explicit toto(int i_) : i(i_) {}
 
-    /// Copy assignment
+    ~toto() = default;
+
+    // Copy/Move construction
+    toto(toto const &) = default;
+    toto(toto &&)      = default;
+
+    /// Copy/Move assignment
     toto &operator=(toto const &) = default;
     toto &operator=(toto &&) = default;
 
@@ -45,7 +47,6 @@ namespace app4triqs {
     static std::string hdf5_scheme() { return "Toto"; }
 
     friend void h5_write(triqs::h5::group grp, std::string subgroup_name, toto const &m);
-
     friend void h5_read(triqs::h5::group grp, std::string subgroup_name, toto &m);
 
     /// Serialization
@@ -58,7 +59,7 @@ namespace app4triqs {
    * Chain the decimal digits of two integers i and j, and return the result
    *
    * @param :math:`i` The first integer
-   * @param :math:`j` The second integer 
+   * @param :math:`j` The second integer
    * @return An integer containing the digits of both i and j
    *
    * @remark

@@ -37,15 +37,11 @@ script:
   - make -j8 install
   - cd $TRAVIS_BUILD_DIR
   - source root_install/share/triqsvars.sh
-  # ===== Set up CTINT and Test using fsanitize=address
+  # ===== Set up CTINT and Test with Sanitizer Checks
   - mkdir build && cd build
-  - cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DGTAU_IS_COMPLEX=ON -DINTERACTION_IS_COMPLEX=ON -DCMAKE_CXX_FLAGS='-fsanitize=address -fno-omit-frame-pointer -fuse-ld=gold -Wno-register -Wno-macro-redefined'
-  - make -j8
+  - cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DASAN=ON -DUBSAN=ON
+  - export UBSAN_SYMBOLIZER_PATH=/usr/lib/llvm-5.0/bin/llvm-symbolizer
   - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-5.0/bin/llvm-symbolizer
   - export ASAN_OPTIONS=symbolize=1:detect_leaks=0
   - export CTEST_OUTPUT_ON_FAILURE=1
-  - cd test/c++ && ctest
-  - if [ "$CXX" = g++ ]; then export LD_PRELOAD=/usr/lib/gcc/x86_64-linux-gnu/7/libasan.so; elif [ "$CXX" = clang++ ]; then export LD_PRELOAD=/usr/lib/llvm-5.0/lib/clang/5.0.1/lib/linux/libclang_rt.asan-x86_64.so; fi
-  - cd ../python && ctest
-  - cd ../../
-  - unset LD_PRELOAD
+  - make -j8 && make test

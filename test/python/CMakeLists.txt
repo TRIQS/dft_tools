@@ -9,4 +9,8 @@ foreach(t ${all_tests})
 endforeach()
 
 # Set the PythonPath : put the build dir first (in case there is an installed version).
-set_property(TEST ${all_tests} PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH} )
+set_property(TEST ${all_tests} PROPERTY
+  ENVIRONMENT
+    PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH}
+    LD_PRELOAD=$<$<BOOL:${ASAN}>:${ASAN_RT_LIBRARY}>:$<$<BOOL:${UBSAN}>:${UBSAN_RT_LIBRARY}>
+)

@@ -12,7 +12,7 @@ configure_file(version.py.in version.py)
 # All Python files. Copy them in the build dir to have a complete package for the tests.
 set(PYTHON_SOURCES __init__.py)
 foreach(f ${PYTHON_SOURCES})
- configure_file(${f} ${f} COPYONLY)
+  configure_file(${f} ${f} COPYONLY)
 endforeach()
 
 # Install python module to proper location

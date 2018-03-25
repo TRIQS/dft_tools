@@ -2,7 +2,7 @@
 set(APP4TRIQS_VERSION "1.5")
 
 # Start configuration
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.6)
 project(app4triqs CXX)
 
 # Default to Release build type
@@ -14,12 +14,9 @@ message( STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} --------")
 # Use shared libraries
 set(BUILD_SHARED_LIBS ON)
 
-# Load TRIQS and Cpp2Py
+# Load Dependencies
 find_package(TRIQS ${APP4TRIQS_VERSION} EXACT REQUIRED)
 find_package(Cpp2Py ${APP4TRIQS_VERSION} EXACT REQUIRED)
-
-# We will need the FindNNFT of triqs, so we adjust CMake Module Path to find it
-list(APPEND CMAKE_MODULE_PATH ${TRIQS_ROOT}/share/cmake)
 
 # Default Install directory to TRIQS_ROOT if not given. Checks an absolute name is given.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTALL_PREFIX}))
@@ -35,9 +32,12 @@ message(STATUS "app4triqs git hash: ${APP4TRIQS_GIT_HASH}")
 # Set up the rpath for compiled executable
 triqs_set_rpath_for_all_targets()
 
+# Build and install the app4triqs library
 add_subdirectory(c++/app4triqs)
+
+# Build and install the app4triqs python module
 if(${TRIQS_WITH_PYTHON_SUPPORT})
- add_subdirectory(python/app4triqs)
+  add_subdirectory(python/app4triqs)
 endif()
 
 # Tests

@@ -1,1 +1,2 @@
 Checks: '-*,modernize-*,cppcoreguidelines-*'
+HeaderFilterRegex: 'app4triqs'
