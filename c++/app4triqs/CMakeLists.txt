@@ -4,6 +4,7 @@ add_library(app4triqs_c ${sources})
 target_link_libraries(app4triqs_c PUBLIC triqs)
 target_compile_options(app4triqs_c PUBLIC -std=c++17)
 target_include_directories(app4triqs_c PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/c++>)
+target_include_directories(app4triqs_c SYSTEM PUBLIC ${TRIQS_ROOT}/include)
 target_compile_definitions(app4triqs_c PRIVATE
 				APP4TRIQS_GIT_HASH=${APP4TRIQS_GIT_HASH}
 			    	TRIQS_GIT_HASH=${TRIQS_GIT_HASH}
@@ -61,7 +62,7 @@ if(ASAN)
   list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/share/cmake)
   find_package(libasan_rt REQUIRED)
   target_compile_options(app4triqs_c PUBLIC -fsanitize=address -fno-omit-frame-pointer)
-  target_link_libraries(app4triqs_c INTERFACE "-fsanitize=address -fno-omit-frame-pointer")
+  target_link_libraries(app4triqs_c INTERFACE "-fsanitize=address -fno-omit-frame-pointer -fuse-ld=gold")
 endif()
 
 # Undefined Behavior Sanitizer
@@ -73,5 +74,5 @@ if(UBSAN)
   list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/share/cmake)
   find_package(libubsan_rt REQUIRED)
   target_compile_options(app4triqs_c PUBLIC -fsanitize=undefined -fno-omit-frame-pointer -fno-sanitize=vptr)
-  target_link_libraries(app4triqs_c INTERFACE "-fsanitize=undefined -fno-omit-frame-pointer")
+  target_link_libraries(app4triqs_c INTERFACE "-fsanitize=undefined -fno-omit-frame-pointer -fuse-ld=gold")
 endif()
