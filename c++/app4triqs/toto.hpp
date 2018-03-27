@@ -1,5 +1,4 @@
 #pragma once
-#include <cpp2py.hpp>
 #include <triqs/gfs.hpp>
 
 namespace app4triqs {
