@@ -851,38 +851,22 @@ class SumkDFT(object):
                             elif (ind1 < 0) and (ind2 < 0):
                                 self.deg_shells[ish].append([block1, block2])
 
-    def analyse_block_structure_from_gf(self, G, threshold=1.e-5, include_shells=None, analyse_deg_shells = True):
-        r"""
-        Determines the block structure of local Green's functions by analysing
-        the structure of the corresponding non-interacting Green's function.
-        The resulting block structures for correlated shells are
-        stored in the :class:`SumkDFT.block_structure <dft.block_structure.BlockStructure>`
-        attribute.
+    def _get_hermitian_quantity_from_gf(self, G):
+        """ Convert G to a Hermitian quantity
 
-        This is a safer alternative to analyse_block_structure, because
-        the full non-interacting Green's function is taken into account
-        and not just the density matrix and Hloc.
+        For G(tau) and G(iw), G(tau) is returned.
+        For G(t) and G(w), the spectral function is returned.
 
         Parameters
         ----------
-        G : list of BlockGf of GfImFreq or GfImTime
-            the non-interacting Green's function for each inequivalent correlated shell
-        threshold : real, optional
-                    If the difference between matrix elements is below threshold,
-                    they are considered to be equal.
-        include_shells : list of integers, optional
-                         List of correlated shells to be analysed.
-                         If include_shells is not provided all correlated shells will be analysed.
-        analyse_deg_shells : bool
-                             Whether to call the analyse_deg_shells function
-                             after having finished the block structure analysis
+        G : list of BlockGf of GfImFreq, GfImTime, GfReFreq or GfReTime
+            the input Green's function
 
         Returns
         -------
-        G : list of BlockGf of GfImFreq or GfImTime
-            the Green's function transformed into the new block structure
+        gf : list of BlockGf of GfImTime or GfReFreq
+            the output G(tau) or A(w)
         """
-
         # make a GfImTime from the supplied GfImFreq
         if all(isinstance(g_sh._first(), GfImFreq) for g_sh in G):
             gf = [BlockGf(name_block_generator = [(name, GfImTime(beta=block.mesh.beta,
@@ -922,6 +906,43 @@ class SumkDFT(object):
                     g << 1.0j*(g-g.conjugate().transpose())/2.0/numpy.pi
         else:
             raise Exception("G must be a list of BlockGf of either GfImFreq, GfImTime, GfReFreq or GfReTime")
+        return gf
+
+
+
+    def analyse_block_structure_from_gf(self, G, threshold=1.e-5, include_shells=None, analyse_deg_shells = True):
+        r"""
+        Determines the block structure of local Green's functions by analysing
+        the structure of the corresponding non-interacting Green's function.
+        The resulting block structures for correlated shells are
+        stored in the :class:`SumkDFT.block_structure <dft.block_structure.BlockStructure>`
+        attribute.
+
+        This is a safer alternative to analyse_block_structure, because
+        the full non-interacting Green's function is taken into account
+        and not just the density matrix and Hloc.
+
+        Parameters
+        ----------
+        G : list of BlockGf of GfImFreq, GfImTime, GfReFreq or GfReTime
+            the non-interacting Green's function for each inequivalent correlated shell
+        threshold : real, optional
+                    If the difference between matrix elements is below threshold,
+                    they are considered to be equal.
+        include_shells : list of integers, optional
+                         List of correlated shells to be analysed.
+                         If include_shells is not provided all correlated shells will be analysed.
+        analyse_deg_shells : bool
+                             Whether to call the analyse_deg_shells function
+                             after having finished the block structure analysis
+
+        Returns
+        -------
+        G : list of BlockGf of GfImFreq or GfImTime
+            the Green's function transformed into the new block structure
+        """
+
+        gf = self._get_hermitian_quantity_from_gf(G)
 
         # initialize the variables
         self.gf_struct_solver = [{} for ish in range(self.n_inequiv_shells)]
@@ -1031,45 +1052,7 @@ class SumkDFT(object):
             null_space = compress(null_mask, vh, axis=0)
             return null_space.conjugate().transpose()
 
-        # make a GfImTime from the supplied GfImFreq
-        if all(isinstance(g_sh._first(), GfImFreq) for g_sh in G):
-            gf = [BlockGf(name_block_generator = [(name, GfImTime(beta=block.mesh.beta,
-                indices=block.indices,n_points=len(block.mesh)+1)) for name, block in g_sh])
-                for g_sh in G]
-            for ish in range(len(gf)):
-                for name, g in gf[ish]:
-                    g.set_from_inverse_fourier(G[ish][name])
-        # keep a GfImTime from the supplied GfImTime
-        elif all(isinstance(g_sh._first(), GfImTime) for g_sh in G):
-            gf = G
-        # make a spectral function from the supplied GfReFreq
-        elif all(isinstance(g_sh._first(), GfReFreq) for g_sh in G):
-            gf = [g_sh.copy() for g_sh in G]
-            for ish in range(len(gf)):
-                for name, g in gf[ish]:
-                    g << 1.0j*(g-g.conjugate().transpose())/2.0/numpy.pi
-        elif all(isinstance(g_sh._first(), GfReTime) for g_sh in G):
-            def get_delta_from_mesh(mesh):
-                w0 = None
-                for w in mesh:
-                    if w0 is None:
-                        w0 = w
-                    else:
-                        return w-w0
-            gf = [BlockGf(
-                name_block_generator = [(name,
-                    GfReFreq(
-                        window=(-numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh)), numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh))),
-                        n_points=len(block.mesh),
-                        indices=block.indices)) for name, block in g_sh])
-                for g_sh in G]
-
-            for ish in range(len(gf)):
-                for name, g in gf[ish]:
-                    g.set_from_fourier(G[ish][name])
-                    g << 1.0j*(g-g.conjugate().transpose())/2.0/numpy.pi
-        else:
-            raise Exception("G must be a list of BlockGf of either GfImFreq, GfImTime, GfReFreq or GfReTime")
+        gf = self._get_hermitian_quantity_from_gf(G)
 
         if include_shells is None:
             # include all shells
