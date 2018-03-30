@@ -1251,6 +1251,10 @@ class SumkDFT(object):
                                 d[block2] = T, False
                             self.deg_shells[ish].append(d)
 
+                        # a block was found, break out of the loop
+                        break
+
+
     def density_matrix(self, method='using_gf', beta=40.0):
         """Calculate density matrices in one of two ways.
 
