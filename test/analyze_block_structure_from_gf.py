@@ -166,7 +166,7 @@ for conjugate in conjugate_values:
             G_noisy['ud'][i:i+2,i:i+2] << G_noisy['ud'][i:i+2,i:i+2].transpose()
 
     # analyse the block structure
-    G_new = SK.analyse_block_structure_from_gf(G)
+    G_new = SK.analyse_block_structure_from_gf(G, 1.e-7)
 
     # transform G_noisy etc. to the new block structure
     G_noisy = SK.block_structure.convert_gf(G_noisy, block_structure1, beta = G_noisy.mesh.beta)
@@ -200,18 +200,20 @@ for conjugate in conjugate_values:
             normalized_gfs.append(normalized_gf)
         for i in range(len(normalized_gfs)):
             for j in range(i+1,len(normalized_gfs)):
-                assert_gfs_are_close(normalized_gfs[i], normalized_gfs[j])
+                # here, we use a threshold that is 1 order of magnitude less strict
+                # because of numerics
+                assert_gfs_are_close(normalized_gfs[i], normalized_gfs[j], 1.e-6)
 
     # now we check symm_deg_gf
-    # symmetrizing the GF as is has to leave it unchanged
+    # symmetrizing the GF has is has to leave it unchanged
     G_new_symm = G_new[0].copy()
     SK.symm_deg_gf(G_new_symm, 0)
-    assert_block_gfs_are_close(G_new[0], G_new_symm)
+    assert_block_gfs_are_close(G_new[0], G_new_symm, 1.e-6)
 
     # symmetrizing the noisy GF, which was carefully constructed,
     # has to give the same result as G_new[0]
     SK.symm_deg_gf(G_noisy, 0)
-    assert_block_gfs_are_close(G_new[0], G_noisy)
+    assert_block_gfs_are_close(G_new[0], G_noisy, 1.e-6)
 
     # check backward compatibility of symm_deg_gf
     # first, construct the old format of the deg shells
@@ -222,9 +224,9 @@ for conjugate in conjugate_values:
     # symmetrizing the GF as is has to leave it unchanged
     G_new_symm << G_pre_transform
     SK.symm_deg_gf(G_new_symm, 0)
-    assert_block_gfs_are_close(G_new_symm, G_pre_transform)
+    assert_block_gfs_are_close(G_new_symm, G_pre_transform, 1.e-6)
 
     # symmetrizing the noisy GF pre transform, which was carefully constructed,
     # has to give the same result as G_pre_transform
     SK.symm_deg_gf(G_noisy_pre_transform, 0)
-    assert_block_gfs_are_close(G_noisy_pre_transform, G_pre_transform)
+    assert_block_gfs_are_close(G_noisy_pre_transform, G_pre_transform, 1.e-6)

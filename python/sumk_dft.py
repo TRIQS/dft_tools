@@ -1029,6 +1029,10 @@ class SumkDFT(object):
         :class:`SumkDFT.block_structure <dft.block_structure.BlockStructure>`
         attribute.
 
+        Due to the implementation and numerics, the maximum difference between
+        two matrix elements that are detected as equal can be a bit higher
+        (e.g. a factor of two) than the actual threshold.
+
         Parameters
         ----------
         G : list of BlockGf of GfImFreq or GfImTime
