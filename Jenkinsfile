@@ -1,7 +1,11 @@
-def projectName = "app4triqs"
+def projectName = "app4triqs" /* set to app/repo name */
+
+/* which platform to build documentation on */
 def documentationPlatform = "ubuntu-clang"
+/* depend on triqs upstream branch/project */
 def triqsBranch = env.CHANGE_TARGET ?: env.BRANCH_NAME
 def triqsProject = '/TRIQS/triqs/' + triqsBranch.replaceAll('/', '%2F')
+/* whether to publish the results (disabled for template project) */
 def publish = !env.BRANCH_NAME.startsWith("PR-") && projectName != "app4triqs"
 
 properties([
@@ -18,6 +22,8 @@ properties([
 /* map of all builds to run, populated below */
 def platforms = [:]
 
+/****************** linux builds (in docker) */
+/* Each platform must have a cooresponding Dockerfile.PLATFORM in triqs/packaging */
 def dockerPlatforms = ["ubuntu-clang", "ubuntu-gcc", "centos-gcc"]
 /* .each is currently broken in jenkins */
 for (int i = 0; i < dockerPlatforms.size(); i++) {
@@ -40,6 +46,7 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
   } }
 }
 
+/****************** osx builds (on host) */
 def osxPlatforms = [
   ["gcc", ['CC=gcc-7', 'CXX=g++-7']],
   ["clang", ['CC=/usr/local/opt/llvm/bin/clang', 'CXX=/usr/local/opt/llvm/bin/clang++', 'CXXFLAGS=-I/usr/local/opt/llvm/include', 'LDFLAGS=-L/usr/local/opt/llvm/lib']]
@@ -79,12 +86,15 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
   } }
 }
 
+/****************** wrap-up */
 try {
   parallel platforms
   if (publish) { node("docker") {
+    /* Publish results */
     stage("publish") { timeout(time: 1, unit: 'HOURS') {
       def commit = sh(returnStdout: true, script: "git rev-parse HEAD").trim()
       def workDir = pwd()
+      /* Update documention on gh-pages branch */
       dir("$workDir/gh-pages") {
         def subdir = env.BRANCH_NAME
         git(url: "ssh://git@github.com/TRIQS/${projectName}.git", branch: "gh-pages", credentialsId: "ssh", changelog: false)
@@ -99,6 +109,7 @@ try {
         // note: credentials used above don't work (need JENKINS-28335)
         sh "git push origin gh-pages"
       }
+      /* Update docker repo submodule */
       dir("$workDir/docker") { try {
         git(url: "ssh://git@github.com/TRIQS/docker.git", branch: env.BRANCH_NAME, credentialsId: "ssh", changelog: false)
         sh "echo '160000 commit ${commit}\t${projectName}' | git update-index --index-info"
@@ -108,11 +119,13 @@ try {
         // note: credentials used above don't work (need JENKINS-28335)
         sh "git push origin ${env.BRANCH_NAME}"
       } catch (err) {
+	/* Ignore, non-critical -- might not exist on this branch */
         echo "Failed to update docker repo"
       } }
     } }
   } }
 } catch (err) {
+  /* send email on build failure (declarative pipeline's post section would work better) */
   if (env.BRANCH_NAME != "jenkins") emailext(
     subject: "\$PROJECT_NAME - Build # \$BUILD_NUMBER - FAILED",
     body: """\$PROJECT_NAME - Build # \$BUILD_NUMBER - FAILED
