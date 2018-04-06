@@ -1,7 +1,7 @@
 # See ../triqs/packaging for other options
 FROM flatironinstitute/triqs:master-ubuntu-clang
 
-ARG APPNAME=app4triqs
+ARG APPNAME
 COPY . $SRC/$APPNAME
 WORKDIR $BUILD/$APPNAME
 RUN chown build .
