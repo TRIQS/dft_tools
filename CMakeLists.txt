@@ -2,7 +2,7 @@
 set(APP4TRIQS_VERSION "1.5")
 
 # Start configuration
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 2.8.12)
 project(app4triqs CXX)
 
 # Default to Release build type
@@ -15,7 +15,7 @@ message( STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} --------")
 set(BUILD_SHARED_LIBS OFF)
 
 # Enable compiler warnings for the whole project
-add_definitions(-Wall -fPIC)
+add_definitions(-Wall)
 
 # Load Dependencies
 find_package(TRIQS ${APP4TRIQS_VERSION} EXACT REQUIRED)
