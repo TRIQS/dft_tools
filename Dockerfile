@@ -7,6 +7,6 @@ WORKDIR $BUILD/$APPNAME
 RUN chown build .
 USER build
 ARG BUILD_DOC=0
-RUN cmake $SRC/$APPNAME -DTRIQS_ROOT=${INSTALL} -DBuild_Documentation=${BUILD_DOC} -DCPP2RST_INCLUDE_DIRS=--includes=/usr/lib/llvm-${LLVM}/include/c++/v1 && make -j2 && make test
+RUN cmake $SRC/$APPNAME -DTRIQS_ROOT=${INSTALL} -DBuild_Documentation=${BUILD_DOC} -DCPP2RST_INCLUDE_COMMAND=--includes=/usr/lib/llvm-${LLVM}/include/c++/v1 && make -j2 && make test
 USER root
 RUN make install
