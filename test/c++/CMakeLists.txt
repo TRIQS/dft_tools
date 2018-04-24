@@ -30,5 +30,5 @@ endforeach()
 # Set UBSan Options for all tests
 set_property(TEST ${all_tests} PROPERTY
   ENVIRONMENT
-    UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1
+    UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1:$ENV{UBSAN_OPTIONS}
 )

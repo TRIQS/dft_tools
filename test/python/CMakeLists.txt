@@ -18,5 +18,5 @@ set_property(TEST ${all_tests} PROPERTY
   ENVIRONMENT
     PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH}
     LD_PRELOAD=$<$<BOOL:${ASAN}>:${ASAN_RT_LIBRARY}>:$<$<BOOL:${UBSAN}>:${UBSAN_RT_LIBRARY}>
-    UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1
+    UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1:$ENV{UBSAN_OPTIONS}
 )
