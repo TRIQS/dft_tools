@@ -12,6 +12,7 @@ before_install:
   - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update
+  - sudo rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock # Avoid the occasional apt-get install failure for xenial image
   - sudo apt-get install -y --allow-unauthenticated g++-7 clang-7
   - export LIBRARY_PATH=/usr/lib/llvm-7/lib:$LIBRARY_PATH
   - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-7
@@ -41,6 +42,7 @@ script:
   - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DASAN=ON -DUBSAN=ON
   - export UBSAN_SYMBOLIZER_PATH=/usr/lib/llvm-7/bin/llvm-symbolizer
   - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-7/bin/llvm-symbolizer
+  - export UBSAN_OPTIONS=symbolize=1:print_stacktrace=1
   - export ASAN_OPTIONS=symbolize=1:detect_leaks=0
   - export CTEST_OUTPUT_ON_FAILURE=1
   - make -j8 && make test
