@@ -31,6 +31,7 @@ find_library(ASAN_RT_LIBRARY
     ENV LD_INCLUDE_PATH
     /usr/lib 
     /usr/local/lib
+    /usr/lib/gcc/*/7
     /usr/lib/gcc/*/*
     /usr/lib/clang/*/lib/linux
     /usr/lib/llvm-*/lib/clang/*/lib/linux

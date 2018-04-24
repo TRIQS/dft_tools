@@ -14,7 +14,20 @@
 #
 # Results are reported in::
 #
-#    UBSAN_RT_LIBRARY 		Undefined Behavior Sanitizer Runtime Library 
+#    UBSAN_RT_LIBRARY 			Undefined Behavior Sanitizer Runtime Library
+#    [UBSAN_MINIMAL_RT_LIBRARY] 	Minimal version of UBSan Runtime, To be used in combination with Asan
+
+set(TRIAL_PATHS
+  ENV LIBRARY_PATH
+  ENV LD_INCLUDE_PATH
+  /usr/lib
+  /usr/local/lib
+  /usr/lib/gcc/7/*
+  /usr/lib/gcc/*/*
+  /usr/lib/clang/*/lib/linux
+  /usr/lib/llvm-*/lib/clang/*/lib/linux
+  /usr/local/opt/llvm/lib/clang/*/lib/darwin
+)
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
   set(name clang_rt.ubsan_standalone-x86_64)
@@ -26,16 +39,16 @@ endif()
   
 find_library(UBSAN_RT_LIBRARY
   NAMES ${name}
-  PATHS
-    ENV LIBRARY_PATH
-    ENV LD_INCLUDE_PATH
-    /usr/lib 
-    /usr/local/lib
-    /usr/lib/gcc/*/*
-    /usr/lib/clang/*/lib/linux
-    /usr/lib/llvm-*/lib/clang/*/lib/linux
-    /usr/local/opt/llvm/lib/clang/*/lib/darwin
+  PATHS ${TRIAL_PATHS}
 )
+
+# Try to find UBSan Minimal Runtime for Clang
+if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+  find_library(UBSAN_MINIMAL_RT_LIBRARY
+    NAMES clang_rt.ubsan_minimal-x86_64
+    PATHS ${TRIAL_PATHS}
+  )
+endif()
 
 mark_as_advanced(UBSAN_RT_LIBRARY)
 
