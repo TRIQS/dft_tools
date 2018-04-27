@@ -934,6 +934,9 @@ class SumkDFTTools(SumkDFT):
 
         seebeck : dictionary of double
             Seebeck coefficient in each direction. If zero is not present in Om_mesh the Seebeck coefficient is set to NaN.
+
+        kappa : dictionary of double. 
+            thermal conductivity in each direction. If zero is not present in Om_mesh the thermal conductivity is set to NaN
         """
 
         if not (mpi.is_master_node()):
@@ -947,7 +950,10 @@ class SumkDFTTools(SumkDFT):
               for direction in self.directions}
         A1 = {direction: numpy.full((n_q,), numpy.nan)
               for direction in self.directions}
+        A2 = {direction: numpy.full((n_q,), numpy.nan)
+              for direction in self.directions}
         self.seebeck = {direction: numpy.nan for direction in self.directions}
+        self.kappa = {direction: numpy.nan for direction in self.directions}
         self.optic_cond = {direction: numpy.full(
             (n_q,), numpy.nan) for direction in self.directions}
 
@@ -957,21 +963,28 @@ class SumkDFTTools(SumkDFT):
                     direction, iq=iq, n=0, beta=beta, method=method)
                 A1[direction][iq] = self.transport_coefficient(
                     direction, iq=iq, n=1, beta=beta, method=method)
+                A2[direction][iq] = self.transport_coefficient(
+                    direction, iq=iq, n=2, beta=beta, method=method)
                 print "A_0 in direction %s for Omega = %.2f    %e a.u." % (direction, self.Om_mesh[iq], A0[direction][iq])
                 print "A_1 in direction %s for Omega = %.2f    %e a.u." % (direction, self.Om_mesh[iq], A1[direction][iq])
+                print "A_2 in direction %s for Omega = %.2f    %e a.u." % (direction, self.Om_mesh[iq], A2[direction][iq])
                 if ~numpy.isnan(A1[direction][iq]):
-                    # Seebeck is overwritten if there is more than one Omega =
+                    # Seebeck and kappa are overwritten if there is more than one Omega =
                     # 0 in Om_mesh
                     self.seebeck[direction] = - \
                         A1[direction][iq] / A0[direction][iq] * 86.17
+                    self.kappa[direction] = A2[direction][iq] - A1[direction][iq]*A1[direction][iq]/A0[direction][iq]
+                    self.kappa[direction] *= 293178.0
             self.optic_cond[direction] = beta * \
                 A0[direction] * 10700.0 / numpy.pi
             for iq in xrange(n_q):
                 print "Conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" % (direction, self.Om_mesh[iq], self.optic_cond[direction][iq])
                 if not (numpy.isnan(A1[direction][iq])):
                     print "Seebeck in direction      %s for Omega = 0.00      %f  x 10^(-6) V/K" % (direction, self.seebeck[direction])
+                    print "kappa in direction      %s for Omega = 0.00      %f  W/(m * K)" % (direction, self.kappa[direction])
 
-        return self.optic_cond, self.seebeck
+        return self.optic_cond, self.seebeck, self.kappa
+
 
     def fermi_dis(self, w, beta):
         r"""
