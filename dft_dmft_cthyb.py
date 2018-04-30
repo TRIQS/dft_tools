@@ -57,7 +57,7 @@ gf_struct = SK.gf_struct_solver[0]
 Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
 # Construct Hamiltonian and solver
 h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat, H_dump="H.txt")
-S = Solver(beta=beta, gf_struct=gf_struct)
+S = Solver(beta=beta, gf_struct=list(gf_struct))
 
 if previous_present:
   chemical_potential = 0

@@ -66,7 +66,7 @@ Umat = U_matrix(n_orb=n_orb, U_int=U, J_hund=J, basis='cubic',)
 
 # Construct Hamiltonian and solver
 h_int = h_int_slater(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U_matrix=Umat)
-S = Solver(beta=beta, gf_struct=gf_struct)
+S = Solver(beta=beta, gf_struct=list(gf_struct))
 
 if previous_present:
   chemical_potential = 0

@@ -104,7 +104,7 @@ Kanamori definitions of :math:`U` and :math:`J`.
 Next, we construct the Hamiltonian and the solver::
   
   h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
-  S = Solver(beta=beta, gf_struct=gf_struct)
+  S = Solver(beta=beta, gf_struct=list(gf_struct))
 
 As you see, we take only density-density interactions into
 account. Other Hamiltonians with, e.g. with full rotational invariant interactions are:

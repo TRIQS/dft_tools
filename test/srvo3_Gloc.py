@@ -40,8 +40,8 @@ orb_names = ['%s'%i for i in range(num_orbitals)]
 orb_hybridized = False
 
 gf_struct = set_operator_structure(spin_names,orb_names,orb_hybridized)
-glist = [ GfImFreq(indices=inner,beta=beta) for block,inner in gf_struct.iteritems()]
-Sigma_iw = BlockGf(name_list = gf_struct.keys(), block_list = glist, make_copies = False)
+glist = [ GfImFreq(indices=inner,beta=beta) for block,inner in gf_struct]
+Sigma_iw = BlockGf(name_list = [block for block,inner in gf_struct], block_list = glist, make_copies = False)
 
 SK.set_Sigma([Sigma_iw])
 Gloc = SK.extract_G_loc()
