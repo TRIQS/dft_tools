@@ -46,7 +46,7 @@ SK.transport_distribution(directions=['xx'], broadening=0.0, energy_window=[-0.3
 #SK.load(['Gamma_w','Om_meshr','omega','directions'])
 SK.conductivity_and_seebeck(beta=beta)
 SK.hdf_file = 'srvo3_transp.out.h5'
-SK.save(['seebeck','optic_cond'])
+SK.save(['seebeck','optic_cond','kappa'])
 
 if mpi.is_master_node():
     h5diff("srvo3_transp.out.h5","srvo3_transp.ref.h5") 
