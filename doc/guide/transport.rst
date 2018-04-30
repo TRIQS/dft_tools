@@ -5,11 +5,19 @@ Transport calculations
 
 Formalism
 ---------
-The conductivity and the Seebeck coefficient in direction :math:`\alpha\beta` are defined as [#transp]_:
+The conductivity, the Seebeck coefficient and the electronic contribution to the thermal conductivity in direction :math:`\alpha\beta` are defined as [#transp1]_ [#transp2]_:
 
 .. math::
 
-   \sigma_{\alpha\beta} = \beta e^{2} A_{0,\alpha\beta}  \ \ \  \text{and} \ \ \  S_{\alpha\beta} = -\frac{k_B}{|e|}\frac{A_{1,\alpha\beta}}{A_{0,\alpha\beta}}, 
+   \sigma_{\alpha\beta} = \beta e^{2} A_{0,\alpha\beta}
+   
+.. math::
+    
+    S_{\alpha\beta} = -\frac{k_B}{|e|}\frac{A_{1,\alpha\beta}}{A_{0,\alpha\beta}}, 
+
+.. math::
+
+    \kappa^{\text{el}}_{\alpha\beta} = k_B \left(A_{2,\alpha\beta} - \frac{A_{1,\alpha\beta}^2}{A_{0,\alpha\beta}}\right),
 
 in which the kinetic coefficients :math:`A_{n,\alpha\beta}` are given by
 
@@ -102,7 +110,7 @@ As next step we can calculate the transport distribution :math:`\Gamma_{\alpha\b
 
 Here the transport distribution is calculated in :math:`xx` direction for the frequencies :math:`\Omega=0.0` and :math:`0.1`. 
 To use the previously obtained self energy we set with_Sigma to True and the broadening to :math:`0.0`.
-As we also want to calculate the Seebeck coefficient we have to include :math:`\Omega=0.0` in the mesh. 
+As we also want to calculate the Seebeck coefficient and the thermal conductivity we have to include :math:`\Omega=0.0` in the mesh. 
 Note that the current version of the code repines the :math:`\Omega` values to the closest values on the self energy mesh.
 For complete description of the input parameters see the :meth:`transport_distribution reference <dft.sumk_dft_tools.SumkDFTTools.transport_distribution>`.
 
@@ -114,10 +122,10 @@ You can retrieve it from the archive by::
       
     SK.Gamma_w, SK.Om_meshr, SK.omega, SK.directions = SK.load(['Gamma_w','Om_meshr','omega','directions'])  
 
-Finally the optical conductivity :math:`\sigma(\Omega)` and the Seebeck coefficient :math:`S` can be obtained with::
+Finally the optical conductivity :math:`\sigma(\Omega)`, the Seebeck coefficient :math:`S` and the thermal conductivity :math:`\kappa^{\text{el}}` can be obtained with::
 
     SK.conductivity_and_seebeck(beta=40)
-    SK.save(['seebeck','optic_cond']) 
+    SK.save(['seebeck','optic_cond','kappa']) 
 
 It is strongly advised to check convergence in the number of k-points!
 
@@ -125,5 +133,6 @@ It is strongly advised to check convergence in the number of k-points!
 References
 ----------
 
-.. [#transp] `V. S. Oudovenko, G. Palsson, K. Haule, G. Kotliar, S. Y. Savrasov, Phys. Rev. B 73, 035120 (2006) <http://link.aps.org/doi/10.1103/PhysRevB.73.0351>`_
+.. [#transp1] `V. S. Oudovenko, G. Palsson, K. Haule, G. Kotliar, S. Y. Savrasov, Phys. Rev. B 73, 035120 (2006) <http://link.aps.org/doi/10.1103/PhysRevB.73.0351>`_
+.. [#transp2] `J. M. Tomczak, K. Haule, T. Miyake, A. Georges, G. Kotliar, Phys. Rev. B 82, 085104 (2010) <https://link.aps.org/doi/10.1103/PhysRevB.82.085104>`_
 .. [#userguide] `P. Blaha, K. Schwarz, G. K. H. Madsen, D. Kvasnicka, J. Luitz, ISBN 3-9501031-1-2 <http://www.wien2k.at/reg_user/textbooks/usersguide.pdf>`_
