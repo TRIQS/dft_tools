@@ -107,7 +107,7 @@ Now we convert these files into an hdf5 file that can be used for the
 DMFT calculations. For this purpose we
 use the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.Wien2kConverter>`. It is initialized as::
 
-  from pytriqs.applications.dft.converters.wien2k_converter import *
+  from triqs_dft_tools.converters.wien2k_converter import *
   Converter = Wien2kConverter(filename = case)
 
 The only necessary parameter to this construction is the parameter `filename`.
@@ -337,7 +337,7 @@ matrix of the imaginary part, and then move on to the next :math:`\mathbf{k}`-po
 
 The converter itself is used as::
 
-  from pytriqs.applications.dft.converters.hk_converter import *
+  from triqs_dft_tools.converters.hk_converter import *
   Converter = HkConverter(filename = hkinputfile)
   Converter.convert_dft_input()
   
@@ -371,7 +371,7 @@ as a placeholder for the actual prefix chosen by the user when creating the
 input for :program:`wannier90`.
 Once these two files are available, one can use the converter as follows::
 
-    from pytriqs.applications.dft.converters import Wannier90Converter
+    from triqs_dft_tools.converters import Wannier90Converter
     Converter = Wannier90Converter(seedname='seedname')
     Converter.convert_dft_input()
 

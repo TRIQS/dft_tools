@@ -23,11 +23,11 @@ Loading modules
 
 First, we load the necessary modules::
 
-  from pytriqs.applications.dft.sumk_dft import *
-  from pytriqs.gf.local import *
+  from triqs_dft_tools.sumk_dft import *
+  from pytriqs.gf import *
   from pytriqs.archive import HDFArchive
   from pytriqs.operators.util import *
-  from pytriqs.applications.impurity_solvers.cthyb import *
+  from triqs_cthyb import *
 
 The last two lines load the modules for the construction of the
 :ref:`CTHYB solver <triqscthyb:welcome>`.
@@ -80,7 +80,7 @@ each material individually. A guide on how to set the tail fit parameters is giv
 
 
 The next step is to initialize the
-:class:`solver class <pytriqs.applications.impurity_solvers.cthyb.Solver>`.
+:class:`solver class <triqs_cthyb.Solver>`.
 It consist of two parts:
 
 #. Calculating the multi-band interaction matrix, and constructing the
@@ -94,7 +94,7 @@ The first step is done using methods of the :ref:`TRIQS <triqslibs:welcome>` lib
   spin_names = ["up","down"]
   orb_names = [i for i in range(n_orb)]
   # Use GF structure determined by DFT blocks:
-  gf_struct = SK.gf_struct_solver[0]
+  gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].iteritems()]
   # Construct U matrix for density-density calculations:
   Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
 
@@ -104,7 +104,7 @@ Kanamori definitions of :math:`U` and :math:`J`.
 Next, we construct the Hamiltonian and the solver::
   
   h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
-  S = Solver(beta=beta, gf_struct=list(gf_struct))
+  S = Solver(beta=beta, gf_struct=gf_struct)
 
 As you see, we take only density-density interactions into
 account. Other Hamiltonians with, e.g. with full rotational invariant interactions are:
@@ -213,7 +213,7 @@ and perform only one DMFT iteration. The resulting self energy can be tail fitte
         S.Sigma_iw[name].fit_tail(fit_n_moments = 4, fit_min_n = 60, fit_max_n = 140)
 
 Plot the self energy and adjust the tail fit parameters such that you obtain a
-proper fit. The :meth:`fit_tail function <pytriqs.gf.local.tools.tail_fit>` is part
+proper fit. The :meth:`fit_tail function <pytriqs.gf.tools.tail_fit>` is part
 of the :ref:`TRIQS <triqslibs:welcome>` library.
 
 For a self energy which is going to zero for :math:`i\omega \rightarrow 0` our suggestion is

@@ -22,7 +22,7 @@ The first thing is the :class:`SumkDFT <dft.sumk_dft.SumkDFT>` class.
 It contains all basic routines that are necessary to perform a summation in k-space
 to get the local quantities used in DMFT. It is initialized by::
 
-    from pytriqs.applications.dft.sumk_dft import *
+    from triqs_dft_tools.sumk_dft import *
     SK = SumkDFT(hdf_file = filename + '.h5')
 
 

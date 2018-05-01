@@ -502,7 +502,7 @@ class Wien2kConverter(ConverterTools):
         - symmetries from :file:`case.outputs`,
 
         if those Wien2k files are present and stores the data in the hdf5 archive.
-        This function is automatically called by :meth:`convert_dft_input <pytriqs.applications.dft.converters.wien2k_converter.Wien2kConverter.convert_dft_input>`. 
+        This function is automatically called by :meth:`convert_dft_input <triqs_dft_tools.converters.wien2k_converter.Wien2kConverter.convert_dft_input>`. 
 
         """
 

@@ -1,9 +1,9 @@
 import pytriqs.utility.mpi as mpi
 from pytriqs.operators.util import *
 from pytriqs.archive import HDFArchive
-from pytriqs.applications.impurity_solvers.cthyb import *
-from pytriqs.gf.local import *
-from pytriqs.applications.dft.sumk_dft import *
+from triqs_cthyb import *
+from pytriqs.gf import *
+from triqs_dft_tools.sumk_dft import *
 
 dft_filename='SrVO3'
 U = 4.0
@@ -30,7 +30,7 @@ p["fit_min_n"] = 30
 p["fit_max_n"] = 60
 
 # If conversion step was not done, we could do it here. Uncomment the lines it you want to do this.
-#from pytriqs.applications.dft.converters.wien2k_converter import *
+#from triqs_dft_tools.converters.wien2k_converter import *
 #Converter = Wien2kConverter(filename=dft_filename, repacking=True)
 #Converter.convert_dft_input()
 #mpi.barrier()
@@ -58,14 +58,14 @@ spin_names = ["up","down"]
 orb_names = [i for i in range(n_orb)]
 
 # Use GF structure determined by DFT blocks
-gf_struct = SK.gf_struct_solver[0]
+gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].iteritems()]
 
 # Construct U matrix for density-density calculations
 Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
 
 # Construct density-density Hamiltonian and solver
 h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat, H_dump="H.txt")
-S = Solver(beta=beta, gf_struct=list(gf_struct))
+S = Solver(beta=beta, gf_struct=gf_struct)
 
 if previous_present:
   chemical_potential = 0

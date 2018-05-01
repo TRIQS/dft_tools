@@ -21,7 +21,7 @@
 ################################################################################
 
 from types import *
-#from pytriqs.applications.dft.U_matrix import *
+#from triqs_dft_tools.U_matrix import *
 from U_matrix import *
 from pytriqs.gf import *
 #from hubbard_I import gf_hi_fullu, sigma_atomic_fullu

@@ -1,6 +1,6 @@
 .. index:: DFTTools
 
-.. module:: pytriqs.applications.dft
+.. module:: triqs_dft_tools
 
 .. _dft:
 

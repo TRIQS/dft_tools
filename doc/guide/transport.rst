@@ -76,8 +76,8 @@ Using the transport code
 
 First we have to read the Wien2k files and store the relevant information in the hdf5 archive::
 
-    from pytriqs.applications.dft.converters.wien2k_converter import *
-    from pytriqs.applications.dft.sumk_dft_tools import *
+    from triqs_dft_tools.converters.wien2k_converter import *
+    from triqs_dft_tools.sumk_dft_tools import *
 
     Converter = Wien2kConverter(filename='case', repacking=True)
     Converter.convert_transport_input()
