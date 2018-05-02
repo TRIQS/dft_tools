@@ -870,8 +870,8 @@ class SumkDFT(object):
         # make a GfImTime from the supplied GfImFreq
         if all(isinstance(g_sh._first(), GfImFreq) for g_sh in G):
             gf = [BlockGf(name_block_generator = [(name, GfImTime(beta=block.mesh.beta,
-                indices=block.indices,n_points=len(block.mesh)+1)) for name, block in g_sh])
-                for g_sh in G]
+                indices=block.indices,n_points=len(block.mesh)+1)) for name, block in g_sh],
+                make_copies=False) for g_sh in G]
             for ish in range(len(gf)):
                 for name, g in gf[ish]:
                     g.set_from_inverse_fourier(G[ish][name])
@@ -892,12 +892,10 @@ class SumkDFT(object):
                         w0 = w
                     else:
                         return w-w0
-            gf = [BlockGf(
-                name_block_generator = [(name,
-                    GfReFreq(
-                        window=(-numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh)), numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh))),
-                        n_points=len(block.mesh),
-                        indices=block.indices)) for name, block in g_sh])
+            gf = [BlockGf(name_block_generator = [(name, GfReFreq(
+                window=(-numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh)), 
+                numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh))),
+                n_points=len(block.mesh), indices=block.indices)) for name, block in g_sh], make_copies=False)
                 for g_sh in G]
 
             for ish in range(len(gf)):

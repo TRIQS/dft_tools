@@ -41,7 +41,7 @@ delta[0,1] << (V[0,0]*V[1,0].conjugate()*inverse(Omega-b1)+V[0,1]*V[1,1].conjuga
 delta[1,0] << (V[1,0]*V[0,0].conjugate()*inverse(Omega-b1)+V[1,1]*V[0,1].conjugate()*inverse(Omega-b2+0.02j))/2.0
 delta[1,1] << (V[1,0]*V[1,0].conjugate()*inverse(Omega-b1)+V[1,1]*V[1,1].conjugate()*inverse(Omega-b2+0.02j))/2.0
 # construct G
-G = BlockGf(name_block_generator=(('ud',GfReFreq(window=(-5,5), indices=range(10), n_points=1001)),))
+G = BlockGf(name_block_generator=[('ud',GfReFreq(window=(-5,5), indices=range(10), n_points=1001))], make_copies=False)
 for i in range(0,10,2):
     G['ud'][i:i+2,i:i+2] << inverse(Omega-delta+0.02j)
 G['ud'] << inverse(inverse(G['ud']) - Hloc)
@@ -86,7 +86,7 @@ def get_delta_from_mesh(mesh):
 Gt = BlockGf(name_block_generator = [(name,
             GfReTime(window=(-np.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh)), np.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh))),
                 n_points=len(block.mesh),
-                indices=block.indices)) for name, block in G])
+                indices=block.indices)) for name, block in G], make_copies=False)
 
 Gt['ud'].set_from_inverse_fourier(G['ud'])
 
