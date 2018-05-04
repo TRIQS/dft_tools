@@ -29,7 +29,7 @@ class TestConverterLuNiO3(mytest.MyTestCase):
         generate_and_output_as_text(_rpath + 'lunio3.cfg', _rpath + 'lunio3/')
 
         test_file = _rpath + 'lunio3.test.h5'
-        converter = VaspConverter(filename=_rpath + 'vasp', 
+        converter = VaspConverter(filename=_rpath + 'lunio3', 
                                   hdf_filename=test_file)
 
         converter.convert_dft_input()
