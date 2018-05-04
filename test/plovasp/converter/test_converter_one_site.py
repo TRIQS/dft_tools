@@ -29,7 +29,7 @@ class TestConverterOneSite(mytest.MyTestCase):
         generate_and_output_as_text(_rpath + 'example.cfg', _rpath + 'one_site/')
 
         test_file = _rpath + 'pg_output.test.h5'
-        converter = VaspConverter(filename=_rpath + 'vasp', 
+        converter = VaspConverter(filename=_rpath + 'one_site', 
                                   hdf_filename=test_file)
 
         converter.convert_dft_input()
