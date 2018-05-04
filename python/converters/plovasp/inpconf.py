@@ -54,7 +54,7 @@ def issue_warning(message):
 class ConfigParameters:
     r"""
     Class responsible for parsing of the input config-file.
-  
+
     Parameters:
 
     - *sh_required*, *sh_optional* : required and optional parameters of shells
@@ -79,7 +79,7 @@ class ConfigParameters:
         self.parameters = {}
 
         self.sh_required = {
-            'ions': ('ion_list', self.parse_string_ion_list),
+            'ions': ('ions', self.parse_string_ion_list),
             'lshell': ('lshell', int)}
 
         self.sh_optional = {
@@ -109,14 +109,20 @@ class ConfigParameters:
 ################################################################################
     def parse_string_ion_list(self, par_str):
         """
-        The ion list accepts two formats:
+        The ion list accepts the following formats:
           1). A list of ion indices according to POSCAR.
               The list can be defined as a range '9..20'.
-          2). An element name, in which case all ions with
-              this name are included.
+
+          2). A list of ion groups (e.g. '[1  4]  [2  3]') in which
+              case each group defines a set of equivalent sites.
+
+          3). An element name, in which case all ions with
+              this name are included. NOT YET IMPLEMENTED.
 
         The second option requires an input from POSCAR file.
         """
+        ion_info = {}
+
 # First check if a range is given
         patt = '([0-9]+)\.\.([0-9]+)'
         match = re.match(patt, par_str)
@@ -125,7 +131,8 @@ class ConfigParameters:
             mess = "First index of the range must be smaller or equal to the second"
             assert i1 <= i2, mess
 # Note that we need to subtract 1 from VASP indices
-            ion_list = np.array(range(i1 - 1, i2))
+            ion_info['ion_list'] = [[ion - 1] for ion in range(i1, i2 + 1)]
+            ion_info['nion'] = len(ion_info['ion_list'])
         else:
 # Check if a set of indices is given
             try:
@@ -133,15 +140,40 @@ class ConfigParameters:
                 l_tmp.sort()
 # Subtract 1 so that VASP indices (starting with 1) are converted
 # to Python indices (starting with 0)
-                ion_list = np.array(l_tmp) - 1
+                ion_info['ion_list'] = [[ion - 1] for ion in l_tmp]
+                ion_info['nion'] = len(ion_info['ion_list'])
             except ValueError:
-                err_msg = "Only an option with a list of ion indices is implemented"
+                pass
+# Check if equivalence classes are given
+
+        if not ion_info:
+            try:
+                patt = '[0-9][0-9,\s]*'
+                patt2 = '[0-9]+'
+                classes = re.findall(patt, par_str)
+                ion_list = []
+                nion = 0
+                for cl in classes:
+                    ions = map(int, re.findall(patt2, cl))
+                    ion_list.append([ion - 1 for ion in ions])
+                    nion += len(ions)
+
+                if not ion_list:
+                    raise ValueError
+
+                ion_info['ion_list'] = ion_list
+                ion_info['nion'] = nion
+            except ValueError:
+                err_msg = "Error parsing list of ions"
                 raise NotImplementedError(err_msg)
 
-        err_mess = "Lowest ion index is smaller than 1 in '%s'"%(par_str)
-        assert np.all(ion_list >= 0), err_mess
+        if 'ion_list' in ion_info:
+            ion_list = ion_info['ion_list']
 
-        return ion_list
+            assert all([all([ion >= 0 for ion in gr]) for gr in ion_list]), (
+               "Lowest ion index is smaller than 1 in '%s'"%(par_str))
+
+        return ion_info
 
 ################################################################################
 #
@@ -225,7 +257,7 @@ class ConfigParameters:
 
 ################################################################################
 #
-# parse_string_ion_list()
+# parse_string_dosmesh()
 #
 ################################################################################
     def parse_string_dosmesh(self, par_str):
@@ -470,13 +502,13 @@ class ConfigParameters:
                     if len(self.gr_optional[par]) > 2:
                         self.groups[0][key] = self.gr_optional[par][2]
                     continue
-# Add the index of the single shell into the group                
+# Add the index of the single shell into the group
             self.groups[0].update({'shells': [1]})
 
 #
 # Consistency checks
 #
-# Check the existance of shells referenced in the groups 
+# Check the existence of shells referenced in the groups
         def find_shell_by_user_index(uindex):
             for ind, shell in enumerate(self.shells):
                 if shell['user_index'] == uindex:
@@ -529,7 +561,7 @@ class ConfigParameters:
 # Check that all shells are referenced in the groups
         assert sh_refs_used == range(self.nshells), "Some shells are not inside any of the groups"
 
- 
+
 ################################################################################
 #
 # parse_general()
