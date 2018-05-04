@@ -70,7 +70,7 @@ class ProjectorShell:
     """
     def __init__(self, sh_pars, proj_raw, proj_params, kmesh, structure, nc_flag):
         self.lorb = sh_pars['lshell']
-        self.ion_list = sh_pars['ion_list']
+        self.ions = sh_pars['ions']
         self.user_index = sh_pars['user_index']
         self.nc_flag = nc_flag
 #        try:
@@ -81,8 +81,17 @@ class ProjectorShell:
         self.lm1 = self.lorb**2
         self.lm2 = (self.lorb+1)**2
 
+        self.nion = self.ions['nion']
+# Extract ion list and equivalence classes (ion sorts)
+        self.ion_list = sorted(it.chain(*self.ions['ion_list']))
+        self.ion_sort = []
+        for ion in self.ion_list:
+            for icl, eq_cl in enumerate(self.ions['ion_list']):
+                if ion in eq_cl:
+                    self.ion_sort.append(icl + 1) # Enumerate classes starting from 1
+                    break
+
         self.ndim = self.extract_tmatrices(sh_pars)
-        self.nion = len(self.ion_list)
 
         self.extract_projectors(proj_raw, proj_params, kmesh, structure)
 
@@ -106,7 +115,7 @@ class ProjectorShell:
         Flag 'self.do_transform' is introduced for the optimization purposes
         to avoid superfluous matrix multiplications.
         """
-        nion = len(self.ion_list)
+        nion = self.nion
         nm = self.lm2 - self.lm1
 
         if 'tmatrices' in sh_pars:
@@ -213,7 +222,8 @@ class ProjectorShell:
         """
         assert self.nc_flag == False, "Non-collinear case is not implemented"
 
-        nion = len(self.ion_list)
+#        nion = len(self.ion_list)
+        nion = self.nion
         nlm = self.lm2 - self.lm1
         _, ns, nk, nb = proj_raw.shape
 
