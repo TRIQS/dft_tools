@@ -166,8 +166,7 @@ class VaspConverter(ConverterTools):
                         pars = {}
                         pars['atom'] = ion
 # We set all sites inequivalent
-#                        pars['sort'] = sh['ion_sort']
-                        pars['sort'] = ion
+                        pars['sort'] = sh['ion_sort'][i]
                         pars['l'] = sh['lorb']
                         pars['dim'] = sh['ndim']
                         pars['SO'] = SO
