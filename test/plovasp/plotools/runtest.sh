@@ -1,1 +1,1 @@
-PYTHONPATH=../../python:../../c:$PYTHONPATH python $1
+PYTHONPATH=../../python:../../c:$PYTHONPATH ../../../build_pytriqs $1

@@ -57,19 +57,19 @@ class TestParseShells(arraytest.ArrayTestCase):
         conf_pars = ConfigParameters(_rpath + 'parse_shells_4.cfg')
         conf_pars.parse_shells()
         res = conf_pars.shells
-        expected = [{'user_index': 1, 'lshell': 2, 'ion_list': np.array([4, 5, 6, 7])},
-                    {'user_index': 2, 'lshell': 1, 'ion_list': np.array([0, 1, 2, 3]),
+        expected = [{'user_index': 1, 'lshell': 2, 'ions': {'nion': 4, 'ion_list': [[4],[5],[6],[7]]}},
+                    {'user_index': 2, 'lshell': 1, 'ions': {'nion': 4, 'ion_list': [[0],[1],[2],[3]]},
                         'tmatrix': np.array([[ 0.,  1.,  0.], [ 1.,  0.,  0.], [ 0.,  0.,  1.]])}]
 # ...lousy way to test equality of two dictionaries containing numpy arrays
         self.assertEqual(len(res), len(expected))
 
-        arr = res[0].pop('ion_list')
-        arr_exp = expected[0].pop('ion_list')
-        self.assertEqual(arr, arr_exp)
+        arr = res[0].pop('ions')
+        arr_exp = expected[0].pop('ions')
+        self.assertDictEqual(arr, arr_exp)
 
-        arr = res[1].pop('ion_list')
-        arr_exp = expected[1].pop('ion_list')
-        self.assertEqual(arr, arr_exp)
+        arr = res[1].pop('ions')
+        arr_exp = expected[1].pop('ions')
+        self.assertDictEqual(arr, arr_exp)
 
         arr = res[1].pop('tmatrix')
         arr_exp = expected[1].pop('tmatrix')
@@ -77,4 +77,8 @@ class TestParseShells(arraytest.ArrayTestCase):
 
         self.assertListEqual(res, expected)
 
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main(verbosity=2, buffer=False)
 
