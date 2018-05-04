@@ -1,12 +1,13 @@
 # load triqs helper to set up tests
 set(all_tests
     inpconf
-#    plocar_io
-    plotools
     proj_group
     proj_shell
     vaspio
-    atm)
+    atm
+    plotools
+    converter
+)
     
 FILE(COPY ${all_tests} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 FILE(COPY run_suite.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
