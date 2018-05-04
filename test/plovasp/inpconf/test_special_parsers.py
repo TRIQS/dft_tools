@@ -102,6 +102,12 @@ class TestParseStringIonList(arraytest.ArrayTestCase):
         with self.assertRaisesRegexp(AssertionError, err_mess):
             self.cpars.parse_string_ion_list('8..5')
 
+# Scenario 6
+    def test_eq_classes(self):
+        expected = {'nion': 4, 'ion_list': [[4, 7], [5, 6]]}
+        res = self.cpars.parse_string_ion_list('[5, 8] [6 7]')
+        self.assertDictEqual(res, expected)
+
 
 ################################################################################
 #
@@ -136,7 +142,7 @@ class TestParseStringTmatrix(arraytest.ArrayTestCase):
         err_mess = "Number of columns"
         with self.assertRaisesRegexp(AssertionError, err_mess):
             self.cpars.parse_string_tmatrix(par_str, real=True)
- 
+
 # Scenario 2
     def test_complex_matrix_odd(self):
         par_str = "1.0 0.0 2.0 1.0 0.0\n0.0 1.0 2.0 3.0 -1.0"
