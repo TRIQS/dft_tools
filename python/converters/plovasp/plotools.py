@@ -64,12 +64,14 @@ def check_data_consistency(pars, el_struct):
     """
 # Check that ions inside each shell are of the same sort
     for sh in pars.shells:
-        assert max(sh['ion_list']) <= el_struct.natom, "Site index in the projected shell exceeds the number of ions in the structure"
-        sorts = set([el_struct.type_of_ion[io] for io in sh['ion_list']])
+        max_ion_index = max([max(gr) for gr in sh['ions']['ion_list']])
+        assert max_ion_index < el_struct.natom, "Site index in the projected shell exceeds the number of ions in the structure"
+        ion_list = list(it.chain(*sh['ions']['ion_list']))
+
+        sorts = set([el_struct.type_of_ion[io] for io in ion_list])
         assert len(sorts) == 1, "Each projected shell must contain only ions of the same sort"
 
 # Check that ion and orbital lists in shells match those of projectors
-        ion_list = sh['ion_list']
         lshell = sh['lshell']
         for ion in ion_list:
             for par in el_struct.proj_params:
@@ -113,7 +115,7 @@ def generate_plo(conf_pars, el_struct):
         print
         print "    Shell         : %s"%(pshell.user_index)
         print "    Orbital l     : %i"%(pshell.lorb)
-        print "    Number of ions: %i"%(len(pshell.ion_list))
+        print "    Number of ions: %i"%(pshell.nion)
         print "    Dimension     : %i"%(pshell.ndim)
         pshells.append(pshell)
 
@@ -323,8 +325,9 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
 # Convert ion indices from the internal representation (starting from 0)
 # to conventional VASP representation (starting from 1)
             ion_output = [io + 1 for io in shell.ion_list]
+# Derive sorts from equivalence classes
             sh_dict['ion_list'] = ion_output
-            sh_dict['ion_sort'] = el_struct.type_of_ion[shell.ion_list[0]]
+            sh_dict['ion_sort'] = shell.ion_sort
 
 # TODO: add the output of transformation matrices
 
