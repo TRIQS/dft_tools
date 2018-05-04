@@ -1,4 +1,4 @@
-pars: {'ion_list': array([1]), 'user_index': 1, 'lshell': 2}
+pars: {'ions': {'nion': 1, 'ion_list': [[1]]}, 'user_index': 1, 'lshell': 2}
 10  25
     1  0.000000  -0.000000
     2  0.000000  0.000000
