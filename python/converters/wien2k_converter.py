@@ -252,7 +252,7 @@ class Wien2kConverter(ConverterTools):
             for it in things_to_set:
                 setattr(self, it, locals()[it])
         except StopIteration:  # a more explicit error if the file is corrupted.
-            raise "Wien2k_converter : reading file %s failed!" % self.dft_file
+            raise IOError, "Wien2k_converter : reading file %s failed!" % self.dft_file
 
         R.close()
         # Reading done!
@@ -475,9 +475,9 @@ class Wien2kConverter(ConverterTools):
             R.close()
 
         except KeyError:
-            raise "convert_bands_input : Needed data not found in hdf file. Consider calling convert_dft_input first!"
+            raise IOError, "convert_bands_input : Needed data not found in hdf file. Consider calling convert_dft_input first!"
         except StopIteration:  # a more explicit error if the file is corrupted.
-            raise "Wien2k_converter : reading file band_file failed!"
+            raise IOError, "Wien2k_converter : reading file %s failed!" % self.band_file
 
         # Reading done!
 
@@ -577,7 +577,7 @@ class Wien2kConverter(ConverterTools):
                     things_to_save.extend(
                         ['lattice_type', 'lattice_constants', 'lattice_angles'])
                 except IOError:
-                    raise "convert_misc_input: reading file %s failed" % self.struct_file
+                    raise IOError, "convert_misc_input: reading file %s failed" % self.struct_file
 
         # Read relevant data from .outputs file
         #######################################
@@ -609,7 +609,7 @@ class Wien2kConverter(ConverterTools):
                     things_to_save.extend(['n_symmetries', 'rot_symmetries'])
                     things_to_save.append('rot_symmetries')
                 except IOError:
-                    raise "convert_misc_input: reading file %s failed" % self.outputs_file
+                    raise IOError, "convert_misc_input: reading file %s failed" % self.outputs_file
 
         # Save it to the HDF:
         ar = HDFArchive(self.hdf_file, 'a')
@@ -775,7 +775,7 @@ class Wien2kConverter(ConverterTools):
                                 R.next()      # imaginary part
 
         except StopIteration:  # a more explicit error if the file is corrupted.
-            raise "Wien2k_converter : reading file symm_file failed!"
+            raise IOError, "Wien2k_converter : reading file %s failed!" %symm_file
 
         R.close()
         # Reading done!
