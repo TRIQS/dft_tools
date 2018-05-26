@@ -1,10 +1,10 @@
 import pytriqs.utility.mpi as mpi
 from pytriqs.operators.util import *
 from pytriqs.archive import HDFArchive
-from pytriqs.applications.impurity_solvers.cthyb import *
-from pytriqs.gf.local import *
-from pytriqs.applications.dft.sumk_dft import *
-from pytriqs.applications.dft.converters.wien2k_converter import *
+from triqs_cthyb import *
+from pytriqs.gf import *
+from triqs_dft_tools.sumk_dft import *
+from triqs_dft_tools.converters.wien2k_converter import *
 
 dft_filename='Gd_fcc'
 U = 9.6
@@ -52,7 +52,7 @@ spin_names = ["up","down"]
 orb_names = [i for i in range(n_orb)]
 
 # Use GF structure determined by DFT blocks
-gf_struct = SK.gf_struct_solver[0] 
+gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].iteritems()]
 # Construct U matrix for density-density calculations
 Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
 # Construct Hamiltonian and solver

@@ -27,7 +27,7 @@ Initialisation
 All tools described below are collected in an extension of the :class:`SumkDFT <dft.sumk_dft.SumkDFT>` class and are
 loaded by importing the module :class:`SumkDFTTools <dft.sumk_dft_tools.SumkDFTTools>`::
 
-  from pytriqs.applications.dft.sumk_dft_tools import *
+  from triqs_dft_tools.sumk_dft_tools import *
 
 The initialisation of the class is equivalent to that of the :class:`SumkDFT <dft.sumk_dft.SumkDFT>`
 class::
@@ -37,7 +37,7 @@ class::
 Note that all routines available in :class:`SumkDFT <dft.sumk_dft.SumkDFT>` are also available here.
 
 If required, we have to load and initialise the real frequency self energy. Most conveniently,
-you have your self energy already stored as a real frequency :class:`BlockGf <pytriqs.gf.local.BlockGf>` object
+you have your self energy already stored as a real frequency :class:`BlockGf <pytriqs.gf.BlockGf>` object
 in a hdf5 file::
 
   ar = HDFArchive('case.h5', 'a')
@@ -45,10 +45,10 @@ in a hdf5 file::
 
 You may also have your self energy stored in text files. For this case the :ref:`TRIQS <triqslibs:welcome>` library offers
 the function :meth:`read_gf_from_txt`, which is able to load the data from text files of one Greens function block
-into a real frequency :class:`ReFreqGf <pytriqs.gf.local.ReFreqGf>` object. Loading each block separately and
-building up a :class:´BlockGf <pytriqs.gf.local.BlockGf>´ is done with::
+into a real frequency :class:`ReFreqGf <pytriqs.gf.ReFreqGf>` object. Loading each block separately and
+building up a :class:´BlockGf <pytriqs.gf.BlockGf>´ is done with::
 
-  from pytriqs.gf.local.tools import *
+  from pytriqs.gf.tools import *
   # get block names
   n_list = [n for n,nl in SK.gf_struct_solver[0].iteritems()]
   # load sigma for each block - in this example sigma is composed of 1x1 blocks

@@ -23,11 +23,11 @@ Loading modules
 
 First, we load the necessary modules::
 
-  from pytriqs.applications.dft.sumk_dft import *
-  from pytriqs.gf.local import *
+  from triqs_dft_tools.sumk_dft import *
+  from pytriqs.gf import *
   from pytriqs.archive import HDFArchive
   from pytriqs.operators.util import *
-  from pytriqs.applications.impurity_solvers.cthyb import *
+  from triqs_cthyb import *
 
 The last two lines load the modules for the construction of the
 :ref:`CTHYB solver <triqscthyb:welcome>`.
@@ -56,7 +56,7 @@ Initializing the solver
 -----------------------
 
 We also have to specify the :ref:`CTHYB solver <triqscthyb:welcome>` related settings.
-We assume that the DMFT script for SrVO3 is executed on 16 cores. A sufficient set 
+We assume that the DMFT script for SrVO3 is executed on 16 cores. A sufficient set
 of parameters for a first guess is::
 
   p = {}
@@ -80,7 +80,7 @@ each material individually. A guide on how to set the tail fit parameters is giv
 
 
 The next step is to initialize the
-:class:`solver class <pytriqs.applications.impurity_solvers.cthyb.Solver>`.
+:class:`solver class <triqs_cthyb.Solver>`.
 It consist of two parts:
 
 #. Calculating the multi-band interaction matrix, and constructing the
@@ -94,7 +94,7 @@ The first step is done using methods of the :ref:`TRIQS <triqslibs:welcome>` lib
   spin_names = ["up","down"]
   orb_names = [i for i in range(n_orb)]
   # Use GF structure determined by DFT blocks:
-  gf_struct = SK.gf_struct_solver[0]
+  gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].iteritems()]
   # Construct U matrix for density-density calculations:
   Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
 
@@ -102,7 +102,7 @@ We assumed here that we want to use an interaction matrix with
 Kanamori definitions of :math:`U` and :math:`J`.
 
 Next, we construct the Hamiltonian and the solver::
-  
+
   h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
   S = Solver(beta=beta, gf_struct=gf_struct)
 
@@ -125,7 +125,7 @@ some additional refinements::
 
   for iteration_number in range(1,loops+1):
       if mpi.is_master_node(): print "Iteration = ", iteration_number
-  
+
       SK.symm_deg_gf(S.Sigma_iw,orb=0)                        # symmetrizing Sigma
       SK.set_Sigma([ S.Sigma_iw ])                            # put Sigma into the SumK class
       chemical_potential = SK.calc_mu( precision = prec_mu )  # find the chemical potential for given density
@@ -137,17 +137,17 @@ some additional refinements::
           dm = S.G_iw.density()
           SK.calc_dc(dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
           S.Sigma_iw << SK.dc_imp[0]['up'][0,0]
-  
+
       # Calculate new G0_iw to input into the solver:
       S.G0_iw << S.Sigma_iw + inverse(S.G_iw)
       S.G0_iw << inverse(S.G0_iw)
 
       # Solve the impurity problem:
       S.solve(h_int=h_int, **p)
-  
+
       # Solved. Now do post-solution stuff:
       mpi.report("Total charge of impurity problem : %.6f"%S.G_iw.total_density())
-  
+
       # Now mix Sigma and G with factor mix, if wanted:
       if (iteration_number>1 or previous_present):
           if mpi.is_master_node():
@@ -158,7 +158,7 @@ some additional refinements::
               del ar
           S.G_iw << mpi.bcast(S.G_iw)
           S.Sigma_iw << mpi.bcast(S.Sigma_iw)
-  
+
       # Write the final Sigma and G to the hdf5 archive:
       if mpi.is_master_node():
           ar = HDFArchive(dft_filename+'.h5','a')
@@ -188,8 +188,8 @@ to start with a lower statistics (less measurements), but then increase it at a
 point close to converged results (e.g. after a few initial iterations). This helps
 to keep computational costs low during the first iterations.
 
-Using the Kanamori Hamiltonian and the parameters above (but on 16 cores), 
-your self energy after the **first iteration** should look like the 
+Using the Kanamori Hamiltonian and the parameters above (but on 16 cores),
+your self energy after the **first iteration** should look like the
 self energy shown below.
 
 .. image:: images_scripts/SrVO3_Sigma_iw_it1.png
@@ -208,12 +208,12 @@ Therefore disabled the tail fitting first::
     p["perform_tail_fit"] = False
 
 and perform only one DMFT iteration. The resulting self energy can be tail fitted by hand::
-    
+
     Sigma_iw_fit = S.Sigma_iw.copy()
     Sigma_iw_fit << tail_fit(S.Sigma_iw, fit_max_moment = 4, fit_min_n = 40, fit_max_n = 160)[0]
 
 Plot the self energy and adjust the tail fit parameters such that you obtain a
-proper fit. The :meth:`tail_fit function <pytriqs.gf.local.tools.tail_fit>` is part
+proper fit. The :meth:`fit_tail function <pytriqs.gf.tools.tail_fit>` is part
 of the :ref:`TRIQS <triqslibs:welcome>` library.
 
 For a self energy which is going to zero for :math:`i\omega \rightarrow 0` our suggestion is

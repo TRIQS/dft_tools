@@ -1,50 +1,83 @@
 # Version number of the application
-set (DFT_TOOLS_VERSION "1.4")
-set (DFT_TOOLS_RELEASE "1.4.0")
+set (DFT_TOOLS_VERSION "1.5")
+set (DFT_TOOLS_RELEASE "1.5.0")
 
-# Append triqs installed files to the cmake load path
-list(APPEND CMAKE_MODULE_PATH ${TRIQS_PATH}/share/triqs/cmake)
-
-# start configuration 
-cmake_minimum_required(VERSION 2.8)
-project(dft_tools CXX Fortran)
-set(CMAKE_BUILD_TYPE Release)
-enable_testing()
-
-# Load TRIQS, including all predefined variables from TRIQS installation
-find_package(TRIQS REQUIRED)
-
-# Check that versions are compatible
-if(NOT DFT_TOOLS_VERSION EQUAL TRIQS_VERSION)
-  message(FATAL_ERROR "The application version is not compatible with the TRIQS library (TRIQS library version: ${TRIQS_VERSION} while this application version: ${DFT_TOOLS_VERSION})")
+# Default to Release build type
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Type of build" FORCE)
 endif()
+message( STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} -------------")
+
+# start configuration
+cmake_minimum_required(VERSION 2.8)
+project(dft_tools C CXX Fortran)
+
+# Use shared libraries
+set(BUILD_SHARED_LIBS ON)
+
+# Load TRIQS and Cpp2Py
+find_package(TRIQS 1.5 EXACT REQUIRED)
+find_package(Cpp2Py REQUIRED)
+
 if (NOT ${TRIQS_WITH_PYTHON_SUPPORT})
  MESSAGE(FATAL_ERROR "dft_tools require Python support in TRIQS")
 endif()
 
-# Get hash
-triqs_get_git_hash(${CMAKE_SOURCE_DIR} "DFT_TOOLS")
-if(${GIT_RESULT} EQUAL 0)
-  message(STATUS "Hash: ${DFT_TOOLS_GIT_HASH}")
-endif(${GIT_RESULT} EQUAL 0)
+# Default Install directory to TRIQS_ROOT if not given. Checks an absolute name is given.
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTALL_PREFIX}))
+  message(STATUS " No install prefix given (or invalid). Defaulting to TRIQS_ROOT")
+  set(CMAKE_INSTALL_PREFIX ${TRIQS_ROOT} CACHE PATH "default install path" FORCE)
+endif()
+message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} -------------")
 
-# We want to be installed in the TRIQS tree
-set(CMAKE_INSTALL_PREFIX ${TRIQS_PATH})
+# Macro defined in TRIQS which picks the hash of repo.
+triqs_get_git_hash_of_source_dir(DFT_TOOLS_GIT_HASH)
+message(STATUS "Git hash: ${DFT_TOOLS_GIT_HASH}")
 
 add_subdirectory(fortran/dmftproj) 
 
 # Add the compiling options (-D... ) for C++
 message(STATUS "TRIQS : Adding compilation flags detected by the library (C++11/14, libc++, etc...) ")
-add_definitions(${TRIQS_CXX_DEFINITIONS})
 
 add_subdirectory(c++)
 add_subdirectory(python)
 add_subdirectory(shells)
-add_subdirectory(test)
-option(BUILD_DOC "Build documentation" OFF)
-if(${BUILD_DOC})
-  if(NOT TRIQS_WITH_DOCUMENTATION)
+
+#------------------------
+# tests
+#------------------------
+ 
+enable_testing()
+ 
+option(Build_Tests "Build the tests of the library " ON)
+if (Build_Tests)
+  message(STATUS "-------- Preparing tests  -------------")
+ add_subdirectory(test)
+endif()
+
+#------------------------
+# Documentation
+#------------------------
+option(Build_Documentation "Build documentation" OFF)
+if(${Build_Documentation})
+  if(NOT ${TRIQS_WITH_DOCUMENTATION})
     message("Error: TRIQS library has not been compiled with its documentation")
   endif()
   add_subdirectory(doc)
-endif(${BUILD_DOC})
+endif()
+
+#--------------------------------------------------------
+# Packaging
+#--------------------------------------------------------
+option(BUILD_DEBIAN_PACKAGE "Build a deb package" OFF)
+if(BUILD_DEBIAN_PACKAGE)
+  if(NOT CMAKE_INSTALL_PREFIX STREQUAL "/usr")
+    message(FATAL_ERROR "CMAKE_INSTALL_PREFIX must be /usr for packaging")
+  endif()
+  SET(CPACK_GENERATOR "DEB")
+  SET(CPACK_PACKAGE_VERSION ${DFT_TOOLS_VERSION})
+  SET(CPACK_PACKAGE_CONTACT "https://github.com/TRIQS/dft_tools")
+  EXECUTE_PROCESS(COMMAND dpkg --print-architecture OUTPUT_VARIABLE CMAKE_DEBIAN_PACKAGE_ARCHITECTURE OUTPUT_STRIP_TRAILING_WHITESPACE)
+  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.23), libgcc1 (>= 1:6), libstdc++6, python, libpython2.7, libopenmpi1.10, libhdf5-10, libgmp10, libfftw3-double3, libibverbs1, libgfortran3, zlib1g, libsz2, libhwloc5, libquadmath0, libaec0, libnuma1, libltdl7, libblas3, liblapack3, python-numpy, python-h5py, python-jinja2, python-mako, python-mpi4py, python-matplotlib, python-scipy, cpp2py (= ${DFT_TOOLS_VERSION}), triqs (= ${DFT_TOOLS_VERSION})")
+  INCLUDE(CPack)
+endif()

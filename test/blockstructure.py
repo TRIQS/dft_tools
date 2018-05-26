@@ -1,8 +1,8 @@
-from pytriqs.applications.dft.sumk_dft import *
+from sumk_dft import *
 from pytriqs.utility.h5diff import h5diff
-from pytriqs.gf.local import *
+from pytriqs.gf import *
 from pytriqs.utility.comparison_tests import assert_block_gfs_are_close
-from pytriqs.applications.dft import BlockStructure
+from block_structure import BlockStructure
 
 SK = SumkDFT('blockstructure.in.h5',use_dft_blocks=True)
 
@@ -21,7 +21,8 @@ sk_pick1 = BlockStructure(gf_struct_sumk = SK.gf_struct_sumk,
                           gf_struct_solver = SK.gf_struct_solver,
                           solver_to_sumk = SK.solver_to_sumk,
                           sumk_to_solver = SK.sumk_to_solver,
-                          solver_to_sumk_block = SK.solver_to_sumk_block)
+                          solver_to_sumk_block = SK.solver_to_sumk_block,
+                          deg_shells = SK.deg_shells)
 assert sk_pick1 == pick1, 'constructing block structure from SumkDFT properties failed'
 
 # check pick_gf_struct_sumk

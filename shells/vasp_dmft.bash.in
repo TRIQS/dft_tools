@@ -83,5 +83,5 @@ stdbuf -o 0 $MPIRUN_CMD -np $NPROC "$VASP_DIR" &
 
 PYTRIQS=@CMAKE_INSTALL_PREFIX@/bin/pytriqs
 
-$MPIRUN_CMD -np $NPROC $PYTRIQS -m pytriqs.applications.dft.converters.plovasp.sc_dmft $(jobs -p) $NITER $DMFT_SCRIPT 'plo.cfg' || kill %1
+$MPIRUN_CMD -np $NPROC $PYTRIQS -m triqs_dft_tools.converters.plovasp.sc_dmft $(jobs -p) $NITER $DMFT_SCRIPT 'plo.cfg' || kill %1
 

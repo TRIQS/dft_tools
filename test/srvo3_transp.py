@@ -20,9 +20,9 @@
 ################################################################################
 
 from numpy import *
-from pytriqs.applications.dft.converters.wien2k_converter import *
-from pytriqs.applications.dft.sumk_dft import *
-from pytriqs.applications.dft.sumk_dft_tools import *
+from converters.wien2k_converter import *
+from sumk_dft import *
+from sumk_dft_tools import *
 from pytriqs.utility.comparison_tests import *
 from pytriqs.utility.h5diff import h5diff 
 

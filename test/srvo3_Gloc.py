@@ -20,9 +20,9 @@
 ################################################################################
 
 from pytriqs.archive import *
-from pytriqs.gf.local import *
-from pytriqs.applications.dft.sumk_dft import *
-from pytriqs.applications.dft.converters.wien2k_converter import *
+from pytriqs.gf import *
+from sumk_dft import *
+from converters.wien2k_converter import *
 from pytriqs.operators.util import set_operator_structure
 from pytriqs.utility.comparison_tests import *
 from pytriqs.utility.h5diff import h5diff
@@ -40,8 +40,8 @@ orb_names = ['%s'%i for i in range(num_orbitals)]
 orb_hybridized = False
 
 gf_struct = set_operator_structure(spin_names,orb_names,orb_hybridized)
-glist = [ GfImFreq(indices=inner,beta=beta) for block,inner in gf_struct.iteritems()]
-Sigma_iw = BlockGf(name_list = gf_struct.keys(), block_list = glist, make_copies = False)
+glist = [ GfImFreq(indices=inner,beta=beta) for block,inner in gf_struct]
+Sigma_iw = BlockGf(name_list = [block for block,inner in gf_struct], block_list = glist, make_copies = False)
 
 SK.set_Sigma([Sigma_iw])
 Gloc = SK.extract_G_loc()

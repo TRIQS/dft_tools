@@ -1,4 +1,4 @@
 #!/bin/bash
 
-@CMAKE_INSTALL_PREFIX@/bin/pytriqs -m pytriqs.applications.dft.converters.plovasp.converter $@
+@CMAKE_INSTALL_PREFIX@/bin/pytriqs -m triqs_dft_tools.converters.plovasp.converter $@
 

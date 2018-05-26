@@ -1,6 +1,6 @@
-from pytriqs.applications.dft.sumk_dft import *
-from pytriqs.applications.dft.converters import Wien2kConverter
-from pytriqs.gf.local import *
+from triqs_dft_tools.sumk_dft import *
+from triqs_dft_tools.converters import Wien2kConverter
+from pytriqs.gf import *
 from pytriqs.archive import *
 import pytriqs.utility.mpi as mpi
 import numpy

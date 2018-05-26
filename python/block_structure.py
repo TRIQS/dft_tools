@@ -1,13 +1,14 @@
 import copy
 import numpy as np
-from pytriqs.gf.local import GfImFreq, BlockGf
+from pytriqs.gf import GfImFreq, BlockGf
 from ast import literal_eval
+import pytriqs.utility.mpi as mpi
 from warnings import warn
 
 class BlockStructure(object):
     """ Contains information about the Green function structure.
 
-    This class contains information about the structure of the solver 
+    This class contains information about the structure of the solver
     and sumk Green functions and the mapping between them.
 
     Parameters
@@ -33,19 +34,21 @@ class BlockStructure(object):
     solver_to_sumk_block : list of dict
         solver_to_sumk_block[ish][from_block] = to_block
 
-        maps from the solver block to the sumk block 
+        maps from the solver block to the sumk block
         for *inequivalent* correlated shell ish
     """
     def __init__(self,gf_struct_sumk=None,
                       gf_struct_solver=None,
                       solver_to_sumk=None,
                       sumk_to_solver=None,
-                      solver_to_sumk_block=None):
+                      solver_to_sumk_block=None,
+                      deg_shells=None):
         self.gf_struct_sumk = gf_struct_sumk
         self.gf_struct_solver = gf_struct_solver
         self.solver_to_sumk = solver_to_sumk
         self.sumk_to_solver = sumk_to_solver
         self.solver_to_sumk_block = solver_to_sumk_block
+        self.deg_shells = deg_shells
 
     @classmethod
     def full_structure(cls,gf_struct,corr_to_inequiv):
@@ -99,20 +102,21 @@ class BlockStructure(object):
                 gf_struct_sumk = gs_sumk_all,
                 solver_to_sumk = copy.deepcopy(solver_to_sumk),
                 sumk_to_solver = solver_to_sumk,
-                solver_to_sumk_block = s2sblock)
+                solver_to_sumk_block = s2sblock,
+                deg_shells = [[] for ish in range(len(gf_struct))])
 
     def pick_gf_struct_solver(self,new_gf_struct):
-        """ Pick selected orbitals within blocks. 
+        """ Pick selected orbitals within blocks.
 
         This throws away parts of the Green's function that (for some
-        reason - be sure that you know what you're doing) shouldn't be 
+        reason - be sure that you know what you're doing) shouldn't be
         included in the calculation.
 
         To drop an entire block, just don't include it.
         To drop a certain index within a block, just don't include it.
 
-        If it was before: 
-        
+        If it was before:
+
         [{'up':[0,1],'down':[0,1],'left':[0,1]}]
 
         to choose the 0th index of the up block and the 1st index of
@@ -130,11 +134,11 @@ class BlockStructure(object):
         Parameters
         ----------
         new_gf_struct : list of dict
-            formatted the same as gf_struct_solver: 
+            formatted the same as gf_struct_solver:
 
             new_gf_struct[ish][block]=list of indices in that block.
         """
-        
+
         for ish in range(len(self.gf_struct_solver)):
             gf_struct = new_gf_struct[ish]
 
@@ -154,24 +158,24 @@ class BlockStructure(object):
                     new_ind = gf_struct[blk].index(ind)
                     self.sumk_to_solver[ish][k]=(blk,new_ind)
                 else:
-                    self.sumk_to_solver[ish][k]=(None,None) 
+                    self.sumk_to_solver[ish][k]=(None,None)
             # reindexing gf_struct so that it starts with 0
             for k in gf_struct:
                 gf_struct[k]=range(len(gf_struct[k]))
             self.gf_struct_solver[ish]=gf_struct
 
     def pick_gf_struct_sumk(self,new_gf_struct):
-        """ Pick selected orbitals within blocks. 
+        """ Pick selected orbitals within blocks.
 
         This throws away parts of the Green's function that (for some
-        reason - be sure that you know what you're doing) shouldn't be 
+        reason - be sure that you know what you're doing) shouldn't be
         included in the calculation.
 
         To drop an entire block, just don't include it.
         To drop a certain index within a block, just don't include it.
 
-        If it was before: 
-        
+        If it was before:
+
         [{'up':[0,1],'down':[0,1],'left':[0,1]}]
 
         to choose the 0th index of the up block and the 1st index of
@@ -188,11 +192,11 @@ class BlockStructure(object):
         Parameters
         ----------
         new_gf_struct : list of dict
-            formatted the same as gf_struct_solver: 
+            formatted the same as gf_struct_solver:
 
             new_gf_struct[ish][block]=list of indices in that block.
 
-            However, the indices are not according to the solver Gf 
+            However, the indices are not according to the solver Gf
             but the sumk Gf.
         """
 
@@ -218,7 +222,7 @@ class BlockStructure(object):
         Parameters
         ----------
         mapping : list of dict
-            the dict consists of elements 
+            the dict consists of elements
             (from_block,from_index) : (to_block,to_index)
             that maps from one structure to the other
         """
@@ -254,7 +258,7 @@ class BlockStructure(object):
     def create_gf(self,ish=0,gf_function=GfImFreq,**kwargs):
         """ Create a zero BlockGf having the gf_struct_solver structure.
 
-        When using GfImFreq as gf_function, typically you have to 
+        When using GfImFreq as gf_function, typically you have to
         supply beta as keyword argument.
 
         Parameters
@@ -284,7 +288,7 @@ class BlockStructure(object):
         .. warning::
 
             Elements that are zero in the new structure due to
-            the new block structure will be just ignored, thus 
+            the new block structure will be just ignored, thus
             approximated to zero.
 
         Parameters
@@ -292,15 +296,24 @@ class BlockStructure(object):
         G : BlockGf
             the Gf that should be converted
         G_struct : GfStructure
-            the structure ofthat G 
+            the structure of that G
         ish : int
             shell index
-        show_warnings : bool
-            whether to show warnings when elements of the Green's 
+        show_warnings : bool or float
+            whether to show warnings when elements of the Green's
             function get thrown away
+            if float, set the threshold for the magnitude of an element
+            about to be thrown away to trigger a warning
+            (default: 1.e-10)
         **kwargs :
             options passed to the constructor for the new Gf
         """
+
+        warning_threshold = 1.e-10
+        if isinstance(show_warnings, float):
+            warning_threshold = show_warnings
+            show_warnings = True
+
         G_new = self.create_gf(ish=ish,**kwargs)
         for block in G_struct.gf_struct_solver[ish].keys():
             for i1 in G_struct.gf_struct_solver[ish][block]:
@@ -311,22 +324,24 @@ class BlockStructure(object):
                     i2_sol = self.sumk_to_solver[ish][i2_sumk]
                     if i1_sol[0] is None or i2_sol[0] is None:
                         if show_warnings:
-                            warn(('Element {},{} of block {} of G is not present '+
-                                'in the new structure').format(i1,i2,block))
+                            if mpi.is_master_node():
+                                warn(('Element {},{} of block {} of G is not present '+
+                                    'in the new structure').format(i1,i2,block))
                         continue
                     if i1_sol[0]!=i2_sol[0]:
-                        if show_warnings:
-                            warn(('Element {},{} of block {} of G is approximated '+
-                                'to zero to match the new structure.').format(
-                                    i1,i2,block))
+                        if show_warnings and np.max(np.abs(G[block][i1,i2].data)) > warning_threshold:
+                            if mpi.is_master_node():
+                                warn(('Element {},{} of block {} of G is approximated '+
+                                    'to zero to match the new structure. Max abs value: {}').format(
+                                        i1,i2,block,np.max(np.abs(G[block][i1,i2].data))))
                         continue
                     G_new[i1_sol[0]][i1_sol[1],i2_sol[1]] = \
                             G[block][i1,i2]
         return G_new
 
     def approximate_as_diagonal(self):
-        """ Create a structure for a GF with zero off-diagonal elements. 
-        
+        """ Create a structure for a GF with zero off-diagonal elements.
+
         .. warning::
 
             In general, this will throw away non-zero elements of the
@@ -351,7 +366,8 @@ class BlockStructure(object):
     def __eq__(self,other):
         def compare(one,two):
             if type(one)!=type(two):
-                return False
+                if not (isinstance(one, (bool, np.bool_)) and isinstance(two, (bool, np.bool_))):
+                    return False
             if one is None and two is None:
                 return True
             if isinstance(one,list) or isinstance(one,tuple):
@@ -361,10 +377,10 @@ class BlockStructure(object):
                     if not compare(x,y):
                         return False
                 return True
-            elif isinstance(one,int): 
+            elif isinstance(one,(int,bool, str, np.bool_)):
                 return one==two
-            elif isinstance(one,str):
-                return one==two
+            elif isinstance(one,np.ndarray):
+                return np.all(one==two)
             elif isinstance(one,dict):
                 if set(one.keys()) != set(two.keys()):
                     return False
@@ -375,8 +391,9 @@ class BlockStructure(object):
             warn('Cannot compare {}'.format(type(one)))
             return False
 
-        for prop in [ "gf_struct_sumk", "gf_struct_solver", 
-                "solver_to_sumk", "sumk_to_solver", "solver_to_sumk_block"]:
+        for prop in [ "gf_struct_sumk", "gf_struct_solver",
+                "solver_to_sumk", "sumk_to_solver", "solver_to_sumk_block",
+                "deg_shells"]:
             if not compare(getattr(self,prop),getattr(other,prop)):
                 return False
         return True
@@ -388,8 +405,8 @@ class BlockStructure(object):
         """ Reduce to dict for HDF5 export."""
 
         ret = {}
-        for element in [ "gf_struct_sumk", "gf_struct_solver", 
-                         "solver_to_sumk_block"]:
+        for element in [ "gf_struct_sumk", "gf_struct_solver",
+                         "solver_to_sumk_block","deg_shells"]:
             ret[element] = getattr(self,element)
 
         def construct_mapping(mapping):
@@ -436,6 +453,18 @@ class BlockStructure(object):
                 keys = sorted(element[ish].keys(),key=keyfun)
                 for k in keys:
                     s+='  '+str(k)+str(element[ish][k])+'\n'
+        s += "deg_shells\n"
+        for ish in range(len(self.deg_shells)):
+            s+=' shell '+str(ish)+'\n'
+            for l in range(len(self.deg_shells[ish])):
+                s+='  equivalent group '+str(l)+'\n'
+                if isinstance(self.deg_shells[ish][l],dict):
+                    for key, val in self.deg_shells[ish][l].iteritems():
+                        s+='   '+key+('*' if val[1] else '')+':\n'
+                        s+='    '+str(val[0]).replace('\n','\n    ')+'\n'
+                else:
+                    for key in self.deg_shells[ish][l]:
+                        s+='   '+key+'\n'
         return s
 
 from pytriqs.archive.hdf_archive_schemes import register_class

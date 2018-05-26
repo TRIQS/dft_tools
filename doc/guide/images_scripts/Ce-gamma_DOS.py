@@ -1,5 +1,5 @@
-from pytriqs.applications.dft.sumk_dft_tools import *
-from pytriqs.applications.dft.converters.wien2k_converter import *
+from triqs_dft_tools.sumk_dft_tools import *
+from triqs_dft_tools.converters.wien2k_converter import *
 from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
 # Creates the data directory, cd into it:

@@ -21,13 +21,16 @@
 import sys
 from types import *
 import numpy
-from pytriqs.gf.local import *
+from pytriqs.gf import *
 import pytriqs.utility.mpi as mpi
 from symmetry import *
 from sumk_dft import SumkDFT
 from scipy.integrate import *
 from scipy.interpolate import *
 
+if not hasattr(numpy, 'full'):
+    # polyfill full for older numpy:
+    numpy.full = lambda a, f: numpy.zeros(a) + f
 
 class SumkDFTTools(SumkDFT):
     """
@@ -767,8 +770,8 @@ class SumkDFTTools(SumkDFT):
                     self.Sigma_imp_w[icrsh] = BlockGf(
                         name_list=spn, block_list=glist(), make_copies=False)
                     for i, g in self.Sigma_imp_w[icrsh]:
-                        for iL in g.indices:
-                            for iR in g.indices:
+                        for iL in g.indices[0]:
+                            for iR in g.indices[0]:
                                 for iom in xrange(n_om):
                                     g.data[iom, int(iL), int(iR)] = Sigma_save[
                                         i].data[ioffset + iom, int(iL), int(iR)]
