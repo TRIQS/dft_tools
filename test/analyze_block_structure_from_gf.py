@@ -73,12 +73,6 @@ for d in SK.deg_shells[0]:
     for i in range(len(normalized_gfs)):
         for j in range(i+1,len(normalized_gfs)):
             assert_arrays_are_close(normalized_gfs[i].data, normalized_gfs[j].data, 1.e-5)
-            # the tails have to be compared using a relative error
-            for o in range(normalized_gfs[i].tail.order_min,normalized_gfs[i].tail.order_max+1):
-                if np.abs(normalized_gfs[i].tail[o][0,0]) < 1.e-10:
-                    continue
-                assert np.max(np.abs((normalized_gfs[i].tail[o]-normalized_gfs[j].tail[o])/(normalized_gfs[i].tail[o][0,0]))) < 1.e-5, \
-                        "tails are different"
 
 #######################################################################
 # Second test                                                         #

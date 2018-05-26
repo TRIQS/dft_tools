@@ -16,7 +16,7 @@ project(dft_tools C CXX Fortran)
 set(BUILD_SHARED_LIBS ON)
 
 # Load TRIQS and Cpp2Py
-find_package(TRIQS 1.5 EXACT REQUIRED)
+find_package(TRIQS 2.0 REQUIRED)
 find_package(Cpp2Py REQUIRED)
 
 if (NOT ${TRIQS_WITH_PYTHON_SUPPORT})

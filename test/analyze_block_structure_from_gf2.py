@@ -35,13 +35,13 @@ Hloc[8:,8:] = Hloc1
 V = get_random_hermitian(2) # the hopping elements from impurity to bath
 b1 = np.random.rand() # the bath energy of the first bath level
 b2 = np.random.rand() # the bath energy of the second bath level
-delta = GfReFreq(window=(-5,5), indices=range(2), n_points=1001)
+delta = GfReFreq(window=(-10,10), indices=range(2), n_points=1001)
 delta[0,0] << (V[0,0]*V[0,0].conjugate()*inverse(Omega-b1)+V[0,1]*V[0,1].conjugate()*inverse(Omega-b2+0.02j))/2.0
 delta[0,1] << (V[0,0]*V[1,0].conjugate()*inverse(Omega-b1)+V[0,1]*V[1,1].conjugate()*inverse(Omega-b2+0.02j))/2.0
 delta[1,0] << (V[1,0]*V[0,0].conjugate()*inverse(Omega-b1)+V[1,1]*V[0,1].conjugate()*inverse(Omega-b2+0.02j))/2.0
 delta[1,1] << (V[1,0]*V[1,0].conjugate()*inverse(Omega-b1)+V[1,1]*V[1,1].conjugate()*inverse(Omega-b2+0.02j))/2.0
 # construct G
-G = BlockGf(name_block_generator=[('ud',GfReFreq(window=(-5,5), indices=range(10), n_points=1001))], make_copies=False)
+G = BlockGf(name_block_generator=[('ud',GfReFreq(window=(-10,10), indices=range(10), n_points=1001))], make_copies=False)
 for i in range(0,10,2):
     G['ud'][i:i+2,i:i+2] << inverse(Omega-delta+0.02j)
 G['ud'] << inverse(inverse(G['ud']) - Hloc)
@@ -88,7 +88,9 @@ Gt = BlockGf(name_block_generator = [(name,
                 n_points=len(block.mesh),
                 indices=block.indices)) for name, block in G], make_copies=False)
 
-Gt['ud'].set_from_inverse_fourier(G['ud'])
+known_moments = np.zeros((2,10,10), dtype=np.complex)
+known_moments[1,:] = np.eye(10)
+Gt['ud'].set_from_inverse_fourier(G['ud'], known_moments)
 
 G_new = SK.analyse_block_structure_from_gf([Gt])
 G_new_symm = G_new[0].copy()
