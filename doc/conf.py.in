@@ -29,7 +29,7 @@ html_theme = 'triqs'
 html_theme_path = ['@TRIQS_THEMES_PATH@']
 html_show_sphinx = False
 html_context = {'header_title': 'dft tools',
-                'header_subtitle': 'connecting <a class="triqs" style="font-size: 12px" href="http://triqs.ipht.cnrs.fr/1.x">TRIQS</a> to DFT packages',
+                'header_subtitle': 'connecting <a class="triqs" style="font-size: 12px" href="http://triqs.github.io/triqs">TRIQS</a> to DFT packages',
                 'header_links': [['Install', 'install'],
                                  ['Documentation', 'documentation'],
                                  ['Issues', 'issues'],
@@ -39,4 +39,4 @@ html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = 'TRIQSDftToolsdoc'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('http://triqs.ipht.cnrs.fr/1.x', None), 'triqscthyb': ('https://triqs.ipht.cnrs.fr/1.x/applications/cthyb/', None)}
+intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('http://triqs.github.io/triqs', None), 'triqscthyb': ('https://triqs.github.io/cthyb', None)}

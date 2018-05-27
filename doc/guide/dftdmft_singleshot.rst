@@ -33,7 +33,7 @@ The next step is to setup an impurity solver. There are different
 solvers available within the :ref:`TRIQS <triqslibs:welcome>` framework.
 E.g. for :ref:`SrVO3 <SrVO3>`, we will use the hybridization
 expansion :ref:`CTHYB solver <triqscthyb:welcome>`. Later on, we will
-see also the example of the `Hubbard-I solver <https://triqs.ipht.cnrs.fr/1.x/applications/hubbardI/>`_.
+see also the example of the `Hubbard-I solver <https://triqs.ipht.cnrs.fr/1.4/applications/hubbardI/>`_.
 They all have in common, that they are called by an uniform command::
 
     S.solve(params)
@@ -140,7 +140,7 @@ Be careful when storing the :emphasis:`iteration_number` as we also have to add 
 iteration count::
 
     ar['dmft_output']['iterations'] = iteration_number + previous_runs
-    
+
 .. _mixing:
 
 
