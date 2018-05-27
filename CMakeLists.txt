@@ -1,5 +1,5 @@
-# Version number
-set(APP4TRIQS_VERSION "1.5")
+# Version number from the latest annotated git tag
+execute_process(COMMAND git describe --abbrev=0 OUTPUT_VARIABLE APP4TRIQS_VERSION)
 
 # Start configuration
 cmake_minimum_required(VERSION 2.8.12)
@@ -18,8 +18,8 @@ set(BUILD_SHARED_LIBS OFF)
 add_definitions(-Wall)
 
 # Load Dependencies
-find_package(TRIQS ${APP4TRIQS_VERSION} EXACT REQUIRED)
-find_package(Cpp2Py ${APP4TRIQS_VERSION} EXACT REQUIRED)
+find_package(TRIQS 1.5 REQUIRED)
+find_package(Cpp2Py 1.5 REQUIRED)
 
 # Default Install directory to TRIQS_ROOT if not given or invalid.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTALL_PREFIX}))
