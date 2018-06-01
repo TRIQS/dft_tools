@@ -41,8 +41,8 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
       if (!publish || platform != documentationPlatform) {
         /* but we don't need the tag so clean it up (except for documentation) */
         sh "docker rmi --no-prune ${img.imageName()}"
-    }
-  } }
+      }
+    } }
   } }
 }
 
