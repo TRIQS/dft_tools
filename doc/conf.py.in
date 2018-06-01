@@ -20,7 +20,6 @@ source_suffix = '.rst'
 project = u'TRIQS DFTTools'
 copyright = u'2011-2013, M. Aichhorn, L. Pourovskii, V. Vildosola, C. Martins'
 version = '@DFT_TOOLS_VERSION@'
-release = '@DFT_TOOLS_RELEASE@'
 
 mathjax_path = "@TRIQS_MATHJAX_PATH@/MathJax.js?config=default"
 templates_path = ['@CMAKE_SOURCE_DIR@/doc/_templates']

@@ -1,7 +1,3 @@
-# Version number of the application
-set (DFT_TOOLS_VERSION "1.5")
-set (DFT_TOOLS_RELEASE "1.5.0")
-
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Type of build" FORCE)
@@ -30,8 +26,17 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTA
 endif()
 message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} -------------")
 
-# Macro defined in TRIQS which picks the hash of repo.
+# Use git to detect Cthyb version and git hash
+execute_process(COMMAND bash "-c" "${TRIQS_GIT_EXECUTABLE} describe | sed \"s/-\\([0-9]*\\)-.*/.\\1/g\""
+ WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+ OUTPUT_VARIABLE   DFT_TOOLS_VERSION
+ OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if(NOT DFT_TOOLS_VERSION)
+  set(DFT_TOOLS_VERSION 1.5)
+endif()
 triqs_get_git_hash_of_source_dir(DFT_TOOLS_GIT_HASH)
+MESSAGE(STATUS "Dft_tools version : ${DFT_TOOLS_VERSION}")
 message(STATUS "Git hash: ${DFT_TOOLS_GIT_HASH}")
 
 add_subdirectory(fortran/dmftproj) 
