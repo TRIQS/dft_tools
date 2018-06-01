@@ -32,7 +32,7 @@ execute_process(COMMAND bash "-c" "${TRIQS_GIT_EXECUTABLE} describe | sed \"s/-\
  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 if(NOT APP4TRIQS_VERSION)
-  set(APP4TRIQS_VERSION 1.5)
+  set(APP4TRIQS_VERSION 0.1)
 endif()
 triqs_get_git_hash_of_source_dir(APP4TRIQS_GIT_HASH)
 MESSAGE(STATUS "app4triqs version : ${APP4TRIQS_VERSION}")
