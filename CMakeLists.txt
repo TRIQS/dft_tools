@@ -1,6 +1,3 @@
-# Version number from the latest annotated git tag
-execute_process(COMMAND git describe --abbrev=0 OUTPUT_VARIABLE APP4TRIQS_VERSION)
-
 # Start configuration
 cmake_minimum_required(VERSION 2.8.12)
 project(app4triqs CXX)
@@ -28,9 +25,18 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTA
 endif()
 message(STATUS "-------- INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} --------")
 
-# Fetch the git hash of app4triqs
+# Use git to detect App4Triqs version and git hash
+execute_process(COMMAND bash "-c" "${TRIQS_GIT_EXECUTABLE} describe | sed \"s/-\\([0-9]*\\)-.*/.\\1/g\""
+ WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+ OUTPUT_VARIABLE   APP4TRIQS_VERSION
+ OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if(NOT APP4TRIQS_VERSION)
+  set(APP4TRIQS_VERSION 1.5)
+endif()
 triqs_get_git_hash_of_source_dir(APP4TRIQS_GIT_HASH)
-message(STATUS "app4triqs git hash: ${APP4TRIQS_GIT_HASH}")
+MESSAGE(STATUS "app4triqs version : ${APP4TRIQS_VERSION}")
+message(STATUS "Git hash: ${APP4TRIQS_GIT_HASH}")
 
 # Build and install the app4triqs library
 add_subdirectory(c++/app4triqs)
@@ -65,6 +71,6 @@ if(BUILD_DEBIAN_PACKAGE)
   SET(CPACK_PACKAGE_VERSION ${APP4TRIQS_VERSION})
   SET(CPACK_PACKAGE_CONTACT "https://github.com/TRIQS/app4triqs")
   EXECUTE_PROCESS(COMMAND dpkg --print-architecture OUTPUT_VARIABLE CMAKE_DEBIAN_PACKAGE_ARCHITECTURE OUTPUT_STRIP_TRAILING_WHITESPACE)
-  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.23), libgcc1 (>= 1:6), libstdc++6, python, libpython2.7, libopenmpi1.10, libhdf5-10, libgmp10, libfftw3-double3, libibverbs1, libgfortran3, zlib1g, libsz2, libhwloc5, libquadmath0, libaec0, libnuma1, libltdl7, libblas3, liblapack3, python-numpy, python-h5py, python-jinja2, python-mako, python-mpi4py, python-matplotlib, python-scipy, cpp2py (= ${APP4TRIQS_VERSION}), triqs (= ${APP4TRIQS_VERSION})")
+  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.23), libgcc1 (>= 1:6), libstdc++6, python, libpython2.7, libopenmpi1.10, libhdf5-10, libgmp10, libfftw3-double3, libibverbs1, libgfortran3, zlib1g, libsz2, libhwloc5, libquadmath0, libaec0, libnuma1, libltdl7, libblas3, liblapack3, python-numpy, python-h5py, python-jinja2, python-mako, python-mpi4py, python-matplotlib, python-scipy, cpp2py (>= 1.5), triqs (>= 1.5)")
   INCLUDE(CPack)
 endif()

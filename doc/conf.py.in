@@ -2,15 +2,25 @@
 #
 # TRIQS documentation build configuration file
 
+import sys
+sys.path.insert(0, "@TRIQS_SPHINXEXT_PATH@/numpydoc")
+
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
               'sphinx.ext.intersphinx',
+              'sphinx.ext.doctest',
+              'sphinx.ext.todo',
+              'sphinx.ext.viewcode',
+              'sphinx.ext.autosummary',
+              'plot_directive',
+              'numpydoc',
               'matplotlib.sphinxext.plot_directive']
 
 source_suffix = '.rst'
 
 project = u'APP4TRIQS - An example triqs application'
 copyright = u'2018 - The TRIQS Developers'
+version = '@APP4TRIQS_VERSION'
 
 mathjax_path = "@TRIQS_MATHJAX_PATH@/MathJax.js?config=default"
 templates_path = ['@CMAKE_SOURCE_DIR@/doc/_templates']
@@ -27,6 +37,6 @@ html_context = {'header_title': 'app4triqs',
 html_static_path = ['@CMAKE_SOURCE_DIR@/doc/_static']
 html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
-htmlhelp_basename = 'TRIQSIntdoc'
+htmlhelp_basename = 'APP4TRIQSdoc'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('https://triqs.ipht.cnrs.fr/unstable', None)}
+intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('https://triqs.github.io/triqs', None)}
