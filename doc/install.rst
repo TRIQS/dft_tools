@@ -32,11 +32,12 @@ Installation steps
  
 #. Create an empty build directory where you will compile the code:: 
  
-     $ mkdir build && cd build 
+     $ mkdir dft_tools.build && cd dft_tools.build
  
-#. In the build directory call cmake specifying where the TRIQS library is installed:: 
- 
-     $ cmake -DTRIQS_PATH=path_to_triqs ../src 
+#. Make sure that you have added the TRIQS and Cpp2Py installation to your environment variables::
+
+     $ source path_to_triqs/share/cpp2pyvarsh.sh
+     $ source path_to_triqs/share/triqsvarsh.sh
  
 #. Compile the code, run the tests and install the application:: 
  
@@ -114,7 +115,7 @@ Custom CMake options
 
 Functionality of ``dft_tools`` can be tweaked using extra compile-time options passed to CMake::
 
-    cmake -DOPTION1=value1 -DOPTION2=value2 ... ../cthyb.src
+    cmake -DOPTION1=value1 -DOPTION2=value2 ... ../dft_tools.src
 
 +---------------------------------------------------------------+-----------------------------------------------+
 | Options                                                       | Syntax                                        |
