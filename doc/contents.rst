@@ -8,4 +8,5 @@ Table of contents
    install
    documentation
    issues
+   changelog
    about
