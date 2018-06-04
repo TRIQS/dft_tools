@@ -12,6 +12,7 @@ Contents
    index
    install
    issues
+   changelog
    about
 
 Reference manual

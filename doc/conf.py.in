@@ -13,8 +13,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.autosummary',
               'plot_directive',
-              'numpydoc',
-              'matplotlib.sphinxext.plot_directive']
+              'numpydoc']
 
 source_suffix = '.rst'
 
@@ -39,4 +38,4 @@ html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = 'APP4TRIQSdoc'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('https://triqs.github.io/triqs', None)}
+intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('https://triqs.github.io/triqs/master', None)}
