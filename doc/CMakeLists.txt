@@ -19,7 +19,7 @@ add_dependencies(docs_sphinx app4triqs_c)
 # cp_rs is a script in cpp2py/bin, it mimics cp -rs on Linux
 # and filters the relevant extension
 # ------------------------------------------------------------------------------------------------
-set(EXT_FOR_DOC "rst png txt css_t conf css js gif jpg py html bib")
+set(EXT_FOR_DOC "rst png txt css_t conf css js gif jpg py html bib md")
 execute_process(COMMAND cp_rs ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${EXT_FOR_DOC})
 
 # ---------------------------------
