@@ -49,7 +49,7 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
 /****************** osx builds (on host) */
 def osxPlatforms = [
   ["gcc", ['CC=gcc-7', 'CXX=g++-7']],
-  ["clang", ['CC=/usr/local/opt/llvm/bin/clang', 'CXX=/usr/local/opt/llvm/bin/clang++', 'CXXFLAGS=-I/usr/local/opt/llvm/include', 'LDFLAGS=-L/usr/local/opt/llvm/lib']]
+  ["clang", ['CC=$BREW/opt/llvm/bin/clang', 'CXX=$BREW/opt/llvm/bin/clang++', 'CXXFLAGS=-I$BREW/opt/llvm/include', 'LDFLAGS=-L$BREW/opt/llvm/lib']]
 ]
 for (int i = 0; i < osxPlatforms.size(); i++) {
   def platformEnv = osxPlatforms[i]
@@ -66,10 +66,10 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
       }
 
       checkout scm
-      dir(buildDir) { withEnv(platformEnv[1]+[
-        "PATH=$triqsDir/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin",
-        "CPATH=$triqsDir/include",
-        "LIBRARY_PATH=$triqsDir/lib",
+      dir(buildDir) { withEnv(platformEnv[1].collect { it.replace('\$BREW', env.BREW) } + [
+        "PATH=$triqsDir/bin:${env.BREW}/bin:/usr/bin:/bin:/usr/sbin",
+        "CPATH=$triqsDir/include:${env.BREW}/include",
+        "LIBRARY_PATH=$triqsDir/lib:${env.BREW}/lib",
         "CMAKE_PREFIX_PATH=$triqsDir/share/cmake"]) {
         deleteDir()
       sh "cmake $srcDir -DCMAKE_INSTALL_PREFIX=$installDir -DTRIQS_ROOT=$triqsDir"
