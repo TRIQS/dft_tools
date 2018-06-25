@@ -15,7 +15,7 @@ working python scripts in this documentation. One for a calculation
 using Kanamori definitions (:download:`dft_dmft_cthyb.py
 <images_scripts/dft_dmft_cthyb.py>`) and one with a
 rotational-invariant Slater interaction Hamiltonian (:download:`dft_dmft_cthyb_slater.py
-<images_scripts/dft_dmft_cthyb.py>`). The user has to adapt these
+<images_scripts/dft_dmft_cthyb_slater.py>`). The user has to adapt these
 scripts to his own needs.
 
 Loading modules
