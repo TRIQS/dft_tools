@@ -26,7 +26,7 @@ p["length_cycle"] = 200
 p["n_warmup_cycles"] = 100000
 p["n_cycles"] = 1000000
 p["perform_tail_fit"] = True
-p["fit_max_moments"] = 4
+p["fit_max_moment"] = 4
 p["fit_min_n"] = 30
 p["fit_max_n"] = 60
 
@@ -62,7 +62,9 @@ orb_names = [i for i in range(n_orb)]
 gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].iteritems()]
 
 # Construct Slater U matrix 
-Umat = U_matrix(n_orb=n_orb, U_int=U, J_hund=J, basis='cubic',)
+U_sph = U_matrix(l=2, U_int=U, J_hund=J)
+U_cubic = transform_U_matrix(U_sph, spherical_to_cubic(l=2, convention='wien2k'))
+Umat = t2g_submatrix(U_cubic, convention='wien2k')
 
 # Construct Hamiltonian and solver
 h_int = h_int_slater(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U_matrix=Umat)

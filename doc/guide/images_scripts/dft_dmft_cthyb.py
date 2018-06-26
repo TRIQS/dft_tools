@@ -25,7 +25,7 @@ p["length_cycle"] = 200
 p["n_warmup_cycles"] = 100000
 p["n_cycles"] = 1000000
 p["perform_tail_fit"] = True
-p["fit_max_moments"] = 4
+p["fit_max_moment"] = 4
 p["fit_min_n"] = 30
 p["fit_max_n"] = 60
 
