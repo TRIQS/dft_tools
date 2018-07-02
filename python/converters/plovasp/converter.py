@@ -67,7 +67,7 @@ def main():
     This function should not be called directly but via a bash script
     'plovasp' invoking the main function as follows:
 
-      pytriqs -m applications.dft.converters.plovasp.converter $@
+      python -m applications.dft.converters.plovasp.converter $@
     """
     narg = len(sys.argv)
     if narg < 2:

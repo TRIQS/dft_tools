@@ -27,15 +27,3 @@ x optic does not write a case.pmat file
 Make sure that you set line 6 to "ON" and put a "1" to the following line.
 The "1" is undocumented in Wien2k, but needed to have `case.pmat` written.
 However, we are working on reading directly the `case.mommat2` file.
-
-No module named pytriqs.*** error when running a script
--------------------------------------------------------
-
-Make sure that have properly build, tested and installed TRIQS and DFTTools
-using, make, make test and make install. Additionally, you should always
-use pytriqs to call your scripts, e.g. pytriqs yourscript.py
-
-Why is my calculation not working?
-----------------------------------
-
-Are you running in the right shell?
