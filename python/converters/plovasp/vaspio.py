@@ -345,7 +345,7 @@ class Poscar:
         ----------
 
         vasp_dir (str) : path to the VASP working directory [default = `./']
-        plocar_filename (str) : filename [default = `PLOCAR']
+        plocar_filename (str) : filename [default = `POSCAR']
 
         """
 # Convenince local function
@@ -465,7 +465,7 @@ class Kpoints:
         ----------
 
         vasp_dir (str) : path to the VASP working directory [default = `./']
-        plocar_filename (str) : filename [default = `PLOCAR']
+        plocar_filename (str) : filename [default = `IBZKPT']
 
         """
 
