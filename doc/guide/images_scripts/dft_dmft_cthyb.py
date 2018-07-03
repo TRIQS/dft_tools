@@ -102,14 +102,15 @@ for iteration_number in range(1,loops+1):
     if mpi.is_master_node():
         # We can do a mixing of Delta in order to stabilize the DMFT iterations:
         S.G0_iw << S.Sigma_iw + inverse(S.G_iw)
-        ar = HDFArchive(dft_filename+'.h5','a')
-        if (iteration_number>1 or previous_present):
-            mpi.report("Mixing input Delta with factor %s"%delta_mix)
-            Delta = (delta_mix * delta(S.G0_iw)) + (1.0-delta_mix) * ar['dmft_output']['Delta_iw']
-            S.G0_iw << S.G0_iw + delta(S.G0_iw) - Delta
-        ar['dmft_output']['Delta_iw'] = delta(S.G0_iw)
+        # The following lines are uncommented until issue #98 is fixed in TRIQS
+       # ar = HDFArchive(dft_filename+'.h5','a')
+       # if (iteration_number>1 or previous_present):
+       #     mpi.report("Mixing input Delta with factor %s"%delta_mix)
+       #     Delta = (delta_mix * delta(S.G0_iw)) + (1.0-delta_mix) * ar['dmft_output']['Delta_iw']
+       #     S.G0_iw << S.G0_iw + delta(S.G0_iw) - Delta
+       # ar['dmft_output']['Delta_iw'] = delta(S.G0_iw)
         S.G0_iw << inverse(S.G0_iw)
-        del ar
+       # del ar
 
     S.G0_iw << mpi.bcast(S.G0_iw)
 
