@@ -58,7 +58,7 @@ class SumkDFT(object):
                          If True, the local Green's function matrix for each spin is divided into smaller blocks 
                           with the block structure determined from the DFT density matrix of the corresponding correlated shell.
 
-                         Alternatively and additionally, the block structure can be analyzed using :meth:`analyse_block_structure <dft.sumk_dft.SumkDFT.analyse_block_structure>`
+                         Alternatively and additionally, the block structure can be analysed using :meth:`analyse_block_structure <dft.sumk_dft.SumkDFT.analyse_block_structure>`
                          and manipulated using the SumkDFT.block_structre attribute (see :class:`BlockStructure <dft.block_structure.BlockStructure>`).
         dft_data : string, optional
                    Name of hdf5 subgroup in which DFT data for projector and lattice Green's function construction are stored.

@@ -263,6 +263,15 @@ For the conversion to a h5 file we use on the python level (in analogy to the Wi
     Converter = VaspConverter(filename = filename)
     Converter.convert_dft_input()
 
+As usual, the resulting h5-file can then be used with the SumkDFT class.
+
+Note that the automatic detection of the correct blockstructure might fail for VASP inputs.
+This can be circumvented by increase the :class:`SumkDFT <dft.sumk_dft.SumkDFT>` threshold to e.g.::
+     
+    SK.analyse_block_structure(threshold = 1e-4)
+
+However, only do this after a careful study of the density matrix and the dos in the wannier basis.
+
 A general H(k)
 --------------
 
@@ -445,7 +454,7 @@ In our `Pnma`-LaVO\ :sub:`3` example, for instance, we could use::
 where the ``x=-1,1,0`` option indicates that the V--O bonds in the octahedra are
 rotated by (approximatively) 45 degrees with respect to the axes of the `Pbnm` cell.
 
-The converter will analyze the matrix elements of the local Hamiltonian
+The converter will analyse the matrix elements of the local Hamiltonian
 to find the symmetry matrices `rot_mat` needed for the global-to-local
 transformation of the basis set for correlated orbitals
 (see section :ref:`hdfstructure`).

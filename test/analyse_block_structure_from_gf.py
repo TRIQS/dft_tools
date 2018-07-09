@@ -32,13 +32,13 @@ G_new = SK.analyse_block_structure_from_gf(G)
 # the new block structure
 block_structure2 = SK.block_structure.copy()
 
-with HDFArchive('analyze_block_structure_from_gf.out.h5','w') as ar:
+with HDFArchive('analyse_block_structure_from_gf.out.h5','w') as ar:
     ar['bs1'] = block_structure1
     ar['bs2'] = block_structure2
 
 # check whether the block structure is the same as in the reference
-with HDFArchive('analyze_block_structure_from_gf.out.h5','r') as ar,\
-     HDFArchive('analyze_block_structure_from_gf.ref.h5','r') as ar2:
+with HDFArchive('analyse_block_structure_from_gf.out.h5','r') as ar,\
+     HDFArchive('analyse_block_structure_from_gf.ref.h5','r') as ar2:
     assert ar['bs1'] == ar2['bs1'], 'bs1 not equal'
     a1 = ar['bs2']
     a2 = ar2['bs2']

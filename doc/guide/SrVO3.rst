@@ -183,7 +183,7 @@ will be stored in a separate subgroup in the hdf5 file, called `dmft_output`.
 Note that this script performs 15 DMFT cycles, but does not check for
 convergence. Of course, it would be possible to build in convergence criteria.
 A simple check for convergence can be also done if you store multiple quantities
-of each iteration and analyze the convergence by hand. In general, it is advisable
+of each iteration and analyse the convergence by hand. In general, it is advisable
 to start with a lower statistics (less measurements), but then increase it at a
 point close to converged results (e.g. after a few initial iterations). This helps
 to keep computational costs low during the first iterations.
