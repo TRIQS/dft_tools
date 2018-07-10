@@ -16,7 +16,7 @@ The block structure can also be written to and read from HDF files.
     Writing the sumk_to_solver and solver_to_sumk elements
     individually is not implemented.
 
-.. autoclass:: dft.block_structure.BlockStructure
+.. autoclass:: triqs_dft_tools.block_structure.BlockStructure
    :members:
    :show-inheritance:
    

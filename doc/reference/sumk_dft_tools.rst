@@ -2,7 +2,7 @@ SumK DFT Tools
 ==============
 
 
-.. autoclass:: dft.sumk_dft_tools.SumkDFTTools
+.. autoclass:: triqs_dft_tools.sumk_dft_tools.SumkDFTTools
    :members:
    :special-members:
    :show-inheritance:
