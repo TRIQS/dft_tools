@@ -23,8 +23,8 @@ Conversion for the DMFT self-consistency cycle
 
 First, we have to write the necessary
 quantities into a file that can be processed further by invoking in a
-shell the command 
-  
+shell the command
+
   `x lapw2 -almd`
 
 We note that any other flag for lapw2, such as -c or -so (for
@@ -38,7 +38,7 @@ Here we will only describe the basic steps.
 
 Let us take the compound SrVO3, a commonly used
 example for DFT+DMFT calculations. The input file for
-:program:`dmftproj` looks like 
+:program:`dmftproj` looks like
 
 .. literalinclude:: images_scripts/SrVO3.indmftpr
 
@@ -90,18 +90,18 @@ After setting up this input file, you run:
 Again, adding possible flags like -so for spin-orbit coupling. This
 program produces the following files (in the following, take *case* as
 the standard Wien2k place holder, to be replaced by the actual working
-directory name):  
+directory name):
 
  * :file:`case.ctqmcout` and :file:`case.symqmc` containing projector
    operators and symmetry operations for orthonormalized Wannier
-   orbitals, respectively. 
+   orbitals, respectively.
  * :file:`case.parproj` and :file:`case.sympar` containing projector
    operators and symmetry operations for uncorrelated states,
    respectively. These files are needed for projected
    density-of-states or spectral-function calculations in
-   post-processing only. 
+   post-processing only.
  * :file:`case.oubwin` needed for the charge density recalculation in
-   the case of fully self-consistent DFT+DMFT run (see below). 
+   the case of fully self-consistent DFT+DMFT run (see below).
 
 Now we convert these files into an hdf5 file that can be used for the
 DMFT calculations. For this purpose we
@@ -124,9 +124,9 @@ text files to the hdf5 archive by::
 
   Converter.convert_dft_input()
 
-This reads all the data, and stores it in the file :file:`case.h5`. 
+This reads all the data, and stores it in the file :file:`case.h5`.
 In this step, the files :file:`case.ctqmcout` and
-:file:`case.symqmc` 
+:file:`case.symqmc`
 have to be present in the working directory.
 
 After this step, all the necessary information for the DMFT loop is
@@ -157,7 +157,7 @@ This reads and converts the files :file:`case.parproj` and
 If you want to plot band structures, one has to do the
 following. First, one has to do the Wien2k calculation on the given
 :math:`\mathbf{k}`-path, and run :program:`dmftproj` on that path:
-	
+
   |  `x lapw1 -band`
   |  `x lapw2 -band -almd`
   |  `dmftproj -band`
@@ -168,7 +168,7 @@ Wien2k. Now we use a routine of the converter module allows to read
 and convert the input for :class:`SumkDFTTools <dft.sumk_dft_tools.SumkDFTTools>`::
 
   Converter.convert_bands_input()
-       
+
 After having converted this input, you can further proceed with the
 :ref:`analysis`. For more options on the converter module, please have
 a look at the :ref:`refconverters` section of the reference manual.
@@ -180,7 +180,7 @@ For the transport calculations, the situation is a bit more involved,
 since we need also the :program:`optics` package of Wien2k. Please
 look at the section on :ref:`Transport` to see how to do the necessary
 steps, including the conversion.
-  
+
 Interface with VASP
 ---------------------
 
@@ -189,54 +189,98 @@ Interface with VASP
   yet publicly released. The documentation may, thus, be subject to changes
   before the final release.
 
-Note that this VASP interface relies on new options introduced since version
-5.4.x.
+*Limitations of the alpha-version:*
 
-Additionally, the interface only works correctly if the k-point symmetries
-are turned off during the VASP run (ISYM=-1).
+  * The interface works correctly only if the k-point symmetries
+    are turned off during the VASP run (ISYM=-1).
 
-The output of raw (non-normalized) projectors is controlled by an INCAR option 
-LOCPROJ whose complete syntax is described in the VASP documentaion.
+  * Generation of projectors for k-point lines (option `Lines` in KPOINTS)
+    needed for Bloch spectral function calculations is not possible at the moment.
 
-The definition of a projector set starts with specifying which sites
-and which local states we are going to project onto.
-This information is provided by option LOCPROJ
+  * The interface currently supports only collinear-magnetism calculation
+    (this implis no spin-orbit coupling) and
+    spin-polarized projectors have not been tested.
+
+A detailed description of the VASP converter tool PLOVasp can be found
+in :ref:`plovasp`. Here, a quick-start guide is presented.
+
+The VASP interface relies on new options introduced since version
+5.4.x. In particular, a new INCAR-option `LOCPROJ`
+and new `LORBIT` modes 13 and 14 have been added.
+
+Option `LOCPROJ` selects a set of localized projectors that will
+be written to file `LOCPROJ` after a successful VASP run.
+A projector set is specified by site indices,
+labels of the target local states, and projector type:
 
   | `LOCPROJ = <sites> : <shells> : <projector type>`
 
 where `<sites>` represents a list of site indices separated by spaces,
 with the indices corresponding to the site position in the POSCAR file;
-`<shells>` specifies local states (e.g. :math:`s`, :math:`p`, :math:`d`,
-:math:`d_{x^2-y^2}`, etc.);
+`<shells>` specifies local states (see below);
 `<projector type>` chooses a particular type of the local basis function.
+The recommended projector type is `Pr 2`.
 
-Some projector types also require parameters `EMIN`, `EMAX` in INCAR to
-be set to define an (approximate) energy window corresponding to the 
-valence states.
+The allowed labels of the local states defined in terms of cubic
+harmonics are:
 
-When either a self-consistent (`ICHARG < 10`) or a non-self-consistent
-(`ICHARG >= 10`) calculation is done VASP produces file `LOCPROJ` which
-will serve as the main input for the conversion routine.
+ * Entire shells: `s`, `p`, `d`, `f`
 
+ * `p`-states: `py`, `pz`, `px`
+
+ * `d`-states: `dxy`, `dyz`, `dz2`, `dxz`, `dx2-y2`
+
+ * `f`-states: `fy(3x2-y2)`, `fxyz`, `fyz2`, `fz3`,
+   `fxz2`, `fz(x2-y2)`, `fx(x2-3y2)`.
+
+For projector type `Pr 2`, one should also set `LORBIT = 14` in INCAR
+and provide parameters `EMIN`, `EMAX` which, in this case, define an
+energy range (window) corresponding to the valence states. Note that as in the case
+of DOS calculation the position of the valence states depends on the
+Fermi level.
+
+For example, in case of SrVO3 one may first want to perform a self-consistent
+calculation, then set `ICHARGE = 1` and add the following additional
+lines into INCAR (provided that V is the second ion in POSCAR):
+
+  | `EMIN = 3.0`
+  | `EMAX = 8.0`
+  | `LORBIT = 14`
+  | `LOCPROJ = 2 : d : Pr 2`
+
+The energy range does not have to be precise. Important is that it has a large
+overlap with valence bands and no overlap with semi-core or high unoccupied states.
 
 Conversion for the DMFT self-consistency cycle
 """"""""""""""""""""""""""""""""""""""""""""""
 
-In order to use the projectors generated by VASP for defining an
-impurity problem they must be processed, i.e. normalized, possibly
-transformed, and then converted to a format suitable for DFT_tools scripts.
+The projectors generated by VASP require certain post-processing before
+they can be used for DMFT calculations. The most important step is to normalize
+them within an energy window that selects band states relevant for the impurity
+problem. Note that this energy window is different from the one described above
+and it must be chosen independently of the energy
+range given by `EMIN, EMAX` in INCAR.
 
-Currently, it is necessary to add the Fermi energy by hand as the fifth value
-in the first line of the LOCPROJ file before the next steps can be executed.
+Post-processing of `LOCPROJ` data is generally done as follows:
 
-The processing of projectors is performed by the program :program:`plovasp`
-invoked as
+#. Prepare an input file `<name>.cfg` (e.g., `plo.cfg`) that describes the definition
+   of your impurity problem (more details below).
 
-  | `plovasp <plo.cfg>`
+#. Extract the value of the Fermi level from OUTCAR and paste at the end of
+   the first line of LOCPROJ.
 
-where `<plo.cfg>` is a input file controlling the conversion of projectors.
+#. Run :program:`plovasp` with the input file as an argument, e.g.:
 
-The format of input file `<plo.cfg>` is described in details in
+     | `plovasp plo.cfg`
+
+   This requires that the TRIQS paths are set correctly (see Installation
+   of TRIQS).
+
+If everything goes right one gets files `<name>.ctrl` and `<name>.pg1`.
+These files are needed for the converter that will be invoked in your
+DMFT script.
+
+The format of input file `<name>.cfg` is described in details in
 :ref:`plovasp`. Here we just give a simple example for the case
 of SrVO3:
 
@@ -252,12 +296,12 @@ parameters are required
   orbitals must be present in `LOCPROJ`.
 - **EWINDOW**: energy window in which the projectors are normalized;
   note that the energies are defined with respect to the Fermi level.
-  
+
 Option **TRANSFORM** is optional but here it is specified to extract
-only three :math:`t_{2g}` orbitals out of five `d` orbitals given by 
+only three :math:`t_{2g}` orbitals out of five `d` orbitals given by
 :math:`l = 2`.
 
-For the conversion to a h5 file we use on the python level (in analogy to the Wien2kConverter)::
+The conversion to a h5-file is performed in the same way as for Wien2TRIQS::
 
     from triqs_dft_tools.converters.vasp_converter import *
     Converter = VaspConverter(filename = filename)
@@ -265,12 +309,15 @@ For the conversion to a h5 file we use on the python level (in analogy to the Wi
 
 As usual, the resulting h5-file can then be used with the SumkDFT class.
 
-Note that the automatic detection of the correct blockstructure might fail for VASP inputs.
-This can be circumvented by increase the :class:`SumkDFT <dft.sumk_dft.SumkDFT>` threshold to e.g.::
-     
+Note that the automatic detection of the correct block structure might
+fail for VASP inputs.
+This can be circumvented by setting a bigger value of the threshold in
+:class:`SumkDFT <dft.sumk_dft.SumkDFT>`, e.g.::
+
     SK.analyse_block_structure(threshold = 1e-4)
 
-However, only do this after a careful study of the density matrix and the dos in the wannier basis.
+However, do this only after a careful study of the density matrix and
+the projected DOS in the localized basis.
 
 A general H(k)
 --------------
@@ -285,7 +332,7 @@ input file):
 .. literalinclude:: images_scripts/case.hk
 
 The lines of this header define
-		    
+
 #. Number of :math:`\mathbf{k}`-points used in the calculation
 #. Electron density for setting the chemical potential
 #. Number of total atomic shells in the hamiltonian matrix. In short,
@@ -325,7 +372,7 @@ The lines of this header define
       as `4 2 1 3`. We have 4 atoms, since the first number runs from 1 to 4,
       but only two inequivalent atoms, since the second number runs
       only form 1 to 2.
-   
+
    Note that the total dimension of the hamiltonian matrices that are
    read in is the sum of all shell dimensions that you specified. For
    example number 4 given above we have a dimension of 5+5+3+3=16. It is important
@@ -333,8 +380,8 @@ The lines of this header define
    the order of the orbitals in the hamiltonian matrix. In the last
    example case above the code assumes that matrix index 1 to 5
    belongs to the first d shell, 6 to 10 to the second, 11 to 13 to
-   the first p shell, and 14 to 16 the second p shell. 
-   
+   the first p shell, and 14 to 16 the second p shell.
+
 #. Number of correlated shells in the hamiltonian matrix, in the same
    spirit as line 3.
 
@@ -345,7 +392,7 @@ The lines of this header define
    parameters are not used at the moment in the code, and only kept
    for compatibility reasons. In our example file we use only the
    d-shell as correlated, that is why we have only one line here.
-      
+
 #. The last line contains several numbers: the number of irreducible
    representations, and then the dimensions of the irreps. One
    possibility is as the example above, another one would be 2
@@ -362,7 +409,7 @@ The converter itself is used as::
   from triqs_dft_tools.converters.hk_converter import *
   Converter = HkConverter(filename = hkinputfile)
   Converter.convert_dft_input()
-  
+
 where :file:`hkinputfile` is the name of the input file described
 above. This produces the hdf file that you need for a DMFT calculation.
 
@@ -415,7 +462,7 @@ Currently implemented options are:
   :math:`n_{k_x} \times n_{k_y} \times n_{k_z}`;
   specify ``0`` followed by the three grid dimensions,
   like in the example above
-* :math:`\Gamma`-centered uniform grid with dimensions 
+* :math:`\Gamma`-centered uniform grid with dimensions
   automatically determined by the converter (from the number of
   :math:`\mathbf{R}` vectors found in :file:`seedname_hr.dat`);
   just specify ``-1``
@@ -440,7 +487,7 @@ When reading the hoppings :math:`\langle w_i | H(\mathbf{R}) | w_j \rangle`
 (where :math:`w_i` is the :math:`i`-th MLWF), the converter also assumes that
 the first indices correspond to the correlated shells (in our example,
 the V-t\ :sub:`2g` shells). Therefore, the MLWFs corresponding to the
-uncorrelated shells (if present) must be listed **after** those of the 
+uncorrelated shells (if present) must be listed **after** those of the
 correlated shells.
 With the :program:`wannier90` code, this can be achieved by listing the
 projections for the uncorrelated shells after those for the correlated shells.
@@ -484,7 +531,7 @@ The current implementation of the Wannier90 Converter has some limitations:
 * ``proj_mat_all`` are not used, so there are no projectors onto the
   uncorrelated orbitals for now.
 
-     
+
 MPI issues
 ----------
 
