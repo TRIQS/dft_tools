@@ -46,7 +46,7 @@ electronic structure data. At this stage simple consistency checks are performed
 
 All electronic structure from VASP is stored in a class ElectronicStructure:
 
-.. autoclass:: elstruct.ElectronicStructure
+.. autoclass:: triqs_dft_tools.converters.plovasp.elstruct.ElectronicStructure
    :members:
 
 
@@ -95,7 +95,7 @@ Order of operations:
     * distribute back the arrays assuming that the order is preserved
     
 
-.. autoclass:: proj_shell.ProjectorShell
+.. autoclass:: triqs_dft_tools.converters.plovasp.proj_shell.ProjectorShell
    :members:
 
 
