@@ -3,8 +3,8 @@ import os
 import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
-from pytriqs.applications.dft.converters.plovasp.converter import generate_and_output_as_text
-from pytriqs.applications.dft.converters import VaspConverter
+from converters.plovasp.converter import generate_and_output_as_text
+from converters import VaspConverter
 import mytest
 
 ################################################################################
@@ -29,7 +29,7 @@ class TestConverterOneSite(mytest.MyTestCase):
         generate_and_output_as_text(_rpath + 'example.cfg', _rpath + 'one_site/')
 
         test_file = _rpath + 'pg_output.test.h5'
-        converter = VaspConverter(filename=_rpath + 'one_site', 
+        converter = VaspConverter(filename=_rpath + 'one_site',
                                   hdf_filename=test_file)
 
         converter.convert_dft_input()
