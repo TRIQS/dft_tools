@@ -16,18 +16,31 @@ Basic notions
    basicnotions/structure
 
 
-User guide
-----------
+Construction of local orbitals from DFT
+---------------------------------------
 
 .. toctree::
    :maxdepth: 2
 
    guide/conversion
+
+
+DFT+DMFT
+--------
+
+.. toctree::
+   :maxdepth: 2
+
    guide/dftdmft_singleshot
-   guide/SrVO3
    guide/dftdmft_selfcons
+
+Postprocessing
+--------------
+
+.. toctree::
+   :maxdepth: 2
+
    guide/analysis
-   guide/full_tutorial
    guide/transport
 
 

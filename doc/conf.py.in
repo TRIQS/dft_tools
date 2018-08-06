@@ -32,6 +32,7 @@ html_context = {'header_title': 'dft tools',
                 'header_subtitle': 'connecting <a class="triqs" style="font-size: 12px" href="http://triqs.github.io/triqs">TRIQS</a> to DFT packages',
                 'header_links': [['Install', 'install'],
                                  ['Documentation', 'documentation'],
+                                 ['Tutorials', 'tutorials'],
                                  ['Issues', 'issues'],
                                  ['About DFTTools', 'about']]}
 html_static_path = ['@CMAKE_SOURCE_DIR@/doc/_static']

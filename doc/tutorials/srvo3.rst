@@ -1,14 +1,10 @@
 .. _SrVO3:
 
-SrVO3 (single-shot)
-===================
-
 We will discuss now how to set up a full working calculation,
 including the initialization of the :ref:`CTHYB solver <triqscthyb:welcome>`.
 Some additional parameter are introduced to make the calculation
 more efficient. This is a more advanced example, which is
-also suited for parallel execution. The conversion, which
-we assume to be carried out already, is discussed :ref:`here <conversion>`.
+also suited for parallel execution. 
 
 For the convenience of the user, we provide also two
 working python scripts in this documentation. One for a calculation
@@ -17,6 +13,25 @@ using Kanamori definitions (:download:`dft_dmft_cthyb.py
 rotational-invariant Slater interaction Hamiltonian (:download:`dft_dmft_cthyb_slater.py
 <images_scripts/dft_dmft_cthyb_slater.py>`). The user has to adapt these
 scripts to his own needs. How to execute your script is described :ref:`here<runpy>`.
+
+The conversion will now be discussed in detail for the Wien2k and VASP packlages. For more details we refer to the :ref:`documentation <conversion>`.
+
+
+Wien2k setup and conversion
+===========================
+
+TODO
+
+VASP setup and conversion
+=========================
+
+TODO
+
+The DMFT calculation
+====================
+
+The DMFT script itself is, except very few details, independent of the DFT package that was used to calculate the local orbitals.
+As soon as one has converted everything to the hdf5 format, the following procedure is practially the same. 
 
 Loading modules
 ---------------
