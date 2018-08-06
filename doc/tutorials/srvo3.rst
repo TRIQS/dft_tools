@@ -14,18 +14,67 @@ rotational-invariant Slater interaction Hamiltonian (:download:`dft_dmft_cthyb_s
 <images_scripts/dft_dmft_cthyb_slater.py>`). The user has to adapt these
 scripts to his own needs. How to execute your script is described :ref:`here<runpy>`.
 
-The conversion will now be discussed in detail for the Wien2k and VASP packlages. For more details we refer to the :ref:`documentation <conversion>`.
+TODO: At the end of this section we also provide hdf5 archives for this example, including data as function of DMFT iterations.
+
+The conversion will now be discussed in detail for the Wien2k and VASP packages. For more details we refer to the :ref:`documentation <conversion>`.
 
 
-Wien2k setup and conversion
-===========================
+Wien2k
+======
 
-TODO
+DFT setup
+---------
 
-VASP setup and conversion
-=========================
+First, we do a DFT calculation, using the Wien2k package. As main input file we have to provide the so-called struct file :file:`SrVO3.struct`. We use the following:
 
-TODO
+.. literalinclude:: images_scripts/SrVO3.struct
+
+Instead of going through the whole initialisation process, we can use ::
+
+   init -b -vxc 5 -numk 5000 
+
+This is setting up a non-magnetic calculation, using the LDA and 5000 k-points in the full Brillouin zone. As usual, we start the DFT self consistent cycle by the Wien2k script ::
+
+  run
+
+Wannier orbitals
+----------------
+
+As a next step, we calculate localised orbitals for the t2g orbitals. We use the same input file for :program:`dmftproj` as it was used in the :ref:`documentation`:
+
+.. literalinclude:: images_scripts/SrVO3.indmftpr
+
+To prepare the input data for :program:`dmftproj` we execute lapw2 with the `-almd` option ::
+   
+   x lapw2 -almd 
+
+Then  :program:`dmftproj` is executed in its default mode (i.e. without spin-polarization or spin-orbit included) ::
+
+   dmftproj 
+
+This program produces the necessary files for the conversion to the hdf5 file structure. This is done using
+the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.Wien2kConverter>`. A simple python script that initialises the converter is::
+
+  from triqs_dft_tools.converters.wien2k_converter import *
+  Converter = Wien2kConverter(filename = "SrVO3")
+
+After initializing the interface module, we can now convert the input
+text files to the hdf5 archive by::
+
+  Converter.convert_dft_input()
+
+This reads all the data, and stores everything that is necessary for the DMFT calculation in the file :file:`SrVO3.h5`.
+
+
+VASP
+====
+
+DFT setup
+---------
+
+Wannier orbitals
+----------------
+
 
 The DMFT calculation
 ====================
@@ -237,3 +286,9 @@ of the self energy and to stop (:emphasis:`fit_max_n`) before the noise fully ta
 If it is difficult to find a reasonable fit in this region you should increase
 your statistics (number of measurements). Keep in mind that :emphasis:`fit_min_n`
 and :emphasis:`fit_max_n` also depend on :math:`\beta`.
+
+Data for benchmark / comparison
+-------------------------------
+
+TODO: We should provide two h5 files, one fore Wien2k and one for VASP, with selfs for, say, 15 DMFT iterations. Then people can check what they are doing.
+
