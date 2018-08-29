@@ -40,10 +40,9 @@ map1.map_gf_struct_solver(mapping)
 
 # check create_gf
 G1 = original_bs.create_gf(beta=40, n_points=3)
-i = 1
+widths = dict(up_0=1, up_1=2, down_0=4, down_1=3)
 for block, gf in G1:
-    gf << SemiCircular(i)
-    i += 1
+    gf << SemiCircular(widths[block])
 original_bs.check_gf(G1)
 original_bs.check_gf([G1])
 
@@ -57,6 +56,14 @@ G2 = map1.convert_gf(G1, original_bs, beta=40, n_points=3, show_warnings=False)
 # check full_structure
 full = BlockStructure.full_structure(
     [{'up_0': [0, 1], 'up_1': [0], 'down_1': [0], 'down_0': [0, 1]}], None)
+
+G_sumk = BlockGf(mesh=G1.mesh, gf_struct=original_bs.gf_struct_sumk[0])
+for i in range(3):
+    G_sumk['up'][i, i] << SemiCircular(1 if i < 2 else 2)
+    G_sumk['down'][i, i] << SemiCircular(4 if i < 2 else 3)
+G3 = original_bs.convert_gf(G_sumk, 'sumk', beta=40, n_points=3)
+assert_block_gfs_are_close(G1, G3)
+
 
 # check __eq__
 assert full == full, 'equality not correct (equal structures not equal)'

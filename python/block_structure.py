@@ -283,6 +283,7 @@ class BlockStructure(object):
 
     def check_gf(self, G, ish=None):
         """ check whether the Green's function G has the right structure
+
         This throws an error if the structure of G is not the same
         as ``gf_struct_solver``.
 
@@ -322,8 +323,9 @@ class BlockStructure(object):
             assert list(gf.indices) == 2 * [map(str, self.gf_struct_solver[ish][block])],\
                 "block " + block + " has wrong indices (shell {})".format(ish)
 
-    def convert_gf(self,G,G_struct,ish=0,show_warnings=True,**kwargs):
-        """ Convert BlockGf from its structure to this structure.
+    def convert_gf(self, G, G_struct, ish=0, show_warnings=True,
+                   G_out=None, **kwargs):
+        """ Convert BlockGf from its structure to this (solver) structure.
 
         .. warning::
 
@@ -335,8 +337,9 @@ class BlockStructure(object):
         ----------
         G : BlockGf
             the Gf that should be converted
-        G_struct : GfStructure
-            the structure of that G
+        G_struct : BlockStructure or str
+            the structure of that G or 'sumk' (then, the structure of
+            the sumk Green's function of this BlockStructure is used)
         ish : int
             shell index
         show_warnings : bool or float
@@ -354,30 +357,50 @@ class BlockStructure(object):
             warning_threshold = show_warnings
             show_warnings = True
 
-        G_new = self.create_gf(ish=ish,**kwargs)
-        for block in G_struct.gf_struct_solver[ish].keys():
-            for i1 in G_struct.gf_struct_solver[ish][block]:
-                for i2 in G_struct.gf_struct_solver[ish][block]:
-                    i1_sumk = G_struct.solver_to_sumk[ish][(block,i1)]
-                    i2_sumk = G_struct.solver_to_sumk[ish][(block,i2)]
+        # we offer the possibility to convert to convert from sumk_dft
+        from_sumk = False
+        if isinstance(G_struct, str) and G_struct == 'sumk':
+            gf_struct_in = {block: indices
+                            for block, indices in self.gf_struct_sumk[ish]}
+            from_sumk = True
+        else:
+            gf_struct_in = G_struct.gf_struct_solver[ish]
+
+        # create a Green's function to hold the result
+        if G_out is None:
+            G_out = self.create_gf(ish=ish, **kwargs)
+        else:
+            self.check_gf(G_out, ish=ish)
+
+        for block in gf_struct_in.keys():
+            for i1 in gf_struct_in[block]:
+                for i2 in gf_struct_in[block]:
+                    if from_sumk:
+                        i1_sumk = (block, i1)
+                        i2_sumk = (block, i2)
+                    else:
+                        i1_sumk = G_struct.solver_to_sumk[ish][(block, i1)]
+                        i2_sumk = G_struct.solver_to_sumk[ish][(block, i2)]
+
                     i1_sol = self.sumk_to_solver[ish][i1_sumk]
                     i2_sol = self.sumk_to_solver[ish][i2_sumk]
                     if i1_sol[0] is None or i2_sol[0] is None:
                         if show_warnings:
                             if mpi.is_master_node():
-                                warn(('Element {},{} of block {} of G is not present '+
-                                    'in the new structure').format(i1,i2,block))
+                                warn(('Element {},{} of block {} of G is not present ' +
+                                      'in the new structure').format(i1, i2, block))
                         continue
-                    if i1_sol[0]!=i2_sol[0]:
-                        if show_warnings and np.max(np.abs(G[block][i1,i2].data)) > warning_threshold:
+                    if i1_sol[0] != i2_sol[0]:
+                        if (show_warnings and
+                                np.max(np.abs(G[block][i1, i2].data)) > warning_threshold):
                             if mpi.is_master_node():
-                                warn(('Element {},{} of block {} of G is approximated '+
-                                    'to zero to match the new structure. Max abs value: {}').format(
-                                        i1,i2,block,np.max(np.abs(G[block][i1,i2].data))))
+                                warn(('Element {},{} of block {} of G is approximated ' +
+                                      'to zero to match the new structure. Max abs value: {}').format(
+                                    i1, i2, block, np.max(np.abs(G[block][i1, i2].data))))
                         continue
-                    G_new[i1_sol[0]][i1_sol[1],i2_sol[1]] = \
-                            G[block][i1,i2]
-        return G_new
+                    G_out[i1_sol[0]][i1_sol[1], i2_sol[1]] = \
+                        G[block][i1, i2]
+        return G_out
 
     def approximate_as_diagonal(self):
         """ Create a structure for a GF with zero off-diagonal elements.
