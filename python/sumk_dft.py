@@ -2057,3 +2057,19 @@ class SumkDFT(object):
     def __set_deg_shells(self,value):
         self.block_structure.deg_shells = value
     deg_shells = property(__get_deg_shells,__set_deg_shells)
+
+    @property
+    def gf_struct_solver_list(self):
+        return self.block_structure.gf_struct_solver_list
+
+    @property
+    def gf_struct_sumk_list(self):
+        return self.block_structure.gf_struct_sumk_list
+
+    @property
+    def gf_struct_solver_dict(self):
+        return self.block_structure.gf_struct_solver_dict
+
+    @property
+    def gf_struct_sumk_dict(self):
+        return self.block_structure.gf_struct_sumk_dict

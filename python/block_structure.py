@@ -5,6 +5,7 @@ from ast import literal_eval
 import pytriqs.utility.mpi as mpi
 from warnings import warn
 
+
 class BlockStructure(object):
     """ Contains information about the Green function structure.
 
@@ -37,18 +38,86 @@ class BlockStructure(object):
         maps from the solver block to the sumk block
         for *inequivalent* correlated shell ish
     """
-    def __init__(self,gf_struct_sumk=None,
-                      gf_struct_solver=None,
-                      solver_to_sumk=None,
-                      sumk_to_solver=None,
-                      solver_to_sumk_block=None,
-                      deg_shells=None):
+
+    def __init__(self, gf_struct_sumk=None,
+                 gf_struct_solver=None,
+                 solver_to_sumk=None,
+                 sumk_to_solver=None,
+                 solver_to_sumk_block=None,
+                 deg_shells=None):
         self.gf_struct_sumk = gf_struct_sumk
         self.gf_struct_solver = gf_struct_solver
         self.solver_to_sumk = solver_to_sumk
         self.sumk_to_solver = sumk_to_solver
         self.solver_to_sumk_block = solver_to_sumk_block
         self.deg_shells = deg_shells
+
+    @property
+    def gf_struct_solver_list(self):
+        """ The structure of the solver Green's function
+
+        This is returned as a
+            list (for each shell)
+        of lists (for each block)
+        of tuples (block_name, block_indices).
+
+        That is,
+        ``gf_struct_solver_list[ish][b][0]``
+        is the name of the block number ``b`` of shell ``ish``, and
+        ``gf_struct_solver_list[ish][b][1]``
+        is a list of its indices.
+
+        The list for each shell is sorted alphabetically by block name.
+        """
+        # we sort by block name in order to get a reproducible result
+        return [sorted([(k, v) for k, v in gfs.iteritems()], key=lambda x: x[0])
+                for gfs in self.gf_struct_solver]
+
+    @property
+    def gf_struct_sumk_list(self):
+        """ The structure of the sumk Green's function
+
+        This is returned as a
+            list (for each shell)
+        of lists (for each block)
+        of tuples (block_name, block_indices)
+
+        That is,
+        ``gf_struct_sumk_list[ish][b][0]``
+        is the name of the block number ``b`` of shell ``ish``, and
+        ``gf_struct_sumk_list[ish][b][1]``
+        is a list of its indices.
+        """
+        return self.gf_struct_sumk
+
+    @property
+    def gf_struct_solver_dict(self):
+        """ The structure of the solver Green's function
+
+        This is returned as a
+            list (for each shell)
+        of dictionaries.
+
+        That is,
+        ``gf_struct_solver_dict[ish][bname]``
+        is a list of the indices of block ``bname`` of shell ``ish``.
+        """
+        return self.gf_struct_solver
+
+    @property
+    def gf_struct_sumk_dict(self):
+        """ The structure of the sumk Green's function
+
+        This is returned as a
+            list (for each shell)
+        of dictionaries.
+
+        That is,
+        ``gf_struct_sumk_dict[ish][bname]``
+        is a list of the indices of block ``bname`` of shell ``ish``.
+        """
+        return [{block: indices for block, indices in gfs}
+                for gfs in self.gf_struct_sumk]
 
     @classmethod
     def full_structure(cls,gf_struct,corr_to_inequiv):
@@ -360,8 +429,7 @@ class BlockStructure(object):
         # we offer the possibility to convert to convert from sumk_dft
         from_sumk = False
         if isinstance(G_struct, str) and G_struct == 'sumk':
-            gf_struct_in = {block: indices
-                            for block, indices in self.gf_struct_sumk[ish]}
+            gf_struct_in = self.gf_struct_sumk_dict[ish]
             from_sumk = True
         else:
             gf_struct_in = G_struct.gf_struct_solver[ish]

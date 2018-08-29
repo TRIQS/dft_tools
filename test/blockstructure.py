@@ -64,6 +64,14 @@ for i in range(3):
 G3 = original_bs.convert_gf(G_sumk, 'sumk', beta=40, n_points=3)
 assert_block_gfs_are_close(G1, G3)
 
+assert original_bs.gf_struct_sumk_list ==\
+    [[('up', [0, 1, 2]), ('down', [0, 1, 2])]]
+assert original_bs.gf_struct_solver_dict ==\
+    [{'up_0': [0, 1], 'up_1': [0], 'down_1': [0], 'down_0': [0, 1]}]
+assert original_bs.gf_struct_sumk_dict ==\
+    [{'down': [0, 1, 2], 'up': [0, 1, 2]}]
+assert original_bs.gf_struct_solver_list ==\
+    [[('down_0', [0, 1]), ('down_1', [0]), ('up_0', [0, 1]), ('up_1', [0])]]
 
 # check __eq__
 assert full == full, 'equality not correct (equal structures not equal)'
