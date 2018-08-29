@@ -281,6 +281,46 @@ class BlockStructure(object):
         G = BlockGf(name_list = names, block_list = blocks)
         return G
 
+    def check_gf(self, G, ish=None):
+        """ check whether the Green's function G has the right structure
+        This throws an error if the structure of G is not the same
+        as ``gf_struct_solver``.
+
+        Parameters
+        ----------
+        G : BlockGf or list of BlockGf
+            Green's function to check
+            if it is a list, there should be as many entries as there
+            are shells, and the check is performed for all shells (unless
+            ish is given).
+        ish : int
+            shell index
+            default: 0 if G is just one Green's function is given,
+            check all if list of Green's functions is given
+        """
+
+        if isinstance(G, list):
+            assert len(G) == len(self.gf_struct_solver),\
+                "list of G does not have the correct length"
+            if ish is None:
+                ishs = range(len(self.gf_struct_solver))
+            else:
+                ishs = [ish]
+            for ish in ishs:
+                self.check_gf(G[ish], ish=ish)
+            return
+
+        if ish is None:
+            ish = 0
+
+        for block in self.gf_struct_solver[ish]:
+            assert block in G.indices,\
+                "block " + block + " not in G (shell {})".format(ish)
+        for block, gf in G:
+            assert block in self.gf_struct_solver[ish],\
+                "block " + block + " not in struct (shell {})".format(ish)
+            assert list(gf.indices) == 2 * [map(str, self.gf_struct_solver[ish][block])],\
+                "block " + block + " has wrong indices (shell {})".format(ish)
 
     def convert_gf(self,G,G_struct,ish=0,show_warnings=True,**kwargs):
         """ Convert BlockGf from its structure to this structure.
