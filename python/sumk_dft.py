@@ -3,6 +3,7 @@
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
 #
+# Copyright (C) 2018 by G. J. Kraberger
 # Copyright (C) 2011 by M. Aichhorn, L. Pourovskii, V. Vildosola
 #
 # TRIQS is free software: you can redistribute it and/or modify it under the
@@ -631,29 +632,34 @@ class SumkDFT(object):
                 for bname, gf in SK_Sigma_imp[icrsh]:
                     gf << self.rotloc(icrsh, gf, direction='toGlobal')
 
-    def extract_G_loc(self, mu=None, iw_or_w='iw', with_Sigma=True, with_dc=True, broadening=None):
+    def extract_G_loc(self, mu=None, iw_or_w='iw', with_Sigma=True, with_dc=True, broadening=None,
+                      transform_to_solver_blocks=True):
         r"""
         Extracts the local downfolded Green function by the Brillouin-zone integration of the lattice Green's function.
 
         Parameters
         ----------
         mu : real, optional
-             Input chemical potential. If not provided the value of self.chemical_potential is used as mu.
+            Input chemical potential. If not provided the value of self.chemical_potential is used as mu.
         with_Sigma : boolean, optional
-                     If True then the local GF is calculated with the self-energy self.Sigma_imp.
+            If True then the local GF is calculated with the self-energy self.Sigma_imp.
         with_dc : boolean, optional
-                  If True then the double-counting correction is subtracted from the self-energy in calculating the GF.
+            If True then the double-counting correction is subtracted from the self-energy in calculating the GF.
         broadening : float, optional
-                     Imaginary shift for the axis along which the real-axis GF is calculated.
-                     If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
-                     Only relevant for real-frequency GF.
+            Imaginary shift for the axis along which the real-axis GF is calculated.
+            If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
+            Only relevant for real-frequency GF.
+        transform_to_solver_blocks : bool, optional
+            If True (default), the returned G_loc will be transformed to the block structure ``gf_struct_solver``,
+            else it will be in ``gf_struct_sumk``.
 
         Returns
         -------
-        G_loc_inequiv : list of BlockGf (Green's function) objects
-                        List of the local Green's functions for all inequivalent correlated shells, 
-                        rotated into the corresponding local frames.
-
+        G_loc : list of BlockGf (Green's function) objects
+            List of the local Green's functions for all (inequivalent) correlated shells,
+            rotated into the corresponding local frames.
+            If ``transform_to_solver_blocks`` is True, it will be one per correlated shell, else one per
+            inequivalent correlated shell.
         """
 
         if mu is None:
@@ -712,20 +718,48 @@ class SumkDFT(object):
                     G_loc[icrsh][bname] << self.rotloc(
                         icrsh, gf, direction='toLocal')
 
+        if transform_to_solver_blocks:
+            return self.transform_to_solver_blocks(G_loc)
+
+        return G_loc
+
+    def transform_to_solver_blocks(self, G_loc, G_out=None):
+        """ transform G_loc from sumk to solver space
+
+        Parameters
+        ----------
+        G_loc : list of BlockGf
+            a list of one BlockGf per correlated shell with a structure
+            according to ``gf_struct_sumk``, e.g. as returned by
+            :py:meth:`.extract_G_loc` with ``transform_to_solver_blocks=False``.
+        G_out : list of BlockGf
+            a list of one BlockGf per *inequivalent* correlated shell
+            with a structure according to ``gf_struct_solver``.
+            The output Green's function (if not given, a new one is
+            created)
+
+        Returns
+        -------
+        G_out
+        """
+        if G_out is None:
+            G_out = [BlockGf(mesh=G_loc[0].mesh,
+                             gf_struct=[(k, v) for k, v in self.gf_struct_solver[ish].iteritems()])
+                     for ish in range(self.n_inequiv_shells)]
+        else:
+            for ish in range(self.n_inequiv_shells):
+                self.block_structure.check_gf(G_out, ish=ish)
+
         # transform to CTQMC blocks:
         for ish in range(self.n_inequiv_shells):
-            for block, inner in self.gf_struct_solver[ish].iteritems():
-                for ind1 in inner:
-                    for ind2 in inner:
-                        block_sumk, ind1_sumk = self.solver_to_sumk[
-                            ish][(block, ind1)]
-                        block_sumk, ind2_sumk = self.solver_to_sumk[
-                            ish][(block, ind2)]
-                        G_loc_inequiv[ish][block][ind1, ind2] << G_loc[
-                            self.inequiv_to_corr[ish]][block_sumk][ind1_sumk, ind2_sumk]
+            self.block_structure.convert_gf(
+                G=G_loc[self.inequiv_to_corr[ish]],
+                G_struct='sumk',
+                ish=ish,
+                G_out=G_out[ish])
 
         # return only the inequivalent shells:
-        return G_loc_inequiv
+        return G_out
 
     def analyse_block_structure(self, threshold=0.00001, include_shells=None, dm=None, hloc=None):
         r"""
