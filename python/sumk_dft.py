@@ -576,61 +576,95 @@ class SumkDFT(object):
 
         return G_latt
 
-    def set_Sigma(self, Sigma_imp):
-        self.put_Sigma(Sigma_imp)
+    def set_Sigma(self, Sigma_imp, transform_to_sumk_blocks=True):
+        self.put_Sigma(Sigma_imp, transform_to_sumk_blocks)
 
-    def put_Sigma(self, Sigma_imp):
+    def put_Sigma(self, Sigma_imp, transform_to_sumk_blocks=True):
         r"""
-        Inserts the impurity self-energies into the sumk_dft class.
+        Insert the impurity self-energies into the sumk_dft class.
 
         Parameters
         ----------
         Sigma_imp : list of BlockGf (Green's function) objects
-                    List containing impurity self-energy for all inequivalent correlated shells.
-                    Self-energies for equivalent shells are then automatically set by this function.
-                    The self-energies can be of the real or imaginary-frequency type.
+            List containing impurity self-energy for all (inequivalent) correlated shells.
+            Self-energies for equivalent shells are then automatically set by this function.
+            The self-energies can be of the real or imaginary-frequency type.
+        transform_to_sumk_blocks : bool, optional
+            If True (default), the input Sigma_imp will be transformed to the block structure ``gf_struct_sumk``,
+            else it has to be given in ``gf_struct_sumk``.
         """
 
-        assert isinstance(
-            Sigma_imp, list), "put_Sigma: Sigma_imp has to be a list of Sigmas for the correlated shells, even if it is of length 1!"
-        assert len(
-            Sigma_imp) == self.n_inequiv_shells, "put_Sigma: give exactly one Sigma for each inequivalent corr. shell!"
+        if transform_to_sumk_blocks:
+            Sigma_imp = self.transform_to_sumk_blocks(Sigma_imp)
 
-        # init self.Sigma_imp_(i)w:
-        if all( (isinstance(gf, Gf) and isinstance (gf.mesh, MeshImFreq)) for bname, gf in Sigma_imp[0]):
+        assert isinstance(Sigma_imp, list),\
+            "put_Sigma: Sigma_imp has to be a list of Sigmas for the correlated shells, even if it is of length 1!"
+        assert len(Sigma_imp) == self.n_corr_shells,\
+            "put_Sigma: give exactly one Sigma for each corr. shell!"
+
+        if all((isinstance(gf, Gf) and isinstance(gf.mesh, MeshImFreq)) for bname, gf in Sigma_imp[0]):
             # Imaginary frequency Sigma:
-            self.Sigma_imp_iw = [BlockGf(name_block_generator=[(block, GfImFreq(indices=inner, mesh=Sigma_imp[0].mesh))
-                                                               for block, inner in self.gf_struct_sumk[icrsh]], make_copies=False)
+            self.Sigma_imp_iw = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, space='sumk')
                                  for icrsh in range(self.n_corr_shells)]
             SK_Sigma_imp = self.Sigma_imp_iw
-        elif all( isinstance(gf, Gf) and isinstance (gf.mesh, MeshReFreq) for bname, gf in Sigma_imp[0]):
+        elif all(isinstance(gf, Gf) and isinstance(gf.mesh, MeshReFreq) for bname, gf in Sigma_imp[0]):
             # Real frequency Sigma:
-            self.Sigma_imp_w = [BlockGf(name_block_generator=[(block, GfReFreq(indices=inner, mesh=Sigma_imp[0].mesh))
-                                                              for block, inner in self.gf_struct_sumk[icrsh]], make_copies=False)
+            self.Sigma_imp_w = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, gf_function=GfReFreq, space='sumk')
                                 for icrsh in range(self.n_corr_shells)]
             SK_Sigma_imp = self.Sigma_imp_w
         else:
-            raise ValueError, "put_Sigma: This type of Sigma is not handled."
+            raise ValueError, "put_Sigma: This type of Sigma is not handled, give either BlockGf of GfReFreq or GfImFreq."
+
+        # rotation from local to global coordinate system:
+        for icrsh in range(self.n_corr_shells):
+            for bname, gf in SK_Sigma_imp[icrsh]:
+                if self.use_rotations:
+                    gf << self.rotloc(icrsh,
+                                      Sigma_imp[icrsh][bname],
+                                      direction='toGlobal')
+                else:
+                    gf << Sigma_imp[icrsh][bname]
+
+    def transform_to_sumk_blocks(self, Sigma_imp, Sigma_out=None):
+        r""" transform Sigma from solver to sumk space
+
+        Parameters
+        ----------
+        Sigma_imp : list of BlockGf (Green's function) objects
+            List containing impurity self-energy for all inequivalent correlated shells.
+            The self-energies can be of the real or imaginary-frequency type.
+        Sigma_out : list of BlockGf
+            list of one BlockGf per correlated shell with the block structure
+            according to ``gf_struct_sumk``; if None, it will be created
+        """
+
+        assert isinstance(Sigma_imp, list),\
+            "transform_to_sumk_blocks: Sigma_imp has to be a list of Sigmas for the inequivalent correlated shells, even if it is of length 1!"
+        assert len(Sigma_imp) == self.n_inequiv_shells,\
+            "transform_to_sumk_blocks: give exactly one Sigma for each inequivalent corr. shell!"
+
+        if Sigma_out is None:
+            Sigma_out = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[self.corr_to_inequiv[icrsh]].mesh, space='sumk')
+                         for icrsh in range(self.n_corr_shells)]
+        else:
+            for icrsh in range(self.n_corr_shells):
+                self.block_structure.check_gf(Sigma_out,
+                                              ish=icrsh,
+                                              space='sumk')
 
         # transform the CTQMC blocks to the full matrix:
         for icrsh in range(self.n_corr_shells):
             # ish is the index of the inequivalent shell corresponding to icrsh
             ish = self.corr_to_inequiv[icrsh]
-            for block, inner in self.gf_struct_solver[ish].iteritems():
-                for ind1 in inner:
-                    for ind2 in inner:
-                        block_sumk, ind1_sumk = self.solver_to_sumk[
-                            ish][(block, ind1)]
-                        block_sumk, ind2_sumk = self.solver_to_sumk[
-                            ish][(block, ind2)]
-                        SK_Sigma_imp[icrsh][block_sumk][
-                            ind1_sumk, ind2_sumk] << Sigma_imp[ish][block][ind1, ind2]
-
-        # rotation from local to global coordinate system:
-        if self.use_rotations:
-            for icrsh in range(self.n_corr_shells):
-                for bname, gf in SK_Sigma_imp[icrsh]:
-                    gf << self.rotloc(icrsh, gf, direction='toGlobal')
+            self.block_structure.convert_gf(
+                G=Sigma_imp[ish],
+                G_struct=None,
+                space_from='solver',
+                space_to='sumk',
+                ish_from=ish,
+                ish_to=icrsh,
+                G_out=Sigma_out[icrsh])
+        return Sigma_out
 
     def extract_G_loc(self, mu=None, iw_or_w='iw', with_Sigma=True, with_dc=True, broadening=None,
                       transform_to_solver_blocks=True):
