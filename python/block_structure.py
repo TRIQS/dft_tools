@@ -349,8 +349,11 @@ class BlockStructure(object):
             self.sumk_to_solver[ish]=su2so
             self.solver_to_sumk_block[ish]=so2su_block
 
-    def create_gf(self,ish=0,gf_function=GfImFreq,**kwargs):
-        """ Create a zero BlockGf having the gf_struct_solver structure.
+    def create_gf(self, ish=0, gf_function=GfImFreq, space='solver', **kwargs):
+        """ Create a zero BlockGf having the correct structure.
+
+        For ``space='solver'``, the structure is according to
+        ``gf_struct_solver``, else according to ``gf_struct_sumk``.
 
         When using GfImFreq as gf_function, typically you have to
         supply beta as keyword argument.
@@ -359,27 +362,40 @@ class BlockStructure(object):
         ----------
         ish : int
             shell index
+            If ``space='solver', the index of the of the inequivalent correlated shell,
+            if ``space='sumk'`, the index of the correlated shell
         gf_function : constructor
             function used to construct the Gf objects constituting the
             individual blocks; default: GfImFreq
+        space : 'solver' or 'sumk'
+            which space the structure should correspond to
         **kwargs :
             options passed on to the Gf constructor for the individual
             blocks
         """
 
-        names = self.gf_struct_solver[ish].keys()
-        blocks=[]
+        if space == 'solver':
+            gf_struct = self.gf_struct_solver
+        elif space == 'sumk':
+            gf_struct = self.gf_struct_sumk_dict
+        else:
+            raise Exception(
+                "Argument space has to be either 'solver' or 'sumk'.")
+
+        names = gf_struct[ish].keys()
+        blocks = []
         for n in names:
-            G = gf_function(indices=self.gf_struct_solver[ish][n],**kwargs)
+            G = gf_function(indices=gf_struct[ish][n], **kwargs)
             blocks.append(G)
-        G = BlockGf(name_list = names, block_list = blocks)
+        G = BlockGf(name_list=names, block_list=blocks)
         return G
 
-    def check_gf(self, G, ish=None):
+    def check_gf(self, G, ish=None, space='solver'):
         """ check whether the Green's function G has the right structure
 
         This throws an error if the structure of G is not the same
-        as ``gf_struct_solver``.
+        as ``gf_struct_solver`` (for ``space=solver``) or
+        ``gf_struct_sumk`` (for ``space=sumk``)..
 
         Parameters
         ----------
@@ -392,34 +408,44 @@ class BlockStructure(object):
             shell index
             default: 0 if G is just one Green's function is given,
             check all if list of Green's functions is given
+        space : 'solver' or 'sumk'
+            which space the structure should correspond to
         """
 
+        if space == 'solver':
+            gf_struct = self.gf_struct_solver
+        elif space == 'sumk':
+            gf_struct = self.gf_struct_sumk_dict
+        else:
+            raise Exception(
+                "Argument space has to be either 'solver' or 'sumk'.")
+
         if isinstance(G, list):
-            assert len(G) == len(self.gf_struct_solver),\
+            assert len(G) == len(gf_struct),\
                 "list of G does not have the correct length"
             if ish is None:
-                ishs = range(len(self.gf_struct_solver))
+                ishs = range(len(gf_struct))
             else:
                 ishs = [ish]
             for ish in ishs:
-                self.check_gf(G[ish], ish=ish)
+                self.check_gf(G[ish], ish=ish, space=space)
             return
 
         if ish is None:
             ish = 0
 
-        for block in self.gf_struct_solver[ish]:
+        for block in gf_struct[ish]:
             assert block in G.indices,\
                 "block " + block + " not in G (shell {})".format(ish)
         for block, gf in G:
-            assert block in self.gf_struct_solver[ish],\
+            assert block in gf_struct[ish],\
                 "block " + block + " not in struct (shell {})".format(ish)
-            assert list(gf.indices) == 2 * [map(str, self.gf_struct_solver[ish][block])],\
+            assert list(gf.indices) == 2 * [map(str, gf_struct[ish][block])],\
                 "block " + block + " has wrong indices (shell {})".format(ish)
 
-    def convert_gf(self, G, G_struct, ish=0, show_warnings=True,
-                   G_out=None, **kwargs):
-        """ Convert BlockGf from its structure to this (solver) structure.
+    def convert_gf(self, G, G_struct, ish_from=0, ish_to=None, show_warnings=True,
+                   G_out=None, space_from='solver', space_to='solver', ish=None, **kwargs):
+        """ Convert BlockGf from its structure to this structure.
 
         .. warning::
 
@@ -432,10 +458,13 @@ class BlockStructure(object):
         G : BlockGf
             the Gf that should be converted
         G_struct : BlockStructure or str
-            the structure of that G or 'sumk' (then, the structure of
-            the sumk Green's function of this BlockStructure is used)
-        ish : int
-            shell index
+            the structure of that G or None (then, this structure
+            is used)
+        ish_from : int
+            shell index of the input structure
+        ish_to : int
+            shell index of the output structure; if None (the default),
+            it is the same as ish_from
         show_warnings : bool or float
             whether to show warnings when elements of the Green's
             function get thrown away
@@ -445,41 +474,67 @@ class BlockStructure(object):
         G_out : BlockGf
             the output Green's function (if not given, a new one is
             created)
+        space_from : 'solver' or 'sumk'
+            whether the Green's function ``G`` corresponds to the
+            solver or sumk structure of ``G_struct``
+        space_to : 'solver' or 'sumk'
+            whether the output Green's function should be according to
+            the solver of sumk structure of this structure
         **kwargs :
             options passed to the constructor for the new Gf
         """
+
+        if ish is not None:
+            warn(
+                'The parameter ish in convert_gf is deprecated. Use ish_from and ish_to instead.')
+            ish_from = ish
+            ish_to = ish
+
+        if ish_to is None:
+            ish_to = ish_from
 
         warning_threshold = 1.e-10
         if isinstance(show_warnings, float):
             warning_threshold = show_warnings
             show_warnings = True
 
-        # we offer the possibility to convert to convert from sumk_dft
-        from_sumk = False
-        if isinstance(G_struct, str) and G_struct == 'sumk':
-            gf_struct_in = self.gf_struct_sumk_dict[ish]
-            from_sumk = True
+        if G_struct is None:
+            G_struct = self
+
+        if space_from == 'solver':
+            gf_struct_in = G_struct.gf_struct_solver[ish_from]
+        elif space_from == 'sumk':
+            gf_struct_in = G_struct.gf_struct_sumk_dict[ish_from]
         else:
-            gf_struct_in = G_struct.gf_struct_solver[ish]
+            raise Exception(
+                "Argument space_from has to be either 'solver' or 'sumk'.")
 
         # create a Green's function to hold the result
         if G_out is None:
-            G_out = self.create_gf(ish=ish, **kwargs)
+            G_out = self.create_gf(ish=ish_to, space=space_to, **kwargs)
         else:
-            self.check_gf(G_out, ish=ish)
+            self.check_gf(G_out, ish=ish_to, space=space_to)
 
         for block in gf_struct_in.keys():
             for i1 in gf_struct_in[block]:
                 for i2 in gf_struct_in[block]:
-                    if from_sumk:
+                    if space_from == 'sumk':
                         i1_sumk = (block, i1)
                         i2_sumk = (block, i2)
-                    else:
-                        i1_sumk = G_struct.solver_to_sumk[ish][(block, i1)]
-                        i2_sumk = G_struct.solver_to_sumk[ish][(block, i2)]
+                    elif space_from == 'solver':
+                        i1_sumk = G_struct.solver_to_sumk[ish_from][(block, i1)]
+                        i2_sumk = G_struct.solver_to_sumk[ish_from][(block, i2)]
 
-                    i1_sol = self.sumk_to_solver[ish][i1_sumk]
-                    i2_sol = self.sumk_to_solver[ish][i2_sumk]
+                    if space_to == 'sumk':
+                        i1_sol = i1_sumk
+                        i2_sol = i2_sumk
+                    elif space_to == 'solver':
+                        i1_sol = self.sumk_to_solver[ish_to][i1_sumk]
+                        i2_sol = self.sumk_to_solver[ish_to][i2_sumk]
+                    else:
+                        raise Exception(
+                            "Argument space_to has to be either 'solver' or 'sumk'.")
+
                     if i1_sol[0] is None or i2_sol[0] is None:
                         if show_warnings:
                             if mpi.is_master_node():

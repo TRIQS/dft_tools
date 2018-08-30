@@ -743,8 +743,7 @@ class SumkDFT(object):
         G_out
         """
         if G_out is None:
-            G_out = [BlockGf(mesh=G_loc[0].mesh,
-                             gf_struct=[(k, v) for k, v in self.gf_struct_solver[ish].iteritems()])
+            G_out = [self.block_structure.create_gf(ish=ish, mesh=G_loc[self.inequiv_to_corr[ish]].mesh)
                      for ish in range(self.n_inequiv_shells)]
         else:
             for ish in range(self.n_inequiv_shells):
@@ -754,8 +753,10 @@ class SumkDFT(object):
         for ish in range(self.n_inequiv_shells):
             self.block_structure.convert_gf(
                 G=G_loc[self.inequiv_to_corr[ish]],
-                G_struct='sumk',
-                ish=ish,
+                G_struct=None,
+                ish_from=self.inequiv_to_corr[ish],
+                ish_to=ish,
+                space_from='sumk',
                 G_out=G_out[ish])
 
         # return only the inequivalent shells:

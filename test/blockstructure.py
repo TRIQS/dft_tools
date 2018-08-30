@@ -61,7 +61,7 @@ G_sumk = BlockGf(mesh=G1.mesh, gf_struct=original_bs.gf_struct_sumk[0])
 for i in range(3):
     G_sumk['up'][i, i] << SemiCircular(1 if i < 2 else 2)
     G_sumk['down'][i, i] << SemiCircular(4 if i < 2 else 3)
-G3 = original_bs.convert_gf(G_sumk, 'sumk', beta=40, n_points=3)
+G3 = original_bs.convert_gf(G_sumk, None, space_from='sumk', beta=40, n_points=3)
 assert_block_gfs_are_close(G1, G3)
 
 assert original_bs.gf_struct_sumk_list ==\
