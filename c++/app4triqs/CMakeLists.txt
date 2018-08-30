@@ -16,7 +16,7 @@ target_compile_definitions(app4triqs_c PRIVATE
 
 # Install library and headers
 install(TARGETS app4triqs_c EXPORT app4triqs-targets DESTINATION lib)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION include FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION include/app4triqs FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h")
 
 
 # ========= Static Analyzer Checks ==========
