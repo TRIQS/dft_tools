@@ -868,7 +868,7 @@ class SumkDFT(object):
             the output G(tau) or A(w)
         """
         # make a GfImTime from the supplied GfImFreq
-        if all(isinstance(g_sh._first(), GfImFreq) for g_sh in G):
+        if all(isinstance(g_sh.mesh, MeshImFreq) for g_sh in G):
             gf = [BlockGf(name_block_generator = [(name, GfImTime(beta=block.mesh.beta,
                 indices=block.indices,n_points=len(block.mesh)+1)) for name, block in g_sh],
                 make_copies=False) for g_sh in G]
@@ -876,15 +876,15 @@ class SumkDFT(object):
                 for name, g in gf[ish]:
                     g.set_from_inverse_fourier(G[ish][name])
         # keep a GfImTime from the supplied GfImTime
-        elif all(isinstance(g_sh._first(), GfImTime) for g_sh in G):
+        elif all(isinstance(g_sh.mesh, MeshImTime) for g_sh in G):
             gf = G
         # make a spectral function from the supplied GfReFreq
-        elif all(isinstance(g_sh._first(), GfReFreq) for g_sh in G):
+        elif all(isinstance(g_sh.mesh, MeshReFreq) for g_sh in G):
             gf = [g_sh.copy() for g_sh in G]
             for ish in range(len(gf)):
                 for name, g in gf[ish]:
                     g << 1.0j*(g-g.conjugate().transpose())/2.0/numpy.pi
-        elif all(isinstance(g_sh._first(), GfReTime) for g_sh in G):
+        elif all(isinstance(g_sh.mesh, MeshReTime) for g_sh in G):
             def get_delta_from_mesh(mesh):
                 w0 = None
                 for w in mesh:
