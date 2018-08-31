@@ -36,6 +36,9 @@ from warnings import warn
 from scipy import compress
 from scipy.optimize import minimize
 
+# TODO: check where the transformation in block_structure has to enter
+#       - DC
+
 
 class SumkDFT(object):
     """This class provides a general SumK method for combining ab-initio code and pytriqs."""

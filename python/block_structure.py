@@ -62,6 +62,43 @@ class BlockStructure(object):
 
         maps from the solver block to the sumk block
         for *inequivalent* correlated shell ish
+    deg_shells : list of lists of lists OR list of lists of dicts
+        In the simple format, ``deg_shells[ish][grp]`` is a list of
+        block names; ``ish`` is the index of the inequivalent correlated shell,
+        ``grp`` is the index of the group of symmetry-related blocks.
+        When the name of two blocks is in the same group, that means that
+        these two blocks are the same by symmetry.
+
+        In the more general format, ``deg_shells[ish][grp]`` is a
+        dictionary whose keys are the block names that are part of the
+        group. The values of the dict for each key are tuples ``(v, conj)``,
+        where ``v`` is a transformation matrix with the same matrix dimensions
+        as the block and ``conj`` is a bool (whether or not to conjugate).
+        Two blocks with ``v_1, conj_1`` and ``v_2, conj_2`` being in the same
+        symmetry group means that
+
+        .. math::
+
+            C_1(v_1^\dagger G_1 v_1) = C_2(v_2^\dagger G_2 v_2),
+
+        where the :math:`G_i` are the Green's functions of the block,
+        and the functions :math:`C_i` conjugate their argument if the bool
+        ``conj_i`` is ``True``.
+    transformation : list of numpy.array or list of dict
+        a list with entries for each ``ish`` giving transformation matrices
+        that are used on the Green's function in ``sumk`` space when before
+        converting to the ``solver`` space
+        Up to the change in block structure,
+
+        .. math::
+
+            G_{solver} = T G_{sumk} T^\dagger
+
+        if :math:`T` is the ``transformation`` of that particular shell.
+
+        Note that for each shell this can either be a numpy array which
+        applies to all blocks or a dict with a transformation matrix for
+        each block.
     """
 
     def __init__(self, gf_struct_sumk=None,
@@ -69,13 +106,15 @@ class BlockStructure(object):
                  solver_to_sumk=None,
                  sumk_to_solver=None,
                  solver_to_sumk_block=None,
-                 deg_shells=None):
+                 deg_shells=None,
+                 transformation=None):
         self.gf_struct_sumk = gf_struct_sumk
         self.gf_struct_solver = gf_struct_solver
         self.solver_to_sumk = solver_to_sumk
         self.sumk_to_solver = sumk_to_solver
         self.solver_to_sumk_block = solver_to_sumk_block
         self.deg_shells = deg_shells
+        self.transformation = transformation
 
     @property
     def gf_struct_solver_list(self):
@@ -143,6 +182,13 @@ class BlockStructure(object):
         """
         return [{block: indices for block, indices in gfs}
                 for gfs in self.gf_struct_sumk]
+
+    @property
+    def effective_transformation(self):
+        # TODO: if transformation is None, return np.eye
+        # TODO: zero out all the lines of the transformation that are
+        #       not included in gf_struct_solver
+        return self.transformation
 
     @classmethod
     def full_structure(cls,gf_struct,corr_to_inequiv):
@@ -294,6 +340,10 @@ class BlockStructure(object):
             but the sumk Gf.
         """
 
+        # TODO: when there is a transformation matrix, this should
+        #       first zero out the corresponding rows of (a copy of) T and then
+        #       pick_gf_struct_solver all lines of (the copy of) T that have at least
+        #       one non-zero entry
 
         gfs = []
         # construct gfs, which is the equivalent of new_gf_struct
@@ -309,9 +359,8 @@ class BlockStructure(object):
                     gfs[ish][ind_sol[0]].append(ind_sol[1])
         self.pick_gf_struct_solver(gfs)
 
-
-    def map_gf_struct_solver(self,mapping):
-        """ Map the Green function structure from one struct to another.
+    def map_gf_struct_solver(self, mapping):
+        r""" Map the Green function structure from one struct to another.
 
         Parameters
         ----------
@@ -319,35 +368,51 @@ class BlockStructure(object):
             the dict consists of elements
             (from_block,from_index) : (to_block,to_index)
             that maps from one structure to the other
+            (one for each shell; use a mapping ``None`` for a shell
+            you want to leave unchanged)
+
+        Examples
+        --------
+
+        Consider a `gf_struct_solver` consisting of two :math:`1 \times 1`
+        blocks, `block_1` and `block_2`. Say you want to have a new block
+        structure where you merge them into one block because you want to
+        introduce an off-diagonal element. You could perform the mapping
+        via::
+
+            map_gf_struct_solver([{('block_1',0) : ('block', 0)
+                                   ('block_2',0) : ('block', 1)}])
         """
 
         for ish in range(len(mapping)):
+            if mapping[ish] is None:
+                continue
             gf_struct = {}
             so2su = {}
             su2so = {}
             so2su_block = {}
-            for frm,to in mapping[ish].iteritems():
+            for frm, to in mapping[ish].iteritems():
                 if not to[0] in gf_struct:
-                    gf_struct[to[0]]=[]
+                    gf_struct[to[0]] = []
                 gf_struct[to[0]].append(to[1])
 
-                so2su[to]=self.solver_to_sumk[ish][frm]
-                su2so[self.solver_to_sumk[ish][frm]]=to
+                so2su[to] = self.solver_to_sumk[ish][frm]
+                su2so[self.solver_to_sumk[ish][frm]] = to
                 if to[0] in so2su_block:
                     if so2su_block[to[0]] != \
-                        self.solver_to_sumk_block[ish][frm[0]]:
+                            self.solver_to_sumk_block[ish][frm[0]]:
                             warn("solver block '{}' maps to more than one sumk block: '{}', '{}'".format(
-                                    to[0],so2su_block[to[0]],self.solver_to_sumk_block[ish][frm[0]]))
+                                to[0], so2su_block[to[0]], self.solver_to_sumk_block[ish][frm[0]]))
                 else:
-                    so2su_block[to[0]]=\
+                    so2su_block[to[0]] =\
                         self.solver_to_sumk_block[ish][frm[0]]
             for k in self.sumk_to_solver[ish].keys():
                 if not k in su2so:
-                    su2so[k] = (None,None)
-            self.gf_struct_solver[ish]=gf_struct
-            self.solver_to_sumk[ish]=so2su
-            self.sumk_to_solver[ish]=su2so
-            self.solver_to_sumk_block[ish]=so2su_block
+                    su2so[k] = (None, None)
+            self.gf_struct_solver[ish] = gf_struct
+            self.solver_to_sumk[ish] = so2su
+            self.sumk_to_solver[ish] = su2so
+            self.solver_to_sumk_block[ish] = so2su_block
 
     def create_gf(self, ish=0, gf_function=GfImFreq, space='solver', **kwargs):
         """ Create a zero BlockGf having the correct structure.
@@ -484,6 +549,8 @@ class BlockStructure(object):
             options passed to the constructor for the new Gf
         """
 
+        # TODO: use effective_transformation here
+
         if ish is not None:
             warn(
                 'The parameter ish in convert_gf is deprecated. Use ish_from and ish_to instead.')
@@ -607,7 +674,7 @@ class BlockStructure(object):
 
         for prop in [ "gf_struct_sumk", "gf_struct_solver",
                 "solver_to_sumk", "sumk_to_solver", "solver_to_sumk_block",
-                "deg_shells"]:
+                "deg_shells","transformation"]:
             if not compare(getattr(self,prop),getattr(other,prop)):
                 return False
         return True
@@ -620,8 +687,12 @@ class BlockStructure(object):
 
         ret = {}
         for element in [ "gf_struct_sumk", "gf_struct_solver",
-                         "solver_to_sumk_block","deg_shells"]:
+                         "solver_to_sumk_block","deg_shells",
+                         "transformation"]:
             ret[element] = getattr(self,element)
+
+        if ret["transformation"] is None:
+            ret["transformation"] = "None"
 
         def construct_mapping(mapping):
             d = []
@@ -647,6 +718,9 @@ class BlockStructure(object):
                     # literal_eval is a saje alternative to eval
                     d[ish][literal_eval(k)] = literal_eval(v)
             return d
+
+        if 'transformation' in D and D['transformation'] == "None":
+            D['transformation'] = None
 
         D['solver_to_sumk']=reconstruct_mapping(D['solver_to_sumk'])
         D['sumk_to_solver']=reconstruct_mapping(D['sumk_to_solver'])
@@ -679,6 +753,8 @@ class BlockStructure(object):
                 else:
                     for key in self.deg_shells[ish][l]:
                         s+='   '+key+'\n'
+        s += "transformation\n"
+        s += str(self.transformation)
         return s
 
 from pytriqs.archive.hdf_archive_schemes import register_class
