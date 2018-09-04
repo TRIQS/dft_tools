@@ -26,6 +26,7 @@ User guide
    guide/dftdmft_singleshot
    guide/SrVO3
    guide/dftdmft_selfcons
+   guide/Sr2RuO4
    guide/analysis
    guide/full_tutorial
    guide/transport
