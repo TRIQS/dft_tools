@@ -7,7 +7,7 @@ _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import mytest
 import numpy as np
-from converters.plovasp.vaspio import Doscar
+from triqs_dft_tools.converters.plovasp.vaspio import Doscar
 
 ################################################################################
 #

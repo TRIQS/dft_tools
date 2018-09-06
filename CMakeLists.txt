@@ -45,7 +45,7 @@ add_subdirectory(fortran/dmftproj)
 message(STATUS "TRIQS : Adding compilation flags detected by the library (C++11/14, libc++, etc...) ")
 
 add_subdirectory(c++)
-add_subdirectory(python)
+add_subdirectory(python python/triqs_dft_tools)
 add_subdirectory(shells)
 
 #------------------------

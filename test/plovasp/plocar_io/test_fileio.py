@@ -3,7 +3,7 @@ Tests of 'read_plocar()' from module 'plocar_io.c_plocar_io'
 """
 import mytest
 import numpy as np
-from plocar_io.c_plocar_io import read_plocar
+from triqs_dft_tools.plocar_io.c_plocar_io import read_plocar
 
 ################################################################################
 #

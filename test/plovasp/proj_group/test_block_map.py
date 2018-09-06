@@ -4,9 +4,9 @@ import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import numpy as np
-from converters.plovasp.inpconf import ConfigParameters
-from converters.plovasp.proj_shell import ProjectorShell
-from converters.plovasp.proj_group import ProjectorGroup
+from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
+from triqs_dft_tools.converters.plovasp.proj_shell import ProjectorShell
+from triqs_dft_tools.converters.plovasp.proj_group import ProjectorGroup
 import mytest
 
 ################################################################################
