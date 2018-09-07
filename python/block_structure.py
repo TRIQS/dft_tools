@@ -133,6 +133,8 @@ class BlockStructure(object):
 
         The list for each shell is sorted alphabetically by block name.
         """
+        if self.gf_struct_solver is None:
+            return None
         # we sort by block name in order to get a reproducible result
         return [sorted([(k, v) for k, v in gfs.iteritems()], key=lambda x: x[0])
                 for gfs in self.gf_struct_solver]
@@ -180,15 +182,55 @@ class BlockStructure(object):
         ``gf_struct_sumk_dict[ish][bname]``
         is a list of the indices of block ``bname`` of shell ``ish``.
         """
+        if self.gf_struct_sumk is None:
+            return None
         return [{block: indices for block, indices in gfs}
                 for gfs in self.gf_struct_sumk]
 
     @property
-    def effective_transformation(self):
-        # TODO: if transformation is None, return np.eye
-        # TODO: zero out all the lines of the transformation that are
-        #       not included in gf_struct_solver
-        return self.transformation
+    def effective_transformation_sumk(self):
+        trans = copy.deepcopy(self.transformation)
+        if self.gf_struct_sumk is None:
+            raise Exception('gf_struct_sumk not set.')
+        if self.gf_struct_solver is None:
+            raise Exception('gf_struct_solver not set.')
+
+        if trans is None:
+            trans = [{block: np.eye(len(indices)) for block, indices in gfs}
+                     for gfs in self.gf_struct_sumk]
+
+        assert isinstance(trans, list),\
+            "transformation has to be a list"
+
+        assert len(trans) == len(self.gf_struct_sumk),\
+            "give one transformation per correlated shell"
+
+        for icrsh in range(len(trans)):
+            if trans[icrsh] is None:
+                trans[icrsh] = {block: np.eye(len(indices))
+                                for block, indices in self.gf_struct_sumk[icrsh]}
+
+            if not isinstance(trans[icrsh], dict):
+                trans[icrsh] = {block: copy.deepcopy(trans[icrsh])
+                                for block, indices in self.gf_struct_sumk[icrsh]}
+
+            assert trans[icrsh].keys() == self.gf_struct_sumk_dict[icrsh].keys(),\
+                "wrong block names used in transformation (icrsh = {})".format(icrsh)
+
+            for block in trans[icrsh]:
+                assert trans[icrsh][block].shape[0] == trans[icrsh][block].shape[1],\
+                    "Transformation has to be quadratic; throwing away orbitals can be achieved on the level of the mapping. (icrsh = {}, block = {})".format(icrsh, block)
+
+                assert trans[icrsh][block].shape[0] == len(self.gf_struct_sumk_dict[icrsh][block]),\
+                    "Transformation block shape does not match gf_struct_sumk. (icrsh = {}, block = {})".format(icrsh, block)
+
+                # zero out all the lines of the transformation that are
+                # not included in gf_struct_solver
+                for iorb, norb in enumerate(self.gf_struct_sumk_dict[icrsh][block]):
+                    if self.sumk_to_solver[icrsh][(block, norb)][0] is None:
+                        trans[icrsh][block][iorb, :] = 0.0
+        return trans
+
 
     @classmethod
     def full_structure(cls,gf_struct,corr_to_inequiv):

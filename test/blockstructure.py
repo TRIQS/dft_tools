@@ -3,14 +3,37 @@ from pytriqs.utility.h5diff import h5diff
 from pytriqs.gf import *
 from pytriqs.utility.comparison_tests import assert_block_gfs_are_close
 from triqs_dft_tools.block_structure import BlockStructure
+import numpy as np
+from pytriqs.utility.h5diff import compare, failures
+
+
+def cmp(a, b, precision=1.e-15):
+    compare('', a, b, 0, precision)
+    if failures:
+        raise AssertionError('\n'.join(failures))
 
 SK = SumkDFT('blockstructure.in.h5', use_dft_blocks=True)
 
 original_bs = SK.block_structure
+cmp(original_bs.effective_transformation_sumk,
+    [{'down': np.array([[1., 0., 0.],
+                        [0., 1., 0.],
+                        [0., 0., 1.]]),
+      'up': np.array([[1., 0., 0.],
+                      [0., 1., 0.],
+                      [0., 0., 1.]])}])
 
 # check pick_gf_struct_solver
 pick1 = original_bs.copy()
 pick1.pick_gf_struct_solver([{'up_0': [1], 'up_1': [0], 'down_1': [0]}])
+
+cmp(pick1.effective_transformation_sumk,
+    [{'down': np.array([[0., 0., 0.],
+                        [0., 0., 0.],
+                        [0., 0., 1.]]),
+      'up': np.array([[0., 0., 0.],
+                      [0., 1., 0.],
+                      [0., 0., 1.]])}])
 
 # check loading a block_structure from file
 SK.block_structure = SK.load(['block_structure'], 'mod')[0]
@@ -25,9 +48,35 @@ sk_pick1 = BlockStructure(gf_struct_sumk=SK.gf_struct_sumk,
                           deg_shells=SK.deg_shells)
 assert sk_pick1 == pick1, 'constructing block structure from SumkDFT properties failed'
 
+cmp(pick1.effective_transformation_sumk,
+    [{'down': np.array([[0., 0., 0.],
+                        [0., 0., 0.],
+                        [0., 0., 1.]]),
+      'up': np.array([[0., 0., 0.],
+                      [0., 1., 0.],
+                      [0., 0., 1.]])}])
+
 # check pick_gf_struct_sumk
 pick2 = original_bs.copy()
 pick2.pick_gf_struct_sumk([{'up': [1, 2], 'down': [0, 1]}])
+
+cmp(pick2.effective_transformation_sumk,
+    [{'down': np.array([[1., 0., 0.],
+                        [0., 1., 0.],
+                        [0., 0., 0.]]),
+      'up': np.array([[0., 0., 0.],
+                      [0., 1., 0.],
+                      [0., 0., 1.]])}])
+
+pick3 = pick2.copy()
+pick3.transformation = [np.reshape(range(9), (3, 3))]
+cmp(pick3.effective_transformation_sumk,
+    [{'down': np.array([[0, 1, 2],
+                        [3, 4, 5],
+                        [0, 0, 0]]),
+      'up': np.array([[0, 0, 0],
+                      [3, 4, 5],
+                      [6, 7, 8]])}])
 
 # check map_gf_struct_solver
 mapping = [{('down_0', 0): ('down', 0),
@@ -61,7 +110,11 @@ G_sumk = BlockGf(mesh=G1.mesh, gf_struct=original_bs.gf_struct_sumk[0])
 for i in range(3):
     G_sumk['up'][i, i] << SemiCircular(1 if i < 2 else 2)
     G_sumk['down'][i, i] << SemiCircular(4 if i < 2 else 3)
-G3 = original_bs.convert_gf(G_sumk, None, space_from='sumk', beta=40, n_points=3)
+G3 = original_bs.convert_gf(G_sumk,
+                            None,
+                            space_from='sumk',
+                            beta=40,
+                            n_points=3)
 assert_block_gfs_are_close(G1, G3)
 
 assert original_bs.gf_struct_sumk_list ==\
