@@ -45,7 +45,8 @@ sk_pick1 = BlockStructure(gf_struct_sumk=SK.gf_struct_sumk,
                           solver_to_sumk=SK.solver_to_sumk,
                           sumk_to_solver=SK.sumk_to_solver,
                           solver_to_sumk_block=SK.solver_to_sumk_block,
-                          deg_shells=SK.deg_shells)
+                          deg_shells=SK.deg_shells,
+                          corr_to_inequiv=SK.corr_to_inequiv)
 assert sk_pick1 == pick1, 'constructing block structure from SumkDFT properties failed'
 
 cmp(pick1.effective_transformation_sumk,

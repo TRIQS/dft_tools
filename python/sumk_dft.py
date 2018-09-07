@@ -98,6 +98,8 @@ class SumkDFT(object):
             self.misc_data = misc_data
             self.h_field = h_field
 
+            self.block_structure = BlockStructure()
+
             # Read input from HDF:
             things_to_read = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                               'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
@@ -122,8 +124,6 @@ class SumkDFT(object):
                 for isp in range(self.n_spin_blocks[iso]):
                     self.spin_names_to_ind[iso][
                         self.spin_block_names[iso][isp]] = isp * self.SP
-
-            self.block_structure = BlockStructure()
 
             # GF structure used for the local things in the k sums
             # Most general form allowing for all hybridisation, i.e. largest
@@ -187,7 +187,7 @@ class SumkDFT(object):
         # initialise variables on all nodes to ensure mpi broadcast works at
         # the end
         for it in things_to_read:
-            setattr(self, it, 0)
+            setattr(self, it, None)
         subgroup_present = 0
 
         if mpi.is_master_node():
@@ -2145,3 +2145,15 @@ class SumkDFT(object):
     @property
     def gf_struct_sumk_dict(self):
         return self.block_structure.gf_struct_sumk_dict
+
+    def __get_corr_to_inequiv(self):
+        return self.block_structure.corr_to_inequiv
+    def __set_corr_to_inequiv(self, value):
+        self.block_structure.corr_to_inequiv = value
+    corr_to_inequiv = property(__get_corr_to_inequiv, __set_corr_to_inequiv)
+
+    def __get_inequiv_to_corr(self):
+        return self.block_structure.inequiv_to_corr
+    def __set_inequiv_to_corr(self, value):
+        self.block_structure.inequiv_to_corr = value
+    inequiv_to_corr = property(__get_inequiv_to_corr, __set_inequiv_to_corr)

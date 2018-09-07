@@ -107,6 +107,7 @@ class BlockStructure(object):
                  sumk_to_solver=None,
                  solver_to_sumk_block=None,
                  deg_shells=None,
+                 corr_to_inequiv = None,
                  transformation=None):
         self.gf_struct_sumk = gf_struct_sumk
         self.gf_struct_solver = gf_struct_solver
@@ -114,6 +115,7 @@ class BlockStructure(object):
         self.sumk_to_solver = sumk_to_solver
         self.solver_to_sumk_block = solver_to_sumk_block
         self.deg_shells = deg_shells
+        self.corr_to_inequiv = corr_to_inequiv
         self.transformation = transformation
 
     @property
@@ -186,6 +188,24 @@ class BlockStructure(object):
             return None
         return [{block: indices for block, indices in gfs}
                 for gfs in self.gf_struct_sumk]
+
+    @property
+    def inequiv_to_corr(self):
+        if self.corr_to_inequiv is None:
+            return None
+        N_solver = len(np.unique(self.corr_to_inequiv))
+        if self.gf_struct_solver is not None:
+            assert N_solver == len(self.gf_struct_solver)
+        assert sorted(np.unique(self.corr_to_inequiv)) == range(N_solver),\
+            "an inequivalent shell is missing in corr_to_inequiv"
+        return [self.corr_to_inequiv.index(icrsh)
+                for icrsh in range(N_solver)]
+
+    @inequiv_to_corr.setter
+    def inequiv_to_corr(self, value):
+        if value is None:
+            return
+        assert self.inequiv_to_corr == value, "Trying to set incompatible inequiv_to_corr"
 
     @property
     def effective_transformation_sumk(self):
@@ -285,7 +305,8 @@ class BlockStructure(object):
                 solver_to_sumk = copy.deepcopy(solver_to_sumk),
                 sumk_to_solver = solver_to_sumk,
                 solver_to_sumk_block = s2sblock,
-                deg_shells = [[] for ish in range(len(gf_struct))])
+                deg_shells = [[] for ish in range(len(gf_struct))],
+                corr_to_inequiv = corr_to_inequiv)
 
     def pick_gf_struct_solver(self,new_gf_struct):
         """ Pick selected orbitals within blocks.
@@ -716,7 +737,7 @@ class BlockStructure(object):
 
         for prop in [ "gf_struct_sumk", "gf_struct_solver",
                 "solver_to_sumk", "sumk_to_solver", "solver_to_sumk_block",
-                "deg_shells","transformation"]:
+                "deg_shells","transformation", "corr_to_inequiv"]:
             if not compare(getattr(self,prop),getattr(other,prop)):
                 return False
         return True
@@ -730,8 +751,10 @@ class BlockStructure(object):
         ret = {}
         for element in [ "gf_struct_sumk", "gf_struct_solver",
                          "solver_to_sumk_block","deg_shells",
-                         "transformation"]:
+                         "transformation", "corr_to_inequiv"]:
             ret[element] = getattr(self,element)
+            if ret[element] is None:
+                ret[element] = 'None'
 
         if ret["transformation"] is None:
             ret["transformation"] = "None"
@@ -761,8 +784,9 @@ class BlockStructure(object):
                     d[ish][literal_eval(k)] = literal_eval(v)
             return d
 
-        if 'transformation' in D and D['transformation'] == "None":
-            D['transformation'] = None
+        for elem in D:
+            if D[elem]=="None":
+                D[elem] = None
 
         D['solver_to_sumk']=reconstruct_mapping(D['solver_to_sumk'])
         D['sumk_to_solver']=reconstruct_mapping(D['sumk_to_solver'])
@@ -770,7 +794,8 @@ class BlockStructure(object):
 
     def __str__(self):
         s=''
-        s+= "gf_struct_sumk "+str( self.gf_struct_sumk)+'\n'
+        s+= "corr_to_inequiv "+str(self.corr_to_inequiv)+'\n'
+        s+= "gf_struct_sumk "+str(self.gf_struct_sumk)+'\n'
         s+= "gf_struct_solver "+str(self.gf_struct_solver)+'\n'
         s+= "solver_to_sumk_block "+str(self.solver_to_sumk_block)+'\n'
         for el in ['solver_to_sumk','sumk_to_solver']:
