@@ -22,6 +22,14 @@ cmp(original_bs.effective_transformation_sumk,
       'up': np.array([[1., 0., 0.],
                       [0., 1., 0.],
                       [0., 0., 1.]])}])
+cmp(original_bs.effective_transformation_solver,
+    [{'up_0': np.array([[1., 0., 0.],
+                        [0., 1., 0.]]),
+      'up_1': np.array([[0., 0., 1.]]),
+      'down_1': np.array([[0., 0., 1.]]),
+      'down_0': np.array([[1., 0., 0.],
+                          [0., 1., 0.]])}])
+
 
 # check pick_gf_struct_solver
 pick1 = original_bs.copy()
@@ -34,6 +42,10 @@ cmp(pick1.effective_transformation_sumk,
       'up': np.array([[0., 0., 0.],
                       [0., 1., 0.],
                       [0., 0., 1.]])}])
+cmp(pick1.effective_transformation_solver,
+    [{'up_0': np.array([[0., 1., 0.]]),
+      'up_1': np.array([[0., 0., 1.]]),
+      'down_1': np.array([[0., 0., 1.]])}])
 
 # check loading a block_structure from file
 SK.block_structure = SK.load(['block_structure'], 'mod')[0]
@@ -56,6 +68,10 @@ cmp(pick1.effective_transformation_sumk,
       'up': np.array([[0., 0., 0.],
                       [0., 1., 0.],
                       [0., 0., 1.]])}])
+cmp(pick1.effective_transformation_solver,
+    [{'up_0': np.array([[0., 1., 0.]]),
+      'up_1': np.array([[0., 0., 1.]]),
+      'down_1': np.array([[0., 0., 1.]])}])
 
 # check pick_gf_struct_sumk
 pick2 = original_bs.copy()
@@ -68,6 +84,11 @@ cmp(pick2.effective_transformation_sumk,
       'up': np.array([[0., 0., 0.],
                       [0., 1., 0.],
                       [0., 0., 1.]])}])
+cmp(pick2.effective_transformation_solver,
+    [{'up_0': np.array([[0., 1., 0.]]),
+      'up_1': np.array([[0., 0., 1.]]),
+      'down_0': np.array([[1., 0., 0.],
+                          [0., 1., 0.]])}])
 
 pick3 = pick2.copy()
 pick3.transformation = [np.reshape(range(9), (3, 3))]
@@ -78,6 +99,11 @@ cmp(pick3.effective_transformation_sumk,
       'up': np.array([[0, 0, 0],
                       [3, 4, 5],
                       [6, 7, 8]])}])
+cmp(pick3.effective_transformation_solver,
+    [{'up_0': np.array([[3, 4, 5]]),
+      'up_1': np.array([[6, 7, 8]]),
+      'down_0': np.array([[0, 1, 2],
+                          [3, 4, 5]])}])
 
 # check map_gf_struct_solver
 mapping = [{('down_0', 0): ('down', 0),

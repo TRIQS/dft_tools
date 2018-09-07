@@ -251,6 +251,28 @@ class BlockStructure(object):
                         trans[icrsh][block][iorb, :] = 0.0
         return trans
 
+    @property
+    def effective_transformation_solver(self):
+        eff_trans_sumk = self.effective_transformation_sumk
+
+        ets = []
+        for ish in range(len(self.gf_struct_solver)):
+            icrsh = self.inequiv_to_corr[ish]
+            ets.append(dict())
+            for block in self.gf_struct_solver[ish]:
+                block_sumk = self.solver_to_sumk_block[ish][block]
+                T = eff_trans_sumk[icrsh][block_sumk]
+                ets[ish][block] = np.zeros((len(self.gf_struct_solver[ish][block]),
+                                            len(T)),
+                                           dtype=T.dtype)
+                for i in self.gf_struct_solver[ish][block]:
+                    i_sumk = self.solver_to_sumk[ish][block, i]
+                    assert i_sumk[0] == block_sumk,\
+                        "Wrong block in solver_to_sumk"
+                    i_sumk = i_sumk[1]
+                    ets[ish][block][i, :] = T[i_sumk, :]
+        return ets
+
 
     @classmethod
     def full_structure(cls,gf_struct,corr_to_inequiv):
