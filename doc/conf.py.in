@@ -4,6 +4,7 @@
 
 import sys
 sys.path.insert(0, "@TRIQS_SPHINXEXT_PATH@/numpydoc")
+sys.path.insert(0, "@CMAKE_BINARY_DIR@/python")
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
