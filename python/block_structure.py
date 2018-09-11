@@ -84,6 +84,9 @@ class BlockStructure(object):
         where the :math:`G_i` are the Green's functions of the block,
         and the functions :math:`C_i` conjugate their argument if the bool
         ``conj_i`` is ``True``.
+    corr_to_inequiv : list
+        a list where, for each correlated shell, the index of the corresponding
+        inequivalent correlated shell is given
     transformation : list of numpy.array or list of dict
         a list with entries for each ``ish`` giving transformation matrices
         that are used on the Green's function in ``sumk`` space when before
@@ -123,7 +126,7 @@ class BlockStructure(object):
         """ The structure of the solver Green's function
 
         This is returned as a
-            list (for each shell)
+        list (for each shell)
         of lists (for each block)
         of tuples (block_name, block_indices).
 
@@ -146,7 +149,7 @@ class BlockStructure(object):
         """ The structure of the sumk Green's function
 
         This is returned as a
-            list (for each shell)
+        list (for each shell)
         of lists (for each block)
         of tuples (block_name, block_indices)
 
@@ -163,7 +166,7 @@ class BlockStructure(object):
         """ The structure of the solver Green's function
 
         This is returned as a
-            list (for each shell)
+        list (for each shell)
         of dictionaries.
 
         That is,
@@ -177,7 +180,7 @@ class BlockStructure(object):
         """ The structure of the sumk Green's function
 
         This is returned as a
-            list (for each shell)
+        list (for each shell)
         of dictionaries.
 
         That is,
@@ -191,6 +194,9 @@ class BlockStructure(object):
 
     @property
     def inequiv_to_corr(self):
+        """ A list mapping an inequivalent correlated shell to a correlated shell
+        """
+
         if self.corr_to_inequiv is None:
             return None
         N_solver = len(np.unique(self.corr_to_inequiv))
@@ -209,6 +215,12 @@ class BlockStructure(object):
 
     @property
     def effective_transformation_sumk(self):
+        """ Return the effective transformation matrix
+
+        A list of dicts, one for every correlated shell. In the dict,
+        there is a transformation matrix (as numpy array) for each
+        block in sumk space, that is used to transform the block.
+        """
         trans = copy.deepcopy(self.transformation)
         if self.gf_struct_sumk is None:
             raise Exception('gf_struct_sumk not set.')
@@ -253,6 +265,31 @@ class BlockStructure(object):
 
     @property
     def effective_transformation_solver(self):
+        """ Return the effective transformation matrix
+
+        A list of dicts, one for every inequivalent correlated shell.
+        In the dict, there is a transformation matrix (as numpy array)
+        for each block in solver space, that is used to transform from
+        the sumk block (see :py:meth:`.solver_to_sumk_block`) to the
+        solver block.
+
+
+        For a solver block ``b`` for inequivalent correlated shell ``ish``,
+        the corresponding block of the solver Green's function is::
+
+            # the effective transformation matrix for the block
+            T = block_structure.effective_transformation_solver[ish][b]
+            # the index of the correlated shell
+            icrsh = block_structure.inequiv_to_corr[ish]
+            # the name of the corresponding sumk block
+            block_sumk = block_structure.solver_to_sumk_block[icrsh][b]
+            # transform the Green's function
+            G_solver[ish][b].from_L_G_R(T, G_sumk[icrsh][block_sumk], T.conjugate().transpose())
+
+        The functionality of that code block is implemented in
+        :py:meth:`.convert_gf` (i.e., you don't need to use this directly).
+        """
+
         eff_trans_sumk = self.effective_transformation_sumk
 
         ets = []
@@ -512,8 +549,8 @@ class BlockStructure(object):
         ----------
         ish : int
             shell index
-            If ``space='solver', the index of the of the inequivalent correlated shell,
-            if ``space='sumk'`, the index of the correlated shell
+            If ``space='solver'``, the index of the of the inequivalent correlated shell,
+            if ``space='sumk'``, the index of the correlated shell
         gf_function : constructor
             function used to construct the Gf objects constituting the
             individual blocks; default: GfImFreq
