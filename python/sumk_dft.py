@@ -36,9 +36,6 @@ from warnings import warn
 from scipy import compress
 from scipy.optimize import minimize
 
-# TODO: check where the transformation in block_structure has to enter
-#       - DC
-
 
 class SumkDFT(object):
     """This class provides a general SumK method for combining ab-initio code and pytriqs."""
@@ -1526,21 +1523,22 @@ class SumkDFT(object):
         dc_imp : gf_struct_sumk like
                  Double-counting self-energy term.
         dc_energ : list of floats
-                   Double-counting energy corrections for each correlated shell. 
+                   Double-counting energy corrections for each correlated shell.
 
         """
 
         self.dc_imp = dc_imp
         self.dc_energ = dc_energ
 
-    def calc_dc(self, dens_mat, orb=0, U_interact=None, J_hund=None, use_dc_formula=0, use_dc_value=None):
+    def calc_dc(self, dens_mat, orb=0, U_interact=None, J_hund=None,
+                use_dc_formula=0, use_dc_value=None, transform=True):
         r"""
-        Calculates and sets the double counting corrections.
+        Calculate and set the double counting corrections.
 
         If 'use_dc_value' is provided the double-counting term is uniformly initialized
         with this constant and 'U_interact' and 'J_hund' are ignored.
 
-        If 'use_dc_value' is None the correction is evaluated according to 
+        If 'use_dc_value' is None the correction is evaluated according to
         one of the following formulae:
 
         * use_dc_formula = 0: fully-localised limit (FLL)
@@ -1558,19 +1556,21 @@ class SumkDFT(object):
         Parameters
         ----------
         dens_mat : gf_struct_solver like
-                   Density matrix for the specified correlated shell.
+            Density matrix for the specified correlated shell.
         orb : int, optional
-              Index of an inequivalent shell.
+            Index of an inequivalent shell.
         U_interact : float, optional
-                     Value of interaction parameter `U`.
+            Value of interaction parameter `U`.
         J_hund : float, optional
-                 Value of interaction parameter `J`.
+            Value of interaction parameter `J`.
         use_dc_formula : int, optional
-                         Type of double-counting correction (see description).
+            Type of double-counting correction (see description).
         use_dc_value : float, optional
-                       Value of the double-counting correction. If specified
-                       `U_interact`, `J_hund` and `use_dc_formula` are ignored.
-
+            Value of the double-counting correction. If specified
+            `U_interact`, `J_hund` and `use_dc_formula` are ignored.
+        transform : bool
+            whether or not to use the transformation in block_structure
+            to transform the dc
         """
 
         for icrsh in range(self.n_corr_shells):
@@ -1651,6 +1651,11 @@ class SumkDFT(object):
                 mpi.report(
                     "DC for shell %(icrsh)i = %(use_dc_value)f" % locals())
                 mpi.report("DC energy = %s" % self.dc_energ[icrsh])
+            if transform:
+                for sp in spn:
+                    T = self.block_structure.effective_transformation_sumk[icrsh][sp]
+                    self.dc_imp[icrsh][sp] = numpy.dot(T.conjugate().transpose(),
+                            numpy.dot(self.dc_imp[icrsh][sp], T))
 
     def add_dc(self, iw_or_w="iw"):
         r"""
