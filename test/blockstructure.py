@@ -106,6 +106,22 @@ cmp(pick3.effective_transformation_solver,
       'down_0': np.array([[0, 1, 2],
                           [3, 4, 5]])}])
 
+pick4 = original_bs.copy()
+pick4.transformation = [np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])]
+pick4.pick_gf_struct_sumk([{'up': [1, 2], 'down': [0, 1]}])
+cmp(pick2.gf_struct_sumk, pick4.gf_struct_sumk)
+cmp(pick2.gf_struct_solver, pick4.gf_struct_solver)
+assert pick4.sumk_to_solver == [{('up', 0): ('up_0', 0),
+                                 ('up', 1): (None, None),
+                                 ('up', 2): ('up_1', 0),
+                                 ('down', 2): (None, None),
+                                 ('down', 1): ('down_0', 1),
+                                 ('down', 0): ('down_0', 0)}]
+assert pick4.solver_to_sumk == [{('up_1', 0): ('up', 2),
+                                 ('up_0', 0): ('up', 0),
+                                 ('down_0', 0): ('down', 0),
+                                 ('down_0', 1): ('down', 1)}]
+
 # check map_gf_struct_solver
 mapping = [{('down_0', 0): ('down', 0),
             ('down_0', 1): ('down', 2),

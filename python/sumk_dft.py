@@ -1080,7 +1080,7 @@ class SumkDFT(object):
         full_structure = BlockStructure.full_structure(
             [{sp:range(self.corr_shells[self.inequiv_to_corr[ish]]['dim'])
                 for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]}
-                for ish in range(self.n_inequiv_shells)],None)
+                for ish in range(self.n_inequiv_shells)],self.corr_to_inequiv)
         G_transformed = [
             self.block_structure.convert_gf(G[ish],
                 full_structure, ish, mesh=G[ish].mesh.copy(), show_warnings=threshold,

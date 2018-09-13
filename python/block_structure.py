@@ -217,10 +217,10 @@ class BlockStructure(object):
 
     @property
     def sumk_to_solver_block(self):
-        if self.corr_to_inequiv is None:
+        if self.inequiv_to_corr is None:
             return None
         ret = []
-        for icrsh, ish in enumerate(self.corr_to_inequiv):
+        for ish, icrsh in enumerate(self.inequiv_to_corr):
             d = defaultdict(list)
             for block_solver, block_sumk in self.solver_to_sumk_block[ish].iteritems():
                 d[block_sumk].append(block_solver)
@@ -252,6 +252,7 @@ class BlockStructure(object):
             "give one transformation per correlated shell"
 
         for icrsh in range(len(trans)):
+            ish = self.corr_to_inequiv[icrsh]
             if trans[icrsh] is None:
                 trans[icrsh] = {block: np.eye(len(indices))
                                 for block, indices in self.gf_struct_sumk[icrsh]}
@@ -273,7 +274,7 @@ class BlockStructure(object):
                 # zero out all the lines of the transformation that are
                 # not included in gf_struct_solver
                 for iorb, norb in enumerate(self.gf_struct_sumk_dict[icrsh][block]):
-                    if self.sumk_to_solver[icrsh][(block, norb)][0] is None:
+                    if self.sumk_to_solver[ish][(block, norb)][0] is None:
                         trans[icrsh][block][iorb, :] = 0.0
         return trans
 
@@ -381,7 +382,7 @@ class BlockStructure(object):
                 deg_shells = [[] for ish in range(len(gf_struct))],
                 corr_to_inequiv = corr_to_inequiv)
 
-    def pick_gf_struct_solver(self,new_gf_struct):
+    def pick_gf_struct_solver(self, new_gf_struct):
         """ Pick selected orbitals within blocks.
 
         This throws away parts of the Green's function that (for some
@@ -419,28 +420,28 @@ class BlockStructure(object):
             gf_struct = new_gf_struct[ish]
 
             # create new solver_to_sumk
-            so2su={}
+            so2su = {}
             so2su_block = {}
-            for blk,idxs in gf_struct.items():
+            for blk, idxs in gf_struct.items():
                 for i in range(len(idxs)):
-                    so2su[(blk,i)]=self.solver_to_sumk[ish][(blk,idxs[i])]
-                    so2su_block[blk]=so2su[(blk,i)][0]
+                    so2su[(blk, i)] = self.solver_to_sumk[ish][(blk, idxs[i])]
+                    so2su_block[blk] = so2su[(blk, i)][0]
             self.solver_to_sumk[ish] = so2su
             self.solver_to_sumk_block[ish] = so2su_block
             # create new sumk_to_solver
-            for k,v in self.sumk_to_solver[ish].items():
-                blk,ind=v
+            for k, v in self.sumk_to_solver[ish].items():
+                blk, ind = v
                 if blk in gf_struct and ind in gf_struct[blk]:
                     new_ind = gf_struct[blk].index(ind)
-                    self.sumk_to_solver[ish][k]=(blk,new_ind)
+                    self.sumk_to_solver[ish][k] = (blk, new_ind)
                 else:
-                    self.sumk_to_solver[ish][k]=(None,None)
+                    self.sumk_to_solver[ish][k] = (None, None)
             # reindexing gf_struct so that it starts with 0
             for k in gf_struct:
-                gf_struct[k]=range(len(gf_struct[k]))
-            self.gf_struct_solver[ish]=gf_struct
+                gf_struct[k] = range(len(gf_struct[k]))
+            self.gf_struct_solver[ish] = gf_struct
 
-    def pick_gf_struct_sumk(self,new_gf_struct):
+    def pick_gf_struct_sumk(self, new_gf_struct):
         """ Pick selected orbitals within blocks.
 
         This throws away parts of the Green's function that (for some
@@ -475,24 +476,46 @@ class BlockStructure(object):
             However, the indices are not according to the solver Gf
             but the sumk Gf.
         """
+        eff_trans_sumk = self.effective_transformation_sumk
 
-        # TODO: when there is a transformation matrix, this should
-        #       first zero out the corresponding rows of (a copy of) T and then
-        #       pick_gf_struct_solver all lines of (the copy of) T that have at least
-        #       one non-zero entry
+        assert len(eff_trans_sumk) == len(new_gf_struct),\
+            "new_gf_struct has the wrong length"
+
+        new_gf_struct_transformed = copy.deepcopy(new_gf_struct)
+
+        # when there is a transformation matrix, this first zeroes out
+        # the corresponding rows of (a copy of) T and then applies
+        # pick_gf_struct_solver for all lines of  T that have at least
+        # one non-zero entry
+
+        for icrsh in range(len(new_gf_struct)):
+            for block, indices in self.gf_struct_sumk[icrsh]:
+                if not block in new_gf_struct[icrsh]:
+                    del new_gf_struct_transformed[block]
+                    continue
+                T = eff_trans_sumk[icrsh][block]
+                for index in indices:
+                    if not index in new_gf_struct[icrsh][block]:
+                        T[:, index] = 0.0
+                new_indices = []
+                for index in indices:
+                    if np.any(np.abs(T[index, :]) > 1.e-15):
+                        new_indices.append(index)
+                new_gf_struct_transformed[icrsh][block] = new_indices
 
         gfs = []
         # construct gfs, which is the equivalent of new_gf_struct
         # but according to the solver Gf, by using the sumk_to_solver
         # mapping
-        for ish in range(len(new_gf_struct)):
+        for icrsh in range(len(new_gf_struct_transformed)):
+            ish = self.corr_to_inequiv[icrsh]
             gfs.append({})
-            for block in new_gf_struct[ish].keys():
-                for ind in new_gf_struct[ish][block]:
-                    ind_sol = self.sumk_to_solver[ish][(block,ind)]
-                    if not ind_sol[0] in gfs[ish]:
-                        gfs[ish][ind_sol[0]]=[]
-                    gfs[ish][ind_sol[0]].append(ind_sol[1])
+            for block in new_gf_struct_transformed[icrsh].keys():
+                for ind in new_gf_struct_transformed[icrsh][block]:
+                    ind_sol = self.sumk_to_solver[ish][(block, ind)]
+                    if not ind_sol[0] in gfs[icrsh]:
+                        gfs[icrsh][ind_sol[0]] = []
+                    gfs[icrsh][ind_sol[0]].append(ind_sol[1])
         self.pick_gf_struct_solver(gfs)
 
     def map_gf_struct_solver(self, mapping):
@@ -730,6 +753,8 @@ class BlockStructure(object):
 
         # create a Green's function to hold the result
         if G_out is None:
+            if not 'mesh' in kwargs and not 'beta' in kwargs:
+                kwargs['mesh'] = G.mesh
             G_out = self.create_gf(ish=ish_to, space=space_to, **kwargs)
         else:
             self.check_gf(G_out, ish=ish_to, space=space_to)
