@@ -29,6 +29,7 @@ from pytriqs.gf import GfImFreq, BlockGf
 from ast import literal_eval
 import pytriqs.utility.mpi as mpi
 from warnings import warn
+from collections import defaultdict
 
 
 class BlockStructure(object):
@@ -209,9 +210,22 @@ class BlockStructure(object):
 
     @inequiv_to_corr.setter
     def inequiv_to_corr(self, value):
+        # a check for backward compatibility
         if value is None:
             return
         assert self.inequiv_to_corr == value, "Trying to set incompatible inequiv_to_corr"
+
+    @property
+    def sumk_to_solver_block(self):
+        if self.corr_to_inequiv is None:
+            return None
+        ret = []
+        for icrsh, ish in enumerate(self.corr_to_inequiv):
+            d = defaultdict(list)
+            for block_solver, block_sumk in self.solver_to_sumk_block[ish].iteritems():
+                d[block_sumk].append(block_solver)
+            ret.append(d)
+        return ret
 
     @property
     def effective_transformation_sumk(self):
@@ -671,8 +685,6 @@ class BlockStructure(object):
             options passed to the constructor for the new Gf
         """
 
-        # TODO: use effective_transformation here
-
         if ish is not None:
             warn(
                 'The parameter ish in convert_gf is deprecated. Use ish_from and ish_to instead.')
@@ -691,12 +703,30 @@ class BlockStructure(object):
             G_struct = self
 
         if space_from == 'solver':
-            gf_struct_in = G_struct.gf_struct_solver[ish_from]
+            gf_struct_from = G_struct.gf_struct_solver[ish_from]
+            eff_trans_from = G_struct.effective_transformation_solver[ish_from]
+            block_mapping_from = G_struct.sumk_to_solver_block[ish_from]
         elif space_from == 'sumk':
-            gf_struct_in = G_struct.gf_struct_sumk_dict[ish_from]
+            gf_struct_from = G_struct.gf_struct_sumk_dict[ish_from]
+            eff_trans_from = {block: np.eye(len(indices))
+                              for block, indices in G_struct.gf_struct_sumk[ish_from]}
+            block_mapping_from = {b: [b] for b in gf_struct_from}
         else:
             raise Exception(
                 "Argument space_from has to be either 'solver' or 'sumk'.")
+
+        if space_to == 'solver':
+            gf_struct_to = self.gf_struct_solver[ish_to]
+            eff_trans_to = self.effective_transformation_solver[ish_to]
+            block_mapping_to = self.solver_to_sumk_block[ish_to]
+        elif space_to == 'sumk':
+            gf_struct_to = self.gf_struct_sumk_dict[ish_to]
+            eff_trans_to = {block: np.eye(len(indices))
+                            for block, indices in self.gf_struct_sumk_list[ish_to]}
+            block_mapping_to = {b: b for b in gf_struct_to}
+        else:
+            raise Exception(
+                "Argument space_to has to be either 'solver' or 'sumk'.")
 
         # create a Green's function to hold the result
         if G_out is None:
@@ -704,42 +734,30 @@ class BlockStructure(object):
         else:
             self.check_gf(G_out, ish=ish_to, space=space_to)
 
-        for block in gf_struct_in.keys():
-            for i1 in gf_struct_in[block]:
-                for i2 in gf_struct_in[block]:
-                    if space_from == 'sumk':
-                        i1_sumk = (block, i1)
-                        i2_sumk = (block, i2)
-                    elif space_from == 'solver':
-                        i1_sumk = G_struct.solver_to_sumk[ish_from][(block, i1)]
-                        i2_sumk = G_struct.solver_to_sumk[ish_from][(block, i2)]
+        for block_to in gf_struct_to.keys():
+            block_intermediate = block_mapping_to[block_to]
+            block_from = block_mapping_from[block_intermediate]
+            T_to = eff_trans_to[block_to]
+            g_help = G_out[block_to].copy()
+            for block in block_from:
+                T_from = eff_trans_from[block]
+                g_help.from_L_G_R(np.dot(T_to, np.conjugate(np.transpose(T_from))),
+                                  G[block],
+                                  np.dot(T_from, np.conjugate(np.transpose(T_to))))
+                G_out[block_to] << G_out[block_to] + g_help
 
-                    if space_to == 'sumk':
-                        i1_sol = i1_sumk
-                        i2_sol = i2_sumk
-                    elif space_to == 'solver':
-                        i1_sol = self.sumk_to_solver[ish_to][i1_sumk]
-                        i2_sol = self.sumk_to_solver[ish_to][i2_sumk]
-                    else:
-                        raise Exception(
-                            "Argument space_to has to be either 'solver' or 'sumk'.")
-
-                    if i1_sol[0] is None or i2_sol[0] is None:
-                        if show_warnings:
-                            if mpi.is_master_node():
-                                warn(('Element {},{} of block {} of G is not present ' +
-                                      'in the new structure').format(i1, i2, block))
-                        continue
-                    if i1_sol[0] != i2_sol[0]:
-                        if (show_warnings and
-                                np.max(np.abs(G[block][i1, i2].data)) > warning_threshold):
-                            if mpi.is_master_node():
-                                warn(('Element {},{} of block {} of G is approximated ' +
-                                      'to zero to match the new structure. Max abs value: {}').format(
-                                    i1, i2, block, np.max(np.abs(G[block][i1, i2].data))))
-                        continue
-                    G_out[i1_sol[0]][i1_sol[1], i2_sol[1]] = \
-                        G[block][i1, i2]
+        if show_warnings:
+            # we back-transform it
+            G_back = G_struct.convert_gf(G_out, self, ish_from=ish_to,
+                                         ish_to=ish_from,
+                                         show_warnings=False,  # else we get an endless loop
+                                         space_from=space_to, space_to=space_from, **kwargs)
+            for name, gf in G_back:
+                maxdiff = np.max(np.abs(G_back[name].data - G[name].data),
+                                 axis=0)
+                if np.any(maxdiff > warning_threshold):
+                    warn('Block {} maximum difference:\n'.format(name)
+                         + str(maxdiff))
         return G_out
 
     def approximate_as_diagonal(self):

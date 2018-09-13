@@ -2,6 +2,7 @@ from triqs_dft_tools.sumk_dft import *
 from pytriqs.utility.h5diff import h5diff
 from pytriqs.gf import *
 from pytriqs.utility.comparison_tests import assert_block_gfs_are_close
+from scipy.linalg import expm
 from triqs_dft_tools.block_structure import BlockStructure
 import numpy as np
 from pytriqs.utility.h5diff import compare, failures
@@ -127,7 +128,14 @@ offd = original_bs.copy()
 offd.approximate_as_diagonal()
 
 # check map_gf_struct_solver
-G2 = map1.convert_gf(G1, original_bs, beta=40, n_points=3, show_warnings=False)
+import warnings
+with warnings.catch_warnings(record=True) as w:
+    G2 = map1.convert_gf(G1, original_bs, beta=40, n_points=3,
+                         show_warnings=True)
+    assert len(w) == 1
+    assert issubclass(w[-1].category, UserWarning)
+    assert "Block up_1 maximum difference" in str(w[-1].message)
+
 
 # check full_structure
 full = BlockStructure.full_structure(
@@ -143,6 +151,20 @@ G3 = original_bs.convert_gf(G_sumk,
                             beta=40,
                             n_points=3)
 assert_block_gfs_are_close(G1, G3)
+
+# check convert_gf with transformation
+# np.random.seed(894892309)
+H = np.random.rand(3, 3) + 1.0j * np.random.rand(3, 3)
+H = H + H.conjugate().transpose()
+T = expm(1.0j * H)
+G_T = G_sumk.copy()
+for block, gf in G_T:
+    gf.from_L_G_R(T.conjugate().transpose(), gf, T)
+transformed_bs = original_bs.copy()
+transformed_bs.transformation = [T]
+G_bT = transformed_bs.convert_gf(G_T, None, space_from='sumk',
+                                 beta=40, n_points=3)
+assert_block_gfs_are_close(G1, G_bT)
 
 assert original_bs.gf_struct_sumk_list ==\
     [[('up', [0, 1, 2]), ('down', [0, 1, 2])]]
