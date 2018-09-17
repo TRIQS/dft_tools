@@ -598,6 +598,36 @@ class BlockStructure(object):
             blocks
         """
 
+        return self._create_gf_or_matrix(ish, gf_function, BlockGf, space, **kwargs)
+
+    def create_matrix(self, ish=0, space='solver', dtype=np.complex_):
+        """ Create a zero matrix having the correct structure.
+
+        For ``space='solver'``, the structure is according to
+        ``gf_struct_solver``, else according to ``gf_struct_sumk``.
+
+        Parameters
+        ----------
+        ish : int
+            shell index
+            If ``space='solver'``, the index of the of the inequivalent correlated shell,
+            if ``space='sumk'``, the index of the correlated shell
+        space : 'solver' or 'sumk'
+            which space the structure should correspond to
+        """
+
+        def gf_function(indices):
+            return np.zeros((len(indices), len(indices)), dtype=dtype)
+
+        def block_function(name_list, block_list):
+            d = dict()
+            for i in range(len(name_list)):
+                d[name_list[i]] = block_list[i]
+            return d
+
+        return self._create_gf_or_matrix(ish, gf_function, block_function, space)
+
+    def _create_gf_or_matrix(self, ish=0, gf_function=GfImFreq, block_function=BlockGf, space='solver', **kwargs):
         if space == 'solver':
             gf_struct = self.gf_struct_solver
         elif space == 'sumk':
@@ -611,7 +641,7 @@ class BlockStructure(object):
         for n in names:
             G = gf_function(indices=gf_struct[ish][n], **kwargs)
             blocks.append(G)
-        G = BlockGf(name_list=names, block_list=blocks)
+        G = block_function(name_list=names, block_list=blocks)
         return G
 
     def check_gf(self, G, ish=None, space='solver'):
@@ -636,6 +666,34 @@ class BlockStructure(object):
             which space the structure should correspond to
         """
 
+        return self._check_gf_or_matrix(G, ish, space)
+
+    def check_matrix(self, G, ish=None, space='solver'):
+        """ check whether the matrix G has the right structure
+
+        This throws an error if the structure of G is not the same
+        as ``gf_struct_solver`` (for ``space=solver``) or
+        ``gf_struct_sumk`` (for ``space=sumk``)..
+
+        Parameters
+        ----------
+        G : dict of matrices or list of dict of matrices
+            matrix to check
+            if it is a list, there should be as many entries as there
+            are shells, and the check is performed for all shells (unless
+            ish is given).
+        ish : int
+            shell index
+            default: 0 if G is just one matrix is given,
+            check all if list of dicts is given
+        space : 'solver' or 'sumk'
+            which space the structure should correspond to
+        """
+
+        return self._check_gf_or_matrix(G, ish, space)
+
+    def _check_gf_or_matrix(self, G, ish=None, space='solver'):
+
         if space == 'solver':
             gf_struct = self.gf_struct_solver
         elif space == 'sumk':
@@ -658,16 +716,28 @@ class BlockStructure(object):
         if ish is None:
             ish = 0
 
-        for block in gf_struct[ish]:
-            assert block in G.indices,\
-                "block " + block + " not in G (shell {})".format(ish)
-        for block, gf in G:
-            assert block in gf_struct[ish],\
-                "block " + block + " not in struct (shell {})".format(ish)
-            assert list(gf.indices) == 2 * [map(str, gf_struct[ish][block])],\
-                "block " + block + " has wrong indices (shell {})".format(ish)
+        if isinstance(G, BlockGf):
+            for block in gf_struct[ish]:
+                assert block in G.indices,\
+                    "block " + block + " not in G (shell {})".format(ish)
+            for block, gf in G:
+                assert block in gf_struct[ish],\
+                    "block " + block + " not in struct (shell {})".format(ish)
+                assert list(gf.indices) == 2 * [map(str, gf_struct[ish][block])],\
+                    "block " + block + \
+                    " has wrong indices (shell {})".format(ish)
+        else:
+            for block in gf_struct[ish]:
+                assert block in G,\
+                    "block " + block + " not in G (shell {})".format(ish)
+            for block, gf in G.iteritems():
+                assert block in gf_struct[ish],\
+                    "block " + block + " not in struct (shell {})".format(ish)
+                assert range(len(gf)) == 2 * [map(str, gf_struct[ish][block])],\
+                    "block " + block + \
+                    " has wrong indices (shell {})".format(ish)
 
-    def convert_gf(self, G, G_struct, ish_from=0, ish_to=None, show_warnings=True,
+    def convert_gf(self, G, G_struct=None, ish_from=0, ish_to=None, show_warnings=True,
                    G_out=None, space_from='solver', space_to='solver', ish=None, **kwargs):
         """ Convert BlockGf from its structure to this structure.
 
@@ -714,6 +784,56 @@ class BlockStructure(object):
             ish_from = ish
             ish_to = ish
 
+        return self._convert_gf_or_matrix(G, G_struct, ish_from, ish_to,
+                                          show_warnings, G_out, space_from, space_to, **kwargs)
+
+    def convert_matrix(self, G, G_struct=None, ish_from=0, ish_to=None, show_warnings=True,
+                       G_out=None, space_from='solver', space_to='solver'):
+        """ Convert matrix from its structure to this structure.
+
+        .. warning::
+
+            Elements that are zero in the new structure due to
+            the new block structure will be just ignored, thus
+            approximated to zero.
+
+        Parameters
+        ----------
+        G : dict of numpy array
+            the matrix that should be converted
+        G_struct : BlockStructure or str
+            the structure of that G or None (then, this structure
+            is used)
+        ish_from : int
+            shell index of the input structure
+        ish_to : int
+            shell index of the output structure; if None (the default),
+            it is the same as ish_from
+        show_warnings : bool or float
+            whether to show warnings when elements of the Green's
+            function get thrown away
+            if float, set the threshold for the magnitude of an element
+            about to be thrown away to trigger a warning
+            (default: 1.e-10)
+        G_out : dict of numpy array
+            the output numpy array (if not given, a new one is
+            created)
+        space_from : 'solver' or 'sumk'
+            whether the matrix ``G`` corresponds to the
+            solver or sumk structure of ``G_struct``
+        space_to : 'solver' or 'sumk'
+            whether the output matrix should be according to
+            the solver of sumk structure of this structure
+        **kwargs :
+            options passed to the constructor for the new Gf
+        """
+
+        return self._convert_gf_or_matrix(G, G_struct, ish_from, ish_to,
+                                          show_warnings, G_out, space_from, space_to)
+
+    def _convert_gf_or_matrix(self, G, G_struct=None, ish_from=0, ish_to=None, show_warnings=True,
+                              G_out=None, space_from='solver', space_to='solver', **kwargs):
+
         if ish_to is None:
             ish_to = ish_from
 
@@ -751,35 +871,56 @@ class BlockStructure(object):
             raise Exception(
                 "Argument space_to has to be either 'solver' or 'sumk'.")
 
-        # create a Green's function to hold the result
-        if G_out is None:
-            if not 'mesh' in kwargs and not 'beta' in kwargs:
-                kwargs['mesh'] = G.mesh
-            G_out = self.create_gf(ish=ish_to, space=space_to, **kwargs)
+        if isinstance(G, BlockGf):
+            # create a Green's function to hold the result
+            if G_out is None:
+                if not 'mesh' in kwargs and not 'beta' in kwargs:
+                    kwargs['mesh'] = G.mesh
+                G_out = self.create_gf(ish=ish_to, space=space_to, **kwargs)
+            else:
+                self.check_gf(G_out, ish=ish_to, space=space_to)
+        elif isinstance(G, dict):
+            if G_out is None:
+                G_out = self.create_matrix(ish=ish_to, space=space_to)
+            else:
+                self.check_matrix(G_out, ish=ish_to, space=space_to)
         else:
-            self.check_gf(G_out, ish=ish_to, space=space_to)
+            raise Exception('G is neither BlockGf nor dict.')
 
         for block_to in gf_struct_to.keys():
+            if isinstance(G, BlockGf):
+                G_out[block_to].zero()
+            else:
+                G_out[block_to][:] = 0.0
             block_intermediate = block_mapping_to[block_to]
             block_from = block_mapping_from[block_intermediate]
             T_to = eff_trans_to[block_to]
             g_help = G_out[block_to].copy()
             for block in block_from:
                 T_from = eff_trans_from[block]
-                g_help.from_L_G_R(np.dot(T_to, np.conjugate(np.transpose(T_from))),
-                                  G[block],
-                                  np.dot(T_from, np.conjugate(np.transpose(T_to))))
-                G_out[block_to] << G_out[block_to] + g_help
+                if isinstance(G, BlockGf):
+                    g_help.from_L_G_R(np.dot(T_to, np.conjugate(np.transpose(T_from))),
+                                      G[block],
+                                      np.dot(T_from, np.conjugate(np.transpose(T_to))))
+                    G_out[block_to] << G_out[block_to] + g_help
+                else:
+                    g_help = np.dot(np.dot(T_to, np.conjugate(np.transpose(T_from))),
+                                    np.dot(G[block],
+                                           np.dot(T_from, np.conjugate(np.transpose(T_to)))))
+                    G_out[block_to] += g_help
 
         if show_warnings:
             # we back-transform it
-            G_back = G_struct.convert_gf(G_out, self, ish_from=ish_to,
-                                         ish_to=ish_from,
-                                         show_warnings=False,  # else we get an endless loop
-                                         space_from=space_to, space_to=space_from, **kwargs)
-            for name, gf in G_back:
-                maxdiff = np.max(np.abs(G_back[name].data - G[name].data),
-                                 axis=0)
+            G_back = G_struct._convert_gf_or_matrix(G_out, self, ish_from=ish_to,
+                                                    ish_to=ish_from,
+                                                    show_warnings=False,  # else we get an endless loop
+                                                    space_from=space_to, space_to=space_from, **kwargs)
+            for name, gf in (G_back if isinstance(G, BlockGf) else G_back.iteritems()):
+                if isinstance(G, BlockGf):
+                    maxdiff = np.max(np.abs(G_back[name].data - G[name].data),
+                                     axis=0)
+                else:
+                    maxdiff = G_back[name] - G[name]
                 if np.any(maxdiff > warning_threshold):
                     warn('Block {} maximum difference:\n'.format(name)
                          + str(maxdiff))

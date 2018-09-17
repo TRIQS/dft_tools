@@ -776,6 +776,9 @@ class SumkDFT(object):
         -------
         G_out
         """
+
+        assert isinstance(G_loc, list), "G_loc must be a list (with elements for each correlated shell)"
+
         if G_out is None:
             G_out = [self.block_structure.create_gf(ish=ish, mesh=G_loc[self.inequiv_to_corr[ish]].mesh)
                      for ish in range(self.n_inequiv_shells)]
@@ -1008,6 +1011,8 @@ class SumkDFT(object):
         G : list of BlockGf of GfImFreq or GfImTime
             the Green's function transformed into the new block structure
         """
+
+        assert isinstance(G, list), "G must be a list (with elements for each correlated shell)"
 
         gf = self._get_hermitian_quantity_from_gf(G)
 

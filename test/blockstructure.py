@@ -31,6 +31,15 @@ cmp(original_bs.effective_transformation_solver,
       'down_0': np.array([[1., 0., 0.],
                           [0., 1., 0.]])}])
 
+created_matrix = original_bs.create_matrix()
+cmp(created_matrix,
+    {'up_0': np.array([[0. + 0.j, 0. + 0.j],
+                       [0. + 0.j, 0. + 0.j]]),
+     'up_1': np.array([[0. + 0.j]]),
+     'down_1': np.array([[0. + 0.j]]),
+     'down_0': np.array([[0. + 0.j, 0. + 0.j],
+                         [0. + 0.j, 0. + 0.j]])})
+
 
 # check pick_gf_struct_solver
 pick1 = original_bs.copy()
@@ -152,6 +161,13 @@ with warnings.catch_warnings(record=True) as w:
     assert issubclass(w[-1].category, UserWarning)
     assert "Block up_1 maximum difference" in str(w[-1].message)
 
+m2 = map1.convert_matrix(created_matrix, original_bs, show_warnings=True)
+cmp(m2,
+    {'down': np.array([[0. + 0.j, 0. + 0.j, 0. + 0.j],
+                       [0. + 0.j, 0. + 0.j, 0. + 0.j],
+                       [0. + 0.j, 0. + 0.j, 0. + 0.j]]),
+     'up_0': np.array([[0. + 0.j]]),
+     'down_1': np.array([[0. + 0.j]])})
 
 # check full_structure
 full = BlockStructure.full_structure(
