@@ -42,15 +42,15 @@ The frequency depended optical conductivity is given by
 Prerequisites
 -------------
 First perform a standard :ref:`DFT+DMFT calculation <full_charge_selfcons>` for your desired material and obtain the
-real-frequency self energy by doing an analytic continuation.
+real-frequency self energy.
 
-.. warning::
-  This package does NOT provide an explicit method to do an **analytic continuation** of
-  self energies and Green functions from Matsubara frequencies to the real frequency axis! 
-  There are methods included e.g. in the :program:`ALPS` package, which can be used for these purposes.
-  Keep in mind that all these methods have to be used very carefully. Especially for optics calculations
-  it is crucial to perform the analytic continuation in such a way that the obtained real frequency self energy 
-  is accurate around the Fermi energy as low energy features strongly influence the final results!
+.. note::
+  If you use a CT-QMC impurity solver you need to perform an **analytic continuation** of
+  self energies and Green functions from Matsubara frequencies to the real-frequency axis!
+  This packages does NOT provide methods to do this, but a list of options available within the TRIQS framework
+  is given :ref:`here <ac>`. Keep in mind that all these methods have to be used very carefully. Especially for optics calculations
+  it is crucial to perform the analytic continuation in such a way that the real-frequency self energy
+  is accurate around the Fermi energy as low-energy features strongly influence the final results.
 
 Besides the self energy the Wien2k files read by the transport converter (:meth:`convert_transport_input <dft.converters.wien2k_converter.Wien2kConverter.convert_transport_input>`) are:
    * :file:`.struct`: The lattice constants specified in the struct file are used to calculate the unit cell volume.

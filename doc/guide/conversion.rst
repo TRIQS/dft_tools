@@ -112,7 +112,7 @@ use the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.W
 
 The only necessary parameter to this construction is the parameter `filename`.
 It has to be the root of the files produces by dmftproj. For our
-example, the :program:`Wien2k` naming convention is that all files are
+example, the Wien2k naming convention is that all files are
 called the same, for instance
 :file:`SrVO3.*`, so you would give `filename = "SrVO3"`. The constructor opens
 an hdf5 archive, named :file:`case.h5`, where all the data is
@@ -147,7 +147,7 @@ In case you want to do post-processing of your data using the module
 :class:`SumkDFTTools <dft.sumk_dft_tools.SumkDFTTools>`, some more files
 have to be converted to the hdf5 archive. For instance, for
 calculating the partial density of states or partial charges
-consistent with the definition of :program:`Wien2k`, you have to invoke::
+consistent with the definition of Wien2k, you have to invoke::
 
   Converter.convert_parproj_input()
 

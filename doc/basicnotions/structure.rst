@@ -66,7 +66,7 @@ perform the multi-band DMFT calculation in the context of real
 materials. The major part is contained in the module
 :class:`SumkDFT`. It contains routines to
        
-* calculate local Greens functions
+* calculate local Green functions
 * do the upfolding and downfolding from Bloch bands to Wannier
   orbitals
 * calculate the double-counting correction
@@ -91,12 +91,12 @@ self-consistent one is only a couple of additional lines in the code!
 Post-processing
 ---------------
 
-The main result of DMFT calculation is the interacting Greens function
-and the Self energy. However, one is normally interested in
+The main result of DMFT calculation is the interacting Green function
+and the self energy. However, one is normally interested in
 quantities like band structure, density of states, or transport
-properties. In order to calculate these things, :program:`DFTTools`
-provides the post-processing modules :class:`SumkDFTTools`. It
-contains routines to calculate
+properties. In order to calculate these, :program:`DFTTools`
+provides the post-processing modules :class:`SumkDFTTools`.
+It contains routines to calculate
 
 * (projected) density of states
 * partial charges
@@ -104,9 +104,28 @@ contains routines to calculate
 * transport properties such as optical conductivity, resistivity,
   or thermopower.
 
-.. warning::
-   At the moment neither :ref:`TRIQS<triqslibs:welcome>` nor :program:`DFTTools`
-   provides Maximum Entropy routines! You can use the Pade
-   approximation implemented in the :ref:`TRIQS <triqslibs:welcome>` library, or you use your own
-   home-made Maximum Entropy code to do the analytic continuation from
-   Matsubara to the real-frequency axis.
+Note that most of these post-processing tools need a real-frequency
+self energy, and should you be using a CT-QMC impurity solver this
+comes with the necessity of performing an :ref:`analytic continuation<ac>`.
+
+.. _runpy:
+
+Executing your python scripts
+-----------------------------
+
+After having prepared your own python script you may run
+it on one core with
+
+   `python MyScript.py`
+
+or in parallel mode
+
+   `mpirun -np 64 python MyScript.py`
+
+where :program:`mpirun` launches the calculation in parallel mode on 64 cores.
+The exact form of this command will, of course, depend on the
+mpi-launcher installed, but the form above works on most systems.
+
+How to run full charge self-consistent DFT+DMFT calculations (in combination with Wien2k)
+is described in the :ref:`full charge self-consistency tutorial<full_charge_selfcons>` and
+the :ref:`Ce tutorial<DFTDMFTtutorial>`, as such calculations need to be launched in a different way.

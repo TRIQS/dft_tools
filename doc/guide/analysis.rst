@@ -8,17 +8,17 @@ This section explains how to use some tools of the package in order to analyse t
 There are two practical tools for which a self energy on the real axis is not needed, namely:
 
   * :meth:`dos_wannier_basis <dft.sumk_dft_tools.SumkDFTTools.dos_wannier_basis>` for the density of states of the Wannier orbitals and
-  * :meth:`partial_charges <dft.sumk_dft_tools.SumkDFTTools.partial_charges>` for the partial charges according to the :program:`Wien2k` definition.
+  * :meth:`partial_charges <dft.sumk_dft_tools.SumkDFTTools.partial_charges>` for the partial charges according to the Wien2k definition.
 
-However, a real frequency self energy has to be provided by the user for the methods:
+However, a real-frequency self energy has to be provided by the user for the methods:
 
   * :meth:`dos_parproj_basis <dft.sumk_dft_tools.SumkDFTTools.dos_parproj_basis>` for the momentum-integrated spectral function including self energy effects and
   * :meth:`spaghettis <dft.sumk_dft_tools.SumkDFTTools.spaghettis>` for the momentum-resolved spectral function (i.e. ARPES)
 
-.. warning::
-  This package does NOT provide an explicit method to do an **analytic continuation** of the
-  self energies and Green functions from Matsubara frequencies to the real frequency axis! 
-  There are methods included e.g. in the :program:`ALPS` package, which can be used for these purposes. 
+.. note::
+  This package does NOT provide an explicit method to do an **analytic continuation** of
+  self energies and Green functions from Matsubara frequencies to the real-frequency axis,
+  but a list of options available within the TRIQS framework is given :ref:`here <ac>`.
   Keep in mind that all these methods have to be used very carefully!
 
 Initialisation
@@ -36,16 +36,16 @@ class::
 
 Note that all routines available in :class:`SumkDFT <dft.sumk_dft.SumkDFT>` are also available here.
 
-If required, we have to load and initialise the real frequency self energy. Most conveniently,
-you have your self energy already stored as a real frequency :class:`BlockGf <pytriqs.gf.BlockGf>` object
+If required, we have to load and initialise the real-frequency self energy. Most conveniently,
+you have your self energy already stored as a real-frequency :class:`BlockGf <pytriqs.gf.BlockGf>` object
 in a hdf5 file::
 
   ar = HDFArchive('case.h5', 'a')
   SigmaReFreq = ar['dmft_output']['Sigma_w']
 
 You may also have your self energy stored in text files. For this case the :ref:`TRIQS <triqslibs:welcome>` library offers
-the function :meth:`read_gf_from_txt`, which is able to load the data from text files of one Greens function block
-into a real frequency :class:`ReFreqGf <pytriqs.gf.ReFreqGf>` object. Loading each block separately and
+the function :meth:`read_gf_from_txt`, which is able to load the data from text files of one Green function block
+into a real-frequency :class:`ReFreqGf <pytriqs.gf.ReFreqGf>` object. Loading each block separately and
 building up a :class:´BlockGf <pytriqs.gf.BlockGf>´ is done with::
 
   from pytriqs.gf.tools import *
@@ -61,7 +61,7 @@ where:
   * `block_txtfiles` is a rank 2 square np.array(str) or list[list[str]] holding the file names of one block and
   * `block_name` is the name of the block.
 
-It is important that each data file has to contain three columns: the real frequency mesh, the real part and the imaginary part
+It is important that each data file has to contain three columns: the real-frequency mesh, the real part and the imaginary part
 of the self energy - exactly in this order! The mesh should be the same for all files read in and non-uniform meshes are not supported.
 
 Finally, we set the self energy into the `SK` object::
@@ -101,18 +101,18 @@ otherwise, the output is returned by the function for a further usage in :progra
 Partial charges
 ---------------
 
-Since we can calculate the partial charges directly from the Matsubara Green's functions, we also do not need a
-real frequency self energy for this purpose. The calculation is done by::
+Since we can calculate the partial charges directly from the Matsubara Green functions, we also do not need a
+real-frequency self energy for this purpose. The calculation is done by::
 
   SK.set_Sigma(SigmaImFreq)
   dm = SK.partial_charges(beta=40.0, with_Sigma=True, with_dc=True)
 
 which calculates the partial charges using the self energy, double counting, and chemical potential as set in the 
 `SK` object. On return, `dm` is a list, where the list items correspond to the density matrices of all shells
-defined in the list `SK.shells`. This list is constructed by the :program:`Wien2k` converter routines and stored automatically
+defined in the list `SK.shells`. This list is constructed by the Wien2k converter routines and stored automatically
 in the hdf5 archive. For the structure of `dm`, see also :meth:`reference manual <dft.sumk_dft_tools.SumkDFTTools.partial_charges>`.
 
-Correlated spectral function (with real frequency self energy)
+Correlated spectral function (with real-frequency self energy)
 --------------------------------------------------------------
 
 To produce both the momentum-integrated (total density of states or DOS) and orbitally-resolved (partial/projected DOS) spectral functions
@@ -124,7 +124,7 @@ The variable `broadening` is an additional Lorentzian broadening (default: `0.01
 The output is written in the same way as described above for the :ref:`Wannier density of states <dos_wannier>`, but with filenames 
 `DOS_parproj_*` instead.  
 
-Momentum resolved spectral function (with real frequency self energy)
+Momentum resolved spectral function (with real-frequency self energy)
 ---------------------------------------------------------------------
 
 Another quantity of interest is the momentum-resolved spectral function, which can directly be compared to ARPES
@@ -141,7 +141,7 @@ Here, optional parameters are
   * `plotrange`: A list with two entries, :math:`\omega_{min}` and :math:`\omega_{max}`, which set the plot
     range for the output. The default value is `None`, in which case the full momentum range as given in the self energy is used. 
   * `ishell`: An integer denoting the orbital index `ishell` onto which the spectral function is projected. The resulting function is saved in 
-    the files. The default value is `None`. Note for experts: The spectra are not rotated to the local coordinate system used in :program:`Wien2k`.
+    the files. The default value is `None`. Note for experts: The spectra are not rotated to the local coordinate system used in Wien2k.
 
 The output is written as the 3-column files ``Akw(sp).dat``, where `(sp)` is defined as above. The output format is 
 `k`, :math:`\omega`, `value`. 

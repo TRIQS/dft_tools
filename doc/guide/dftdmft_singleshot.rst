@@ -78,7 +78,7 @@ for :emphasis:`use_dc_formula` are:
     * `1`: DC formula as given in K. Held, Adv. Phys. 56, 829 (2007).
     * `2`: Around-mean-field (AMF)
 
-At the end of the calculation, we can save the Greens function and self energy into a file::
+At the end of the calculation, we can save the Green function and self energy into a file::
 
     from pytriqs.archive import HDFArchive
     import pytriqs.utility.mpi as mpi

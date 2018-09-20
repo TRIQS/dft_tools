@@ -2,7 +2,7 @@ Block Structure
 ===============
 
 The `BlockStructure` class allows to change and manipulate
-Green's functions structures and mappings from sumk to solver.
+Green functions structures and mappings from sumk to solver.
 
 The block structure can also be written to and read from HDF files.
 

@@ -14,35 +14,34 @@ Wien2k + dmftproj
 
 
 .. warning::
-  Before using this tool, you should be familiar with the band-structure package :program:`Wien2k`, since
-  the calculation is controlled by the :program:`Wien2k` scripts! Be
+  Before using this tool, you should be familiar with the band-structure package Wien2k, since
+  the calculation is controlled by the Wien2k scripts! Be
   sure that you also understand how :program:`dmftproj` is used to
   construct the Wannier functions. For this step, see either sections
   :ref:`conversion`, or the extensive :download:`dmftproj manual<images_scripts/TutorialDmftproj.pdf>`.
 
-In the following, we discuss how to use the 
-:ref:`TRIQS <triqslibs:installation>` tools in combination with the :program:`Wien2k` program.
+In the following, we discuss how to use the
+:ref:`TRIQS <triqslibs:installation>` tools in combination with the Wien2k program.
 
 We can use the DMFT script as introduced in section :ref:`singleshot`,
-with just a few simple 
-modifications. First, in order to be compatible with the :program:`Wien2k` standards, the DMFT script has to be 
-named :file:`case.py`, where `case` is the place holder name of the :program:`Wien2k` calculation, see the section 
-:ref:`conversion` for details. We can then set the variable `dft_filename` dynamically::
+with just a few simple modifications. First, in order to be compatible with the Wien2k standards,
+the DMFT script has to be named :file:`case.py`, where `case` is the place holder name of the Wien2k
+calculation, see the section :ref:`conversion` for details. We can then set the variable `dft_filename` dynamically::
 
   import os
   dft_filename = os.getcwd().rpartition('/')[2]
 
 This sets the `dft_filename` to the name of the current directory. The
-remaining part of the script is identical to 
+remaining part of the script is identical to
 that for one-shot calculations. Only at the very end we have to calculate the modified charge density,
-and store it in a format such that :program:`Wien2k` can read it. Therefore, after the DMFT loop that we saw in the 
+and store it in a format such that Wien2k can read it. Therefore, after the DMFT loop that we saw in the
 previous section, we symmetrise the self energy, and recalculate the impurity Green function::
 
   SK.symm_deg_gf(S.Sigma,orb=0)
   S.G_iw << inverse(S.G0_iw) - S.Sigma_iw
   S.G_iw.invert()
 
-These steps are not necessary, but can help to reduce fluctuations in the total energy. 
+These steps are not necessary, but can help to reduce fluctuations in the total energy.
 Now we calculate the modified charge density::
 
   # find exact chemical potential
@@ -51,9 +50,9 @@ Now we calculate the modified charge density::
   dN, d = SK.calc_density_correction(filename = dft_filename+'.qdmft')
   SK.save(['chemical_potential','dc_imp','dc_energ'])
 
-First we find the chemical potential with high precision, and after that the routine 
+First we find the chemical potential with high precision, and after that the routine
 ``SK.calc_density_correction(filename)`` calculates the density matrix including correlation effects. The result
-is stored in the file `dft_filename.qdmft`, which is later read by the :program:`Wien2k` program. The last statement saves 
+is stored in the file `dft_filename.qdmft`, which is later read by the Wien2k program. The last statement saves
 the chemical potential into the hdf5 archive.
 
 We need also the correlation energy, which we evaluate by the Migdal formula::
@@ -79,17 +78,16 @@ The above steps are valid for a calculation with only one correlated atom in the
 where you will apply this method. That is the reason why we give the index `0` in the list `SK.dc_energ`.
 If you have more than one correlated atom in the unit cell, but all of them
 are equivalent atoms, you have to multiply the `correnerg` by their multiplicity before writing it to the file.
-The multiplicity is easily found in the main input file of the :program:`Wien2k` package, i.e. `case.struct`. In case of
+The multiplicity is easily found in the main input file of the Wien2k package, i.e. `case.struct`. In case of
 non-equivalent atoms, the correlation energy has to be calculated for
 all of them separately and summed up.
 
-As mentioned above, the calculation is controlled by the :program:`Wien2k` scripts and not by :program:`python` 
-routines. You should think of replacing the lapw2 part of the
-:program:`Wien2k` self-consistency cycle by
+As mentioned above, the calculation is controlled by the Wien2k scripts and not by :program:`python`
+routines. You should think of replacing the lapw2 part of the Wien2k self-consistency cycle by
 
   |   `lapw2 -almd`
   |   `dmftproj`
-  |   `pytriqs case.py`
+  |   `python case.py`
   |   `lapw2 -qdmft`
 
 In other words, for the calculation of the density matrix in lapw2, we
@@ -98,7 +96,7 @@ Therefore, at the command line, you start your calculation for instance by:
 
   `me@home $ run -qdmft 1 -i 10`
 
-The flag `-qdmft` tells the :program:`Wien2k` script that the density
+The flag `-qdmft` tells the Wien2k script that the density
 matrix including correlation effects is to be read in from the
 `case.qdmft` file, and that you want the code to run on one computing
 core only. Moreover, we ask for 10 self-consistency iterations are to be
@@ -110,15 +108,15 @@ number of nodes to be used:
 In that case, you will run on 64 computing cores. As standard setting,
 we use `mpirun` as the proper MPI execution statement. If you happen
 to have a different, non-standard MPI setup, you have to give the
-proper MPI execution statement, in the `run_lapw` script (see the  
-corresponding :program:`Wien2k` documentation).
+proper MPI execution statement, in the `run_lapw` script (see the
+corresponding Wien2k documentation).
 
-In many cases it is advisable to start from a converged one-shot 
+In many cases it is advisable to start from a converged one-shot
 calculation. For practical purposes, you keep the number of DMFT loops
 within one DFT cycle low, or even to `loops=1`. If you encounter
 unstable convergence, you have to adjust the parameters such as
 the number of DMFT loops, or some mixing of the self energy to improve
-the convergence. 
+the convergence.
 
 In the section :ref:`DFTDMFTtutorial` we will see in a detailed
 example how such a self-consistent calculation is performed from scratch.

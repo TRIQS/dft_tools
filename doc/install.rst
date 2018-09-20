@@ -3,17 +3,17 @@
 .. _install:
 
 
-Packaged Versions of DftTools
+Packaged Versions of DFTTools
 =============================
 
-A Docker image including the latest version of DftTools is available `here <https://hub.docker.com/r/flatironinstitute/triqs>`_. For more information, please see the page on :ref:`TRIQS Docker <triqslibs:triqs_docker>`.
+A Docker image including the latest version of DFTTools is available `here <https://hub.docker.com/r/flatironinstitute/triqs>`_. For more information, please see the page on :ref:`TRIQS Docker <triqslibs:triqs_docker>`.
 
-We further provide a Debian package for the Ubuntu LTS Versions 16.04 (xenial) and 18.04 (bionic), which can be installed by following the steps outlined :ref:`here <triqslibs:triqs_debian>`, and the subsequent command::
+We further provide a Debian package for the Ubuntu LTS Versions 16.04 (xenial) and 18.04 (bionic), which can be installed by following the steps outlined :ref:`here <triqslibs:triqs_docker>`, and the subsequent command::
 
         sudo apt-get install -y dft_tools
 
 
-Compiling DftTools from source
+Compiling DFTTools from source
 ==============================
 
 Prerequisites
@@ -85,21 +85,20 @@ fully self-consistent calculations. These files should be copied to
 
   $ chmod +x run*_triqs 
 
-You will also need to insert manually a correct call of :file:`pytriqs` into
+You will also need to insert manually a correct call of :file:`python` into
 these scripts using an appropriate for your system MPI wrapper (mpirun,
-mpprun, etc.), if needed. Search for *pytriqs* within the scripts to locate the
-appropriate place for inserting the :file:`pytriqs` call.
+mpprun, etc.), if needed.
 
 Finally, you will have to change the calls to :program:`python_with_DMFT` to
-:program:`pytriqs` in the Wien2k :file:`path_to_Wien2k/run*` files.
+your :program:`python` installation in the Wien2k :file:`path_to_Wien2k/run*` files.
 
  
 Version compatibility 
 ---------------------
  
-Be careful that the version of the TRIQS library and of the dft tools must be 
+Be careful that the version of the TRIQS library and of the :program:`DFTTools` must be
 compatible (more information on the :ref:`TRIQS website <triqslibs:welcome>`. 
-If you want to use a version of the dft tools that is not the latest one, go
+If you want to use a version of the :program:`DFTTools` that is not the latest one, go
 into the directory with the sources and look at all available versions:: 
  
      $ cd src && git tag 

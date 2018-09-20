@@ -59,14 +59,19 @@ hybridization-expansion solver. In general, those tutorials will take at least a
 
 Afterwards you can continue with the :ref:`DFTTools user guide <documentation>`.
 
+.. _ac:
 
-Maximum Entropy (MaxEnt)
-------------------------
+Analytic Continuation
+---------------------
 
-Analytic continuation is needed for many :ref:`post-processing tools <analysis>`, e.g. to
-calculate the spectral function, the correlated band structure (:math:`A(k,\omega)`)
-and to perform :ref:`transport calculations <Transport>`.
-You can use the Pade approximation available in the :ref:`TRIQS <triqslibs:welcome>` library, however,
-it turns out to be very unstable for noisy numerical data. Most of the time, the MaxEnt method
-is used to obtain data on the real-frequency axis. At the moment neither :ref:`TRIQS <triqslibs:welcome>` nor
-:program:`DFTTools` provide such routines.
+Often impurity solvers working on the Matsubra axis are used within the
+DFT+DMFT framework. However, many :ref:`post-processing tools <analysis>`,
+require a self energy on the real-frequency axis, e.g. to calculate the spectral
+function :math:`A(k,\omega)` or to perform :ref:`transport calculations <Transport>`.
+The ill-posed nature of the analytic continuation has lead to a plethora of methods,
+and conversely, computer codes. :program:`DFTTools` itself does not provide functions to perform analytic
+continuations. Within the TRIQS environment the following options are available:
+
+* Pade: Implemented in the :ref:`TRIQS<triqslibs:welcome>` library
+* Stochastic Optimization Method (Mishchenko): `SOM <http://krivenko.github.io/som/>`_ package by Igor Krivenko
+* Maximum Entropy Method: `TRIQS/maxent <https://triqs.github.io/maxent/master>`_ package

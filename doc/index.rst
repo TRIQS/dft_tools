@@ -7,10 +7,10 @@
 DFTTools
 ========
 
-.. sidebar:: DftTools 1.5
+.. sidebar:: DFTTools 1.5
 
-   This is the homepage DftTools Version 1.5
-   For the changes in DftTools, Cf :ref:`changelog page <changelog>`
+   This is the homepage DFTTools Version 1.5
+   For the changes in DFTTools, Cf :ref:`changelog page <changelog>`
 
 This :ref:`TRIQS-based <triqslibs:welcome>`-based application is aimed
 at ab-initio calculations for 

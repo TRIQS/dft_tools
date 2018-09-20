@@ -16,7 +16,7 @@ using Kanamori definitions (:download:`dft_dmft_cthyb.py
 <images_scripts/dft_dmft_cthyb.py>`) and one with a
 rotational-invariant Slater interaction Hamiltonian (:download:`dft_dmft_cthyb_slater.py
 <images_scripts/dft_dmft_cthyb_slater.py>`). The user has to adapt these
-scripts to his own needs.
+scripts to his own needs. How to execute your script is described :ref:`here<runpy>`.
 
 Loading modules
 ---------------
@@ -28,6 +28,7 @@ First, we load the necessary modules::
   from pytriqs.archive import HDFArchive
   from pytriqs.operators.util import *
   from triqs_cthyb import *
+  import pytriqs.utility.mpi as mpi
 
 The last two lines load the modules for the construction of the
 :ref:`CTHYB solver <triqscthyb:welcome>`.
@@ -195,7 +196,6 @@ self energy shown below.
 .. image:: images_scripts/SrVO3_Sigma_iw_it1.png
     :width: 700
     :align: center
-
 
 .. _tailfit:
 

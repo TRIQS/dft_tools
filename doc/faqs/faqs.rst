@@ -27,3 +27,10 @@ x optic does not write a case.pmat file
 Make sure that you set line 6 to "ON" and put a "1" to the following line.
 The "1" is undocumented in Wien2k, but needed to have `case.pmat` written.
 However, we are working on reading directly the `case.mommat2` file.
+
+How do I get real-frequency quantities?
+---------------------------------------
+
+:program:`DFTTools` does not provide functions to perform analytic
+continuations. However, within the TRIQS environment there are
+different :ref:`tools<ac>` available.

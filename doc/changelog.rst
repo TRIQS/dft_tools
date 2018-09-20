@@ -3,6 +3,6 @@
 Changelog
 =========
 
-This document describes the main changes in DftTools.
+This document describes the main changes in DFTTools.
 
 .. include:: ChangeLog.md

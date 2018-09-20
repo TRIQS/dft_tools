@@ -126,7 +126,7 @@ model. The DMFT self-consistency cycle can now be formulated as
 follows:
 
 #. Take :math:`G^0_{mn}(i\omega)` and the interaction Hamiltonian and
-   solve the impurity problem, to get the interacting Greens function
+   solve the impurity problem, to get the interacting Green function
    :math:`G_{mn}(i\omega)` and the self energy
    :math:`\Sigma_{mn}(i\omega)`. For the details of how to do
    this in practice, we refer to the documentation of one of the
@@ -147,7 +147,7 @@ follows:
       G^{latt}_{\nu\nu'}(\mathbf{k},i\omega)  = \frac{1}{i\omega+\mu
       -\varepsilon_{\nu\mathbf{k}}-\Sigma_{\nu\nu'}(\mathbf{k},i\omega)}
 
-#. Calculate from that the local downfolded Greens function in orbital space:
+#. Calculate from that the local downfolded Green function in orbital space:
 
    .. math::
       G^{loc}_{mn}(i\omega) = \sum_{\mathbf{k}}\sum_{\nu\nu'}P_{m\nu}(\mathbf{k})G^{latt}_{\nu\nu'}(\mathbf{k},i\omega)P^*_{\nu'
@@ -166,7 +166,7 @@ follows:
 This is the basic scheme for one-shot DFT+DMFT calculations. Of
 course, one has to make sure, that the chemical potential :math:`\mu`
 is set such that the electron density is correct. This can be achieved
-by adjusting it for the lattice Greens function such that the electron
+by adjusting it for the lattice Green function such that the electron
 count is fulfilled.
 
 Full charge self-consistency
