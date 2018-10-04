@@ -1,5 +1,5 @@
 from pytriqs.gf import *
-from sumk_dft import SumkDFT
+from triqs_dft_tools.sumk_dft import SumkDFT
 from scipy.linalg import expm
 import numpy as np
 from pytriqs.utility.comparison_tests import assert_gfs_are_close, assert_arrays_are_close, assert_block_gfs_are_close

@@ -123,3 +123,7 @@ Functionality of ``dft_tools`` can be tweaked using extra compile-time options p
 +---------------------------------------------------------------+-----------------------------------------------+
 | Build the documentation locally                               | -DBuild_Documentation=ON                      |
 +---------------------------------------------------------------+-----------------------------------------------+
+| Check test coverage when testing                              | -DTEST_COVERAGE=ON                            |
+| (run ``make coverage`` to show the results; requires the      |                                               |
+| python ``coverage`` package)                                  |                                               |
++---------------------------------------------------------------+-----------------------------------------------+

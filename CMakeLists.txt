@@ -45,15 +45,30 @@ add_subdirectory(fortran/dmftproj)
 message(STATUS "TRIQS : Adding compilation flags detected by the library (C++11/14, libc++, etc...) ")
 
 add_subdirectory(c++)
-add_subdirectory(python)
+add_subdirectory(python python/triqs_dft_tools)
 add_subdirectory(shells)
 
 #------------------------
 # tests
 #------------------------
- 
+
+option(TEST_COVERAGE "Analyze the coverage of tests" OFF)
+
+# perform tests with coverage info
+if (${TEST_COVERAGE})
+  # we try to locate the coverage program
+  find_program(PYTHON_COVERAGE python-coverage)
+  find_program(PYTHON_COVERAGE coverage)
+  if(NOT PYTHON_COVERAGE)
+      message(FATAL_ERROR "Program coverage (or python-coverage) not found.\nEither set PYTHON_COVERAGE explicitly or disable TEST_COVERAGE!\nYou need to install the python package coverage, e.g. with\n  pip install coverage\nor with\n  apt install python-coverage")
+  endif()
+
+  message(STATUS "Setting up test coverage")
+  add_custom_target(coverage ${PYTHON_COVERAGE} combine --append .coverage plovasp/.coverage || true COMMAND ${PYTHON_COVERAGE} html COMMAND echo "Open ${CMAKE_BINARY_DIR}/test/htmlcov/index.html in browser!" WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+endif()
+
 enable_testing()
- 
+
 option(Build_Tests "Build the tests of the library " ON)
 if (Build_Tests)
   message(STATUS "-------- Preparing tests  -------------")

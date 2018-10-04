@@ -7,8 +7,14 @@ FILE(COPY SrVO3.pmat SrVO3.struct SrVO3.outputs SrVO3.oubwin SrVO3.ctqmcout SrVO
 # List all tests
 set(all_tests wien2k_convert hk_convert w90_convert sumkdft_basic srvo3_Gloc srvo3_transp sigma_from_file blockstructure analyse_block_structure_from_gf analyse_block_structure_from_gf2)
 
+set(python_executable python)
+
+if(${TEST_COVERAGE})
+    set(python_executable ${PYTHON_COVERAGE} run --append --source "${CMAKE_BINARY_DIR}/python" )
+endif()
+
 foreach(t ${all_tests})
-  add_test(NAME ${t} COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/${t}.py)
+  add_test(NAME ${t} COMMAND ${python_executable} ${CMAKE_CURRENT_SOURCE_DIR}/${t}.py)
 endforeach()
 
 # Set the PythonPath : put the build dir first (in case there is an installed version). 
@@ -17,4 +23,3 @@ set_property(TEST ${all_tests} PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DI
 
 # VASP converter tests
 add_subdirectory(plovasp)
-

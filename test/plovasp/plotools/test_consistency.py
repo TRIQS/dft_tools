@@ -1,8 +1,8 @@
 
-import converters.plovasp.vaspio
-from converters.plovasp.inpconf import ConfigParameters
-from converters.plovasp.plotools import check_data_consistency
-from converters.plovasp.elstruct import ElectronicStructure
+import triqs_dft_tools.converters.plovasp.vaspio
+from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
+from triqs_dft_tools.converters.plovasp.plotools import check_data_consistency
+from triqs_dft_tools.converters.plovasp.elstruct import ElectronicStructure
 import mytest
 
 ################################################################################
