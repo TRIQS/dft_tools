@@ -68,7 +68,7 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
       checkout scm
       dir(buildDir) { withEnv(platformEnv[1].collect { it.replace('\$BREW', env.BREW) } + [
         "PATH=$triqsDir/bin:${env.BREW}/bin:/usr/bin:/bin:/usr/sbin",
-        "CPATH=$triqsDir/include:${env.BREW}/include",
+        "CPLUS_INCLUDE_PATH=$triqsDir/include:${env.BREW}/include",
         "LIBRARY_PATH=$triqsDir/lib:${env.BREW}/lib",
         "CMAKE_PREFIX_PATH=$triqsDir/share/cmake"]) {
         deleteDir()
