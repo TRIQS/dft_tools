@@ -12,10 +12,13 @@ message( STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} --------")
 set(BUILD_SHARED_LIBS OFF)
 
 # Enable compiler warnings for the whole project
-add_definitions(-Wall)
+add_compile_options(-Wall
+		     $<$<CONFIG:Debug>:-Og>
+		     $<$<CONFIG:Debug>:-ggdb3>
+		     )
 
 # Load Dependencies
-find_package(TRIQS 1.5 REQUIRED)
+find_package(TRIQS 2.0 REQUIRED)
 find_package(Cpp2Py 1.5 REQUIRED)
 
 # Default Install directory to TRIQS_ROOT if not given or invalid.
@@ -47,8 +50,11 @@ if(${TRIQS_WITH_PYTHON_SUPPORT})
 endif()
 
 # Tests
-enable_testing()
-add_subdirectory(test)
+option(Build_Tests "Build tests" ON)
+if(${Build_Tests})
+  enable_testing()
+  add_subdirectory(test)
+endif()
 
 # Additional configuration files
 add_subdirectory(share)
