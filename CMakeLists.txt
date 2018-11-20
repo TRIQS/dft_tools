@@ -1,6 +1,9 @@
 # Start configuration
 cmake_minimum_required(VERSION 2.8.12)
 project(app4triqs CXX)
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -51,7 +54,7 @@ endif()
 
 # Tests
 option(Build_Tests "Build tests" ON)
-if(${Build_Tests})
+if(Build_Tests)
   enable_testing()
   add_subdirectory(test)
 endif()
@@ -60,10 +63,11 @@ endif()
 add_subdirectory(share)
 
 option(Build_Documentation "Build documentation" OFF)
-if(${Build_Documentation})
-  if(NOT ${TRIQS_WITH_DOCUMENTATION})
-    message("Error: TRIQS library has not been compiled with its documentation")
+if(Build_Documentation)
+  if(NOT TRIQS_WITH_DOCUMENTATION)
+    message(WARNING "TRIQS library has not been compiled with its documentation! Cannot build documentation.")
   else()
+    message(STATUS "Documentation Build enabled")
     add_subdirectory(doc)
   endif()
 endif()

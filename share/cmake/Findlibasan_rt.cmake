@@ -28,7 +28,7 @@ find_library(ASAN_RT_LIBRARY
   NAMES ${name}
   PATHS
     ENV LIBRARY_PATH
-    ENV LD_INCLUDE_PATH
+    ENV LD_LIBRARY_PATH
     /usr/lib 
     /usr/local/lib
     /usr/lib/gcc/*/7
