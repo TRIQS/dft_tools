@@ -58,26 +58,25 @@ endif()
 
 # ========= Dynamic Analyzer Checks ==========
 
+# Make additional cmake Modules available
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/share/cmake)
+
 # Address Sanitizer
 option(ASAN OFF "Compile library and executables with LLVM Address Sanitizer")
 if(ASAN)
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    message(FATAL_ERROR "Address Sanitizer Checks currently not compatible with OSX.")
-  endif()
-  list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/share/cmake)
   find_package(libasan_rt REQUIRED)
   target_compile_options(app4triqs_c PUBLIC -fsanitize=address -fno-omit-frame-pointer)
-  target_link_libraries(app4triqs_c INTERFACE "-fsanitize=address -fno-omit-frame-pointer -fuse-ld=gold")
+  target_link_libraries(app4triqs_c INTERFACE "-fsanitize=address -fno-omit-frame-pointer")
 endif()
 
 # Undefined Behavior Sanitizer
 option(UBSAN OFF "Compile library and executables with LLVM Undefined Behavior Sanitizer")
 if(UBSAN)
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    message(FATAL_ERROR "Undefined Behavior Sanitizer Checks currently not compatible with OSX.")
-  endif()
-  list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/share/cmake)
   find_package(libubsan_rt REQUIRED)
   target_compile_options(app4triqs_c PUBLIC -fsanitize=undefined -fno-omit-frame-pointer -fno-sanitize=vptr)
-  target_link_libraries(app4triqs_c INTERFACE "-fsanitize=undefined -fno-omit-frame-pointer -fuse-ld=gold")
+  target_link_libraries(app4triqs_c INTERFACE "-fsanitize=undefined -fno-omit-frame-pointer")
+endif()
+
+if(ASAN OR UBSAN AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+  target_link_libraries(app4triqs_c INTERFACE "-fuse-ld=gold")
 endif()

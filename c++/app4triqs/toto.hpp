@@ -10,7 +10,7 @@ namespace app4triqs {
    */
   class toto {
 
-    int i = 0.0;
+    int i = 0;
 
     public:
     toto()  = default;

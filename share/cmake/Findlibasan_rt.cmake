@@ -17,7 +17,11 @@
 #    ASAN_RT_LIBRARY 		Address Sanitizer Runtime Library 
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-  set(name clang_rt.asan-x86_64)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(name clang_rt.asan_osx_dynamic)
+  elseif()
+    set(name clang_rt.asan-x86_64)
+  endif()
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   set(name asan)
 else()

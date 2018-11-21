@@ -30,7 +30,11 @@ set(TRIAL_PATHS
 )
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-  set(name clang_rt.ubsan_standalone-x86_64)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(name clang_rt.ubsan_osx_dynamic)
+  else()
+    set(name clang_rt.ubsan_standalone-x86_64)
+  endif()
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   set(name ubsan)
 else()
@@ -42,15 +46,22 @@ find_library(UBSAN_RT_LIBRARY
   PATHS ${TRIAL_PATHS}
 )
 
+mark_as_advanced(UBSAN_RT_LIBRARY)
+
 # Try to find UBSan Minimal Runtime for Clang
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(name libclang_rt.ubsan_minimal_osx_dynamic)
+  else()
+    set(name clang_rt.ubsan_minimal-x86_64)
+  endif()
+
   find_library(UBSAN_MINIMAL_RT_LIBRARY
-    NAMES clang_rt.ubsan_minimal-x86_64
+    NAMES ${name}
     PATHS ${TRIAL_PATHS}
   )
+  mark_as_advanced(UBSAN_MINIMAL_RT_LIBRARY)
 endif()
-
-mark_as_advanced(UBSAN_RT_LIBRARY)
 
 # Imported target
 add_library(libubsan_rt SHARED IMPORTED)
