@@ -74,7 +74,7 @@ option(UBSAN OFF "Compile library and executables with LLVM Undefined Behavior S
 if(UBSAN)
   find_package(libubsan_rt REQUIRED)
   target_compile_options(app4triqs_c PUBLIC -fsanitize=undefined -fno-omit-frame-pointer -fno-sanitize=vptr)
-  target_link_libraries(app4triqs_c INTERFACE "-fsanitize=undefined -fno-omit-frame-pointer")
+  target_link_libraries(app4triqs_c INTERFACE "-fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-omit-frame-pointer")
 endif()
 
 if(ASAN OR UBSAN AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
