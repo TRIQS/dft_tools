@@ -19,7 +19,7 @@
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(name clang_rt.asan_osx_dynamic)
-  elseif()
+  else()
     set(name clang_rt.asan-x86_64)
   endif()
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
