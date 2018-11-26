@@ -14,6 +14,9 @@ message( STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} --------")
 # Build static libraries
 set(BUILD_SHARED_LIBS OFF)
 
+# Export the list of compile-commands into compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Enable compiler warnings for the whole project
 add_compile_options(-Wall
 		     $<$<CONFIG:Debug>:-Og>
