@@ -10,7 +10,7 @@ set(APP4TRIQS_GIT_HASH @APP4TRIQS_GIT_HASH@)
 set(APP4TRIQS_ROOT  @CMAKE_INSTALL_PREFIX@)
 
 # include the exported targets of this project 
-include(@CMAKE_INSTALL_PREFIX@/share/cmake/app4triqs-targets.cmake)
+include(@CMAKE_INSTALL_PREFIX@/lib/cmake/triqs/app4triqs-targets.cmake)
 
 MESSAGE(STATUS "Found APP4TRIQSConfig.cmake with version ${APP4TRIQS_VERSION}, hash = ${APP4TRIQS_GIT_HASH}")
 
