@@ -5,7 +5,7 @@ file(COPY ${all_h5_files} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 set(all_tests Toto chain)
 
 # Nasty Workaround for Mac Os Homebrew Python to find the proper Sanitizer Compatible Python Executable
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND (ASAN OR UBSAN))
   execute_process(COMMAND bash "-c" "readlink -f $(which python) | xargs dirname" OUTPUT_VARIABLE PYTHON_EXECUTABLE OUTPUT_STRIP_TRAILING_WHITESPACE)
   set(PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}/../Resources/Python.app/Contents/MacOS/Python")
   if(NOT EXISTS ${PYTHON_EXECUTABLE})
