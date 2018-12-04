@@ -15,6 +15,7 @@ conversion tools.
 .. toctree::
    :maxdepth: 2
    
+   conv_wien2k
    conv_vasp
    conv_W90
    conv_generalhk
@@ -38,7 +39,3 @@ in order to work with other band-structure codes. The only necessary requirement
 the interface module produces an hdf5 archive, that stores all the data in the specified
 form. For the details of what data is stored in detail, see the
 :ref:`hdfstructure` part of the reference manual.
-
-
-
-

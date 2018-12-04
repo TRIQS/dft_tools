@@ -18,8 +18,8 @@ The conversion will now be discussed in detail for the Wien2k and VASP packages.
 For more details we refer to the :ref:`documentation <conversion>`.
 
 
-Wien2k
-======
+DFT (Wien2k) and Wannier orbitals
+=================================
 
 DFT setup
 ---------
