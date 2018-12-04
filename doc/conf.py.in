@@ -19,7 +19,7 @@ extensions = ['sphinx.ext.autodoc',
 source_suffix = '.rst'
 
 project = u'TRIQS DFTTools'
-copyright = u'2011-2013, M. Aichhorn, L. Pourovskii, V. Vildosola, C. Martins'
+copyright = u'2011-2019'
 version = '@DFT_TOOLS_VERSION@'
 
 mathjax_path = "@TRIQS_MATHJAX_PATH@/MathJax.js?config=default"

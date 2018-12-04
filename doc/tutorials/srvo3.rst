@@ -1,6 +1,6 @@
 .. _SrVO3:
 
-We will discuss now how to set up a full working calculation,
+On the example of SrVO3 we will discuss now how to set up a full working calculation,
 including the initialization of the :ref:`CTHYB solver <triqscthyb:welcome>`.
 Some additional parameter are introduced to make the calculation
 more efficient. This is a more advanced example, which is
@@ -14,9 +14,8 @@ rotational-invariant Slater interaction Hamiltonian (:download:`dft_dmft_cthyb_s
 <images_scripts/dft_dmft_cthyb_slater.py>`). The user has to adapt these
 scripts to his own needs. How to execute your script is described :ref:`here<runpy>`.
 
-TODO: At the end of this section we also provide hdf5 archives for this example, including data as function of DMFT iterations.
-
-The conversion will now be discussed in detail for the Wien2k and VASP packages. For more details we refer to the :ref:`documentation <conversion>`.
+The conversion will now be discussed in detail for the Wien2k and VASP packages.
+For more details we refer to the :ref:`documentation <conversion>`.
 
 
 Wien2k
@@ -64,16 +63,6 @@ text files to the hdf5 archive by::
   Converter.convert_dft_input()
 
 This reads all the data, and stores everything that is necessary for the DMFT calculation in the file :file:`SrVO3.h5`.
-
-
-VASP
-====
-
-DFT setup
----------
-
-Wannier orbitals
-----------------
 
 
 The DMFT calculation
@@ -286,9 +275,3 @@ of the self energy and to stop (:emphasis:`fit_max_n`) before the noise fully ta
 If it is difficult to find a reasonable fit in this region you should increase
 your statistics (number of measurements). Keep in mind that :emphasis:`fit_min_n`
 and :emphasis:`fit_max_n` also depend on :math:`\beta`.
-
-Data for benchmark / comparison
--------------------------------
-
-TODO: We should provide two h5 files, one fore Wien2k and one for VASP, with selfs for, say, 15 DMFT iterations. Then people can check what they are doing.
-
