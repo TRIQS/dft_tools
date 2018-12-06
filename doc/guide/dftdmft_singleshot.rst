@@ -106,15 +106,15 @@ are present, or if the calculation should start from scratch::
     previous_runs = 0
     previous_present = False
     if mpi.is_master_node():
-        f = HDFArchive(dft_filename+'.h5','a')
-        if 'dmft_output' in f:
-            ar = f['dmft_output']
-            if 'iterations' in ar:
-                previous_present = True
-                previous_runs = ar['iterations']
+        with HDFArchive(dft_filename+'.h5','a') as f:
+            if 'dmft_output' in f:
+                ar = f['dmft_output']
+                if 'iterations' in ar:
+                    previous_present = True
+                    previous_runs = ar['iterations']
             else:
                 f.create_group('dmft_output')
-        del f
+    
     previous_runs = mpi.bcast(previous_runs)
     previous_present = mpi.bcast(previous_present)
 
@@ -126,9 +126,8 @@ double counting values of the last iteration::
 
     if previous_present:
         if mpi.is_master_node():
-            ar = HDFArchive(dft_filename+'.h5','a')
-            S.Sigma_iw << ar['dmft_output']['Sigma_iw']
-            del ar
+            with HDFArchive(dft_filename+'.h5','r') as ar:
+                S.Sigma_iw << ar['dmft_output']['Sigma_iw']
 
         S.Sigma_iw << mpi.bcast(S.Sigma_iw)
         chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
@@ -153,11 +152,10 @@ functions) can be necessary in order to ensure convergence::
     mix = 0.8 # mixing factor
     if (iteration_number>1 or previous_present):
         if mpi.is_master_node():
-            ar = HDFArchive(dft_filename+'.h5','a')
-            mpi.report("Mixing Sigma and G with factor %s"%mix)
-            S.Sigma_iw << mix * S.Sigma_iw + (1.0-mix) * ar['dmft_output']['Sigma_iw']
-            S.G_iw << mix * S.G_iw + (1.0-mix) * ar['dmft_output']['G_iw']
-            del ar
+            with HDFArchive(dft_filename+'.h5','r') as ar:
+                mpi.report("Mixing Sigma and G with factor %s"%mix)
+                S.Sigma_iw << mix * S.Sigma_iw + (1.0-mix) * ar['dmft_output']['Sigma_iw']
+                S.G_iw << mix * S.G_iw + (1.0-mix) * ar['dmft_output']['G_iw']
         S.G_iw << mpi.bcast(S.G_iw)
         S.Sigma_iw << mpi.bcast(S.Sigma_iw)
 

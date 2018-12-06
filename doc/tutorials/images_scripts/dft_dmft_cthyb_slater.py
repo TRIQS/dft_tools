@@ -39,15 +39,14 @@ p["fit_max_n"] = 60
 previous_runs = 0
 previous_present = False
 if mpi.is_master_node():
-    f = HDFArchive(dft_filename+'.h5','a')
-    if 'dmft_output' in f:
-        ar = f['dmft_output']
-        if 'iterations' in ar:
-            previous_present = True
-            previous_runs = ar['iterations']
-    else:
-        f.create_group('dmft_output')
-    del f
+    with HDFArchive(dft_filename+'.h5','a') as f:
+        if 'dmft_output' in f:
+            ar = f['dmft_output']
+            if 'iterations' in ar:
+                previous_present = True
+                previous_runs = ar['iterations']
+        else:
+            f.create_group('dmft_output')
 previous_runs    = mpi.bcast(previous_runs)
 previous_present = mpi.bcast(previous_present)
 
@@ -75,9 +74,8 @@ if previous_present:
   dc_imp = 0
   dc_energ = 0
   if mpi.is_master_node():
-      ar = HDFArchive(dft_filename+'.h5','a')
-      S.Sigma_iw << ar['dmft_output']['Sigma_iw']
-      del ar
+      with HDFArchive(dft_filename+'.h5','r') as ar:
+        S.Sigma_iw << ar['dmft_output']['Sigma_iw']
       chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
   S.Sigma_iw << mpi.bcast(S.Sigma_iw)
   chemical_potential = mpi.bcast(chemical_potential)
@@ -106,14 +104,13 @@ for iteration_number in range(1,loops+1):
         # We can do a mixing of Delta in order to stabilize the DMFT iterations:
         S.G0_iw << S.Sigma_iw + inverse(S.G_iw)
         # The following lines are uncommented until issue #98 is fixed in TRIQS
-       # ar = HDFArchive(dft_filename+'.h5','a')
-       # if (iteration_number>1 or previous_present):
-       #     mpi.report("Mixing input Delta with factor %s"%delta_mix)
-       #     Delta = (delta_mix * delta(S.G0_iw)) + (1.0-delta_mix) * ar['dmft_output']['Delta_iw']
-       #     S.G0_iw << S.G0_iw + delta(S.G0_iw) - Delta
-       # ar['dmft_output']['Delta_iw'] = delta(S.G0_iw)
+       # with HDFArchive(dft_filename+'.h5','a') as ar:
+       #    if (iteration_number>1 or previous_present):
+       #        mpi.report("Mixing input Delta with factor %s"%delta_mix)
+       #        Delta = (delta_mix * delta(S.G0_iw)) + (1.0-delta_mix) * ar['dmft_output']['Delta_iw']
+       #        S.G0_iw << S.G0_iw + delta(S.G0_iw) - Delta
+       #    ar['dmft_output']['Delta_iw'] = delta(S.G0_iw)
         S.G0_iw << inverse(S.G0_iw)
-       # del ar
 
     S.G0_iw << mpi.bcast(S.G0_iw)
 
@@ -126,25 +123,23 @@ for iteration_number in range(1,loops+1):
     # Now mix Sigma and G with factor sigma_mix, if wanted:
     if (iteration_number>1 or previous_present):
         if mpi.is_master_node():
-            ar = HDFArchive(dft_filename+'.h5','a')
-            mpi.report("Mixing Sigma and G with factor %s"%sigma_mix)
-            S.Sigma_iw << sigma_mix * S.Sigma_iw + (1.0-sigma_mix) * ar['dmft_output']['Sigma_iw']
-            S.G_iw << sigma_mix * S.G_iw + (1.0-sigma_mix) * ar['dmft_output']['G_iw']
-            del ar
+            with HDFArchive(dft_filename+'.h5','r') as ar:
+                mpi.report("Mixing Sigma and G with factor %s"%sigma_mix)
+                S.Sigma_iw << sigma_mix * S.Sigma_iw + (1.0-sigma_mix) * ar['dmft_output']['Sigma_iw']
+                S.G_iw << sigma_mix * S.G_iw + (1.0-sigma_mix) * ar['dmft_output']['G_iw']
         S.G_iw << mpi.bcast(S.G_iw)
         S.Sigma_iw << mpi.bcast(S.Sigma_iw)
 
     # Write the final Sigma and G to the hdf5 archive:
     if mpi.is_master_node():
-        ar = HDFArchive(dft_filename+'.h5','a')
-        ar['dmft_output']['iterations'] = iteration_number + previous_runs
-        ar['dmft_output']['G_tau'] = S.G_tau
-        ar['dmft_output']['G_iw'] = S.G_iw
-        ar['dmft_output']['Sigma_iw'] = S.Sigma_iw
-        ar['dmft_output']['G0-%s'%(iteration_number)] = S.G0_iw
-        ar['dmft_output']['G-%s'%(iteration_number)] = S.G_iw
-        ar['dmft_output']['Sigma-%s'%(iteration_number)] = S.Sigma_iw
-        del ar
+        with HDFArchive(dft_filename+'.h5','a') as ar:
+            ar['dmft_output']['iterations'] = iteration_number + previous_runs
+            ar['dmft_output']['G_tau'] = S.G_tau
+            ar['dmft_output']['G_iw'] = S.G_iw
+            ar['dmft_output']['Sigma_iw'] = S.Sigma_iw
+            ar['dmft_output']['G0-%s'%(iteration_number)] = S.G0_iw
+            ar['dmft_output']['G-%s'%(iteration_number)] = S.G_iw
+            ar['dmft_output']['Sigma-%s'%(iteration_number)] = S.Sigma_iw
 
     # Set the new double counting:
     dm = S.G_iw.density() # compute the density matrix of the impurity problem

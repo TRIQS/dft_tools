@@ -44,10 +44,9 @@ class TestSumkDFT(SumkDFT):
             fermi_weights = 0
             band_window = 0
             if mpi.is_master_node():
-                ar = HDFArchive(self.hdf_file,'r')
-                fermi_weights = ar['dft_misc_input']['dft_fermi_weights']
-                band_window = ar['dft_misc_input']['band_window']
-                del ar
+                with HDFArchive(self.hdf_file,'r') as ar:
+                    fermi_weights = ar['dft_misc_input']['dft_fermi_weights']
+                    band_window = ar['dft_misc_input']['band_window']
             fermi_weights = mpi.bcast(fermi_weights)
             band_window = mpi.bcast(band_window)
 
@@ -184,10 +183,9 @@ class TestSumkDFT(SumkDFT):
         fermi_weights = 0
         band_window = 0
         if mpi.is_master_node():
-            ar = HDFArchive(self.hdf_file,'r')
-            fermi_weights = ar['dft_misc_input']['dft_fermi_weights']
-            band_window = ar['dft_misc_input']['band_window']
-            del ar
+            with HDFArchive(self.hdf_file,'r') as ar:
+                fermi_weights = ar['dft_misc_input']['dft_fermi_weights']
+                band_window = ar['dft_misc_input']['band_window']
         fermi_weights = mpi.bcast(fermi_weights)
         band_window = mpi.bcast(band_window)
 
@@ -282,14 +280,13 @@ def dmft_cycle():
     previous_present = False
 
     if mpi.is_master_node():
-        ar = HDFArchive(HDFfilename,'a')
-        if 'iterations' in ar:
-            previous_present = True
-            previous_runs = ar['iterations']
-        else:
-            previous_runs = 0
-            previous_present = False
-        del ar
+        with HDFArchive(HDFfilename,'a') as ar:
+            if 'iterations' in ar:
+                previous_present = True
+                previous_runs = ar['iterations']
+            else:
+                previous_runs = 0
+                previous_present = False
 
     mpi.barrier()
     previous_runs    = mpi.bcast(previous_runs)
@@ -315,9 +312,8 @@ def dmft_cycle():
     if (previous_present):
         mpi.report("Using stored data for initialisation")
         if (mpi.is_master_node()):
-            ar = HDFArchive(HDFfilename,'a')
-            S.Sigma <<= ar['SigmaF']
-            del ar
+            with HDFArchive(HDFfilename,'a') as ar:
+                S.Sigma <<= ar['SigmaF']
             things_to_load=['chemical_potential','dc_imp']
             old_data=SK.load(things_to_load)
             chemical_potential=old_data[0]
@@ -365,13 +361,12 @@ def dmft_cycle():
             # Now mix Sigma and G:
             if ((itn>1)or(previous_present)):
                 if (mpi.is_master_node()and (Mix<1.0)):
-                    ar = HDFArchive(HDFfilename,'r')
-                    mpi.report("Mixing Sigma and G with factor %s"%Mix)
-                    if ('SigmaF' in ar):
-                        S.Sigma <<= Mix * S.Sigma + (1.0-Mix) * ar['SigmaF']
-                    if ('GF' in ar):
-                        S.G <<= Mix * S.G + (1.0-Mix) * ar['GF']
-                    del ar
+                    with HDFArchive(HDFfilename,'r') as ar:
+                        mpi.report("Mixing Sigma and G with factor %s"%Mix)
+                        if ('SigmaF' in ar):
+                            S.Sigma <<= Mix * S.Sigma + (1.0-Mix) * ar['SigmaF']
+                        if ('GF' in ar):
+                            S.G <<= Mix * S.G + (1.0-Mix) * ar['GF']
                 S.G = mpi.bcast(S.G)
                 S.Sigma = mpi.bcast(S.Sigma)
             
@@ -386,14 +381,13 @@ def dmft_cycle():
 
             # store the impurity self-energy, GF as well as correlation energy in h5
             if (mpi.is_master_node()):
-                ar = HDFArchive(HDFfilename,'a')
-                ar['iterations'] = itn
-                ar['chemical_cotential%s'%itn] = chemical_potential
-                ar['SigmaF'] = S.Sigma
-                ar['GF'] = S.G
-                ar['correnerg%s'%itn] = correnerg
-                ar['DCenerg%s'%itn] = SK.dc_energ
-                del ar
+                with HDFArchive(HDFfilename,'a') as ar:
+                    ar['iterations'] = itn
+                    ar['chemical_cotential%s'%itn] = chemical_potential
+                    ar['SigmaF'] = S.Sigma
+                    ar['GF'] = S.G
+                    ar['correnerg%s'%itn] = correnerg
+                    ar['DCenerg%s'%itn] = SK.dc_energ
 
             #Save essential SumkDFT data:
             things_to_save=['chemical_potential','dc_energ','dc_imp']
@@ -428,11 +422,10 @@ def dmft_cycle():
 
 # store correlation energy contribution to be read by Wien2ki and then included to DFT+DMFT total energy
     if (mpi.is_master_node()):
-        ar = HDFArchive(HDFfilename)
-        itn = ar['iterations']
-        correnerg = ar['correnerg%s'%itn]
-        DCenerg = ar['DCenerg%s'%itn]
-        del ar
+        with HDFArchive(HDFfilename) as ar:
+            itn = ar['iterations']
+            correnerg = ar['correnerg%s'%itn]
+            DCenerg = ar['DCenerg%s'%itn]
         correnerg -= DCenerg[0]
         f=open(lda_filename+'.qdmft','a')
         f.write("%.16f\n"%correnerg)

@@ -258,18 +258,17 @@ class Wien2kConverter(ConverterTools):
         # Reading done!
 
         # Save it to the HDF:
-        ar = HDFArchive(self.hdf_file, 'a')
-        if not (self.dft_subgrp in ar):
-            ar.create_group(self.dft_subgrp)
-        # The subgroup containing the data. If it does not exist, it is
-        # created. If it exists, the data is overwritten!
-        things_to_save = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
+        with HDFArchive(self.hdf_file, 'a') as ar:
+            if not (self.dft_subgrp in ar):
+                ar.create_group(self.dft_subgrp)
+            # The subgroup containing the data. If it does not exist, it is
+            # created. If it exists, the data is overwritten!
+            things_to_save = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                           'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
                           'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
                           'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
-        for it in things_to_save:
-            ar[self.dft_subgrp][it] = locals()[it]
-        del ar
+            for it in things_to_save:
+                ar[self.dft_subgrp][it] = locals()[it]
 
         # Symmetries are used, so now convert symmetry information for
         # *correlated* orbitals:
@@ -292,15 +291,14 @@ class Wien2kConverter(ConverterTools):
             return
 
         # get needed data from hdf file
-        ar = HDFArchive(self.hdf_file, 'a')
-        things_to_read = ['SP', 'SO', 'n_shells',
+        with HDFArchive(self.hdf_file, 'a') as ar:
+            things_to_read = ['SP', 'SO', 'n_shells',
                           'n_k', 'n_orbitals', 'shells']
 
-        for it in things_to_read:
-            if not hasattr(self, it):
-                setattr(self, it, ar[self.dft_subgrp][it])
-        self.n_spin_blocs = self.SP + 1 - self.SO
-        del ar
+            for it in things_to_read:
+                if not hasattr(self, it):
+                    setattr(self, it, ar[self.dft_subgrp][it])
+            self.n_spin_blocs = self.SP + 1 - self.SO
 
         mpi.report("Reading input from %s..." % self.parproj_file)
 
@@ -368,16 +366,15 @@ class Wien2kConverter(ConverterTools):
         # Reading done!
 
         # Save it to the HDF:
-        ar = HDFArchive(self.hdf_file, 'a')
-        if not (self.parproj_subgrp in ar):
-            ar.create_group(self.parproj_subgrp)
-        # The subgroup containing the data. If it does not exist, it is
-        # created. If it exists, the data is overwritten!
-        things_to_save = ['dens_mat_below', 'n_parproj',
+        with HDFArchive(self.hdf_file, 'a') as ar:
+            if not (self.parproj_subgrp in ar):
+                ar.create_group(self.parproj_subgrp)
+            # The subgroup containing the data. If it does not exist, it is
+            # created. If it exists, the data is overwritten!
+            things_to_save = ['dens_mat_below', 'n_parproj',
                           'proj_mat_all', 'rot_mat_all', 'rot_mat_all_time_inv']
-        for it in things_to_save:
-            ar[self.parproj_subgrp][it] = locals()[it]
-        del ar
+            for it in things_to_save:
+                ar[self.parproj_subgrp][it] = locals()[it]
 
         # Symmetries are used, so now convert symmetry information for *all*
         # orbitals:
@@ -395,15 +392,14 @@ class Wien2kConverter(ConverterTools):
 
         try:
             # get needed data from hdf file
-            ar = HDFArchive(self.hdf_file, 'a')
-            things_to_read = ['SP', 'SO', 'n_corr_shells',
+            with HDFArchive(self.hdf_file, 'a') as ar:
+                things_to_read = ['SP', 'SO', 'n_corr_shells',
                               'n_shells', 'corr_shells', 'shells', 'energy_unit']
 
-            for it in things_to_read:
-                if not hasattr(self, it):
-                    setattr(self, it, ar[self.dft_subgrp][it])
-            self.n_spin_blocs = self.SP + 1 - self.SO
-            del ar
+                for it in things_to_read:
+                    if not hasattr(self, it):
+                        setattr(self, it, ar[self.dft_subgrp][it])
+                self.n_spin_blocs = self.SP + 1 - self.SO
 
             mpi.report("Reading input from %s..." % self.band_file)
             R = ConverterTools.read_fortran_file(
@@ -482,16 +478,15 @@ class Wien2kConverter(ConverterTools):
         # Reading done!
 
         # Save it to the HDF:
-        ar = HDFArchive(self.hdf_file, 'a')
-        if not (self.bands_subgrp in ar):
-            ar.create_group(self.bands_subgrp)
-        # The subgroup containing the data. If it does not exist, it is
-        # created. If it exists, the data is overwritten!
-        things_to_save = ['n_k', 'n_orbitals', 'proj_mat',
+        with HDFArchive(self.hdf_file, 'a') as ar:
+            if not (self.bands_subgrp in ar):
+                ar.create_group(self.bands_subgrp)
+            # The subgroup containing the data. If it does not exist, it is
+            # created. If it exists, the data is overwritten!
+            things_to_save = ['n_k', 'n_orbitals', 'proj_mat',
                           'hopping', 'n_parproj', 'proj_mat_all']
-        for it in things_to_save:
-            ar[self.bands_subgrp][it] = locals()[it]
-        del ar
+            for it in things_to_save:
+                ar[self.bands_subgrp][it] = locals()[it]
 
     def convert_misc_input(self):
         """
@@ -510,13 +505,12 @@ class Wien2kConverter(ConverterTools):
             return
 
         # Check if SP, SO and n_k are already in h5
-        ar = HDFArchive(self.hdf_file, 'r')
-        if not (self.dft_subgrp in ar):
-            raise IOError, "convert_misc_input: No %s subgroup in hdf file found! Call convert_dft_input first." % self.dft_subgrp
-        SP = ar[self.dft_subgrp]['SP']
-        SO = ar[self.dft_subgrp]['SO']
-        n_k = ar[self.dft_subgrp]['n_k']
-        del ar
+        with HDFArchive(self.hdf_file, 'r') as ar:
+            if not (self.dft_subgrp in ar):
+                raise IOError, "convert_misc_input: No %s subgroup in hdf file found! Call convert_dft_input first." % self.dft_subgrp
+            SP = ar[self.dft_subgrp]['SP']
+            SO = ar[self.dft_subgrp]['SO']
+            n_k = ar[self.dft_subgrp]['n_k']
 
         things_to_save = []
 
@@ -612,12 +606,11 @@ class Wien2kConverter(ConverterTools):
                     raise IOError, "convert_misc_input: reading file %s failed" % self.outputs_file
 
         # Save it to the HDF:
-        ar = HDFArchive(self.hdf_file, 'a')
-        if not (self.misc_subgrp in ar):
-            ar.create_group(self.misc_subgrp)
-        for it in things_to_save:
-            ar[self.misc_subgrp][it] = locals()[it]
-        del ar
+        with HDFArchive(self.hdf_file, 'a') as ar:
+            if not (self.misc_subgrp in ar):
+                ar.create_group(self.misc_subgrp)
+            for it in things_to_save:
+                ar[self.misc_subgrp][it] = locals()[it]
 
     def convert_transport_input(self):
         """ 
@@ -633,13 +626,12 @@ class Wien2kConverter(ConverterTools):
             return
 
         # Check if SP, SO and n_k are already in h5
-        ar = HDFArchive(self.hdf_file, 'r')
-        if not (self.dft_subgrp in ar):
-            raise IOError, "convert_transport_input: No %s subgroup in hdf file found! Call convert_dft_input first." % self.dft_subgrp
-        SP = ar[self.dft_subgrp]['SP']
-        SO = ar[self.dft_subgrp]['SO']
-        n_k = ar[self.dft_subgrp]['n_k']
-        del ar
+        with HDFArchive(self.hdf_file, 'r') as ar:
+            if not (self.dft_subgrp in ar):
+                raise IOError, "convert_transport_input: No %s subgroup in hdf file found! Call convert_dft_input first." % self.dft_subgrp
+            SP = ar[self.dft_subgrp]['SP']
+            SO = ar[self.dft_subgrp]['SO']
+            n_k = ar[self.dft_subgrp]['n_k']
 
         # Read relevant data from .pmat/up/dn files
         ###########################################
@@ -691,15 +683,14 @@ class Wien2kConverter(ConverterTools):
             R.close()  # Reading done!
 
         # Put data to HDF5 file
-        ar = HDFArchive(self.hdf_file, 'a')
-        if not (self.transp_subgrp in ar):
-            ar.create_group(self.transp_subgrp)
-        # The subgroup containing the data. If it does not exist, it is
-        # created. If it exists, the data is overwritten!!!
-        things_to_save = ['band_window_optics', 'velocities_k']
-        for it in things_to_save:
-            ar[self.transp_subgrp][it] = locals()[it]
-        del ar
+        with HDFArchive(self.hdf_file, 'a') as ar:
+            if not (self.transp_subgrp in ar):
+                ar.create_group(self.transp_subgrp)
+            # The subgroup containing the data. If it does not exist, it is
+            # created. If it exists, the data is overwritten!!!
+            things_to_save = ['band_window_optics', 'velocities_k']
+            for it in things_to_save:
+                ar[self.transp_subgrp][it] = locals()[it]
 
     def convert_symmetry_input(self, orbits, symm_file, symm_subgrp, SO, SP):
         """
@@ -781,11 +772,10 @@ class Wien2kConverter(ConverterTools):
         # Reading done!
 
         # Save it to the HDF:
-        ar = HDFArchive(self.hdf_file, 'a')
-        if not (symm_subgrp in ar):
-            ar.create_group(symm_subgrp)
-        things_to_save = ['n_symm', 'n_atoms', 'perm',
+        with HDFArchive(self.hdf_file, 'a') as ar:
+            if not (symm_subgrp in ar):
+                ar.create_group(symm_subgrp)
+            things_to_save = ['n_symm', 'n_atoms', 'perm',
                           'orbits', 'SO', 'SP', 'time_inv', 'mat', 'mat_tinv']
-        for it in things_to_save:
-            ar[symm_subgrp][it] = locals()[it]
-        del ar
+            for it in things_to_save:
+                ar[symm_subgrp][it] = locals()[it]

@@ -269,22 +269,23 @@ class VaspConverter(ConverterTools):
 
         
         # Save it to the HDF:
-        ar = HDFArchive(self.hdf_file,'a')
-        if not (self.dft_subgrp in ar): ar.create_group(self.dft_subgrp) 
-        # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
-        things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
+        with HDFArchive(self.hdf_file,'a') as ar:
+            if not (self.dft_subgrp in ar): ar.create_group(self.dft_subgrp) 
+            # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
+            things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                           'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
                           'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
-        for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
+            for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
 
-# Store Fermi weights to 'dft_misc_input'
-        if not (self.misc_subgrp in ar): ar.create_group(self.misc_subgrp)
-        ar[self.misc_subgrp]['dft_fermi_weights'] = f_weights
-        ar[self.misc_subgrp]['band_window'] = band_window
-        del ar
+            # Store Fermi weights to 'dft_misc_input'
+            if not (self.misc_subgrp in ar): ar.create_group(self.misc_subgrp)
+            ar[self.misc_subgrp]['dft_fermi_weights'] = f_weights
+            ar[self.misc_subgrp]['band_window'] = band_window
+        
         # Symmetries are used, so now convert symmetry information for *correlated* orbitals:
         self.convert_symmetry_input(ctrl_head, orbits=self.corr_shells, symm_subgrp=self.symmcorr_subgrp)
+
 # TODO: Implement misc_input
 #        self.convert_misc_input(bandwin_file=self.bandwin_file,struct_file=self.struct_file,outputs_file=self.outputs_file,
 #                                misc_subgrp=self.misc_subgrp,SO=self.SO,SP=self.SP,n_k=self.n_k)
@@ -381,10 +382,9 @@ class VaspConverter(ConverterTools):
                     raise "convert_misc_input: reading file %s failed" %self.outputs_file
 
         # Save it to the HDF:
-        ar=HDFArchive(self.hdf_file,'a')
-        if not (misc_subgrp in ar): ar.create_group(misc_subgrp)
-        for it in things_to_save: ar[misc_subgrp][it] = locals()[it]
-        del ar
+        with HDFArchive(self.hdf_file,'a') as ar:
+            if not (misc_subgrp in ar): ar.create_group(misc_subgrp)
+            for it in things_to_save: ar[misc_subgrp][it] = locals()[it]
 
 
     def convert_symmetry_input(self, ctrl_head, orbits, symm_subgrp):
@@ -405,10 +405,8 @@ class VaspConverter(ConverterTools):
         mat_tinv = [numpy.identity(1)]
 
         # Save it to the HDF:
-        ar=HDFArchive(self.hdf_file,'a')
-        if not (symm_subgrp in ar): ar.create_group(symm_subgrp)
-        things_to_save = ['n_symm','n_atoms','perm','orbits','SO','SP','time_inv','mat','mat_tinv']
-        for it in things_to_save:
-#            print "%s:"%(it), locals()[it]
-            ar[symm_subgrp][it] = locals()[it]
-        del ar
+        with HDFArchive(self.hdf_file,'a') as ar:
+            if not (symm_subgrp in ar): ar.create_group(symm_subgrp)
+            things_to_save = ['n_symm','n_atoms','perm','orbits','SO','SP','time_inv','mat','mat_tinv']
+            for it in things_to_save:
+                ar[symm_subgrp][it] = locals()[it]

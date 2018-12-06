@@ -205,23 +205,21 @@ some additional refinements::
       # Now mix Sigma and G with factor mix, if wanted:
       if (iteration_number>1 or previous_present):
           if mpi.is_master_node():
-              ar = HDFArchive(dft_filename+'.h5','a')
-              mpi.report("Mixing Sigma and G with factor %s"%mix)
-              S.Sigma_iw << mix * S.Sigma_iw + (1.0-mix) * ar['dmft_output']['Sigma_iw']
-              S.G_iw << mix * S.G_iw + (1.0-mix) * ar['dmft_output']['G_iw']
-              del ar
+              with HDFArchive(dft_filename+'.h5','r') as ar:
+                  mpi.report("Mixing Sigma and G with factor %s"%mix)
+                  S.Sigma_iw << mix * S.Sigma_iw + (1.0-mix) * ar['dmft_output']['Sigma_iw']
+                  S.G_iw << mix * S.G_iw + (1.0-mix) * ar['dmft_output']['G_iw']
           S.G_iw << mpi.bcast(S.G_iw)
           S.Sigma_iw << mpi.bcast(S.Sigma_iw)
 
       # Write the final Sigma and G to the hdf5 archive:
       if mpi.is_master_node():
-          ar = HDFArchive(dft_filename+'.h5','a')
-          ar['dmft_output']['iterations'] = iteration_number
-          ar['dmft_output']['G_0'] = S.G0_iw
-          ar['dmft_output']['G_tau'] = S.G_tau
-          ar['dmft_output']['G_iw'] = S.G_iw
-          ar['dmft_output']['Sigma_iw'] = S.Sigma_iw
-          del ar
+          with HDFArchive(dft_filename+'.h5','a') as ar:
+                ar['dmft_output']['iterations'] = iteration_number
+                ar['dmft_output']['G_0'] = S.G0_iw
+                ar['dmft_output']['G_tau'] = S.G_tau
+                ar['dmft_output']['G_iw'] = S.G_iw
+                ar['dmft_output']['Sigma_iw'] = S.Sigma_iw
 
       # Set the new double counting:
       dm = S.G_iw.density() # compute the density matrix of the impurity problem

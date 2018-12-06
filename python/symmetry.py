@@ -58,16 +58,15 @@ class Symmetry:
 
         if mpi.is_master_node():
             # Read the stuff on master:
-            ar = HDFArchive(hdf_file, 'r')
-            if subgroup is None:
-                ar2 = ar
-            else:
-                ar2 = ar[subgroup]
+            with HDFArchive(hdf_file, 'r') as ar:
+                if subgroup is None:
+                    ar2 = ar
+                else:
+                    ar2 = ar[subgroup]
 
-            for it in things_to_read:
-                setattr(self, it, ar2[it])
+                for it in things_to_read:
+                    setattr(self, it, ar2[it])
             del ar2
-            del ar
 
         # Broadcasting
         for it in things_to_read:

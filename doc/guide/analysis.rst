@@ -40,8 +40,8 @@ If required, we have to load and initialise the real-frequency self energy. Most
 you have your self energy already stored as a real-frequency :class:`BlockGf <pytriqs.gf.BlockGf>` object
 in a hdf5 file::
 
-  ar = HDFArchive('case.h5', 'a')
-  SigmaReFreq = ar['dmft_output']['Sigma_w']
+  with HDFArchive('case.h5', 'r') as ar:
+        SigmaReFreq = ar['dmft_output']['Sigma_w']
 
 You may also have your self energy stored in text files. For this case the :ref:`TRIQS <triqslibs:welcome>` library offers
 the function :meth:`read_gf_from_txt`, which is able to load the data from text files of one Green function block
@@ -73,7 +73,6 @@ and additionally set the chemical potential and the double counting correction f
   chemical_potential, dc_imp, dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
   SK.set_mu(chemical_potential)
   SK.set_dc(dc_imp,dc_energ)
-  del ar
 
 .. _dos_wannier:
 

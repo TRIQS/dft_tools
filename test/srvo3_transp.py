@@ -34,12 +34,11 @@ Converter.convert_transport_input()
 
 SK = SumkDFTTools(hdf_file='SrVO3.h5', use_dft_blocks=True)
 
-ar = HDFArchive('SrVO3_Sigma.h5', 'a')
-Sigma = ar['dmft_transp_input']['Sigma_w']
-SK.set_Sigma([Sigma])
-SK.chemical_potential = ar['dmft_transp_input']['chemical_potential']
-SK.dc_imp = ar['dmft_transp_input']['dc_imp']
-del ar
+with HDFArchive('SrVO3_Sigma.h5', 'a') as ar:
+    Sigma = ar['dmft_transp_input']['Sigma_w']
+    SK.set_Sigma([Sigma])
+    SK.chemical_potential = ar['dmft_transp_input']['chemical_potential']
+    SK.dc_imp = ar['dmft_transp_input']['dc_imp']
 
 SK.transport_distribution(directions=['xx'], broadening=0.0, energy_window=[-0.3,0.3], Om_mesh=[0.00, 0.02] , beta=beta, with_Sigma=True)
 #SK.save(['Gamma_w','Om_meshr','omega','directions'])
