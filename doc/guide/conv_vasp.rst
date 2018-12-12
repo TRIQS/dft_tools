@@ -39,7 +39,9 @@ where `<sites>` represents a list of site indices separated by spaces,
 with the indices corresponding to the site position in the POSCAR file;
 `<shells>` specifies local states (see below);
 `<projector type>` chooses a particular type of the local basis function.
-The recommended projector type is `Pr 2`.
+The recommended projector type is `Pr 2`. The formalism for this type
+of projectors is presented in
+`M. Schüler et al. 2018 J. Phys.: Condens. Matter 30 475901 <https://doi.org/10.1088/1361-648X/aae80a>`_.
 
 The allowed labels of the local states defined in terms of cubic
 harmonics are:
