@@ -3,8 +3,8 @@ import os
 import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
-from pytriqs.applications.dft.converters.plovasp.converter import generate_and_output_as_text
-from pytriqs.applications.dft.converters import VaspConverter
+from triqs_dft_tools.converters.plovasp.converter import generate_and_output_as_text
+from triqs_dft_tools.converters import VaspConverter
 import mytest
 
 ################################################################################

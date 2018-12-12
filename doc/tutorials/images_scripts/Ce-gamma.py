@@ -22,15 +22,14 @@ mpi.barrier()
 previous_runs = 0
 previous_present = False
 if mpi.is_master_node():
-    f = HDFArchive(dft_filename+'.h5','a')
-    if 'dmft_output' in f:
-        ar = f['dmft_output']
-        if 'iterations' in ar:
-            previous_present = True
-            previous_runs = ar['iterations']
-    else:
-        f.create_group('dmft_output')
-    del f
+    with HDFArchive(dft_filename+'.h5','a') as f:
+        if 'dmft_output' in f:
+            ar = f['dmft_output']
+            if 'iterations' in ar:
+                previous_present = True
+                previous_runs = ar['iterations']
+        else:
+            f.create_group('dmft_output')
 previous_runs    = mpi.bcast(previous_runs)
 previous_present = mpi.bcast(previous_present)
 
@@ -47,9 +46,8 @@ chemical_potential=chemical_potential_init
 # load previous data: old self-energy, chemical potential, DC correction
 if previous_present:
     if mpi.is_master_node():
-        ar = HDFArchive(dft_filename+'.h5','a')
-        S.Sigma << ar['dmft_output']['Sigma']
-        del ar
+        with HDFArchive(dft_filename+'.h5','r') as ar:
+            S.Sigma << ar['dmft_output']['Sigma']
         SK.chemical_potential,SK.dc_imp,SK.dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
     S.Sigma << mpi.bcast(S.Sigma)
     SK.chemical_potential = mpi.bcast(SK.chemical_potential)
@@ -87,11 +85,10 @@ for iteration_number in range(1,Loops+1):
         # Now mix Sigma and G with factor Mix, if wanted:
         if (iteration_number>1 or previous_present):
             if (mpi.is_master_node() and (mixing<1.0)):
-                ar = HDFArchive(dft_filename+'.h5','a')
-                mpi.report("Mixing Sigma and G with factor %s"%mixing)
-                S.Sigma << mixing * S.Sigma + (1.0-mixing) * ar['dmft_output']['Sigma']
-                S.G << mixing * S.G + (1.0-mixing) * ar['dmft_output']['G']
-                del ar
+                with HDFArchive(dft_filename+'.h5','r') as ar:
+                    mpi.report("Mixing Sigma and G with factor %s"%mixing)
+                    S.Sigma << mixing * S.Sigma + (1.0-mixing) * ar['dmft_output']['Sigma']
+                    S.G << mixing * S.G + (1.0-mixing) * ar['dmft_output']['G']
             S.G << mpi.bcast(S.G)
             S.Sigma << mpi.bcast(S.Sigma)
      
@@ -106,11 +103,10 @@ for iteration_number in range(1,Loops+1):
 
         # store the impurity self-energy, GF as well as correlation energy in h5
         if mpi.is_master_node():
-            ar = HDFArchive(dft_filename+'.h5','a')
-            ar['dmft_output']['iterations'] = iteration_number + previous_runs
-            ar['dmft_output']['G'] = S.G
-            ar['dmft_output']['Sigma'] = S.Sigma
-            del ar
+            with HDFArchive(dft_filename+'.h5','a') as ar:
+                ar['dmft_output']['iterations'] = iteration_number + previous_runs
+                ar['dmft_output']['G'] = S.G
+                ar['dmft_output']['Sigma'] = S.Sigma
 
         #Save essential SumkDFT data:
         SK.save(['chemical_potential','dc_imp','dc_energ','correnerg'])

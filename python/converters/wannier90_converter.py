@@ -345,18 +345,17 @@ class Wannier90Converter(ConverterTools):
             iorb += norb
 
         # Finally, save all required data into the HDF archive:
-        ar = HDFArchive(self.hdf_file, 'a')
-        if not (self.dft_subgrp in ar):
-            ar.create_group(self.dft_subgrp)
-        # The subgroup containing the data. If it does not exist, it is
-        # created. If it exists, the data is overwritten!
-        things_to_save = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
+        with HDFArchive(self.hdf_file, 'a') as ar:
+            if not (self.dft_subgrp in ar):
+                ar.create_group(self.dft_subgrp)
+            # The subgroup containing the data. If it does not exist, it is
+            # created. If it exists, the data is overwritten!
+            things_to_save = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                           'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
                           'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
                           'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
-        for it in things_to_save:
-            ar[self.dft_subgrp][it] = locals()[it]
-        del ar
+            for it in things_to_save:
+                ar[self.dft_subgrp][it] = locals()[it]
 
     def read_wannier90hr(self, hr_filename="wannier_hr.dat"):
         """

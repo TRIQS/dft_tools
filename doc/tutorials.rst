@@ -1,0 +1,25 @@
+.. module:: triqs_dft_tools
+
+.. _tutorials:
+
+Tutorials
+=========
+
+A simple example: SrVO3
+-----------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   tutorials/srvo3
+
+
+Full charge self consistency with Wien2k: :math:`\gamma`-Ce
+-----------------------------------------------------------
+
+.. toctree::
+   :maxdepth: 2
+
+
+   tutorials/ce-gamma-fscs_wien2k
+

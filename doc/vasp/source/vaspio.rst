@@ -1,4 +1,4 @@
-.. sec_vaspio
+.. _vaspio:
 
 VASP input-output
 #################

@@ -96,12 +96,11 @@ The converter :meth:`convert_transport_input <dft.converters.wien2k_converter.Wi
 reads the required data of the Wien2k output and stores it in the `dft_transp_input` subgroup of your hdf file. 
 Additionally we need to read and set the self energy, the chemical potential and the double counting::
 
-    ar = HDFArchive('case.h5', 'a')
-    SK.set_Sigma([ar['dmft_output']['Sigma_w']])
-    chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
-    SK.set_mu(chemical_potential)
-    SK.set_dc(dc_imp,dc_energ)
-    del ar
+    with HDFArchive('case.h5', 'r') as ar:
+        SK.set_Sigma([ar['dmft_output']['Sigma_w']])
+        chemical_potential,dc_imp,dc_energ = SK.load(['chemical_potential','dc_imp','dc_energ'])
+        SK.set_mu(chemical_potential)
+        SK.set_dc(dc_imp,dc_energ)
 
 As next step we can calculate the transport distribution :math:`\Gamma_{\alpha\beta}(\omega)`::
 

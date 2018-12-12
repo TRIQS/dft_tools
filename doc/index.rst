@@ -24,7 +24,7 @@ provides a generic interface for one-shot DFT+DMFT calculations, where
 only the single-particle Hamiltonian in orbital space has to be
 provided.
 
-Learn how to use this package in the :ref:`documentation`.
+Learn how to use this package in the :ref:`documentation` and the :ref:`tutorials`.
 
 
 .. toctree::

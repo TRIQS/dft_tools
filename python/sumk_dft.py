@@ -187,23 +187,22 @@ class SumkDFT(object):
         subgroup_present = 0
 
         if mpi.is_master_node():
-            ar = HDFArchive(self.hdf_file, 'r')
-            if subgrp in ar:
-                subgroup_present = True
-                # first read the necessary things:
-                for it in things_to_read:
-                    if it in ar[subgrp]:
-                        setattr(self, it, ar[subgrp][it])
-                    else:
-                        mpi.report("Loading %s failed!" % it)
-                        value_read = False
-            else:
-                if (len(things_to_read) != 0):
-                    mpi.report(
-                        "Loading failed: No %s subgroup in hdf5!" % subgrp)
-                subgroup_present = False
-                value_read = False
-            del ar
+            with HDFArchive(self.hdf_file, 'r') as ar:
+                if subgrp in ar:
+                    subgroup_present = True
+                    # first read the necessary things:
+                    for it in things_to_read:
+                        if it in ar[subgrp]:
+                            setattr(self, it, ar[subgrp][it])
+                        else:
+                            mpi.report("Loading %s failed!" % it)
+                            value_read = False
+                else:
+                    if (len(things_to_read) != 0):
+                        mpi.report(
+                            "Loading failed: No %s subgroup in hdf5!" % subgrp)
+                    subgroup_present = False
+                    value_read = False
         # now do the broadcasting:
         for it in things_to_read:
             setattr(self, it, mpi.bcast(getattr(self, it)))
@@ -226,18 +225,16 @@ class SumkDFT(object):
 
         if not (mpi.is_master_node()):
             return  # do nothing on nodes
-        ar = HDFArchive(self.hdf_file, 'a')
-        if not subgrp in ar:
-            ar.create_group(subgrp)
-        for it in things_to_save:
-            if it in [ "gf_struct_sumk", "gf_struct_solver",
-                    "solver_to_sumk", "sumk_to_solver", "solver_to_sumk_block"]:
-                warn("It is not recommended to save '{}' individually. Save 'block_structure' instead.".format(it))
-            try:
-                ar[subgrp][it] = getattr(self, it)
-            except:
-                mpi.report("%s not found, and so not saved." % it)
-        del ar
+        with HDFArchive(self.hdf_file, 'a') as ar:
+            if not subgrp in ar: ar.create_group(subgrp)
+            for it in things_to_save:
+                if it in [ "gf_struct_sumk", "gf_struct_solver",
+                        "solver_to_sumk", "sumk_to_solver", "solver_to_sumk_block"]:
+                    warn("It is not recommended to save '{}' individually. Save 'block_structure' instead.".format(it))
+                try:
+                    ar[subgrp][it] = getattr(self, it)
+                except:
+                    mpi.report("%s not found, and so not saved." % it)
 
     def load(self, things_to_load, subgrp='user_data'):
         r"""
@@ -258,16 +255,15 @@ class SumkDFT(object):
 
         if not (mpi.is_master_node()):
             return  # do nothing on nodes
-        ar = HDFArchive(self.hdf_file, 'r')
-        if not subgrp in ar:
-            mpi.report("Loading %s failed!" % subgrp)
-        list_to_return = []
-        for it in things_to_load:
-            try:
-                list_to_return.append(ar[subgrp][it])
-            except:
-                raise ValueError, "load: %s not found, and so not loaded." % it
-        del ar
+        with HDFArchive(self.hdf_file, 'r') as ar:
+            if not subgrp in ar:
+                mpi.report("Loading %s failed!" % subgrp)
+            list_to_return = []
+            for it in things_to_load:
+                try:
+                    list_to_return.append(ar[subgrp][it])
+                except:
+                    raise ValueError, "load: %s not found, and so not loaded." % it
         return list_to_return
 
 ################
@@ -1822,10 +1818,9 @@ class SumkDFT(object):
             fermi_weights = 0
             band_window = 0
             if mpi.is_master_node():
-                ar = HDFArchive(self.hdf_file,'r')
-                fermi_weights = ar['dft_misc_input']['dft_fermi_weights']
-                band_window = ar['dft_misc_input']['band_window']
-                del ar
+                with HDFArchive(self.hdf_file,'r') as ar:
+                    fermi_weights = ar['dft_misc_input']['dft_fermi_weights']
+                    band_window = ar['dft_misc_input']['band_window']
             fermi_weights = mpi.bcast(fermi_weights)
             band_window = mpi.bcast(band_window)
 

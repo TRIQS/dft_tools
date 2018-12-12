@@ -1,14 +1,10 @@
 .. _SrVO3:
 
-SrVO3 (single-shot)
-===================
-
-We will discuss now how to set up a full working calculation,
+On the example of SrVO3 we will discuss now how to set up a full working calculation,
 including the initialization of the :ref:`CTHYB solver <triqscthyb:welcome>`.
 Some additional parameter are introduced to make the calculation
 more efficient. This is a more advanced example, which is
-also suited for parallel execution. The conversion, which
-we assume to be carried out already, is discussed :ref:`here <conversion>`.
+also suited for parallel execution. 
 
 For the convenience of the user, we provide also two
 working python scripts in this documentation. One for a calculation
@@ -17,6 +13,63 @@ using Kanamori definitions (:download:`dft_dmft_cthyb.py
 rotational-invariant Slater interaction Hamiltonian (:download:`dft_dmft_cthyb_slater.py
 <images_scripts/dft_dmft_cthyb_slater.py>`). The user has to adapt these
 scripts to his own needs. How to execute your script is described :ref:`here<runpy>`.
+
+The conversion will now be discussed in detail for the Wien2k and VASP packages.
+For more details we refer to the :ref:`documentation <conversion>`.
+
+
+DFT (Wien2k) and Wannier orbitals
+=================================
+
+DFT setup
+---------
+
+First, we do a DFT calculation, using the Wien2k package. As main input file we have to provide the so-called struct file :file:`SrVO3.struct`. We use the following:
+
+.. literalinclude:: images_scripts/SrVO3.struct
+
+Instead of going through the whole initialisation process, we can use ::
+
+   init -b -vxc 5 -numk 5000 
+
+This is setting up a non-magnetic calculation, using the LDA and 5000 k-points in the full Brillouin zone. As usual, we start the DFT self consistent cycle by the Wien2k script ::
+
+  run
+
+Wannier orbitals
+----------------
+
+As a next step, we calculate localised orbitals for the t2g orbitals. We use the same input file for :program:`dmftproj` as it was used in the :ref:`documentation`:
+
+.. literalinclude:: images_scripts/SrVO3.indmftpr
+
+To prepare the input data for :program:`dmftproj` we execute lapw2 with the `-almd` option ::
+   
+   x lapw2 -almd 
+
+Then  :program:`dmftproj` is executed in its default mode (i.e. without spin-polarization or spin-orbit included) ::
+
+   dmftproj 
+
+This program produces the necessary files for the conversion to the hdf5 file structure. This is done using
+the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.Wien2kConverter>`. A simple python script that initialises the converter is::
+
+  from triqs_dft_tools.converters.wien2k_converter import *
+  Converter = Wien2kConverter(filename = "SrVO3")
+
+After initializing the interface module, we can now convert the input
+text files to the hdf5 archive by::
+
+  Converter.convert_dft_input()
+
+This reads all the data, and stores everything that is necessary for the DMFT calculation in the file :file:`SrVO3.h5`.
+
+
+The DMFT calculation
+====================
+
+The DMFT script itself is, except very few details, independent of the DFT package that was used to calculate the local orbitals.
+As soon as one has converted everything to the hdf5 format, the following procedure is practially the same. 
 
 Loading modules
 ---------------
@@ -152,23 +205,21 @@ some additional refinements::
       # Now mix Sigma and G with factor mix, if wanted:
       if (iteration_number>1 or previous_present):
           if mpi.is_master_node():
-              ar = HDFArchive(dft_filename+'.h5','a')
-              mpi.report("Mixing Sigma and G with factor %s"%mix)
-              S.Sigma_iw << mix * S.Sigma_iw + (1.0-mix) * ar['dmft_output']['Sigma_iw']
-              S.G_iw << mix * S.G_iw + (1.0-mix) * ar['dmft_output']['G_iw']
-              del ar
+              with HDFArchive(dft_filename+'.h5','r') as ar:
+                  mpi.report("Mixing Sigma and G with factor %s"%mix)
+                  S.Sigma_iw << mix * S.Sigma_iw + (1.0-mix) * ar['dmft_output']['Sigma_iw']
+                  S.G_iw << mix * S.G_iw + (1.0-mix) * ar['dmft_output']['G_iw']
           S.G_iw << mpi.bcast(S.G_iw)
           S.Sigma_iw << mpi.bcast(S.Sigma_iw)
 
       # Write the final Sigma and G to the hdf5 archive:
       if mpi.is_master_node():
-          ar = HDFArchive(dft_filename+'.h5','a')
-          ar['dmft_output']['iterations'] = iteration_number
-          ar['dmft_output']['G_0'] = S.G0_iw
-          ar['dmft_output']['G_tau'] = S.G_tau
-          ar['dmft_output']['G_iw'] = S.G_iw
-          ar['dmft_output']['Sigma_iw'] = S.Sigma_iw
-          del ar
+          with HDFArchive(dft_filename+'.h5','a') as ar:
+                ar['dmft_output']['iterations'] = iteration_number
+                ar['dmft_output']['G_0'] = S.G0_iw
+                ar['dmft_output']['G_tau'] = S.G_tau
+                ar['dmft_output']['G_iw'] = S.G_iw
+                ar['dmft_output']['Sigma_iw'] = S.Sigma_iw
 
       # Set the new double counting:
       dm = S.G_iw.density() # compute the density matrix of the impurity problem
