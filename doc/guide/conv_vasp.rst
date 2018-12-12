@@ -22,7 +22,7 @@ Interface with VASP
     spin-polarized projectors have not been tested.
 
 A detailed description of the VASP converter tool PLOVasp can be found
-in :ref:`plovasp`. Here, a quick-start guide is presented.
+in the :ref:`PLOVasp User's Guide <plovasp>`. Here, a quick-start guide is presented.
 
 The VASP interface relies on new options introduced since version
 5.4.x. In particular, a new INCAR-option `LOCPROJ`
@@ -55,11 +55,12 @@ harmonics are:
  * `f`-states: `fy(3x2-y2)`, `fxyz`, `fyz2`, `fz3`,
    `fxz2`, `fz(x2-y2)`, `fx(x2-3y2)`.
 
-For projector type `Pr 2`, one should also set `LORBIT = 14` in INCAR
-and provide parameters `EMIN`, `EMAX` which, in this case, define an
-energy range (window) corresponding to the valence states. Note that as in the case
-of DOS calculation the position of the valence states depends on the
-Fermi level.
+For projector type `Pr 2`, one should also set `LORBIT = 14` in the INCAR file
+and provide parameters `EMIN`, `EMAX`, defining, in this case, an
+energy range (energy window) corresponding to the valence states.
+Note that, as in the case
+of a DOS calculation, the position of the valence states depends on the
+Fermi level, which can usually be found at the end of the OUTCAR file.
 
 For example, in case of SrVO3 one may first want to perform a self-consistent
 calculation, then set `ICHARGE = 1` and add the following additional
@@ -88,7 +89,7 @@ Post-processing of `LOCPROJ` data is generally done as follows:
 #. Prepare an input file `<name>.cfg` (e.g., `plo.cfg`) that describes the definition
    of your impurity problem (more details below).
 
-#. Extract the value of the Fermi level from OUTCAR and paste at the end of
+#. Extract the value of the Fermi level from OUTCAR and paste it at the end of
    the first line of LOCPROJ.
 
 #. Run :program:`plovasp` with the input file as an argument, e.g.:
@@ -103,7 +104,7 @@ These files are needed for the converter that will be invoked in your
 DMFT script.
 
 The format of input file `<name>.cfg` is described in details in
-:ref:`plovasp`. Here we just give a simple example for the case
+the :ref:`User's Guide <plovasp>`. Here we just consider a simple example for the case
 of SrVO3:
 
 .. literalinclude:: images_scripts/srvo3.cfg
@@ -119,7 +120,7 @@ parameters are required
 - **EWINDOW**: energy window in which the projectors are normalized;
   note that the energies are defined with respect to the Fermi level.
 
-Option **TRANSFORM** is optional but here it is specified to extract
+Option **TRANSFORM** is optional but here, it is specified to extract
 only three :math:`t_{2g}` orbitals out of five `d` orbitals given by
 :math:`l = 2`.
 
