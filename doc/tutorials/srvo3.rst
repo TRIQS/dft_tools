@@ -6,13 +6,9 @@ Some additional parameter are introduced to make the calculation
 more efficient. This is a more advanced example, which is
 also suited for parallel execution. 
 
-For the convenience of the user, we provide also two
-working python scripts in this documentation. One for a calculation
-using Kanamori definitions (:download:`dft_dmft_cthyb.py
-<images_scripts/dft_dmft_cthyb.py>`) and one with a
-rotational-invariant Slater interaction Hamiltonian (:download:`dft_dmft_cthyb_slater.py
-<images_scripts/dft_dmft_cthyb_slater.py>`). The user has to adapt these
-scripts to his own needs. How to execute your script is described :ref:`here<runpy>`.
+For the convenience of the user, we provide also a full
+python script (:download:`dft_dmft_cthyb.py <images_scripts/dft_dmft_cthyb.py>`).
+The user has to adapt it to his own needs. How to execute your script is described :ref:`here<runpy>`.
 
 The conversion will now be discussed in detail for the Wien2k and VASP packages.
 For more details we refer to the :ref:`documentation <conversion>`.

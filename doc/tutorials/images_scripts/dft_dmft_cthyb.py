@@ -4,18 +4,37 @@ from pytriqs.archive import HDFArchive
 from triqs_cthyb import *
 from pytriqs.gf import *
 from triqs_dft_tools.sumk_dft import *
+from triqs_dft_tools.converters.wien2k_converter import *
 
 dft_filename='SrVO3'
-U = 4.0
-J = 0.65
 beta = 40
 loops = 15                       # Number of DMFT sc-loops
 sigma_mix = 1.0                  # Mixing factor of Sigma after solution of the AIM
-delta_mix = 1.0                  # Mixing factor of Delta as input for the AIM
-dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
 use_blocks = True                # use bloc structure from DFT input
 prec_mu = 0.0001
 h_field = 0.0
+
+## KANAMORI DENSITY-DENSITY (for full Kanamori use h_int_kanamori)
+# Define interaction paramters, DC and Hamiltonian
+U = 4.0
+J = 0.65
+dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
+# Construct U matrix for density-density calculations
+Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
+# Construct density-density Hamiltonian
+h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
+
+## SLATER HAMILTONIAN
+## Define interaction paramters, DC and Hamiltonian
+#U = 9.6
+#J = 0.8
+#dc_type = 0                      # DC type: 0 FLL, 1 Held, 2 AMF
+## Construct Slater U matrix
+#U_sph = U_matrix(l=2, U_int=U, J_hund=J)
+#U_cubic = transform_U_matrix(U_sph, spherical_to_cubic(l=2, convention='wien2k'))
+#Umat = t2g_submatrix(U_cubic, convention='wien2k')
+## Construct Slater Hamiltonian
+#h_int = h_int_slater(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U_matrix=Umat)
 
 # Solver parameters
 p = {}
@@ -46,7 +65,6 @@ if mpi.is_master_node():
                 previous_runs = ar['iterations']
         else:
             f.create_group('dmft_output')
-
 previous_runs    = mpi.bcast(previous_runs)
 previous_present = mpi.bcast(previous_present)
 
@@ -60,11 +78,7 @@ orb_names = [i for i in range(n_orb)]
 # Use GF structure determined by DFT blocks
 gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].iteritems()]
 
-# Construct U matrix for density-density calculations
-Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
-
-# Construct density-density Hamiltonian and solver
-h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat, H_dump="H.txt")
+# Construct Solver
 S = Solver(beta=beta, gf_struct=gf_struct)
 
 if previous_present:
@@ -98,19 +112,7 @@ for iteration_number in range(1,loops+1):
         S.Sigma_iw << SK.dc_imp[0]['up'][0,0]
 
     # Calculate new G0_iw to input into the solver:
-    if mpi.is_master_node():
-        # We can do a mixing of Delta in order to stabilize the DMFT iterations:
-        S.G0_iw << S.Sigma_iw + inverse(S.G_iw)
-        # The following lines are uncommented until issue #98 is fixed in TRIQS
-       # with HDFArchive(dft_filename+'.h5','a') as ar:
-       #    if (iteration_number>1 or previous_present):
-       #         mpi.report("Mixing input Delta with factor %s"%delta_mix)
-       #        Delta = (delta_mix * delta(S.G0_iw)) + (1.0-delta_mix) * ar['dmft_output']['Delta_iw']
-       #        S.G0_iw << S.G0_iw + delta(S.G0_iw) - Delta
-       #    ar['dmft_output']['Delta_iw'] = delta(S.G0_iw)
-        S.G0_iw << inverse(S.G0_iw)
-
-    S.G0_iw << mpi.bcast(S.G0_iw)
+    S.G0_iw << inverse(S.Sigma_iw + inverse(S.G_iw))
 
     # Solve the impurity problem:
     S.solve(h_int=h_int, **p)
@@ -125,13 +127,13 @@ for iteration_number in range(1,loops+1):
                 mpi.report("Mixing Sigma and G with factor %s"%sigma_mix)
                 S.Sigma_iw << sigma_mix * S.Sigma_iw + (1.0-sigma_mix) * ar['dmft_output']['Sigma_iw']
                 S.G_iw << sigma_mix * S.G_iw + (1.0-sigma_mix) * ar['dmft_output']['G_iw']
-        
+
         S.G_iw << mpi.bcast(S.G_iw)
         S.Sigma_iw << mpi.bcast(S.Sigma_iw)
 
     # Write the final Sigma and G to the hdf5 archive:
     if mpi.is_master_node():
-        with ar = HDFArchive(dft_filename+'.h5','a') as ar:
+        with HDFArchive(dft_filename+'.h5','a') as ar:
             ar['dmft_output']['iterations'] = iteration_number + previous_runs
             ar['dmft_output']['G_tau'] = S.G_tau
             ar['dmft_output']['G_iw'] = S.G_iw
