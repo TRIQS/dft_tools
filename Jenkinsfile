@@ -93,6 +93,7 @@ try {
     /* Publish results */
     stage("publish") { timeout(time: 1, unit: 'HOURS') {
       def commit = sh(returnStdout: true, script: "git rev-parse HEAD").trim()
+      def release = sh(returnStdout: true, script: "git describe --exact-match HEAD || true").trim()
       def workDir = pwd()
       /* Update documention on gh-pages branch */
       dir("$workDir/gh-pages") {
@@ -110,7 +111,7 @@ try {
         sh "git push origin master || { git pull --rebase origin master && git push origin master ; }"
       }
       /* Update docker repo submodule */
-      dir("$workDir/docker") { try {
+      if (release) { dir("$workDir/docker") { try {
         git(url: "ssh://git@github.com/TRIQS/docker.git", branch: env.BRANCH_NAME, credentialsId: "ssh", changelog: false)
         sh "echo '160000 commit ${commit}\t${projectName}' | git update-index --index-info"
         sh """
@@ -121,7 +122,7 @@ try {
       } catch (err) {
         /* Ignore, non-critical -- might not exist on this branch */
         echo "Failed to update docker repo"
-      } }
+      } } }
     } }
   } }
 } catch (err) {
