@@ -436,6 +436,24 @@ class BlockStructure(object):
                     self.sumk_to_solver[ish][k] = (blk, new_ind)
                 else:
                     self.sumk_to_solver[ish][k] = (None, None)
+            # adapt deg_shells
+            if self.deg_shells is not None:
+                for degsh in self.deg_shells[ish]:
+                    for key in degsh.keys():
+                        if isinstance(degsh, dict):
+                            if not key in gf_struct:
+                                del degsh[key]
+                                continue
+                            if gf_struct[key] != self.gf_struct_solver[ish][key]:
+                                v, C = degsh[key]
+                                degsh[key][0] = \
+                                    v[gf_struct[key], :][:, gf_struct[key]]
+                                warn(
+                                    'Removing shells from degenerate shell {}. Cannot guarantee that they continue to be equivalent.')
+                        else:
+                            if not key in gf_struct:
+                                degsh.remove(key)
+                                continue
             # reindexing gf_struct so that it starts with 0
             for k in gf_struct:
                 gf_struct[k] = range(len(gf_struct[k]))
