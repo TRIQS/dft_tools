@@ -3,6 +3,7 @@
 # TRIQS documentation build configuration file
 
 import sys
+sys.path.insert(0, "@TRIQS_SPHINXEXT_PATH@/autorun")
 sys.path.insert(0, "@TRIQS_SPHINXEXT_PATH@/numpydoc")
 
 extensions = ['sphinx.ext.autodoc',
@@ -13,7 +14,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.autosummary',
               'plot_directive',
-              'numpydoc']
+              'numpydoc',
+              'autorun']
 
 source_suffix = '.rst'
 

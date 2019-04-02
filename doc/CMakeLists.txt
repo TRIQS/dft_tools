@@ -4,6 +4,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in ${CMAKE_CURRENT_BINARY_DIR
 # ---------------------------------
 # Top Sphinx target
 # ---------------------------------
+# Sources
 file(GLOB_RECURSE sources *.rst)
 
 set(sphinx_top ${CMAKE_CURRENT_BINARY_DIR}/html/contents.html)
@@ -19,7 +20,7 @@ add_dependencies(docs_sphinx app4triqs_c)
 # cp_rs is a script in cpp2py/bin, it mimics cp -rs on Linux
 # and filters the relevant extension
 # ------------------------------------------------------------------------------------------------
-set(EXT_FOR_DOC "rst png txt css_t conf css js gif jpg py html bib md")
+set(EXT_FOR_DOC "rst png txt css_t conf css js gif jpg py html bib h5 md")
 execute_process(COMMAND cp_rs ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${EXT_FOR_DOC})
 
 # -----------------------------------------------------------------------------
