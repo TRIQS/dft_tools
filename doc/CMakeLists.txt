@@ -22,9 +22,9 @@ add_dependencies(docs_sphinx app4triqs_c)
 set(EXT_FOR_DOC "rst png txt css_t conf css js gif jpg py html bib md")
 execute_process(COMMAND cp_rs ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${EXT_FOR_DOC})
 
-# ---------------------------------
-# Generate C++ doc with c++2rst
-# ---------------------------------
+# -----------------------------------------------------------------------------
+# Make an optional target that allows us to regenerate the C++ doc with c++2rst
+# -----------------------------------------------------------------------------
 add_custom_target(docs_cpp2rst)
 
 get_property(TRIQS_INCLUDE_DIRS TARGET triqs PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
@@ -41,7 +41,7 @@ macro(generate_docs header_file)
     COMMAND c++2rst
     ${header_file}
     -N app4triqs
-    --output_directory ${CMAKE_CURRENT_BINARY_DIR}/cpp2rst_generated
+    --output_directory ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
     ${CPP2RST_INCLUDE_COMMAND}
     --cxxflags="-std=c++17"
     -I ${CMAKE_SOURCE_DIR}/c++
@@ -51,7 +51,6 @@ macro(generate_docs header_file)
 endmacro(generate_docs)
 
 generate_docs(${CMAKE_SOURCE_DIR}/c++/app4triqs/toto.hpp)
-add_dependencies(docs_sphinx docs_cpp2rst)
 
 # ---------------------------------
 # Install
