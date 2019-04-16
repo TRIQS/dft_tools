@@ -16,7 +16,7 @@ set(BUILD_SHARED_LIBS ON)
 
 # Load TRIQS and Cpp2Py
 find_package(TRIQS 2.1 REQUIRED)
-find_package(Cpp2Py 1.5 REQUIRED)
+find_package(Cpp2Py 1.6 REQUIRED)
 
 if (NOT ${TRIQS_WITH_PYTHON_SUPPORT})
  MESSAGE(FATAL_ERROR "dft_tools require Python support in TRIQS")
