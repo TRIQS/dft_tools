@@ -93,7 +93,7 @@ try {
     /* Publish results */
     stage("publish") { timeout(time: 1, unit: 'HOURS') {
       def commit = sh(returnStdout: true, script: "git rev-parse HEAD").trim()
-      def release = env.BRANCH_NAME.toCharacter().isLetter() || sh(returnStdout: true, script: "git describe --exact-match HEAD || true").trim()
+      def release = env.BRANCH_NAME == "master" || env.BRANCH_NAME == "unstable" || sh(returnStdout: true, script: "git describe --exact-match HEAD || true").trim()
       def workDir = pwd()
       /* Update documention on gh-pages branch */
       dir("$workDir/gh-pages") {
