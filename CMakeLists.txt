@@ -25,7 +25,7 @@ add_compile_options(-Wall
 
 # Load Dependencies
 find_package(TRIQS 2.2 REQUIRED)
-find_package(Cpp2Py 1.5 REQUIRED)
+find_package(Cpp2Py 1.6 REQUIRED)
 
 # Default Install directory to TRIQS_ROOT if not given or invalid.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTALL_PREFIX}))
