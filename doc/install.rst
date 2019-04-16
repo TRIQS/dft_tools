@@ -25,7 +25,6 @@ Installation steps
 
 #. Make sure that you have added the TRIQS and Cpp2Py installation to your environment variables::
 
-     $ source path_to_triqs/share/cpp2pyvarsh.sh
      $ source path_to_triqs/share/triqsvarsh.sh
 
 #. In the build directory call cmake::

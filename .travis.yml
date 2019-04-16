@@ -23,12 +23,6 @@ install: true
 
 script:
   - export INSTALL_DIR=$HOME/root_install # We should install outside the repository
-  # ===== Set up Cpp2Py
-  - git clone https://github.com/triqs/cpp2py
-  - mkdir cpp2py/build && cd cpp2py/build
-  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DPYTHON_INTERPRETER=/usr/bin/python -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
-  - make -j8 install
-  - source $INSTALL_DIR/share/cpp2pyvars.sh
   # ===== Set up TRIQS
   - cd $TRAVIS_BUILD_DIR
   - git clone https://github.com/TRIQS/triqs --branch unstable
