@@ -1,18 +1,21 @@
+# Start configuration
+cmake_minimum_required(VERSION 2.8)
+project(dft_tools C CXX Fortran)
+if(POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
+
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Type of build" FORCE)
 endif()
 message( STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} -------------")
 
-# start configuration
-cmake_minimum_required(VERSION 2.8)
-project(dft_tools C CXX Fortran)
-
 # Use shared libraries
 set(BUILD_SHARED_LIBS ON)
 
 # Load TRIQS and Cpp2Py
-find_package(TRIQS 2.0 REQUIRED)
+find_package(TRIQS 2.1 REQUIRED)
 find_package(Cpp2Py 1.5 REQUIRED)
 
 if (NOT ${TRIQS_WITH_PYTHON_SUPPORT})
@@ -26,17 +29,13 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTA
 endif()
 message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} -------------")
 
-# Use git to detect Cthyb version and git hash
-execute_process(COMMAND bash "-c" "${TRIQS_GIT_EXECUTABLE} describe | sed \"s/-\\([0-9]*\\)-.*/.\\1/g\""
- WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
- OUTPUT_VARIABLE   DFT_TOOLS_VERSION
- OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-if(NOT DFT_TOOLS_VERSION)
-  set(DFT_TOOLS_VERSION 1.5)
-endif()
+# Define the dft_tools version numbers and get the git hash
+set(DFT_TOOLS_VERSION_MAJOR 2)
+set(DFT_TOOLS_VERSION_MINOR 1)
+set(DFT_TOOLS_VERSION_PATCH 0)
+set(DFT_TOOLS_VERSION ${DFT_TOOLS_VERSION_MAJOR}.${DFT_TOOLS_VERSION_MINOR}.${DFT_TOOLS_VERSION_PATCH})
 triqs_get_git_hash_of_source_dir(DFT_TOOLS_GIT_HASH)
-MESSAGE(STATUS "Dft_tools version : ${DFT_TOOLS_VERSION}")
+message(STATUS "Dft_tools version : ${DFT_TOOLS_VERSION}")
 message(STATUS "Git hash: ${DFT_TOOLS_GIT_HASH}")
 
 add_subdirectory(fortran/dmftproj) 
@@ -98,7 +97,7 @@ if(BUILD_DEBIAN_PACKAGE)
   SET(CPACK_PACKAGE_VERSION ${DFT_TOOLS_VERSION})
   SET(CPACK_PACKAGE_CONTACT "https://github.com/TRIQS/dft_tools")
   EXECUTE_PROCESS(COMMAND dpkg --print-architecture OUTPUT_VARIABLE CMAKE_DEBIAN_PACKAGE_ARCHITECTURE OUTPUT_STRIP_TRAILING_WHITESPACE)
-  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "python, python-numpy, python-h5py, python-jinja2, python-mako, python-mpi4py, python-matplotlib, python-scipy, triqs (>= 2.0)")
+  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "triqs (>= 2.1)")
   SET(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
   SET(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
   INCLUDE(CPack)
