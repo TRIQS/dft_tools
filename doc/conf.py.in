@@ -21,7 +21,7 @@ source_suffix = '.rst'
 
 project = u'APP4TRIQS - An example triqs application'
 copyright = u'2018 - The TRIQS Developers'
-version = '@APP4TRIQS_VERSION'
+version = '@APP4TRIQS_VERSION@'
 
 mathjax_path = "@TRIQS_MATHJAX_PATH@/MathJax.js?config=default"
 templates_path = ['@CMAKE_SOURCE_DIR@/doc/_templates']
