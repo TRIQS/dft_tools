@@ -10,7 +10,7 @@ set(all_tests toto)
 foreach(test ${all_tests})
   get_filename_component(test_name ${test} NAME_WE)
   add_executable(${test_name} ${test})
-  target_link_libraries(${test_name} app4triqs_c gtest)
+  target_link_libraries(${test_name} app4triqs_c triqs::gtest)
   add_test(${test_name} ${test_name})
   # Run clang-tidy if found
   if(CLANG_TIDY_EXECUTABLE)
