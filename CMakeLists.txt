@@ -18,10 +18,12 @@ set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Enable compiler warnings for the whole project
-add_compile_options(-Wall
-		     $<$<CONFIG:Debug>:-Og>
-		     $<$<CONFIG:Debug>:-ggdb3>
-		     )
+add_compile_options(
+		-Wall
+		-Wextra
+		$<$<CONFIG:Debug>:-Og>
+		$<$<CONFIG:Debug>:-ggdb3>
+		)
 
 # Load Dependencies
 find_package(TRIQS 2.2 REQUIRED)
