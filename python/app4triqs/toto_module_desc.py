@@ -26,6 +26,9 @@ c = class_(
         c_type = "app4triqs::toto",   # name of the C++ class
         doc = """A very useful and important class\n\n @note A Useful note""",   # doc of the C++ class
         hdf5 = True,
+        arithmetic = ("add_only"),
+        comparisons = "==",
+        serializable = "tuple"
 )
 
 c.add_constructor("""()""", doc = """""")
