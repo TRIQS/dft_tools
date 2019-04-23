@@ -13,8 +13,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.todo',
               'sphinx.ext.viewcode',
               'sphinx.ext.autosummary',
-              'plot_directive',
               'numpydoc',
+              'plot_directive',
               'autorun']
 
 source_suffix = '.rst'
