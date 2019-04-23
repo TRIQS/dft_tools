@@ -18,7 +18,7 @@ namespace app4triqs {
     /**
      * Construct from integer
      *
-     * @param i_ a scalar
+     * @param i_ a scalar  :math:`G(\tau)`
      */
     explicit toto(int i_) : i(i_) {}
 
@@ -34,6 +34,13 @@ namespace app4triqs {
 
     /// Simple accessor
     int get_i() const { return i; }
+
+    /** 
+     * A simple function with :math:`G(\tau)`
+     *
+     * @param u Nothing useful
+     */
+    int f(int u) { return u;}
 
     /// Arithmetic operations
     toto operator+(toto const &b) const;
@@ -57,8 +64,8 @@ namespace app4triqs {
    *
    * Chain the decimal digits of two integers i and j, and return the result
    *
-   * @param :math:`i` The first integer
-   * @param :math:`j` The second integer
+   * @param i The first integer
+   * @param j The second integer
    * @return An integer containing the digits of both i and j
    *
    * @remark

@@ -6,6 +6,12 @@ Documentation
 Contents
 --------
 
+.. math::
+
+   (a + b)^2  &=  (a + b)(a + b) \\
+              &=  a^2 + 2ab + b^2
+
+
 .. toctree::
    :maxdepth: 5
 
@@ -14,6 +20,12 @@ Contents
    issues
    changelog
    about
+
+Python
+------
+
+.. automodule:: app4triqs 
+   :members:
 
 Reference manual
 ----------------
