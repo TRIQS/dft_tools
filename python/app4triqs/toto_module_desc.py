@@ -6,6 +6,7 @@ from cpp2py.wrap_generator import *
 module = module_(full_name = "toto_module", doc = "", app_name = "app4triqs")
 
 # Imports
+module.add_imports(*[])
 
 # Add here all includes
 module.add_include("app4triqs/toto.hpp")
@@ -25,9 +26,6 @@ c = class_(
         c_type = "app4triqs::toto",   # name of the C++ class
         doc = """A very useful and important class\n\n @note A Useful note""",   # doc of the C++ class
         hdf5 = True,
-        arithmetic = ("add_only"),
-        comparisons = "==",  
-        serializable = "tuple",
 )
 
 c.add_constructor("""()""", doc = """""")
@@ -44,7 +42,7 @@ c.add_property(name = "i",
 
 module.add_class(c)
 
-module.add_function ("int app4triqs::chain (int i, int j)", doc = """Chain digits of two integers\n\n Chain the decimal digits of two integers i and j, and return a new \n\n @param :math:`i` The first integer\n @param :math:`j` The second integer \n @return An integer containing the digits of both i and j\n\n @remark""")
+module.add_function ("int app4triqs::chain (int i, int j)", doc = """Chain digits of two integers\n\n Chain the decimal digits of two integers i and j, and return the result\n\n @param :math:`i` The first integer\n @param :math:`j` The second integer\n @return An integer containing the digits of both i and j\n\n @remark""")
 
 
 
