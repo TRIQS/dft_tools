@@ -7,7 +7,8 @@ configure_file(version.py.in version.py)
 
 # All Python files. Copy them in the build dir to have a complete package for the tests.
 file(GLOB_RECURSE python_sources RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.py)
-list(FILTER python_sources EXCLUDE REGEX "_desc.py")
+file(GLOB_RECURSE wrap_generators RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *_desc.py)
+list(REMOVE_ITEM python_sources "${wrap_generators}")
 foreach(file ${python_sources})
   configure_file(${file} ${file} COPYONLY)
 endforeach()
