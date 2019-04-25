@@ -62,7 +62,9 @@ namespace app4triqs {
   /**
    * Chain digits of two integers
    *
-   * Chain the decimal digits of two integers i and j, and return the result
+   * @head A set of functions that implement chaining
+   *
+   * @tail Do I really need to explain more ? 
    *
    * @param i The first integer
    * @param j The second integer
@@ -71,5 +73,26 @@ namespace app4triqs {
    * @remark
    */
   int chain(int i, int j);
+ 
+  /**
+   * Chain digits of three integers
+   *
+   * @param i The first integer
+   * @param j The second integer
+   * @param k The third integer
+   * @return An integer containing the digits of both i and j
+   *
+   * @remark
+   */
+  int chain(int i, int j, int k);
+
+  /**
+   * Chain digits of one integers
+   *
+   * @param i The first integer
+   *
+   * @remark
+   */
+  int chain(int i);
 
 } // namespace app4triqs
