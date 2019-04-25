@@ -56,7 +56,7 @@ namespace app4triqs {
     friend void h5_read(triqs::h5::group grp, std::string subgroup_name, toto &m);
 
     /// Serialization
-    template <class Archive> void serialize(Archive &ar, const unsigned int version) { ar &i; }
+    template <class Archive> void serialize(Archive &ar, const unsigned int) { ar &i; }
   };
 
   /**
