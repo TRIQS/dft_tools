@@ -20,7 +20,7 @@ extensions = ['sphinx.ext.autodoc',
 source_suffix = '.rst'
 
 project = u'APP4TRIQS - An example triqs application'
-copyright = u'2018 Simons Foundation - authors: N. Wentzell and H. U.R. Strand'
+copyright = u'2017-2018 N. Wentzell, O. Parcollet 2018-2019 The Simons Foundation, authors: N. Wentzell, H. Strand, O. Parcollet'
 version = '@APP4TRIQS_VERSION@'
 
 mathjax_path = "@TRIQS_MATHJAX_PATH@/MathJax.js?config=default"

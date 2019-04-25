@@ -3,7 +3,7 @@
 .. _install:
 
 Compiling app4triqs from source
-===================================
+===============================
 
 
 Prerequisites
