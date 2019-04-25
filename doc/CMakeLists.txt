@@ -13,7 +13,7 @@ add_custom_command(OUTPUT ${sphinx_top} DEPENDS ${sources}
 add_custom_target(docs_sphinx ALL DEPENDS ${sphinx_top} ${CMAKE_CURRENT_BINARY_DIR})
 
 # Application must be compiled first
-add_dependencies(docs_sphinx app4triqs_c)
+add_dependencies(docs_sphinx app4triqs_c toto_module)
 
 # ------------------------------------------------------------------------------------------------
 # Copy the directory substructure and link all files with relevant extensions
