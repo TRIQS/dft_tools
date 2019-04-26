@@ -113,7 +113,7 @@ try {
       /* Update docker repo submodule */
       if (release) { dir("$workDir/docker") { try {
         git(url: "ssh://git@github.com/TRIQS/docker.git", branch: env.BRANCH_NAME, credentialsId: "ssh", changelog: false)
-        sh "test -d ${projectName}"
+        sh "test -d triqs_${projectName}"
         sh "echo '160000 commit ${commit}\ttriqs_${projectName}' | git update-index --index-info"
         sh """
           git commit --author='Flatiron Jenkins <jenkins@flatironinstitute.org>' --allow-empty -m 'Autoupdate ${projectName}' -m '${env.BUILD_TAG}'
