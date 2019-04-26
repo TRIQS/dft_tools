@@ -13,7 +13,7 @@ namespace app4triqs {
     int i = 0;
 
     public:
-    toto()  = default;
+    toto() = default;
 
     /**
      * Construct from integer
@@ -40,7 +40,7 @@ namespace app4triqs {
      *
      * @param u Nothing useful
      */
-    int f(int u) { return u;}
+    int f(int u) { return u; }
 
     /// Arithmetic operations
     toto operator+(toto const &b) const;
