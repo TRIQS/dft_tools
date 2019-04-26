@@ -10,7 +10,7 @@ A Docker image including the latest version of DFTTools is available `here <http
 
 We further provide a Debian package for the Ubuntu LTS Versions 16.04 (xenial) and 18.04 (bionic), which can be installed by following the steps outlined :ref:`here <triqslibs:triqs_docker>`, and the subsequent command::
 
-        sudo apt-get install -y dft_tools
+        sudo apt-get install -y triqs_dft_tools
 
 
 Compiling DFTTools from source
