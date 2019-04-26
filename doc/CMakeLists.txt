@@ -4,42 +4,48 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in ${CMAKE_CURRENT_BINARY_DIR
 # ---------------------------------
 # Top Sphinx target
 # ---------------------------------
-# Sources
-file(GLOB_RECURSE sources *.rst)
+# Sphinx has internal caching, always run it
+add_custom_target(docs_sphinx ALL)
+add_custom_command(
+  TARGET docs_sphinx
+  COMMAND PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH} ${TRIQS_SPHINXBUILD_EXECUTABLE} -c . -j8 -b html ${CMAKE_CURRENT_SOURCE_DIR} html
+)
 
-set(sphinx_top ${CMAKE_CURRENT_BINARY_DIR}/html/contents.html)
-add_custom_command(OUTPUT ${sphinx_top} DEPENDS ${sources}
-  COMMAND PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH} ${TRIQS_SPHINXBUILD_EXECUTABLE} -c . -j8 -b html ${CMAKE_CURRENT_SOURCE_DIR} html)
-add_custom_target(docs_sphinx ALL DEPENDS ${sphinx_top} ${CMAKE_CURRENT_BINARY_DIR})
-
-# Application must be compiled first
-add_dependencies(docs_sphinx app4triqs_c toto_module)
+# Autodoc usage requires the python modules to be built first
+get_property(CPP2PY_MODULES_LIST GLOBAL PROPERTY CPP2PY_MODULES_LIST)
+add_dependencies(docs_sphinx ${CPP2PY_MODULES_LIST})
 
 # -----------------------------------------------------------------------------
-# Make an optional target that allows us to regenerate the C++ doc with c++2rst
+# Create an optional target that allows us to regenerate the C++ doc with c++2rst
 # -----------------------------------------------------------------------------
-add_custom_target(docs_cpp2rst)
-
-get_property(TRIQS_INCLUDE_DIRS TARGET triqs PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-get_property(APP4TRIQS_INCLUDE_DIRS TARGET app4triqs_c PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-set(CPP2RST_INCLUDE_DIRS ${TRIQS_INCLUDE_DIRS} ${APP4TRIQS_INCLUDE_DIRS})
-
-foreach(I ${CPP2RST_INCLUDE_DIRS})
-  set (CPP2RST_INCLUDE_COMMAND ${CPP2RST_INCLUDE_COMMAND} --includes ${I})
+foreach(t app4triqs_c triqs)
+  get_property(INCLUDE_DIRS TARGET ${t} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+  get_property(SYSTEM_INCLUDE_DIRS TARGET ${t} PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
+  if(SYTEM_INCLUDE_DIRS)
+    list(REMOVE_ITEM INCLUDE_DIRS ${SYSTEM_INCLUDE_DIRS})
+  endif()
+  foreach(DIR ${INCLUDE_DIRS})
+    set(CPP2RST_INCLUDE_FLAGS ${CPP2RST_INCLUDE_FLAGS} -I${DIR})
+  endforeach()
+  foreach(DIR ${SYSTEM_INCLUDE_DIRS})
+    set(CPP2RST_INCLUDE_FLAGS ${CPP2RST_INCLUDE_FLAGS} -isystem=${DIR})
+  endforeach()
+  get_property(COMPILE_OPTIONS TARGET ${t} PROPERTY INTERFACE_COMPILE_OPTIONS)
+  set(CPP2RST_CXXFLAGS ${CPP2RST_CXXFLAGS} ${COMPILE_OPTIONS})
 endforeach()
 
+add_custom_target(docs_cpp2rst)
 macro(generate_docs header_file)
   add_custom_command(
     TARGET docs_cpp2rst
-    COMMAND c++2rst
-    ${header_file}
-    -N app4triqs
-    --output_directory ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
-    ${CPP2RST_INCLUDE_COMMAND}
-    --cxxflags="-std=c++17"
-    -I ${CMAKE_SOURCE_DIR}/c++
-    -I ${TRIQS_ROOT}/include
-    2>&1 >> cpp2rst.log
+    COMMAND rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
+    COMMAND
+      c++2rst
+      ${header_file}
+      -N app4triqs
+      --output_directory ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
+      --cxxflags="${CPP2RST_CXXFLAGS}"
+      ${CPP2RST_INCLUDE_FLAGS}
   )
 endmacro(generate_docs)
 

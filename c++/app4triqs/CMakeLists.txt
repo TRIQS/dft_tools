@@ -5,7 +5,7 @@ add_library(app4triqs_c ${sources})
 target_link_libraries(app4triqs_c PUBLIC triqs)
 
 # Configure compilation
-target_compile_options(app4triqs_c PUBLIC -std=c++17 -fPIC)
+target_compile_options(app4triqs_c PUBLIC -fPIC)
 target_include_directories(app4triqs_c PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/c++>)
 target_compile_definitions(app4triqs_c PUBLIC
 				APP4TRIQS_GIT_HASH=${APP4TRIQS_GIT_HASH}
