@@ -9,19 +9,11 @@ file(GLOB_RECURSE sources *.rst)
 
 set(sphinx_top ${CMAKE_CURRENT_BINARY_DIR}/html/contents.html)
 add_custom_command(OUTPUT ${sphinx_top} DEPENDS ${sources}
-		   COMMAND PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH} ${TRIQS_SPHINXBUILD_EXECUTABLE} -c . -j8 -b html ${CMAKE_CURRENT_BINARY_DIR} html)
+  COMMAND PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH} ${TRIQS_SPHINXBUILD_EXECUTABLE} -c . -j8 -b html ${CMAKE_CURRENT_SOURCE_DIR} html)
 add_custom_target(docs_sphinx ALL DEPENDS ${sphinx_top} ${CMAKE_CURRENT_BINARY_DIR})
 
 # Application must be compiled first
 add_dependencies(docs_sphinx app4triqs_c toto_module)
-
-# ------------------------------------------------------------------------------------------------
-# Copy the directory substructure and link all files with relevant extensions
-# cp_rs is a script in cpp2py/bin, it mimics cp -rs on Linux
-# and filters the relevant extension
-# ------------------------------------------------------------------------------------------------
-set(EXT_FOR_DOC "rst png txt css_t conf css js gif jpg py html bib h5 md")
-execute_process(COMMAND cp_rs ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${EXT_FOR_DOC})
 
 # -----------------------------------------------------------------------------
 # Make an optional target that allows us to regenerate the C++ doc with c++2rst
