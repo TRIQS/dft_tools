@@ -110,9 +110,9 @@ try {
         // note: credentials used above don't work (need JENKINS-28335)
         sh "git push origin master || { git pull --rebase origin master && git push origin master ; }"
       }
-      /* Update docker repo submodule */
-      if (release) { dir("$workDir/docker") { try {
-        git(url: "ssh://git@github.com/TRIQS/docker.git", branch: env.BRANCH_NAME, credentialsId: "ssh", changelog: false)
+      /* Update packaging repo submodule */
+      if (release) { dir("$workDir/packaging") { try {
+        git(url: "ssh://git@github.com/TRIQS/packaging.git", branch: env.BRANCH_NAME, credentialsId: "ssh", changelog: false)
         sh "test -d triqs_${projectName}"
         sh "echo '160000 commit ${commit}\ttriqs_${projectName}' | git update-index --index-info"
         sh """
@@ -122,7 +122,7 @@ try {
         sh "git push origin ${env.BRANCH_NAME} || { git pull --rebase origin ${env.BRANCH_NAME} && git push origin ${env.BRANCH_NAME} ; }"
       } catch (err) {
         /* Ignore, non-critical -- might not exist on this branch */
-        echo "Failed to update docker repo"
+        echo "Failed to update packaging repo"
       } } }
     } }
   } }
