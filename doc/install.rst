@@ -26,21 +26,21 @@ Prerequisites
 Installation steps 
 ------------------
 
-#. Download the sources from github:: 
+#. Download the source code by cloning the ``TRIQS/dft_tools`` repository from GitHub::
  
-     $ git clone https://github.com/TRIQS/dft_tools.git src
+     $ git clone https://github.com/TRIQS/dft_tools.git dft_tools.src
  
-#. Create an empty build directory where you will compile the code:: 
+#. Create and move to a new directory where you will compile the code::
  
      $ mkdir dft_tools.build && cd dft_tools.build
  
-#. Make sure that you have added the TRIQS and Cpp2Py installation to your environment variables::
+#. Ensure that your shell contains the TRIQS environment variables by sourcing the ``triqsvars.sh`` file from your TRIQS installation::
 
      $ source path_to_triqs/share/triqsvarsh.sh
      
-#. In the build directory call cmake 
+#. In the build directory call cmake, including any additional custom CMake options, see below::
 
-     $ cmake ../src
+     $ cmake ../dft_tools.src
  
 #. Compile the code, run the tests and install the application:: 
  
