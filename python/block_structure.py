@@ -439,8 +439,8 @@ class BlockStructure(object):
             # adapt deg_shells
             if self.deg_shells is not None:
                 for degsh in self.deg_shells[ish]:
-                    for key in degsh.keys():
-                        if isinstance(degsh, dict):
+                    if isinstance(degsh, dict):
+                        for key in degsh.keys():
                             if not key in gf_struct:
                                 del degsh[key]
                                 continue
@@ -450,7 +450,8 @@ class BlockStructure(object):
                                     v[gf_struct[key], :][:, gf_struct[key]]
                                 warn(
                                     'Removing shells from degenerate shell {}. Cannot guarantee that they continue to be equivalent.')
-                        else:
+                    else: # degshell is list
+                        for key in degsh:
                             if not key in gf_struct:
                                 degsh.remove(key)
                                 continue
