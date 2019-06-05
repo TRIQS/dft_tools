@@ -451,10 +451,11 @@ class BlockStructure(object):
                                 warn(
                                     'Removing shells from degenerate shell {}. Cannot guarantee that they continue to be equivalent.')
                     else: # degshell is list
-                        for key in degsh:
+                        degsh1 = copy.deepcopy(degsh) # in order to not remove a key while iterating
+                        for key in degsh1:
                             if not key in gf_struct:
+                                warn('Removing shells from degenerate shell {}.')
                                 degsh.remove(key)
-                                continue
             # reindexing gf_struct so that it starts with 0
             for k in gf_struct:
                 gf_struct[k] = range(len(gf_struct[k]))
@@ -510,7 +511,7 @@ class BlockStructure(object):
         for icrsh in range(len(new_gf_struct)):
             for block, indices in self.gf_struct_sumk[icrsh]:
                 if not block in new_gf_struct[icrsh]:
-                    del new_gf_struct_transformed[block]
+                    #del new_gf_struct_transformed[block] # this MUST be wrong, as new_gf_struct_transformed needs to have a integer index for icrsh... # error when index is not kept at all
                     continue
                 T = eff_trans_sumk[icrsh][block]
                 for index in indices:
