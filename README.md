@@ -1,9 +1,9 @@
 # app4triqs
 
-An example application using cpp2py and triqs
----------------------------------------------
+A skeleton for a TRIQS application
+----------------------------------
 
-To use this skeleton for a new triqs application, the following steps are necessary:
+To adapt this skeleton for a new triqs application, the following steps are necessary:
 
 * Create a repository, e.g. https://github.com/myuser/mynewapp
 
