@@ -591,6 +591,7 @@ class BlockStructure(object):
             self.solver_to_sumk[ish] = so2su
             self.sumk_to_solver[ish] = su2so
             self.solver_to_sumk_block[ish] = so2su_block
+            self.deg_shells[ish] = []
 
     def create_gf(self, ish=0, gf_function=GfImFreq, space='solver', **kwargs):
         """ Create a zero BlockGf having the correct structure.
