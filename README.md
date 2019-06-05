@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/TRIQS/app4triqs.svg?branch=unstable)](https://travis-ci.org/TRIQS/app4triqs)
+
 # app4triqs
 
 A skeleton for a TRIQS application
