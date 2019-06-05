@@ -1692,7 +1692,7 @@ class SumkDFT(object):
 
         return sigma_minus_dc
 
-    def symm_deg_gf(self, gf_to_symm, orb):
+    def symm_deg_gf(self, gf_to_symm, ish=0):
         r"""
         Averages a GF over degenerate shells.
 
@@ -1704,8 +1704,8 @@ class SumkDFT(object):
         ----------
         gf_to_symm : gf_struct_solver like
                      Input and output GF (i.e., it gets overwritten)
-        orb : int
-              Index of an inequivalent shell.
+        ish : int
+              Index of an inequivalent shell. (default value 0)
 
         """
 
@@ -1713,7 +1713,7 @@ class SumkDFT(object):
         # an h5 file, self.deg_shells might be None
         if self.deg_shells is None: return
 
-        for degsh in self.deg_shells[orb]:
+        for degsh in self.deg_shells[ish]:
             # ss will hold the averaged orbitals in the basis where the
             # blocks are all equal
             # i.e. maybe_conjugate(v^dagger gf v)
