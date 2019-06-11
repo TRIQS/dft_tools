@@ -19,7 +19,7 @@ Compiling DFTTools from source
 Prerequisites
 -------------
 
-#. The :ref:`TRIQS <triqslibs:welcome>` toolbox. In the following, we will suppose that it is installed in the ``path_to_triqs`` directory.
+#. The :ref:`TRIQS <triqslibs:welcome>` toolbox. 
 
 #. Likely, you will also need at least one impurity solver, e.g. the :ref:`CTHYB solver <triqscthyb:welcome>`.
 
@@ -108,7 +108,7 @@ into the directory with the sources and look at all available versions::
  
 Checkout the version of the code that you want, for instance:: 
  
-     $ git co 1.2 
+     $ git co 2.1 
  
 Then follow the steps 2 to 5 described above to compile the code. 
 
