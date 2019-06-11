@@ -166,6 +166,13 @@ For other choices of the interaction matrices (e.g Slater representation) or
 Hamiltonians, we refer to the reference manual of the :ref:`TRIQS <triqslibs:welcome>`
 library.
 
+As a last step, we initialize the subgroup in the hdf5 archive to store the results::
+
+  if mpi.is_master_node():
+      with HDFArchive(dft_filename+'.h5') as ar:
+          if (not ar.is_group('dmft_output')): 
+              ar.create_group('dmft_output')
+
 DMFT cycle
 ----------
 
@@ -182,8 +189,8 @@ some additional refinements::
       S.G_iw << SK.extract_G_loc()[0]                         # calc the local Green function
       mpi.report("Total charge of Gloc : %.6f"%S.G_iw.total_density())
 
-      # Init the DC term and the real part of Sigma, if no previous runs found:
-      if (iteration_number==1 and previous_present==False):
+      # In the first loop, init the DC term and the real part of Sigma:
+      if (iteration_number==1):
           dm = S.G_iw.density()
           SK.calc_dc(dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
           S.Sigma_iw << SK.dc_imp[0]['up'][0,0]
@@ -199,7 +206,7 @@ some additional refinements::
       mpi.report("Total charge of impurity problem : %.6f"%S.G_iw.total_density())
 
       # Now mix Sigma and G with factor mix, if wanted:
-      if (iteration_number>1 or previous_present):
+      if (iteration_number>1):
           if mpi.is_master_node():
               with HDFArchive(dft_filename+'.h5','r') as ar:
                   mpi.report("Mixing Sigma and G with factor %s"%mix)
@@ -210,7 +217,7 @@ some additional refinements::
 
       # Write the final Sigma and G to the hdf5 archive:
       if mpi.is_master_node():
-          with HDFArchive(dft_filename+'.h5','a') as ar:
+          with HDFArchive(dft_filename+'.h5') as ar:
                 ar['dmft_output']['iterations'] = iteration_number
                 ar['dmft_output']['G_0'] = S.G0_iw
                 ar['dmft_output']['G_tau'] = S.G_tau
