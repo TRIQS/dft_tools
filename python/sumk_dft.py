@@ -1762,7 +1762,7 @@ class SumkDFT(object):
 
         """
         F = lambda mu: self.total_density(
-            mu=mu, iw_or_w=iw_or_w, broadening=broadening)
+            mu=mu, iw_or_w=iw_or_w, broadening=broadening).real
         density = self.density_required - self.charge_below
 
         self.chemical_potential = dichotomy.dichotomy(function=F,
