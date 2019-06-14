@@ -519,12 +519,12 @@ class Wien2kConverter(ConverterTools):
         # band_window: Contains the index of the lowest and highest band within the
         #              projected subspace (used by dmftproj) for each k-point.
 
-        if (SP == 0 or SO == 1):
+        if (SP == SO): # if SP and SO are both 1 or both 0
             files = [self.bandwin_file]
-        elif SP == 1:
+        elif (SP == 1 and SO == 0): # SP but no SO
             files = [self.bandwin_file + 'up', self.bandwin_file + 'dn']
-        else:  # SO and SP can't both be 1
-            assert 0, "convert_misc_input: Reading oubwin error! Check SP and SO!"
+        else:  # SP=0 and SO=1
+            assert 0, "convert_misc_input: Reading oubwin error! Check SP and SO, if SO=1 SP must be 1."
 
         band_window = [None for isp in range(SP + 1 - SO)]
         for isp, f in enumerate(files):
@@ -640,12 +640,12 @@ class Wien2kConverter(ConverterTools):
         # velocities_k: velocity (momentum) matrix elements between all bands in band_window_optics
         #               and each k-point.
 
-        if (SP == 0 or SO == 1):
+        if (SP == SO): # if SP and SO are both 1 or both 0
             files = [self.pmat_file]
-        elif SP == 1:
+        elif (SP == 1 and SO == 0): # SP but no SO
             files = [self.pmat_file + 'up', self.pmat_file + 'dn']
-        else:  # SO and SP can't both be 1
-            assert 0, "convert_transport_input: Reading velocity file error! Check SP and SO!"
+        else:  # SP=0 and SO=1
+            assert 0, "convert_transport_input: Reading velocity file error! Check SP and SO, if SO=1 SP must be 1."
 
         velocities_k = [[] for f in files]
         band_window_optics = []
