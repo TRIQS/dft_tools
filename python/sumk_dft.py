@@ -667,7 +667,7 @@ class SumkDFT(object):
         return Sigma_out
 
     def extract_G_loc(self, mu=None, iw_or_w='iw', with_Sigma=True, with_dc=True, broadening=None,
-                      transform_to_solver_blocks=True):
+                      transform_to_solver_blocks=True, show_warnings=True):
         r"""
         Extracts the local downfolded Green function by the Brillouin-zone integration of the lattice Green's function.
 
@@ -686,6 +686,9 @@ class SumkDFT(object):
         transform_to_solver_blocks : bool, optional
             If True (default), the returned G_loc will be transformed to the block structure ``gf_struct_solver``,
             else it will be in ``gf_struct_sumk``.
+        show_warnings : bool, optional
+            Displays warning messages during transformation
+            (Only effective if transform_to_solver_blocks = True
 
         Returns
         -------
@@ -753,11 +756,11 @@ class SumkDFT(object):
                         icrsh, gf, direction='toLocal')
 
         if transform_to_solver_blocks:
-            return self.transform_to_solver_blocks(G_loc)
+            return self.transform_to_solver_blocks(G_loc, show_warnings=show_warnings)
 
         return G_loc
 
-    def transform_to_solver_blocks(self, G_loc, G_out=None):
+    def transform_to_solver_blocks(self, G_loc, G_out=None, show_warnings = True):
         """ transform G_loc from sumk to solver space
 
         Parameters
@@ -794,7 +797,8 @@ class SumkDFT(object):
                 ish_from=self.inequiv_to_corr[ish],
                 ish_to=ish,
                 space_from='sumk',
-                G_out=G_out[ish])
+                G_out=G_out[ish],
+                show_warnings = show_warnings)
 
         # return only the inequivalent shells:
         return G_out
