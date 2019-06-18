@@ -942,9 +942,23 @@ class BlockStructure(object):
                                      axis=0)
                 else:
                     maxdiff = G_back[name] - G[name]
-                if np.any(maxdiff > warning_threshold):
+
+                if space_to == 'solver': # do comparison in solver (ignore diff. in ignored orbitals)
+                    maxdiff = G_struct._convert_gf_or_matrix({'ud':maxdiff}, self, ish_from=ish_from,
+                                                    ish_to=ish_to,
+                                                    show_warnings=False,
+                                                    space_from=space_from, space_to=space_to, **kwargs)
+
+                    for block in maxdiff:
+                        maxdiff_b = maxdiff[block]
+                        if np.any(maxdiff_b > warning_threshold):
+                            warn('Block {} maximum difference:\n'.format(name) + str(maxdiff))
+
+
+                elif np.any(maxdiff > warning_threshold):
                     warn('Block {} maximum difference:\n'.format(name)
                          + str(maxdiff))
+
         return G_out
 
     def approximate_as_diagonal(self):
