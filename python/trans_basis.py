@@ -78,10 +78,15 @@ class TransBasis:
 
         if calc_in_solver_blocks:
             trafo = self.SK.block_structure.transformation
-            self.SK.block_structre.transform = None
-            prop_solver = self.SK.block_structre.convert_matrix(prop, space_from='sumk', space_to='solver')
-            prop = self.SK.block_structre.convert_matrix(prop_solver, space_from='solver', space_to='sumk')
-            self.SK.block_structre.transform = trafo
+            self.SK.block_structure.transform = None
+            prop_solver = self.SK.block_structure.convert_matrix(prop, space_from='sumk', space_to='solver')
+            v= []
+            for name in prop_solver:
+                v[name] = numpy.linalg.eigh(prop_solver[name])[1]
+            self.w = self.SK.block_structure.convert_matrix(v, space_from='solver', space_to='sumk')['ud' if self.SK.SO else 'up']
+            self.T = numpy.dot(self.T.transpose().conjugate(),
+                               self.w).conjugate().transpose()
+            self.SK.block_structure.transform = trafo
 
         if self.SK.SO == 0:
             self.eig, self.w = numpy.linalg.eigh(prop['up'])
