@@ -48,7 +48,7 @@ class TransBasis:
         self.T = copy.deepcopy(self.SK.T[0])
         self.w = numpy.identity(SK.corr_shells[0]['dim'])
 
-    def calculate_diagonalisation_matrix(self, prop_to_be_diagonal='eal'):
+    def calculate_diagonalisation_matrix(self, prop_to_be_diagonal='eal', calc_in_solver_blocks = False):
         """
         Calculates the diagonalisation matrix w, and stores it as member of the class.
 
@@ -75,6 +75,13 @@ class TransBasis:
             mpi.report(
                 "trans_basis: not a valid quantitiy to be diagonal. Choices are 'eal' or 'dm'.")
             return 0
+
+        if calc_in_solver_blocks:
+            trafo = self.SK.block_structure.transformation
+            self.SK.block_structre.transform = None
+            prop_solver = self.SK.block_structre.convert_matrix(prop, space_from='sumk', space_to='solver')
+            prop = self.SK.block_structre.convert_matrix(prop_solver, space_from='solver', space_to='sumk')
+            self.SK.block_structre.transform = trafo
 
         if self.SK.SO == 0:
             self.eig, self.w = numpy.linalg.eigh(prop['up'])
