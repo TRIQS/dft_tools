@@ -52,11 +52,11 @@ class SumkDFT(object):
         hdf_file : string
                    Name of hdf5 containing the data.
         h_field : scalar, optional
-                  The value of magnetic field to add to the DFT Hamiltonian.
+                  The value of magnetic field to add to the DFT Hamiltonian. 
                   The contribution -h_field*sigma is added to diagonal elements of the Hamiltonian.
                   It cannot be used with the spin-orbit coupling on; namely h_field is set to 0 if self.SO=True.
         use_dft_blocks : boolean, optional
-                         If True, the local Green's function matrix for each spin is divided into smaller blocks
+                         If True, the local Green's function matrix for each spin is divided into smaller blocks 
                           with the block structure determined from the DFT density matrix of the corresponding correlated shell.
 
                          Alternatively and additionally, the block structure can be analysed using :meth:`analyse_block_structure <dft.sumk_dft.SumkDFT.analyse_block_structure>`
@@ -64,7 +64,7 @@ class SumkDFT(object):
         dft_data : string, optional
                    Name of hdf5 subgroup in which DFT data for projector and lattice Green's function construction are stored.
         symmcorr_data : string, optional
-                        Name of hdf5 subgroup in which DFT data on symmetries of correlated shells
+                        Name of hdf5 subgroup in which DFT data on symmetries of correlated shells 
                         (symmetry operations, permutaion matrices etc.) are stored.
         parproj_data : string, optional
                        Name of hdf5 subgroup in which DFT data on non-normalized projectors for non-correlated
@@ -291,10 +291,10 @@ class SumkDFT(object):
 
         bname : string
                 Block name of the target block of the lattice Green's function.
-        gf_to_downfold : Gf
+        gf_to_downfold : Gf 
                        Block of the Green's function that is to be downfolded.
-        gf_inp : Gf
-                 FIXME
+        gf_inp : Gf 
+                 FIXME 
         shells : string, optional
 
                  - if shells='corr': orthonormalized projectors for correlated shells are used for the downfolding.
@@ -343,10 +343,10 @@ class SumkDFT(object):
 
         bname : string
                 Block name of the target block of the lattice Green's function.
-        gf_to_upfold : Gf
+        gf_to_upfold : Gf 
                        Block of the Green's function that is to be upfolded.
-        gf_inp : Gf
-                 FIXME
+        gf_inp : Gf 
+                 FIXME 
         shells : string, optional
 
                  - if shells='corr': orthonormalized projectors for correlated shells are used for the upfolding.
@@ -391,10 +391,10 @@ class SumkDFT(object):
               - if shells='corr': ish labels all correlated shells (equivalent or not)
               - if shells='all': ish labels only representative (inequivalent) non-correlated shells
 
-        gf_to_rotate : Gf
+        gf_to_rotate : Gf 
                        Block of the Green's function that is to be rotated.
         direction : string
-                    The direction of rotation can be either
+                    The direction of rotation can be either 
 
                     - 'toLocal' : global -> local transformation,
                     - 'toGlobal' : local -> global transformation.
@@ -444,7 +444,7 @@ class SumkDFT(object):
 
     def lattice_gf(self, ik, mu=None, iw_or_w="iw", beta=40, broadening=None, mesh=None, with_Sigma=True, with_dc=True):
         r"""
-        Calculates the lattice Green function for a given k-point from the DFT Hamiltonian and the self energy.
+        Calculates the lattice Green function for a given k-point from the DFT Hamiltonian and the self energy. 
 
         Parameters
         ----------
@@ -467,7 +467,7 @@ class SumkDFT(object):
                Data defining mesh on which the real-axis GF will be calculated, given in the form
                (om_min,om_max,n_points), where om_min is the minimum omega, om_max is the maximum omega and n_points is the number of points.
         with_Sigma : boolean, optional
-                     If True the GF will be calculated with the self-energy stored in self.Sigmaimp_(w/iw), for real/Matsubara GF, respectively.
+                     If True the GF will be calculated with the self-energy stored in self.Sigmaimp_(w/iw), for real/Matsubara GF, respectively. 
                      In this case the mesh is taken from the self.Sigma_imp object.
                      If with_Sigma=True but self.Sigmaimp_(w/iw) is not present, with_Sigma is reset to False.
         with_dc : boolean, optional
@@ -667,7 +667,7 @@ class SumkDFT(object):
         return Sigma_out
 
     def extract_G_loc(self, mu=None, iw_or_w='iw', with_Sigma=True, with_dc=True, broadening=None,
-                      transform_to_solver_blocks=True):
+                      transform_to_solver_blocks=True, show_warnings=True):
         r"""
         Extracts the local downfolded Green function by the Brillouin-zone integration of the lattice Green's function.
 
@@ -686,6 +686,9 @@ class SumkDFT(object):
         transform_to_solver_blocks : bool, optional
             If True (default), the returned G_loc will be transformed to the block structure ``gf_struct_solver``,
             else it will be in ``gf_struct_sumk``.
+        show_warnings : bool, optional
+            Displays warning messages during transformation
+            (Only effective if transform_to_solver_blocks = True 
 
         Returns
         -------
@@ -753,11 +756,11 @@ class SumkDFT(object):
                         icrsh, gf, direction='toLocal')
 
         if transform_to_solver_blocks:
-            return self.transform_to_solver_blocks(G_loc)
+            return self.transform_to_solver_blocks(G_loc, show_warnings=show_warnings)
 
         return G_loc
 
-    def transform_to_solver_blocks(self, G_loc, G_out=None):
+    def transform_to_solver_blocks(self, G_loc, G_out=None, show_warnings = True):
         """ transform G_loc from sumk to solver space
 
         Parameters
@@ -794,15 +797,16 @@ class SumkDFT(object):
                 ish_from=self.inequiv_to_corr[ish],
                 ish_to=ish,
                 space_from='sumk',
-                G_out=G_out[ish])
+                G_out=G_out[ish],
+                show_warnings = show_warnings)
 
         # return only the inequivalent shells:
         return G_out
 
     def analyse_block_structure(self, threshold=0.00001, include_shells=None, dm=None, hloc=None):
         r"""
-        Determines the block structure of local Green's functions by analysing the structure of
-        the corresponding density matrices and the local Hamiltonian. The resulting block structures
+        Determines the block structure of local Green's functions by analysing the structure of 
+        the corresponding density matrices and the local Hamiltonian. The resulting block structures 
         for correlated shells are stored in the :class:`SumkDFT.block_structure <dft.block_structure.BlockStructure>` attribute.
 
         Parameters
@@ -965,7 +969,7 @@ class SumkDFT(object):
                     else:
                         return w-w0
             gf = [BlockGf(name_block_generator = [(name, GfReFreq(
-                window=(-numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh)),
+                window=(-numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh)), 
                 numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh))),
                 n_points=len(block.mesh), indices=block.indices)) for name, block in g_sh], make_copies=False)
                 for g_sh in G]
@@ -1344,7 +1348,7 @@ class SumkDFT(object):
                  - if 'using_point_integration': Only works for diagonal hopping matrix (true in wien2k).
 
         beta : float, optional
-               Inverse temperature.
+               Inverse temperature.      
 
         Returns
         -------
@@ -1752,7 +1756,7 @@ class SumkDFT(object):
 
     def total_density(self, mu=None, iw_or_w="iw", with_Sigma=True, with_dc=True, broadening=None):
         r"""
-        Calculates the total charge within the energy window for a given chemical potential.
+        Calculates the total charge within the energy window for a given chemical potential. 
         The chemical potential is either given by parameter `mu` or, if it is not specified,
         taken from `self.chemical_potential`.
 
@@ -1769,7 +1773,7 @@ class SumkDFT(object):
 
         with
 
-        .. math:: n(k) = Tr G_{\nu\nu'}(k, i\omega_{n}).
+        .. math:: n(k) = Tr G_{\nu\nu'}(k, i\omega_{n}). 
 
         The calculation is done in the global coordinate system, if distinction is made between local/global.
 
@@ -1808,8 +1812,10 @@ class SumkDFT(object):
         # collect data from mpi:
         dens = mpi.all_reduce(mpi.world, dens, lambda x, y: x + y)
         mpi.barrier()
-
-        return dens
+        import numpy as np
+        if np.abs(np.imag(dens)) > 1e-20:
+            mpi.report("Warning: Imaginary part in density will be ignored ({})".format(str(np.abs(np.imag(dens)))))
+        return np.real(dens)
 
     def set_mu(self, mu):
         r"""
@@ -2060,7 +2066,7 @@ class SumkDFT(object):
         return dc
 
     def check_projectors(self):
-        """Calculated the density matrix from projectors (DM = P Pdagger) to check that it is correct and
+        """Calculated the density matrix from projectors (DM = P Pdagger) to check that it is correct and 
            specifically that it matches DFT."""
         dens_mat = [numpy.zeros([self.corr_shells[icrsh]['dim'], self.corr_shells[icrsh]['dim']], numpy.complex_)
                     for icrsh in range(self.n_corr_shells)]
