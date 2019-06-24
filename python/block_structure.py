@@ -437,29 +437,38 @@ class BlockStructure(object):
                 else:
                     self.sumk_to_solver[ish][k] = (None, None)
             # adapt deg_shells
-            if self.deg_shells is not None:
-                for degsh in self.deg_shells[ish]:
-                    if isinstance(degsh, dict):
-                        for key in degsh.keys():
-                            if not key in gf_struct:
-                                del degsh[key]
-                                continue
-                            if gf_struct[key] != self.gf_struct_solver[ish][key]:
-                                v, C = degsh[key]
-                                degsh[key][0] = \
-                                    v[gf_struct[key], :][:, gf_struct[key]]
-                                warn(
-                                    'Removing shells from degenerate shell {}. Cannot guarantee that they continue to be equivalent.')
-                    else: # degshell is list
-                        degsh1 = copy.deepcopy(degsh) # in order to not remove a key while iterating
-                        for key in degsh1:
-                            if not key in gf_struct:
-                                warn('Removing shells from degenerate shell {}.')
-                                degsh.remove(key)
+
+            self.adapt_deg_shells(gf_struct, ish)
+
+
             # reindexing gf_struct so that it starts with 0
             for k in gf_struct:
                 gf_struct[k] = range(len(gf_struct[k]))
             self.gf_struct_solver[ish] = gf_struct
+
+    def adapt_deg_shells(gf_struct, ish=0):
+        """ Adapts the deg_shells to a new gf_struct
+            Internally called when using pick_gf_struct and map_gf_struct
+        """
+        if self.deg_shells is not None:
+            for degsh in self.deg_shells[ish]:
+                if isinstance(degsh, dict):
+                    for key in degsh.keys():
+                        if not key in gf_struct:
+                            del degsh[key]
+                            continue
+                        if gf_struct[key] != self.gf_struct_solver[ish][key]:
+                            v, C = degsh[key]
+                            degsh[key][0] = \
+                                v[gf_struct[key], :][:, gf_struct[key]]
+                            warn(
+                                'Removing shells from degenerate shell {}. Cannot guarantee that they continue to be equivalent.')
+                else: # degshell is list
+                    degsh1 = copy.deepcopy(degsh) # in order to not remove a key while iterating
+                    for key in degsh1:
+                        if not key in gf_struct:
+                            warn('Removing shells from degenerate shell {}.')
+                            degsh.remove(key)
 
     def pick_gf_struct_sumk(self, new_gf_struct):
         """ Pick selected orbitals within blocks.
@@ -588,6 +597,9 @@ class BlockStructure(object):
             for k in self.sumk_to_solver[ish].keys():
                 if not k in su2so:
                     su2so[k] = (None, None)
+
+            adapt_deg_shells(gf_struct, ish)
+
             self.gf_struct_solver[ish] = gf_struct
             self.solver_to_sumk[ish] = so2su
             self.sumk_to_solver[ish] = su2so
