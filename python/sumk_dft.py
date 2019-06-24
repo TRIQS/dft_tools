@@ -1090,9 +1090,9 @@ class SumkDFT(object):
         G_transformed = [
             self.block_structure.convert_gf(G[ish],
                 full_structure, ish, mesh=G[ish].mesh.copy(), show_warnings=threshold,
-                gf_function=type(G[ish]._first()))
+                gf_function=type(G[ish]._first()), space_from='sumk', space_to='solver')
             for ish in range(self.n_inequiv_shells)]
-
+        #print 'c'
         if analyse_deg_shells:
             self.analyse_deg_shells(G_transformed, threshold, include_shells)
         return G_transformed

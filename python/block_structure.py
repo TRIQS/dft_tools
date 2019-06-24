@@ -446,7 +446,7 @@ class BlockStructure(object):
                 gf_struct[k] = range(len(gf_struct[k]))
             self.gf_struct_solver[ish] = gf_struct
 
-    def adapt_deg_shells(gf_struct, ish=0):
+    def adapt_deg_shells(self, gf_struct, ish=0):
         """ Adapts the deg_shells to a new gf_struct
             Internally called when using pick_gf_struct and map_gf_struct
         """
@@ -598,7 +598,7 @@ class BlockStructure(object):
                 if not k in su2so:
                     su2so[k] = (None, None)
 
-            adapt_deg_shells(gf_struct, ish)
+            self.adapt_deg_shells(gf_struct, ish)
 
             self.gf_struct_solver[ish] = gf_struct
             self.solver_to_sumk[ish] = so2su
@@ -816,7 +816,6 @@ class BlockStructure(object):
                 'The parameter ish in convert_gf is deprecated. Use ish_from and ish_to instead.')
             ish_from = ish
             ish_to = ish
-
         return self._convert_gf_or_matrix(G, G_struct, ish_from, ish_to,
                                           show_warnings, G_out, space_from, space_to, **kwargs)
 
@@ -866,7 +865,6 @@ class BlockStructure(object):
 
     def _convert_gf_or_matrix(self, G, G_struct=None, ish_from=0, ish_to=None, show_warnings=True,
                               G_out=None, space_from='solver', space_to='solver', **kwargs):
-
         if ish_to is None:
             ish_to = ish_from
 
@@ -955,8 +953,10 @@ class BlockStructure(object):
                 else:
                     maxdiff = G_back[name] - G[name]
 
-                if space_to == 'solver': # do comparison in solver (ignore diff. in ignored orbitals)
-                    maxdiff = G_struct._convert_gf_or_matrix({'ud':maxdiff}, self, ish_from=ish_from,
+                if space_to == 'solver' and self == G_struct: # do comparison in solver (ignore diff. in ignored orbitals)
+                    tmp = self.create_matrix(space='sumk')
+                    tmp[name] = maxdiff
+                    maxdiff = G_struct._convert_gf_or_matrix(tmp, self, ish_from=ish_from,
                                                     ish_to=ish_to,
                                                     show_warnings=False,
                                                     space_from=space_from, space_to=space_to, **kwargs)
