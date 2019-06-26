@@ -17,13 +17,23 @@ set(BUILD_SHARED_LIBS OFF)
 # Export the list of compile-commands into compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Enable compiler warnings for the whole project
+# Global compiler options
 add_compile_options(
-		-Wall
-		-Wextra
-		$<$<CONFIG:Debug>:-Og>
-		$<$<CONFIG:Debug>:-ggdb3>
-		)
+  $<$<CONFIG:Debug>:-Og>
+  $<$<CONFIG:Debug>:-ggdb3>
+)
+
+# Create an Interface target for compiler warnings
+add_library(project_warnings INTERFACE)
+install(TARGETS project_warnings EXPORT app4triqs-targets)
+target_compile_options(project_warnings
+  INTERFACE
+    -Wall
+    -Wextra
+    -Wshadow
+    -Wpedantic
+    -Wno-sign-compare
+)
 
 # Load Dependencies
 find_package(TRIQS 2.2 REQUIRED)

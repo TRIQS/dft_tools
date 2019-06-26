@@ -2,7 +2,7 @@ file(GLOB_RECURSE sources *.cpp)
 add_library(app4triqs_c ${sources})
 
 # Link against dependencies
-target_link_libraries(app4triqs_c PUBLIC triqs)
+target_link_libraries(app4triqs_c PUBLIC triqs PRIVATE project_warnings)
 
 # Configure compilation
 target_compile_options(app4triqs_c PUBLIC -fPIC)
