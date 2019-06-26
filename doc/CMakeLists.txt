@@ -49,7 +49,7 @@ macro(generate_docs header_file)
   )
 endmacro(generate_docs)
 
-generate_docs(${CMAKE_SOURCE_DIR}/c++/app4triqs/toto.hpp)
+generate_docs(${PROJECT_SOURCE_DIR}/c++/app4triqs/toto.hpp)
 
 # ---------------------------------
 # Install

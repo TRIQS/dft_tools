@@ -24,7 +24,7 @@ copyright = u'2017-2018 N. Wentzell, O. Parcollet 2018-2019 The Simons Foundatio
 version = '@APP4TRIQS_VERSION@'
 
 mathjax_path = "@TRIQS_MATHJAX_PATH@/MathJax.js?config=default"
-templates_path = ['@CMAKE_SOURCE_DIR@/doc/_templates']
+templates_path = ['@PROJECT_SOURCE_DIR@/doc/_templates']
 
 html_theme = 'triqs'
 html_theme_path = ['@TRIQS_THEMES_PATH@']
@@ -35,7 +35,7 @@ html_context = {'header_title': 'app4triqs',
                                  ['Documentation', 'documentation'],
                                  ['Issues', 'issues'],
                                  ['About app4triqs', 'about']]}
-html_static_path = ['@CMAKE_SOURCE_DIR@/doc/_static']
+html_static_path = ['@PROJECT_SOURCE_DIR@/doc/_static']
 html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = 'APP4TRIQSdoc'

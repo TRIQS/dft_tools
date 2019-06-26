@@ -6,7 +6,7 @@ target_link_libraries(app4triqs_c PUBLIC triqs PRIVATE project_warnings)
 
 # Configure compilation
 target_compile_options(app4triqs_c PUBLIC -fPIC)
-target_include_directories(app4triqs_c PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/c++>)
+target_include_directories(app4triqs_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
 target_compile_definitions(app4triqs_c PUBLIC
 				APP4TRIQS_GIT_HASH=${APP4TRIQS_GIT_HASH}
 				TRIQS_GIT_HASH=${TRIQS_GIT_HASH}
