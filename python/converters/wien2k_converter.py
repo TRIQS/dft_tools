@@ -519,10 +519,17 @@ class Wien2kConverter(ConverterTools):
         # band_window: Contains the index of the lowest and highest band within the
         #              projected subspace (used by dmftproj) for each k-point.
 
-        if (SP == 0 and SO == 0): # if SP and SO are both 0
+        if (SP == 0 and SO == 0): # read .oubwin file
             files = [self.bandwin_file]
-        elif (SP == 1): # SP = 1
+        elif (SP == 1 and SO == 0): # read .oubwinup and .oubwindn
             files = [self.bandwin_file + 'up', self.bandwin_file + 'dn']
+        elif (SP == 1 and SO == 1): # read either .oubwinup or .oubwindn
+            if os.path.exists(self.bandwin_file + 'up'):
+                files = [self.bandwin_file + 'up']
+            elif os.path.exists(self.bandwin_file + 'dn'):
+                files = [self.bandwin_file + 'dn']
+            else:
+                assert 0, "convert_misc_input: If SO and SP are 1 provide either .oubwinup or .oubwindn file"
         else:
             assert 0, "convert_misc_input: Reading oubwin error! Check SP and SO, if SO=1 SP must be 1."
 
@@ -640,10 +647,17 @@ class Wien2kConverter(ConverterTools):
         # velocities_k: velocity (momentum) matrix elements between all bands in band_window_optics
         #               and each k-point.
 
-        if (SP == 0 and SO == 0): # if SP and SO are both 0
+        if (SP == 0 and SO == 0): # read .pmat file
             files = [self.pmat_file]
-        elif (SP == 1): # SP = 1
+        elif (SP == 1 and SO == 0): # read .pmatup and pmatdn
             files = [self.pmat_file + 'up', self.pmat_file + 'dn']
+        elif (SP == 1 and SO == 1): # read either .pmatup or .pmatdn
+            if os.path.exists(self.pmat_file + 'up'):
+                files = [self.pmat_file + 'up']
+            elif os.path.exists(self.pmat_file + 'dn'):
+                files = [self.pmat_file + 'dn']
+            else:
+                assert 0, "convert_transport_input: If SO and SP are 1 provide either .pmatup or .pmatdn file"
         else:
             assert 0, "convert_transport_input: Reading velocity file error! Check SP and SO, if SO=1 SP must be 1."
 
