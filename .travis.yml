@@ -27,8 +27,8 @@ script:
   - cd $TRAVIS_BUILD_DIR
   - git clone https://github.com/TRIQS/triqs --branch unstable
   - mkdir triqs/build && cd triqs/build
-  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
-  - make -j8 install
+  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_BUILD_TYPE=Debug
+  - make -j2 install
   - source $INSTALL_DIR/share/triqsvars.sh
   # ===== Set up app4triqs and test
   - cd $TRAVIS_BUILD_DIR
@@ -39,4 +39,4 @@ script:
   - export UBSAN_OPTIONS=symbolize=1:print_stacktrace=1
   - export ASAN_OPTIONS=symbolize=1:detect_leaks=0
   - export CTEST_OUTPUT_ON_FAILURE=1
-  - make -j8 && make test
+  - make -j2 && make test
