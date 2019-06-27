@@ -27,6 +27,14 @@ User guide
    guide/SrVO3
    guide/dftdmft_selfcons
    guide/Sr2RuO4
+   guide/BasisRotation
+
+Postprocessing
+--------------
+
+.. toctree::
+   :maxdepth: 2
+
    guide/analysis
    guide/full_tutorial
    guide/transport
