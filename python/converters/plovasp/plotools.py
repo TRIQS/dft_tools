@@ -205,7 +205,7 @@ def output_as_text(pars, el_struct, pshells, pgroups):
     ctrl_output(pars, el_struct, len(pgroups))
     plo_output(pars, el_struct, pshells, pgroups)
     if pars.general['hk']:
-        hk_output(pars, el_struct, pshells, pgroups)
+        hk_output(pars, el_struct, pgroups)
 
 
 # TODO: k-points with weights should be stored once and for all
@@ -384,7 +384,6 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                 f.write("# Shell %i\n"%(ish))
 
                 nion, ns, nk, nlm, nb = shell.proj_win.shape
-                print(nlm)
                 for isp in xrange(ns):
                     f.write("# is = %i\n"%(isp + 1))
                     for ik in xrange(nk):
@@ -403,47 +402,36 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
 # plo_output
 #
 ################################################################################
-def hk_output(conf_pars, el_struct, pshells, pgroups):
+def hk_output(conf_pars, el_struct, pgroups):
     """
     Outputs HK into text file.
 
     Filename is defined by <basename> that is passed from config-file.
 
-    The Hk for all groups is stored in a '<basename>.hk' file. The format is as
-    defined in the Hk dft_tools format 
+    The Hk for each groups is stored in a '<basename>.hk<Ng>' file. The format is
+    as defined in the Hk dft_tools format 
 
-    # Energy window: emin, emax
-    ib_min, ib_max
-    nelect
-    # Eigenvalues
-    isp, ik1, kx, ky, kz, kweight
-    ib1, ib2
-    eig1
-    eig2
-    ...
-    eigN
-    ik2, kx, ky, kz, kweight
-    ...
-
-    # Projected shells
-    Nshells
-    # Shells: <shell indices>
-    # Shell <1>
-    Shell 1
-    ndim
-    # complex arrays: plo(ns, nion, ndim, nb)
-    ...
-    # Shells: <shell indices>
-    # Shell <2>
-    Shell 2
-    ...
-
+    nk                  # number of k-points
+    n_el                # electron density
+    n_sh                # number of total atomic shells
+    at sort l dim       # atom, sort, l, dim
+    at sort l dim       # atom, sort, l, dim
+    n_cr_sh             # number of correlated shells
+    at sort l dim SO irep # atom, sort, l, dim, SO, irep
+    n_irrep dim_irrep   # number of ireps, dim of irep
+    
+    After these header lines, the file has to contain the Hamiltonian matrix
+    in orbital space. The standard convention is that you give for each k-point
+    first the matrix of the real part, then the matrix of the imaginary part,
+    and then move on to the next k-point.
+    
     """
     
-    print 'writing hk'
-    for ig, pgroup in enumerate(pgroups):
-        hk_fname = conf_pars.general['basename'] + '.hk%i'%(ig + 1)
 
+    for ig, pgroup in enumerate(pgroups):
+        
+        hk_fname = conf_pars.general['basename'] + '.hk%i'%(ig + 1)
+        print "  Storing HK-group file '%s'..."%(hk_fname)
 
         head_corr_shells = []
         head_shells = []
@@ -462,32 +450,26 @@ def hk_output(conf_pars, el_struct, pshells, pgroups):
             sh_dict['ion_list'] = ion_output
             sh_dict['ion_sort'] = shell.ion_sort
 
-# TODO: add the output of transformation matrices
 
             head_shells.append(sh_dict)
             if shell.corr:
                 head_corr_shells.append(sh_dict)
 
-        #head_dict['shells'] = head_shells
-
-        #header = json.dumps(head_dict, indent=4, separators=(',', ': '))
 
         with open(hk_fname, 'wt') as f:
-                       
-# Eigenvalues within the window
+            # Eigenvalues within the window
             nk, nband, ns_band = el_struct.eigvals.shape
-            f.write('%i # number of kpoints\n'%nk)
-            f.write('%f # electron density\n'%1.0)
-            f.write('%i # number of shells\n'%len(head_shells))
+            f.write('%i          # number of kpoints\n'%nk)
+            f.write('{0:0.4f}      # electron density\n'.format(pgroup.nelect_window(el_struct)))
+            f.write('%i            # number of shells\n'%len(head_shells))
             for head in head_shells:
-                f.write('%i %i %i %i # atom sort l dim\n'%(head['ion_list'][0],head['ion_sort'][0],head['lorb'],head['ndim']))
-            f.write('%i # number of correlated shells\n'%len(head_corr_shells))
+                f.write('%i %i %i %i      # atom sort l dim\n'%(head['ion_list'][0],head['ion_sort'][0],head['lorb'],head['ndim']))
+            f.write('%i            # number of correlated shells\n'%len(head_corr_shells))
             for head in head_corr_shells:
-                f.write('%i %i %i %i 0 0 # atom sort l dim SO irrep\n'%(head['ion_list'][0],head['ion_sort'][0],head['lorb'],head['ndim']))
-            f.write('1 5 # number of ireps, dim of irep\n')
+                f.write('%i %i %i %i 0 0  # atom sort l dim SO irrep\n'%(head['ion_list'][0],head['ion_sort'][0],head['lorb'],head['ndim']))
+            f.write('1 5          # number of ireps, dim of irep\n')
             norbs = pgroup.hk.shape[2]
             for isp in xrange(ns_band):
-                #f.write("# is = %i\n"%(isp + 1))
                 for ik in xrange(nk):
                     for io in xrange(norbs):
                         for iop in xrange(norbs):

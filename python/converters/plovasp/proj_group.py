@@ -81,6 +81,19 @@ class ProjectorGroup:
         self.ib_min = ib_min
         self.ib_max = ib_max
         self.nb_max = ib_max - ib_min + 1
+        
+        
+        
+        if gr_pars['complement']:
+            n_bands = self.ib_win[:,:,1] - self.ib_win[:,:,0]
+            n_orbs = sum([x.ndim for x in self.shells])
+            assert np.all( n_bands == n_bands[0,0] ), "At each band the same number of bands has to be selected for calculating the complement (to end up with an equal number of orbitals at each k-point)."
+            
+            if n_orbs == n_bands[0,0]+1:
+                gr_pars['complement'] = False
+                print "\nWARNING: The total number of orbitals in this group is  "
+                print "equal to the number of bands. Setting COMPLEMENT to FALSE!\n"
+        
 
 # Select projectors within the energy window
         for ish in self.ishells:
@@ -222,7 +235,7 @@ class ProjectorGroup:
         
         """
 
-        print 'claculating complemet'
+        print '\nCalculating complement\n'
  
         block_maps, ndim = self.get_block_matrix_map()
         _, ns, nk, _, _ = self.shells[0].proj_win.shape
@@ -267,9 +280,6 @@ class ProjectorGroup:
         sh_pars['corr']  = False
         self.shells.append(ComplementShell(sh_pars,p_full[:,:,:,ndim:,:],False))
         self.ishells.append(self.ishells[-1]+1)
-        print(self.shells)
-        print(self.ishells)
-        #p_full -= p_mat
                                                 
                                                 
 ################################################################################

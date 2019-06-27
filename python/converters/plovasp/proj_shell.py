@@ -493,43 +493,14 @@ class ComplementShell(ProjectorShell):
         self.proj_win = proj_compl
         
     def extract_tmatrices(self, sh_pars):
-        pass
+        raise Exception('not implemented')
 
     def local_hamiltonian(self, el_struct, site_diag=True, spin_diag=True):
-        """
-        Returns occupation matrix/matrices for the shell.
-        """
-        nion, ns, nk, nlm, nbtot = self.proj_win.shape
-
-        assert site_diag, "site_diag = False is not implemented"
-        assert spin_diag, "spin_diag = False is not implemented"
-
-        loc_ham = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
-
-        return loc_ham
+        raise Exception('not implemented')
         
     def density_matrix(self, el_struct, site_diag=True, spin_diag=True):
-        """
-        Returns occupation matrix/matrices for the shell.
-        """
-        nion, ns, nk, nlm, nbtot = self.proj_win.shape
-
-#        assert site_diag, "site_diag = False is not implemented"
-        assert spin_diag, "spin_diag = False is not implemented"
-
-        if site_diag:
-            occ_mats = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
-            overlaps = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
-        else:
-            ndim = nion * nlm
-            occ_mats = np.zeros((ns, 1, ndim, ndim), dtype=np.float64)
-            overlaps = np.zeros((ns, 1, ndim, ndim), dtype=np.float64)
-
-        return occ_mats, overlaps
+        raise Exception('not implemented')
 
     def density_of_states(self, el_struct, emesh):
-        nion, ns, nk, nlm, nbtot = self.proj_win.shape
-        ne = len(emesh)
-        dos = np.zeros((ne, ns, nion, nlm))
-        return dos
+        raise Exception('not implemented')
     
