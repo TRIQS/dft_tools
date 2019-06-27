@@ -72,7 +72,8 @@ class ProjectorShell:
         self.lorb = sh_pars['lshell']
         self.ions = sh_pars['ions']
         self.user_index = sh_pars['user_index']
-        self.nc_flag = nc_flag
+        self.corr = sh_pars['corr']
+        self.nc_flag = nc_flag        
 #        try:
 #            self.tmatrix = sh_pars['tmatrix']
 #        except KeyError:

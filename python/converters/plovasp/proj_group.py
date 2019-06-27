@@ -67,6 +67,16 @@ class ProjectorGroup:
 
 # Determine the minimum and maximum band numbers
         ib_win, ib_min, ib_max = self.select_bands(eigvals)
+        if 'bands' in gr_pars:
+            nk, nband, ns_band = eigvals.shape
+            ib_win = np.zeros((nk, ns_band, 2), dtype=np.int32)
+            ib_win[:,:,0] = gr_pars['bands'][0]
+            ib_win[:,:,1] = gr_pars['bands'][1]
+            ib_min = gr_pars['bands'][0]
+            ib_max = gr_pars['bands'][1]
+            
+        else:
+            ib_win, ib_min, ib_max = self.select_bands(eigvals)
         self.ib_win = ib_win
         self.ib_min = ib_min
         self.ib_max = ib_max

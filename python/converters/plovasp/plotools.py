@@ -117,6 +117,7 @@ def generate_plo(conf_pars, el_struct):
         print "    Orbital l     : %i"%(pshell.lorb)
         print "    Number of ions: %i"%(pshell.nion)
         print "    Dimension     : %i"%(pshell.ndim)
+        print "    Correlated    : %r"%(pshell.corr)
         pshells.append(pshell)
 
     pgroups = []
@@ -125,31 +126,38 @@ def generate_plo(conf_pars, el_struct):
         pgroup.orthogonalize()
 # DEBUG output
         print "Density matrix:"
-        dm_all, ov_all = pshells[pgroup.ishells[0]].density_matrix(el_struct)
         nimp = 0.0
-        spin_fac = 2 if dm_all.shape[0] == 1 else 1
-        for io in xrange(dm_all.shape[1]):
-            print "  Site %i"%(io + 1)
-            dm = spin_fac * dm_all[:, io, : ,:].sum(0)
-            for row in dm:
-                print ''.join(map("{0:12.7f}".format, row))
-            ndm = dm.trace()
-            nimp += ndm
-            print "    trace: ", ndm
+        ov_all = []
+        for ish in pgroup.ishells:
+            print "  Shell %i"%(ish + 1)
+            dm_all, ov_all_ = pshells[ish].density_matrix(el_struct)
+            ov_all.append(ov_all_[0])
+            spin_fac = 2 if dm_all.shape[0] == 1 else 1
+            for io in xrange(dm_all.shape[1]):
+                print "    Site %i"%(io + 1)
+                dm = spin_fac * dm_all[:, io, : ,:].sum(0)
+                for row in dm:
+                    print ''.join(map("{0:14.7f}".format, row))
+                ndm = dm.trace()
+                if pshells[ish].corr:
+                    nimp += ndm
+                print "      trace: ", ndm
         print
         print "  Impurity density:", nimp
         print
         print "Overlap:"
-        for io, ov in enumerate(ov_all[0]):
+        for io, ov in enumerate(ov_all):
             print "  Site %i"%(io + 1)
-            print ov
+            print ov[0,...]
         print
         print "Local Hamiltonian:"
-        loc_ham = pshells[pgroup.ishells[0]].local_hamiltonian(el_struct)
-        for io in xrange(loc_ham.shape[1]):
-            print "  Site %i"%(io + 1)
-            for row in loc_ham[:, io, :, :].sum(0):
-                print ''.join(map("{0:12.7f}".format, row))
+        for ish in pgroup.ishells:
+            print "  Shell %i"%(ish + 1)
+            loc_ham = pshells[pgroup.ishells[ish]].local_hamiltonian(el_struct)
+            for io in xrange(loc_ham.shape[1]):
+                print "    Site %i"%(io + 1)
+                for row in loc_ham[:, io, :, :].sum(0):
+                    print ''.join(map("{0:14.7f}".format, row))
 # END DEBUG output
         if 'dosmesh' in conf_pars.general:
             print
@@ -164,12 +172,14 @@ def generate_plo(conf_pars, el_struct):
             n_points = mesh_pars['n_points']
 
             emesh = np.linspace(dos_emin, dos_emax, n_points)
-            dos = pshells[pgroup.ishells[0]].density_of_states(el_struct, emesh)
-            de = emesh[1] - emesh[0]
-            ntot = (dos[1:,...] + dos[:-1,...]).sum(0) / 2 * de
-            print "  Total number of states:", ntot
-            for io in xrange(dos.shape[2]):
-                np.savetxt('pdos_%i.dat'%(io), np.vstack((emesh.T, dos[:, 0, io, :].T)).T)
+            for ish in pgroup.ishells:
+                print "  Shell %i"%(ish + 1)
+                dos = pshells[pgroup.ishells[ish]].density_of_states(el_struct, emesh)
+                de = emesh[1] - emesh[0]
+                ntot = (dos[1:,...] + dos[:-1,...]).sum(0) / 2 * de
+                print "    Total number of states:", ntot
+                for io in xrange(dos.shape[2]):
+                    np.savetxt('pdos_%i_%i.dat'%(ish,io), np.vstack((emesh.T, dos[:, 0, io, :].T)).T)
 
         pgroups.append(pgroup)
 
@@ -322,6 +332,7 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
             sh_dict['shell_index'] = ish
             sh_dict['lorb'] = shell.lorb
             sh_dict['ndim'] = shell.ndim
+            sh_dict['corr'] = shell.corr
 # Convert ion indices from the internal representation (starting from 0)
 # to conventional VASP representation (starting from 1)
             ion_output = [io + 1 for io in shell.ion_list]
@@ -363,6 +374,7 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                 f.write("# Shell %i\n"%(ish))
 
                 nion, ns, nk, nlm, nb = shell.proj_win.shape
+                print(nlm)
                 for isp in xrange(ns):
                     f.write("# is = %i\n"%(isp + 1))
                     for ik in xrange(nk):
