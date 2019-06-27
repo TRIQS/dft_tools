@@ -38,6 +38,7 @@ import itertools as it
 import numpy as np
 from proj_group import ProjectorGroup
 from proj_shell import ProjectorShell
+from proj_shell import ComplementShell
 
 np.set_printoptions(suppress=True)
 
@@ -124,24 +125,29 @@ def generate_plo(conf_pars, el_struct):
     for gr_par in conf_pars.groups:
         pgroup = ProjectorGroup(gr_par, pshells, eigvals)
         pgroup.orthogonalize()
+        if gr_par['complement']:
+            pgroup.complement(eigvals)
+        if conf_pars.general['hk']:
+            pgroup.calc_hk(eigvals)
 # DEBUG output
         print "Density matrix:"
         nimp = 0.0
         ov_all = []
         for ish in pgroup.ishells:
-            print "  Shell %i"%(ish + 1)
-            dm_all, ov_all_ = pshells[ish].density_matrix(el_struct)
-            ov_all.append(ov_all_[0])
-            spin_fac = 2 if dm_all.shape[0] == 1 else 1
-            for io in xrange(dm_all.shape[1]):
-                print "    Site %i"%(io + 1)
-                dm = spin_fac * dm_all[:, io, : ,:].sum(0)
-                for row in dm:
-                    print ''.join(map("{0:14.7f}".format, row))
-                ndm = dm.trace()
-                if pshells[ish].corr:
-                    nimp += ndm
-                print "      trace: ", ndm
+            if  not isinstance(pshells[pgroup.ishells[ish]],ComplementShell):
+                print "  Shell %i"%(ish + 1)
+                dm_all, ov_all_ = pshells[ish].density_matrix(el_struct)
+                ov_all.append(ov_all_[0])
+                spin_fac = 2 if dm_all.shape[0] == 1 else 1
+                for io in xrange(dm_all.shape[1]):
+                    print "    Site %i"%(io + 1)
+                    dm = spin_fac * dm_all[:, io, : ,:].sum(0)
+                    for row in dm:
+                        print ''.join(map("{0:14.7f}".format, row))
+                    ndm = dm.trace()
+                    if pshells[ish].corr:
+                        nimp += ndm
+                    print "      trace: ", ndm
         print
         print "  Impurity density:", nimp
         print
@@ -152,12 +158,13 @@ def generate_plo(conf_pars, el_struct):
         print
         print "Local Hamiltonian:"
         for ish in pgroup.ishells:
-            print "  Shell %i"%(ish + 1)
-            loc_ham = pshells[pgroup.ishells[ish]].local_hamiltonian(el_struct)
-            for io in xrange(loc_ham.shape[1]):
-                print "    Site %i"%(io + 1)
-                for row in loc_ham[:, io, :, :].sum(0):
-                    print ''.join(map("{0:14.7f}".format, row))
+            if  not isinstance(pshells[pgroup.ishells[ish]],ComplementShell):
+                print "  Shell %i"%(ish + 1)
+                loc_ham = pshells[pgroup.ishells[ish]].local_hamiltonian(el_struct)
+                for io in xrange(loc_ham.shape[1]):
+                    print "    Site %i"%(io + 1)
+                    for row in loc_ham[:, io, :, :].sum(0):
+                        print ''.join(map("{0:14.7f}".format, row))
 # END DEBUG output
         if 'dosmesh' in conf_pars.general:
             print
@@ -173,13 +180,14 @@ def generate_plo(conf_pars, el_struct):
 
             emesh = np.linspace(dos_emin, dos_emax, n_points)
             for ish in pgroup.ishells:
-                print "  Shell %i"%(ish + 1)
-                dos = pshells[pgroup.ishells[ish]].density_of_states(el_struct, emesh)
-                de = emesh[1] - emesh[0]
-                ntot = (dos[1:,...] + dos[:-1,...]).sum(0) / 2 * de
-                print "    Total number of states:", ntot
-                for io in xrange(dos.shape[2]):
-                    np.savetxt('pdos_%i_%i.dat'%(ish,io), np.vstack((emesh.T, dos[:, 0, io, :].T)).T)
+                if  not isinstance(pshells[pgroup.ishells[ish]],ComplementShell):
+                    print "  Shell %i"%(ish + 1)
+                    dos = pshells[pgroup.ishells[ish]].density_of_states(el_struct, emesh)
+                    de = emesh[1] - emesh[0]
+                    ntot = (dos[1:,...] + dos[:-1,...]).sum(0) / 2 * de
+                    print "    Total number of states:", ntot
+                    for io in xrange(dos.shape[2]):
+                        np.savetxt('pdos_%i_%i.dat'%(ish,io), np.vstack((emesh.T, dos[:, 0, io, :].T)).T)
 
         pgroups.append(pgroup)
 
@@ -196,6 +204,8 @@ def output_as_text(pars, el_struct, pshells, pgroups):
     """
     ctrl_output(pars, el_struct, len(pgroups))
     plo_output(pars, el_struct, pshells, pgroups)
+    if pars.general['hk']:
+        hk_output(pars, el_struct, pshells, pgroups)
 
 
 # TODO: k-points with weights should be stored once and for all
@@ -388,4 +398,102 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                                     f.write("{0:16.10f}{1:16.10f}\n".format(p.real, p.imag))
                                 f.write("\n")
 
+################################################################################
+#
+# plo_output
+#
+################################################################################
+def hk_output(conf_pars, el_struct, pshells, pgroups):
+    """
+    Outputs HK into text file.
 
+    Filename is defined by <basename> that is passed from config-file.
+
+    The Hk for all groups is stored in a '<basename>.hk' file. The format is as
+    defined in the Hk dft_tools format 
+
+    # Energy window: emin, emax
+    ib_min, ib_max
+    nelect
+    # Eigenvalues
+    isp, ik1, kx, ky, kz, kweight
+    ib1, ib2
+    eig1
+    eig2
+    ...
+    eigN
+    ik2, kx, ky, kz, kweight
+    ...
+
+    # Projected shells
+    Nshells
+    # Shells: <shell indices>
+    # Shell <1>
+    Shell 1
+    ndim
+    # complex arrays: plo(ns, nion, ndim, nb)
+    ...
+    # Shells: <shell indices>
+    # Shell <2>
+    Shell 2
+    ...
+
+    """
+    
+    print 'writing hk'
+    for ig, pgroup in enumerate(pgroups):
+        hk_fname = conf_pars.general['basename'] + '.hk%i'%(ig + 1)
+
+
+        head_corr_shells = []
+        head_shells = []
+        for ish in pgroup.ishells:
+
+            shell = pgroup.shells[ish]
+            
+            sh_dict = {}
+            sh_dict['shell_index'] = ish
+            sh_dict['lorb'] = shell.lorb
+            sh_dict['ndim'] = shell.ndim
+# Convert ion indices from the internal representation (starting from 0)
+# to conventional VASP representation (starting from 1)
+            ion_output = [io + 1 for io in shell.ion_list]
+# Derive sorts from equivalence classes
+            sh_dict['ion_list'] = ion_output
+            sh_dict['ion_sort'] = shell.ion_sort
+
+# TODO: add the output of transformation matrices
+
+            head_shells.append(sh_dict)
+            if shell.corr:
+                head_corr_shells.append(sh_dict)
+
+        #head_dict['shells'] = head_shells
+
+        #header = json.dumps(head_dict, indent=4, separators=(',', ': '))
+
+        with open(hk_fname, 'wt') as f:
+                       
+# Eigenvalues within the window
+            nk, nband, ns_band = el_struct.eigvals.shape
+            f.write('%i # number of kpoints\n'%nk)
+            f.write('%f # electron density\n'%1.0)
+            f.write('%i # number of shells\n'%len(head_shells))
+            for head in head_shells:
+                f.write('%i %i %i %i # atom sort l dim\n'%(head['ion_list'][0],head['ion_sort'][0],head['lorb'],head['ndim']))
+            f.write('%i # number of correlated shells\n'%len(head_corr_shells))
+            for head in head_corr_shells:
+                f.write('%i %i %i %i 0 0 # atom sort l dim SO irrep\n'%(head['ion_list'][0],head['ion_sort'][0],head['lorb'],head['ndim']))
+            f.write('1 5 # number of ireps, dim of irep\n')
+            norbs = pgroup.hk.shape[2]
+            for isp in xrange(ns_band):
+                #f.write("# is = %i\n"%(isp + 1))
+                for ik in xrange(nk):
+                    for io in xrange(norbs):
+                        for iop in xrange(norbs):
+                            f.write(" {0:14.10f}".format(pgroup.hk[isp,ik,io,iop].real))
+                        f.write("\n")
+                    for io in xrange(norbs):
+                        for iop in xrange(norbs):
+                            f.write(" {0:14.10f}".format(pgroup.hk[isp,ik,io,iop].imag))
+                        f.write("\n")

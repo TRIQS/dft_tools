@@ -30,7 +30,7 @@ r"""
     Storage and manipulation of projector groups.
 """
 import numpy as np
-
+from proj_shell import ComplementShell
 np.set_printoptions(suppress=True)
 
 ################################################################################
@@ -165,7 +165,113 @@ class ProjectorGroup:
                         nlm = i2 - i1 + 1
                         shell = self.shells[ish]
                         shell.proj_win[ion, isp, ik, :nlm, :nb] = p_orth[i1:i2, :nb]
+                        
+                        
+################################################################################
+#
+# calc_hk
+#
+################################################################################
+    def calc_hk(self, eigvals):
+        """
+        Calculate H(k) for a group by applying the projectors to the eigenvalues.
+        
+        """
 
+        block_maps, ndim = self.get_block_matrix_map()
+
+        _, ns, nk, _, _ = self.shells[0].proj_win.shape
+        p_mat = np.zeros((ndim, self.nb_max), dtype=np.complex128)
+        #print(p_mat.shape)
+        self.hk = np.zeros((ns,nk,ndim,ndim), dtype=np.complex128)
+# Note that 'ns' and 'nk' are the same for all shells
+        for isp in xrange(ns):
+            for ik in xrange(nk):
+                bmin = self.ib_win[ik, isp, 0]
+                bmax = self.ib_win[ik, isp, 1]+1
+                
+                nb = bmax - bmin 
+                #print(bmin,bmax,nb)
+# Combine all projectors of the group to one block projector
+                for bl_map in block_maps:
+                    p_mat[:, :] = 0.0j  # !!! Clean-up from the last k-point and block!
+                    for ibl, block in enumerate(bl_map):
+                        i1, i2 = block['bmat_range']
+                        ish, ion = block['shell_ion']
+                        nlm = i2 - i1 + 1
+                        shell = self.shells[ish]
+                        p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
+                    #print(p_mat.shape, eigvals[ik,:,isp].shape)
+                    self.hk[isp,ik,:,:] = np.einsum('ij,jk->ik',p_mat*eigvals[ik,bmin:bmax,isp],
+                                                p_mat.transpose().conjugate())
+                    #print(np.linalg.eigvals(self.hk[isp,ik,...]))
+                    #print(eigvals[ik,bmin:bmax,isp])
+                    #print(self.hk.shape)
+                    #self.hk[isp,ik,:,:] = np.dot(p_mat.conjugate()*eigvals[ik,bmin:bmax,isp],
+                    #                            p_mat.transpose())
+
+
+################################################################################
+#
+# complement
+#
+################################################################################
+    def complement(self,eigvals):
+        """
+        Calculate the complement for a group of projectors.
+        
+        """
+
+        print 'claculating complemet'
+ 
+        block_maps, ndim = self.get_block_matrix_map()
+        _, ns, nk, _, _ = self.shells[0].proj_win.shape
+        p_mat = np.zeros((ndim, self.nb_max), dtype=np.complex128)
+        p_full = np.zeros((1,ns,nk,self.nb_max, self.nb_max), dtype=np.complex128)        
+        
+        #print(p_mat.shape)
+        self.hk = np.zeros((ns,nk,ndim,ndim), dtype=np.complex128)
+# Note that 'ns' and 'nk' are the same for all shells
+        orbs_done = 1*ndim
+        while orbs_done < self.nb_max:
+            
+            for isp in xrange(ns):
+                for ik in xrange(nk):
+                    bmin = self.ib_win[ik, isp, 0]
+                    bmax = self.ib_win[ik, isp, 1]+1
+                    
+                    nb = bmax - bmin 
+                    #print(bmin,bmax,nb)
+    # Combine all projectors of the group to one block projector
+                    for bl_map in block_maps:
+                        p_mat[:, :] = 0.0j  # !!! Clean-up from the last k-point and block!
+                        for ibl, block in enumerate(bl_map):
+                            i1, i2 = block['bmat_range']
+                            ish, ion = block['shell_ion']
+                            nlm = i2 - i1 + 1
+                            shell = self.shells[ish]
+                            p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
+                    p_full[0,isp,ik,:ndim,:] = p_mat
+                    proj_work = p_full[0,isp,ik,:,:] 
+                    overlap = np.dot(proj_work.transpose().conjugate(),proj_work)
+                    work = np.eye(self.nb_max) - overlap
+                    norm = np.sqrt(np.sum(work*work.transpose().conjugate(),axis=1))
+                    max_ind = np.argmax(norm)
+                    p_full[0,isp,ik,orbs_done,:] = work[max_ind]/norm[max_ind]
+                    
+            orbs_done += 1
+        sh_pars = {}
+        sh_pars['lshell'] = -1
+        sh_pars['ions'] = {'nion':1,'ion_list':[[1]]}
+        sh_pars['user_index'] = 'complement'
+        sh_pars['corr']  = False
+        self.shells.append(ComplementShell(sh_pars,p_full[:,:,:,ndim:,:],False))
+        self.ishells.append(self.ishells[-1]+1)
+        print(self.shells)
+        print(self.ishells)
+        #p_full -= p_mat
+                                                
+                                                
 ################################################################################
 #
 # gen_block_matrix_map
