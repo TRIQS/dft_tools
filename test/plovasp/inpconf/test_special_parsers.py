@@ -212,6 +212,59 @@ class TestParseEnergyWindow(arraytest.ArrayTestCase):
         with self.assertRaisesRegexp(AssertionError, err_mess):
             self.cpars.parse_energy_window('1.5 3.0 2.0')
 
+################################################################################
+#
+# TestParseBandWindow
+#
+################################################################################
+class TestParseBandWindow(arraytest.ArrayTestCase):
+    """
+    Function:
+
+    def parse_band_window(self, par_str)
+
+    Scenarios:
+
+    - **if** par_str == '1 10' **return** (1, 10)
+    - **if** par_str == '3.0 -1.5' **raise** AssertionError
+    - **if** par_str == '1.0' **raise** AssertionError
+    - **if** par_str == 'aaa' **raise** ValueError
+    - **if** par_str == '1.5 3.0 2.0' **raise** AssertionError
+    """
+    def setUp(self):
+        """
+        """
+# Dummy ConfigParameters object
+        self.cpars = ConfigParameters(_rpath + 'test1.cfg')
+
+# Scenario 1
+    def test_correct_range(self):
+        expected = (1, 10)
+        res = self.cpars.parse_band_window('1 10')
+        self.assertEqual(res, expected)
+
+# Scenario 2
+    def test_wrong_range(self):
+        err_mess = "The first int in BANDS"
+        with self.assertRaisesRegexp(AssertionError, err_mess):
+            self.cpars.parse_band_window('10 1')
+
+# Scenario 3
+    def test_one_float(self):
+        err_mess = "BANDS must be specified"
+        with self.assertRaisesRegexp(AssertionError, err_mess):
+            self.cpars.parse_band_window('1')
+
+# Scenario 4
+    def test_wrong_string(self):
+        with self.assertRaises(ValueError):
+            self.cpars.parse_band_window('aaa')
+
+# Scenario 5
+    def test_three_ints(self):
+        err_mess = "BANDS must be specified"
+        with self.assertRaisesRegexp(AssertionError, err_mess):
+            self.cpars.parse_band_window('1 2 3')
 
 ################################################################################
 #

@@ -180,7 +180,7 @@ def generate_plo(conf_pars, el_struct):
 
             emesh = np.linspace(dos_emin, dos_emax, n_points)
             for ish in pgroup.ishells:
-                if  not isinstance(pshells[pgroup.ishells[ish]],ComplementShell):
+                if  not isinstance(pshells[pgroup.ishells[ish]],ComplementShell) or True:
                     print "  Shell %i"%(ish + 1)
                     dos = pshells[pgroup.ishells[ish]].density_of_states(el_struct, emesh)
                     de = emesh[1] - emesh[0]

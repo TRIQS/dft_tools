@@ -473,7 +473,11 @@ class ComplementShell(ProjectorShell):
         self.ions = sh_pars['ions']
         self.user_index = sh_pars['user_index']
         self.corr = sh_pars['corr']
-        self.nc_flag = nc_flag        
+        self.nc_flag = nc_flag   
+        
+        self.ib_min = sh_pars['ib_min']
+        self.ib_max = sh_pars['ib_max']
+        self.ib_win = sh_pars['ib_win']
 
 
         #self.lm1 = self.lorb**2
@@ -501,6 +505,6 @@ class ComplementShell(ProjectorShell):
     def density_matrix(self, el_struct, site_diag=True, spin_diag=True):
         raise Exception('not implemented')
 
-    def density_of_states(self, el_struct, emesh):
-        raise Exception('not implemented')
+    #def density_of_states(self, el_struct, emesh):
+    #    raise Exception('not implemented')
     

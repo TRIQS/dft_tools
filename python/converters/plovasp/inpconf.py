@@ -221,8 +221,8 @@ class ConfigParameters:
         than the second one.
         """
         ftmp = map(int, par_str.split())
-        assert len(ftmp) == 2, "BWINDOW must be specified by exactly two ints"
-        assert ftmp[0] < ftmp[1], "The first int in BWINDOW must be smaller than the second one"
+        assert len(ftmp) == 2, "BANDS must be specified by exactly two ints"
+        assert ftmp[0] < ftmp[1], "The first int in BANDS must be smaller than the second one"
         return tuple(ftmp)
 
 ################################################################################

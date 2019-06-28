@@ -30,6 +30,8 @@ class TestParseShells(arraytest.ArrayTestCase):
       **raise** Exception
     - **if** two correct [Shell] sections are defined
       **return** a dictionary of shell parameters
+    - **if** two correct [Shell] sections (one has CORR=False are defined
+      **return** a dictionary of shell parameters
     """
 # Scenario 1
     def test_no_shell(self):
@@ -57,9 +59,9 @@ class TestParseShells(arraytest.ArrayTestCase):
         conf_pars = ConfigParameters(_rpath + 'parse_shells_4.cfg')
         conf_pars.parse_shells()
         res = conf_pars.shells
-        expected = [{'user_index': 1, 'lshell': 2, 'ions': {'nion': 4, 'ion_list': [[4],[5],[6],[7]]}},
+        expected = [{'user_index': 1, 'lshell': 2, 'ions': {'nion': 4, 'ion_list': [[4],[5],[6],[7]]},'corr': True},
                     {'user_index': 2, 'lshell': 1, 'ions': {'nion': 4, 'ion_list': [[0],[1],[2],[3]]},
-                        'tmatrix': np.array([[ 0.,  1.,  0.], [ 1.,  0.,  0.], [ 0.,  0.,  1.]])}]
+                        'tmatrix': np.array([[ 0.,  1.,  0.], [ 1.,  0.,  0.], [ 0.,  0.,  1.]]),'corr': True}]
 # ...lousy way to test equality of two dictionaries containing numpy arrays
         self.assertEqual(len(res), len(expected))
 
@@ -77,6 +79,24 @@ class TestParseShells(arraytest.ArrayTestCase):
 
         self.assertListEqual(res, expected)
 
+# Scenario 5
+    def test_two_shells_with_corr_false(self):
+        conf_pars = ConfigParameters(_rpath + 'parse_shells_5.cfg')
+        conf_pars.parse_shells()
+        res = conf_pars.shells
+        expected = [{'user_index': 1, 'lshell': 2, 'ions': {'nion': 4, 'ion_list': [[4],[5],[6],[7]]},'corr': True},
+                    {'user_index': 2, 'lshell': 1, 'ions': {'nion': 4, 'ion_list': [[0],[1],[2],[3]]},'corr': False}]
+        self.assertEqual(len(res), len(expected))
+
+        arr = res[0].pop('ions')
+        arr_exp = expected[0].pop('ions')
+        self.assertDictEqual(arr, arr_exp)
+
+        arr = res[1].pop('ions')
+        arr_exp = expected[1].pop('ions')
+        self.assertDictEqual(arr, arr_exp)
+
+        self.assertListEqual(res, expected)
 
 if __name__ == '__main__':
     import unittest
