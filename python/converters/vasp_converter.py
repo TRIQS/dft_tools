@@ -177,7 +177,7 @@ class VaspConverter(ConverterTools):
 # We set all sites inequivalent
                         pars['sort'] = sh['ion_sort'][i]
                         pars['l'] = sh['lorb']
-                        pars['corr'] = sh['corr']
+                        #pars['corr'] = sh['corr']
                         pars['dim'] = sh['ndim']
                         pars['ion_list'] = sh['ion_list']
                         pars['SO'] = SO
@@ -188,7 +188,7 @@ class VaspConverter(ConverterTools):
                         if ish > 0:
                             shorbs_to_globalorbs[ish] = [shorbs_to_globalorbs[ish-1][1],
                                                  shorbs_to_globalorbs[ish-1][1]+sh['ndim']]
-                        if pars['corr']:
+                        if sh['corr']:
                             corr_shells.append(pars)
                             crshorbs_to_globalorbs.append(shorbs_to_globalorbs[ish])
                             
@@ -322,7 +322,7 @@ class VaspConverter(ConverterTools):
                                 for iclm,ilm in enumerate(xrange(crshorbs_to_globalorbs[ish][0],crshorbs_to_globalorbs[ish][1])):
                                     proj_mat[ik,isp,icsh,iclm+addIndex,ilm] = 1.0
                     addIndex += corr_shell['dim']
-
+            corr_shell.pop('ion_list')
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
             for it in things_to_set:
 #                print "%s:"%(it), locals()[it]
