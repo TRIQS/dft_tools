@@ -409,16 +409,14 @@ def hk_output(conf_pars, el_struct, pgroups):
     Filename is defined by <basename> that is passed from config-file.
 
     The Hk for each groups is stored in a '<basename>.hk<Ng>' file. The format is
-    as defined in the Hk dft_tools format 
+    similar as defined in the Hk dft_tools format, but does not store info
+    about correlated shells and irreps
 
     nk                  # number of k-points
     n_el                # electron density
     n_sh                # number of total atomic shells
     at sort l dim       # atom, sort, l, dim
     at sort l dim       # atom, sort, l, dim
-    n_cr_sh             # number of correlated shells
-    at sort l dim SO irep # atom, sort, l, dim, SO, irep
-    n_irrep dim_irrep   # number of ireps, dim of irep
     
     After these header lines, the file has to contain the Hamiltonian matrix
     in orbital space. The standard convention is that you give for each k-point
@@ -433,7 +431,6 @@ def hk_output(conf_pars, el_struct, pgroups):
         hk_fname = conf_pars.general['basename'] + '.hk%i'%(ig + 1)
         print "  Storing HK-group file '%s'..."%(hk_fname)
 
-        head_corr_shells = []
         head_shells = []
         for ish in pgroup.ishells:
 
@@ -449,11 +446,9 @@ def hk_output(conf_pars, el_struct, pgroups):
 # Derive sorts from equivalence classes
             sh_dict['ion_list'] = ion_output
             sh_dict['ion_sort'] = shell.ion_sort
-
+            
 
             head_shells.append(sh_dict)
-            if shell.corr:
-                head_corr_shells.append(sh_dict)
 
 
         with open(hk_fname, 'wt') as f:
@@ -464,10 +459,7 @@ def hk_output(conf_pars, el_struct, pgroups):
             f.write('%i            # number of shells\n'%len(head_shells))
             for head in head_shells:
                 f.write('%i %i %i %i      # atom sort l dim\n'%(head['ion_list'][0],head['ion_sort'][0],head['lorb'],head['ndim']))
-            f.write('%i            # number of correlated shells\n'%len(head_corr_shells))
-            for head in head_corr_shells:
-                f.write('%i %i %i %i 0 0  # atom sort l dim SO irrep\n'%(head['ion_list'][0],head['ion_sort'][0],head['lorb'],head['ndim']))
-            f.write('1 5          # number of ireps, dim of irep\n')
+
             norbs = pgroup.hk.shape[2]
             for isp in xrange(ns_band):
                 for ik in xrange(nk):

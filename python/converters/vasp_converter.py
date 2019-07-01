@@ -43,7 +43,8 @@ class VaspConverter(ConverterTools):
                        dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input',
                        parproj_subgrp='dft_parproj_input', symmpar_subgrp='dft_symmpar_input',
                        bands_subgrp = 'dft_bands_input', misc_subgrp = 'dft_misc_input',
-                       transp_subgrp = 'dft_transp_input', repacking = False):
+                       transp_subgrp = 'dft_transp_input', repacking = False,
+                       proj_or_hk='proj'):
         """
         Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so on. 
         """
@@ -61,7 +62,9 @@ class VaspConverter(ConverterTools):
         self.bands_subgrp = bands_subgrp
         self.misc_subgrp = misc_subgrp
         self.transp_subgrp = transp_subgrp
-
+        assert (proj_or_hk == 'proj') or (proj_or_hk == 'hk'), "proj_or_hk has to be 'proj' of 'hk'"
+        self.proj_or_hk = proj_or_hk
+        
         # Checks if h5 file is there and repacks it if wanted:
         if (os.path.exists(self.hdf_file) and repacking):
             ConverterTools.repack(self)
@@ -147,6 +150,7 @@ class VaspConverter(ConverterTools):
                 gr_file = self.basename + '.pg%i'%(ig + 1)
                 jheader, rf = self.read_header_and_data(gr_file)
                 gr_head = json.loads(jheader)
+                
 
                 e_win = gr_head['ewindow']
                 nb_max = gr_head['nb_max']
@@ -192,7 +196,7 @@ class VaspConverter(ConverterTools):
                 n_corr_shells = len(corr_shells)
                 #n_shells = n_corr_shells # No non-correlated shells at the moment
                 #shells = corr_shells
-
+            n_orbs = sum([sh['dim'] for sh in shells])
 # FIXME: atomic sorts in Wien2K are not the same as in VASP.
 #        A symmetry analysis from OUTCAR or symmetry file should be used
 #        to define equivalence classes of sites.
@@ -231,6 +235,7 @@ class VaspConverter(ConverterTools):
             band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in xrange(n_spin_blocs)]
             n_orbitals = numpy.zeros([n_k, n_spin_blocs], numpy.int)
 
+            
             for isp in xrange(n_spin_blocs):
                 for ik in xrange(n_k):
                     ib1, ib2 = int(rf.next()), int(rf.next())
@@ -240,6 +245,27 @@ class VaspConverter(ConverterTools):
                     for ib in xrange(nb):
                         hopping[ik, isp, ib, ib] = rf.next()
                         f_weights[ik, isp, ib] = rf.next()
+                        
+            if self.proj_or_hk == 'hk':
+                hopping = numpy.zeros([n_k, n_spin_blocs, n_orbs, n_orbs], numpy.complex_)
+                # skip header lines
+                hk_file = self.basename + '.hk%i'%(ig + 1)
+                f_hk = open(hk_file, 'rt')
+                # skip the header (1 line for n_kpoints, n_electrons, n_shells)
+                # and one line per shell
+                count = 0
+                while count <  3 + n_shells:
+                    f_hk.readline()
+                    count += 1
+                rf_hk = self.read_data(f_hk)
+                for isp in xrange(n_spin_blocs):
+                    for ik in xrange(n_k):
+                        for ib in xrange(n_orbs):
+                            for jb in xrange(n_orbs):
+                                hopping[ik, isp, ib, jb] = rf_hk.next()
+                        for ib in xrange(n_orbs):
+                            for jb in xrange(n_orbs):
+                                hopping[ik, isp, ib, jb] += 1j*rf_hk.next()
 
 # Projectors
 #            print n_orbitals
@@ -273,9 +299,9 @@ class VaspConverter(ConverterTools):
 
 # now save only projectors with flag 'corr' to proj_mat
             proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, sum([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
-            addIndex = 0
-            for ish, corr_shell in enumerate(corr_shells):
-                if True:
+            if self.proj_or_hk == 'proj': 
+                addIndex = 0
+                for ish, corr_shell in enumerate(corr_shells):
                     for isp in xrange(n_spin_blocs):
                         for ik in xrange(n_k):
                             for ion in xrange(len(corr_shell['ion_list'])):
@@ -285,6 +311,18 @@ class VaspConverter(ConverterTools):
                                     for ib in xrange(n_orbitals[ik, isp]):
                                         proj_mat[ik,isp,icsh,iclm+addIndex,ib] = proj_mat_all[ik,isp,icsh,ilm,ib]
                     addIndex += corr_shell['dim']
+            elif self.proj_or_hk == 'hk':
+                addIndex = 0
+                for ish, corr_shell in enumerate(corr_shells):
+                    for isp in xrange(n_spin_blocs):
+                        for ik in xrange(n_k):
+                            for ion in xrange(len(corr_shell['ion_list'])):
+                                icsh = shion_to_shell[ish][ion]
+                                
+                                for iclm,ilm in enumerate(xrange(crshorbs_to_globalorbs[ish][0],crshorbs_to_globalorbs[ish][1])):
+                                    proj_mat[ik,isp,icsh,iclm+addIndex,ilm] = 1.0
+                    addIndex += corr_shell['dim']
+
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
             for it in things_to_set:
 #                print "%s:"%(it), locals()[it]
@@ -302,7 +340,9 @@ class VaspConverter(ConverterTools):
             # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
             things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
-                          'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','proj_mat_all','bz_weights','hopping',
+                          'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat',
+                           # 'proj_mat_all',
+                          'bz_weights','hopping',
                           'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
             for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
 
