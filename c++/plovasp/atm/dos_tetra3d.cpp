@@ -71,7 +71,7 @@ static const double small = 2.5e-2, tol = 1e-8;
   Returns corner contributions to the DOS of a band
 */
 #ifdef __TETRA_ARRAY_VIEW
-array_view<double, 2> dos_tetra_weights_3d(array_view<double, 1> eigk, double en, array_view<long, 2> itt)
+array<double, 2> dos_tetra_weights_3d(array_view<double, 1> eigk, double en, array_view<long, 2> itt)
 #else
 array<double, 2> dos_tetra_weights_3d(array<double, 1> eigk, double en, array<long, 2> itt)
 #endif

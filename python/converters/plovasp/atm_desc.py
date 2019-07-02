@@ -15,6 +15,6 @@ module.add_preamble("""
 #include <triqs/cpp2py_converters/arrays.hpp>
 """)
 
-module.add_function ("array_view<double,2> dos_tetra_weights_3d (array_view<double,1> eigk, double en, array_view<long,2> itt)", doc = """DOS of a band by analytical tetrahedron method\n\n   Returns corner weights for all tetrahedra for a given band and real energy.""")
+module.add_function ("array<double,2> dos_tetra_weights_3d (array_view<double,1> eigk, double en, array_view<long,2> itt)", doc = """DOS of a band by analytical tetrahedron method\n\n   Returns corner weights for all tetrahedra for a given band and real energy.""")
 
 module.generate_code()
