@@ -81,6 +81,7 @@ def check_data_consistency(pars, el_struct):
             else:
                 errmsg = "Projector for isite = %s, l = %s does not match PROJCAR"%(ion + 1, lshell)
                 raise Exception(errmsg)
+
         
 ################################################################################
 #
@@ -106,7 +107,8 @@ def generate_plo(conf_pars, el_struct):
 
 # eigvals(nktot, nband, ispin) are defined with respect to the Fermi level
     eigvals = el_struct.eigvals - efermi
-
+# check if at least one shell is correlated
+    assert np.any([shell['corr'] for shell in conf_pars.shells]), 'at least one shell has be CORR = True'
     nshell = len(conf_pars.shells)
     print
     print "  Generating %i shell%s..."%(nshell, '' if nshell == 1 else 's')
@@ -121,6 +123,7 @@ def generate_plo(conf_pars, el_struct):
         print "    Correlated    : %r"%(pshell.corr)
         pshells.append(pshell)
 
+    
     pgroups = []
     for gr_par in conf_pars.groups:
         pgroup = ProjectorGroup(gr_par, pshells, eigvals)
@@ -436,20 +439,22 @@ def hk_output(conf_pars, el_struct, pgroups):
 
             shell = pgroup.shells[ish]
             
-            sh_dict = {}
-            sh_dict['shell_index'] = ish
-            sh_dict['lorb'] = shell.lorb
-            sh_dict['ndim'] = shell.ndim
-# Convert ion indices from the internal representation (starting from 0)
-# to conventional VASP representation (starting from 1)
             ion_output = [io + 1 for io in shell.ion_list]
-# Derive sorts from equivalence classes
-            sh_dict['ion_list'] = ion_output
-            sh_dict['ion_sort'] = shell.ion_sort
+
+            for iion in ion_output:
+                sh_dict = {}
+                sh_dict['shell_index'] = ish
+                sh_dict['lorb'] = shell.lorb
+                sh_dict['ndim'] = shell.ndim
+    # Convert ion indices from the internal representation (starting from 0)
+    # to conventional VASP representation (starting from 1)
+                
+    # Derive sorts from equivalence classes
+                sh_dict['ion_list'] = ion_output
+                sh_dict['ion_sort'] = shell.ion_sort
             
 
-            head_shells.append(sh_dict)
-
+                head_shells.append(sh_dict)
 
         with open(hk_fname, 'wt') as f:
             # Eigenvalues within the window

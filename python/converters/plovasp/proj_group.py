@@ -192,12 +192,18 @@ class ProjectorGroup:
         H_ij(k) = sum_l P*_il eps_l P_lj
         
         """
-
+        
+# here we abuse the get_block_matrix_map(), however, it only works
+# if self.normion is false
+        temp = self.normion
+        self.normion = False
         block_maps, ndim = self.get_block_matrix_map()
+        self.normion = temp
 
         _, ns, nk, _, _ = self.shells[0].proj_win.shape
         
         #print(p_mat.shape)
+        print block_maps, ndim
         self.hk = np.zeros((ns,nk,ndim,ndim), dtype=np.complex128)
 # Note that 'ns' and 'nk' are the same for all shells
         for isp in xrange(ns):
@@ -218,8 +224,8 @@ class ProjectorGroup:
                         shell = self.shells[ish]
                         p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
                         
-                self.hk[isp,ik,:,:] = np.dot(p_mat.conjugate()*eigvals[ik,bmin:bmax,isp],
-                                        p_mat.transpose())
+                self.hk[isp,ik,:,:] = np.dot(p_mat*eigvals[ik,bmin:bmax,isp],
+                                        p_mat.transpose().conjugate())
 
 
 ################################################################################

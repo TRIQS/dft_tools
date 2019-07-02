@@ -145,7 +145,8 @@ class VaspConverter(ConverterTools):
 # TODO: think about multiple shell groups and how to map them on h5 structures
         assert ng == 1, "Only one group is allowed at the moment"
 
-        try:
+        #try:
+        if True:
             for ig in xrange(ng):
                 gr_file = self.basename + '.pg%i'%(ig + 1)
                 jheader, rf = self.read_header_and_data(gr_file)
@@ -165,8 +166,9 @@ class VaspConverter(ConverterTools):
                 shells = []
                 corr_shells = []
                 shion_to_shell = [[] for ish in xrange(len(p_shells))]
+                cr_shion_to_shell = [[] for ish in xrange(len(p_shells))]
                 shorbs_to_globalorbs = [[] for ish in xrange(len(p_shells))]
-                shorbs_to_globalorbs[0] = [0,p_shells[0]['ndim'] ]
+                last_dimension = 0
                 crshorbs_to_globalorbs = []
                 icsh = 0
                 for ish, sh in enumerate(p_shells):
@@ -179,23 +181,22 @@ class VaspConverter(ConverterTools):
                         pars['l'] = sh['lorb']
                         #pars['corr'] = sh['corr']
                         pars['dim'] = sh['ndim']
-                        pars['ion_list'] = sh['ion_list']
+                        #pars['ion_list'] = sh['ion_list']
                         pars['SO'] = SO
 # TODO: check what 'irep' entry does (it seems to be very specific to dmftproj)
                         pars['irep'] = 0
                         shells.append(pars)
                         shion_to_shell[ish].append(i)
-                        if ish > 0:
-                            shorbs_to_globalorbs[ish] = [shorbs_to_globalorbs[ish-1][1],
-                                                 shorbs_to_globalorbs[ish-1][1]+sh['ndim']]
+                        shorbs_to_globalorbs[ish].append([last_dimension,
+                                                 last_dimension+sh['ndim']])
+                        last_dimension = last_dimension+sh['ndim']
                         if sh['corr']:
                             corr_shells.append(pars)
-                            crshorbs_to_globalorbs.append(shorbs_to_globalorbs[ish])
-                            
+
+                print shorbs_to_globalorbs
 # TODO: generalize this to the case of multiple shell groups
                 n_corr_shells = len(corr_shells)
-                #n_shells = n_corr_shells # No non-correlated shells at the moment
-                #shells = corr_shells
+
             n_orbs = sum([sh['dim'] for sh in shells])
 # FIXME: atomic sorts in Wien2K are not the same as in VASP.
 #        A symmetry analysis from OUTCAR or symmetry file should be used
@@ -260,18 +261,20 @@ class VaspConverter(ConverterTools):
                 rf_hk = self.read_data(f_hk)
                 for isp in xrange(n_spin_blocs):
                     for ik in xrange(n_k):
+                        print ik
                         for ib in xrange(n_orbs):
                             for jb in xrange(n_orbs):
                                 hopping[ik, isp, ib, jb] = rf_hk.next()
                         for ib in xrange(n_orbs):
                             for jb in xrange(n_orbs):
                                 hopping[ik, isp, ib, jb] += 1j*rf_hk.next()
+                rf_hk.close()
 
 # Projectors
 #            print n_orbitals
 #            print [crsh['dim'] for crsh in corr_shells]
-            proj_mat_all = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, sum([sh['dim'] for sh in shells]), numpy.max(n_orbitals)], numpy.complex_)
-
+            proj_mat_csc = numpy.zeros([n_k, n_spin_blocs, sum([sh['dim'] for sh in shells]), numpy.max(n_orbitals)], numpy.complex_)
+            print 'proj_mat_csc', proj_mat_csc.shape
 # TODO: implement reading from more than one projector group
 # In 'dmftproj' each ion represents a separate correlated shell.
 # In my interface a 'projected shell' includes sets of ions.
@@ -284,52 +287,51 @@ class VaspConverter(ConverterTools):
 #
 # At the moment I choose i.2 for its simplicity. But one should consider possible
 # use cases and decide which solution is to be made permanent.
-#
+#   
             for ish, sh in enumerate(p_shells):
                 for isp in xrange(n_spin_blocs):
                     for ik in xrange(n_k):
                         for ion in xrange(len(sh['ion_list'])):
-                            icsh = shion_to_shell[ish][ion]
-                            for ilm in xrange(shorbs_to_globalorbs[ish][0],shorbs_to_globalorbs[ish][1]):
+                            for ilm in xrange(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1]):
                                 for ib in xrange(n_orbitals[ik, isp]):
                                     # This is to avoid confusion with the order of arguments
                                     pr = rf.next()
                                     pi = rf.next()
-                                    proj_mat_all[ik, isp, icsh, ilm, ib] = complex(pr, pi)
+                                    proj_mat_csc[ik, isp, ilm, ib] = complex(pr, pi)
 
 # now save only projectors with flag 'corr' to proj_mat
-            proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, sum([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
+            proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
+            print 'proj_mat', proj_mat.shape
             if self.proj_or_hk == 'proj': 
-                addIndex = 0
-                for ish, corr_shell in enumerate(corr_shells):
-                    for isp in xrange(n_spin_blocs):
-                        for ik in xrange(n_k):
-                            for ion in xrange(len(corr_shell['ion_list'])):
-                                icsh = shion_to_shell[ish][ion]
-                                
-                                for iclm,ilm in enumerate(xrange(crshorbs_to_globalorbs[ish][0],crshorbs_to_globalorbs[ish][1])):
-                                    for ib in xrange(n_orbitals[ik, isp]):
-                                        proj_mat[ik,isp,icsh,iclm+addIndex,ib] = proj_mat_all[ik,isp,icsh,ilm,ib]
-                    addIndex += corr_shell['dim']
+                for ish, sh in enumerate(p_shells):
+                    if sh['corr']:
+                        for isp in xrange(n_spin_blocs):
+                            for ik in xrange(n_k):
+                                for ion in xrange(len(sh['ion_list'])):
+                                    icsh = shion_to_shell[ish][ion]
+                                    for iclm,ilm in enumerate(xrange(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1])):
+                                        for ib in xrange(n_orbitals[ik, isp]):
+                                            proj_mat[ik,isp,icsh,iclm,ib] = proj_mat_csc[ik,isp,ilm,ib]
             elif self.proj_or_hk == 'hk':
-                addIndex = 0
-                for ish, corr_shell in enumerate(corr_shells):
-                    for isp in xrange(n_spin_blocs):
-                        for ik in xrange(n_k):
-                            for ion in xrange(len(corr_shell['ion_list'])):
-                                icsh = shion_to_shell[ish][ion]
-                                
-                                for iclm,ilm in enumerate(xrange(crshorbs_to_globalorbs[ish][0],crshorbs_to_globalorbs[ish][1])):
-                                    proj_mat[ik,isp,icsh,iclm+addIndex,ilm] = 1.0
-                    addIndex += corr_shell['dim']
-            corr_shell.pop('ion_list')
+                print crshorbs_to_globalorbs, proj_mat.shape, shorbs_to_globalorbs
+                for ish, sh in enumerate(p_shells):
+                    if sh['corr']:
+                        for ion in xrange(len(sh['ion_list'])):
+                            icsh = shion_to_shell[ish][ion]
+                            for isp in xrange(n_spin_blocs):
+                                for ik in xrange(n_k):
+                                    for iclm,ilm in enumerate(xrange(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1])):
+                                        proj_mat[ik,isp,icsh,iclm,ilm] = 1.0
+                print proj_mat[0,0,0,:,:].real
+                print proj_mat[0,0,1,:,:].real
+            #corr_shell.pop('ion_list')
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
             for it in things_to_set:
 #                print "%s:"%(it), locals()[it]
                 setattr(self,it,locals()[it])
 
-        except StopIteration:
-           raise "VaspConverter: error reading %s"%self.gr_file
+        #except StopIteration:
+        #   raise "VaspConverter: error reading %s"%self.gr_file
 
         rf.close()
 
@@ -340,10 +342,12 @@ class VaspConverter(ConverterTools):
             # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
             things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
-                          'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat',
-                           # 'proj_mat_all',
-                          'bz_weights','hopping',
+                          'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
                           'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
+            if self.proj_or_hk == 'hk':
+                proj_or_hk = self.proj_or_hk
+                things_to_save.append('proj_mat_csc')
+                things_to_save.append('proj_or_hk')
             for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
 
             # Store Fermi weights to 'dft_misc_input'
