@@ -335,6 +335,8 @@ class VaspConverter(ConverterTools):
 
         rf.close()
 
+
+        proj_or_hk = self.proj_or_hk
         
         # Save it to the HDF:
         with HDFArchive(self.hdf_file,'a') as ar:
@@ -343,11 +345,9 @@ class VaspConverter(ConverterTools):
             things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                           'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
-                          'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
+                          'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk']
             if self.proj_or_hk == 'hk':
-                proj_or_hk = self.proj_or_hk
                 things_to_save.append('proj_mat_csc')
-                things_to_save.append('proj_or_hk')
             for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
 
             # Store Fermi weights to 'dft_misc_input'
