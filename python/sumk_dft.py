@@ -98,9 +98,12 @@ class SumkDFT(object):
             things_to_read = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                               'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
                               'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
-                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
+                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk']
             self.subgroup_present, self.value_read = self.read_input_from_hdf(
                 subgrp=self.dft_data, things_to_read=things_to_read)
+            if self.proj_or_hk == 'hk':
+                self.subgroup_present, self.value_read = self.read_input_from_hdf(
+                subgrp=self.dft_data, things_to_read=['proj_mat_csc'])
             if self.symm_op:
                 self.symmcorr = Symmetry(hdf_file, subgroup=self.symmcorr_data)
 
@@ -294,6 +297,7 @@ class SumkDFT(object):
 
                  - if shells='corr': orthonormalized projectors for correlated shells are used for the downfolding.
                  - if shells='all': non-normalized projectors for all included shells are used for the downfolding.
+                 - if shells='csc': orthonormalized projectors for all shells are used for the downfolding. Used for H(k).
 
         ir : integer, optional
              Index of equivalent site in the non-correlated shell 'ish', only used if shells='all'.
@@ -316,6 +320,8 @@ class SumkDFT(object):
                 raise ValueError, "downfold: provide ir if treating all shells."
             dim = self.shells[ish]['dim']
             projmat = self.proj_mat_all[ik, isp, ish, ir, 0:dim, 0:n_orb]
+        elif shells == 'csc':
+            projmat = self.proj_mat_csc[ik, isp, 0:n_orb, 0:n_orb]
 
         gf_downfolded.from_L_G_R(
             projmat, gf_to_downfold, projmat.conjugate().transpose())
@@ -346,6 +352,7 @@ class SumkDFT(object):
 
                  - if shells='corr': orthonormalized projectors for correlated shells are used for the upfolding.
                  - if shells='all': non-normalized projectors for all included shells are used for the upfolding.
+                 - if shells='csc': orthonormalized projectors for all shells are used for the upfolding. Used for H(k).
 
         ir : integer, optional
              Index of equivalent site in the non-correlated shell 'ish', only used if shells='all'.
@@ -368,6 +375,8 @@ class SumkDFT(object):
                 raise ValueError, "upfold: provide ir if treating all shells."
             dim = self.shells[ish]['dim']
             projmat = self.proj_mat_all[ik, isp, ish, ir, 0:dim, 0:n_orb]
+        elif shells == 'csc':
+            projmat = self.proj_mat_csc[ik, isp, 0:n_orb, 0:n_orb]
 
         gf_upfolded.from_L_G_R(
             projmat.conjugate().transpose(), gf_to_upfold, projmat)
@@ -1840,6 +1849,15 @@ class SumkDFT(object):
         for ik in mpi.slice_array(ikarray):
             G_latt_iw = self.lattice_gf(
                 ik=ik, mu=self.chemical_potential, iw_or_w="iw")
+            if dm_type == 'vasp' and self.proj_or_hk == 'hk':
+                # rotate the Green function into the DFT band basis
+                for bname, gf in G_latt_iw:
+                    G_latt_rot_iw = gf.copy()
+                    G_latt_rot_iw << self.upfold(
+                            ik, 0, bname, G_latt_iw[bname], gf,shells='csc')
+
+                    G_latt_iw[bname] = G_latt_rot_iw.copy()
+                    
             for bname, gf in G_latt_iw:
                 deltaN[bname][ik] = G_latt_iw[bname].density()
 

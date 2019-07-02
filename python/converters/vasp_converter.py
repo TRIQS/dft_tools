@@ -145,8 +145,7 @@ class VaspConverter(ConverterTools):
 # TODO: think about multiple shell groups and how to map them on h5 structures
         assert ng == 1, "Only one group is allowed at the moment"
 
-        #try:
-        if True:
+        try:
             for ig in xrange(ng):
                 gr_file = self.basename + '.pg%i'%(ig + 1)
                 jheader, rf = self.read_header_and_data(gr_file)
@@ -193,7 +192,7 @@ class VaspConverter(ConverterTools):
                         if sh['corr']:
                             corr_shells.append(pars)
 
-                print shorbs_to_globalorbs
+
 # TODO: generalize this to the case of multiple shell groups
                 n_corr_shells = len(corr_shells)
 
@@ -261,7 +260,7 @@ class VaspConverter(ConverterTools):
                 rf_hk = self.read_data(f_hk)
                 for isp in xrange(n_spin_blocs):
                     for ik in xrange(n_k):
-                        print ik
+
                         for ib in xrange(n_orbs):
                             for jb in xrange(n_orbs):
                                 hopping[ik, isp, ib, jb] = rf_hk.next()
@@ -274,7 +273,7 @@ class VaspConverter(ConverterTools):
 #            print n_orbitals
 #            print [crsh['dim'] for crsh in corr_shells]
             proj_mat_csc = numpy.zeros([n_k, n_spin_blocs, sum([sh['dim'] for sh in shells]), numpy.max(n_orbitals)], numpy.complex_)
-            print 'proj_mat_csc', proj_mat_csc.shape
+
 # TODO: implement reading from more than one projector group
 # In 'dmftproj' each ion represents a separate correlated shell.
 # In my interface a 'projected shell' includes sets of ions.
@@ -301,7 +300,7 @@ class VaspConverter(ConverterTools):
 
 # now save only projectors with flag 'corr' to proj_mat
             proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
-            print 'proj_mat', proj_mat.shape
+
             if self.proj_or_hk == 'proj': 
                 for ish, sh in enumerate(p_shells):
                     if sh['corr']:
@@ -313,7 +312,7 @@ class VaspConverter(ConverterTools):
                                         for ib in xrange(n_orbitals[ik, isp]):
                                             proj_mat[ik,isp,icsh,iclm,ib] = proj_mat_csc[ik,isp,ilm,ib]
             elif self.proj_or_hk == 'hk':
-                print crshorbs_to_globalorbs, proj_mat.shape, shorbs_to_globalorbs
+
                 for ish, sh in enumerate(p_shells):
                     if sh['corr']:
                         for ion in xrange(len(sh['ion_list'])):
@@ -322,16 +321,15 @@ class VaspConverter(ConverterTools):
                                 for ik in xrange(n_k):
                                     for iclm,ilm in enumerate(xrange(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1])):
                                         proj_mat[ik,isp,icsh,iclm,ilm] = 1.0
-                print proj_mat[0,0,0,:,:].real
-                print proj_mat[0,0,1,:,:].real
+
             #corr_shell.pop('ion_list')
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
             for it in things_to_set:
 #                print "%s:"%(it), locals()[it]
                 setattr(self,it,locals()[it])
 
-        #except StopIteration:
-        #   raise "VaspConverter: error reading %s"%self.gr_file
+        except StopIteration:
+           raise "VaspConverter: error reading %s"%self.gr_file
 
         rf.close()
 
