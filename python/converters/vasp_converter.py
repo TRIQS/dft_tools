@@ -197,6 +197,7 @@ class VaspConverter(ConverterTools):
                 n_corr_shells = len(corr_shells)
 
             n_orbs = sum([sh['dim'] for sh in shells])
+
 # FIXME: atomic sorts in Wien2K are not the same as in VASP.
 #        A symmetry analysis from OUTCAR or symmetry file should be used
 #        to define equivalence classes of sites.
@@ -260,7 +261,7 @@ class VaspConverter(ConverterTools):
                 rf_hk = self.read_data(f_hk)
                 for isp in xrange(n_spin_blocs):
                     for ik in xrange(n_k):
-
+                        n_orbitals[ik, isp] = n_orbs
                         for ib in xrange(n_orbs):
                             for jb in xrange(n_orbs):
                                 hopping[ik, isp, ib, jb] = rf_hk.next()

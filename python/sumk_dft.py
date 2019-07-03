@@ -562,7 +562,9 @@ class SumkDFT(object):
         idmat = [numpy.identity(
             self.n_orbitals[ik, ntoi[sp]], numpy.complex_) for sp in spn]
         M = copy.deepcopy(idmat)
+        
         for ibl in range(self.n_spin_blocks[self.SO]):
+            
             ind = ntoi[spn[ibl]]
             n_orb = self.n_orbitals[ik, ind]
             M[ibl] = self.hopping[ik, ind, 0:n_orb, 0:n_orb] - \
