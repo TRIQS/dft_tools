@@ -47,6 +47,32 @@ class VaspConverter(ConverterTools):
                        proj_or_hk='proj'):
         """
         Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so on. 
+
+        Parameters
+        ----------
+        filename : string
+                   Base name of DFT files.
+        hdf_filename : string, optional
+                       Name of hdf5 archive to be created.
+        dft_subgrp : string, optional
+                     Name of subgroup storing necessary DFT data.
+        symmcorr_subgrp : string, optional
+                          Name of subgroup storing correlated-shell symmetry data.
+        parproj_subgrp : string, optional
+                         Name of subgroup storing partial projector data.
+        symmpar_subgrp : string, optional
+                         Name of subgroup storing partial-projector symmetry data.
+        bands_subgrp : string, optional
+                       Name of subgroup storing band data.
+        misc_subgrp : string, optional
+                      Name of subgroup storing miscellaneous DFT data.
+        transp_subgrp : string, optional
+                        Name of subgroup storing transport data.
+        repacking : boolean, optional
+                    Does the hdf5 archive need to be repacked to save space?
+        proj_or_hk : string, optional
+                    Select scheme to convert between KS bands and localized orbitals.
+
         """
 
         assert type(filename)==StringType, "Please provide the DFT files' base name as a string."
@@ -73,6 +99,11 @@ class VaspConverter(ConverterTools):
     def read_data(self, fh):
         """
         Generator for reading plain data.
+        
+        Parameters
+        ----------
+        fh : file object
+              file object which is read in.
         """
         for line in fh:
             line_ = line.strip()
@@ -85,6 +116,11 @@ class VaspConverter(ConverterTools):
     def read_header_and_data(self, filename):
         """
         Opens a file and returns a JSON-header and the generator for the plain data.
+        
+        Parameters
+        ----------
+        filename : string
+              file name of the file to read.
         """
         fh = open(filename, 'rt')
         header = ""
@@ -367,6 +403,24 @@ class VaspConverter(ConverterTools):
         Reads input for the band window from bandwin_file, which is case.oubwin,
                             structure from struct_file, which is case.struct,
                             symmetries from outputs_file, which is case.outputs.
+        
+        Parameters
+        ----------
+        bandwin_file : string
+                    filename of .oubwin/up/dn file.
+        struct_file : string
+                    filename of .struct file.
+        outputs_file : string
+                    filename of .outputs file.
+        misc_subgrp : string
+                    name of the subgroup in which to save
+        SO : boolean
+            spin-orbit switch
+        SP : int
+            spin
+        n_k : int
+            number of k-points
+                    
         """
 
         if not (mpi.is_master_node()): return
@@ -461,6 +515,15 @@ class VaspConverter(ConverterTools):
     def convert_symmetry_input(self, ctrl_head, orbits, symm_subgrp):
         """
         Reads input for the symmetrisations from symm_file, which is case.sympar or case.symqmc.
+        
+        Parameters
+        ----------
+        ctrl_head : dict
+                dictionary of header of .ctrl file
+        orbits : list of shells
+                contains all shells 
+        symm_subgrp : name of symmetry group in h5 archive
+        
         """
 
 # In VASP interface the symmetries are read directly from *.ctrl file
