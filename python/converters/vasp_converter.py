@@ -188,7 +188,6 @@ class VaspConverter(ConverterTools):
                 gr_head = json.loads(jheader)
                 
 
-                e_win = gr_head['ewindow']
                 nb_max = gr_head['nb_max']
                 p_shells = gr_head['shells']
                 density_required = gr_head['nelect']

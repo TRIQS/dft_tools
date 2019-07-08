@@ -331,8 +331,13 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
         print "  Storing PLO-group file '%s'..."%(plo_fname)
         head_dict = {}
 
-        head_dict['ewindow'] = (pgroup.emin, pgroup.emax)
+        
         head_dict['nb_max'] = pgroup.nb_max
+        
+        if 'bands' in conf_pars.groups[ig]:
+            head_dict['bandwindow'] = (pgroup.ib_min, pgroup.ib_max)
+        else:
+            head_dict['ewindow'] = (pgroup.emin, pgroup.emax)
 
 # Number of electrons within the window
         head_dict['nelect'] = pgroup.nelect_window(el_struct)
@@ -366,7 +371,11 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
             f.write("#END OF HEADER\n")
             
 # Eigenvalues within the window
-            f.write("# Eigenvalues within the energy window: %s, %s\n"%(pgroup.emin, pgroup.emax))
+            if 'bands' in conf_pars.groups[ig]:
+                f.write("# Eigenvalues within the band window: %s, %s\n"%(pgroup.ib_min+1, pgroup.ib_max+1))
+            else:
+                f.write("# Eigenvalues within the energy window: %s, %s\n"%(pgroup.emin, pgroup.emax))
+            
             nk, nband, ns_band = el_struct.eigvals.shape
             for isp in xrange(ns_band):
                 f.write("# is = %i\n"%(isp + 1))

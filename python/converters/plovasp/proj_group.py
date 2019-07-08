@@ -72,8 +72,8 @@ class ProjectorGroup:
             ib_win = np.zeros((nk, ns_band, 2), dtype=np.int32)
             ib_win[:,:,0] = gr_pars['bands'][0]-1
             ib_win[:,:,1] = gr_pars['bands'][1]-1
-            ib_min = gr_pars['bands'][0]
-            ib_max = gr_pars['bands'][1]
+            ib_min = gr_pars['bands'][0] - 1
+            ib_max = gr_pars['bands'][1] - 1
             
         else:
             ib_win, ib_min, ib_max = self.select_bands(eigvals)
@@ -81,6 +81,11 @@ class ProjectorGroup:
         self.ib_min = ib_min
         self.ib_max = ib_max
         self.nb_max = ib_max - ib_min + 1
+        
+        print self.ib_win
+        print self.ib_min
+        print self.ib_max
+        print self.nb_max
         
         
         
