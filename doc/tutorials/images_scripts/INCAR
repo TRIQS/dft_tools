@@ -1,0 +1,18 @@
+System  = NiO
+
+ISMEAR = -5
+
+# the energy window to optimize projector channels
+EMIN = -3
+EMAX = 7
+
+NBANDS = 16
+LMAXMIX = 6
+
+# switch off all symmetries
+ISYM = -1
+
+# project to Ni d and O p states
+LORBIT = 14
+LOCPROJ = 1 : d : Pr 1
+LOCPROJ = 2 : p : Pr 1

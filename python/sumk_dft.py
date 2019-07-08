@@ -97,13 +97,13 @@ class SumkDFT(object):
             # Read input from HDF:
             things_to_read = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                               'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
-                              'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
+                              'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'proj_mat_csc', 'bz_weights', 'hopping',
                               'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk']
             self.subgroup_present, self.value_read = self.read_input_from_hdf(
                 subgrp=self.dft_data, things_to_read=things_to_read)
-            if self.proj_or_hk == 'hk':
-                self.subgroup_present, self.value_read = self.read_input_from_hdf(
-                subgrp=self.dft_data, things_to_read=['proj_mat_csc'])
+           # if self.proj_or_hk == 'hk':
+           #     self.subgroup_present, self.value_read = self.read_input_from_hdf(
+           #     subgrp=self.dft_data, things_to_read=['proj_mat_csc'])
             if self.symm_op:
                 self.symmcorr = Symmetry(hdf_file, subgroup=self.symmcorr_data)
 

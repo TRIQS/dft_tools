@@ -381,7 +381,7 @@ class VaspConverter(ConverterTools):
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                           'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
                           'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk']
-            if self.proj_or_hk == 'hk':
+            if self.proj_or_hk == 'hk' or True:
                 things_to_save.append('proj_mat_csc')
             for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
 
