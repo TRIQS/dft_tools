@@ -1333,7 +1333,81 @@ class SumkDFT(object):
 
                         # a block was found, break out of the loop
                         break
+    
+    def calculate_diagonalization_matrix(self, prop_to_be_diagonal='eal', calc_in_solver_blocks=False, write_to_blockstructure = True, ish=0):
+        """
+        Calculates the diagonalisation matrix, and (optionally) stores it in the BlockStructure.
 
+        Parameters
+        ----------
+        prop_to_be_diagonal : string, optional
+                              Defines the property to be diagonalized.
+
+                              - 'eal' : local hamiltonian (i.e. crystal field)
+                              - 'dm' : local density matrix
+
+        calc_in_solver_blocks : bool, optional
+                                Whether the property shall be diagonalized in the
+                                full sumk structure, or just in the solver structure.
+                                
+        write_to_blockstructure : bool, optional
+                                Whether the diagonalization matrix shall be written to
+                                the BlockStructure directly.
+        ish : int, optional
+              Number of the correlated shell to be diagonalized.
+
+        Returns
+        -------
+        trafo : dict
+               The transformation matrix for each spin-block in the correlated shell
+
+        """
+        trafo = {}
+        
+        
+        if prop_to_be_diagonal == 'eal':
+            prop = self.eff_atomic_levels()[ish]
+        elif prop_to_be_diagonal == 'dm':
+            prop = self.density_matrix(method='using_point_integration')[ish]
+        else:
+            mpi.report(
+                "calculate_diagonalization_matrix: not a valid quantitiy to be diagonal. Choices are 'eal' or 'dm'.")
+            return 0
+
+        if calc_in_solver_blocks:
+            trafo_tmp = self.block_structure.transformation
+            self.block_structure.transformation = None
+
+            prop_solver = self.block_structure.convert_matrix(prop, space_from='sumk', space_to='solver')
+            t= {}
+            for name in prop_solver:
+                t[name] = numpy.linalg.eigh(prop_solver[name])[1].conjugate().transpose()
+            trafo = self.block_structure.convert_matrix(t, space_from='solver', space_to='sumk')
+            #self.T = numpy.dot(self.T.transpose().conjugate(),
+             #                  self.w).conjugate().transpose()
+            self.block_structure.transformation = trafo_tmp
+        else:
+            for name in prop:
+                t = numpy.linalg.eigh(prop[name])[1].conjugate().transpose()
+                trafo[name] = t
+                # calculate new Transformation matrix
+                #self.T = numpy.dot(self.T.transpose().conjugate(),
+                #                   self.w).conjugate().transpose()
+
+        # measure for the 'unity' of the transformation:
+        #wsqr = sum(abs(self.w.diagonal())**2) / self.w.diagonal().size
+        #return wsqr
+        
+        if write_to_blockstructure:
+            if self.block_structure.transformation == None:
+                self.block_structure.transformation = [{} for icrsh in range(self.n_corr_shells)]
+                for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]:
+                    self.block_structure.transformation[icrsh][sp] = numpy.eye(self.corr_shells[icrsh]['dim'], self.corr_shells[icrsh]['dim'], numpy.complex_)
+        
+            self.block_structure.transformation[ish] = trafo
+            
+        return trafo
+        
 
     def density_matrix(self, method='using_gf', beta=40.0):
         """Calculate density matrices in one of two ways.
