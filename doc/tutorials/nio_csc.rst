@@ -3,7 +3,7 @@
 DFT and projections
 ==================================================
 
-We will perform charge self-consitent DFT+DMFT calcluations for the charge-transfer insulator NiO. We still start from scratch and provide all necessary input files to do the calculations.
+We will perform charge self-consitent DFT+DMFT calcluations for the charge-transfer insulator NiO. We start from scratch and provide all necessary input files to do the calculations: First for doing a single-shot calculation and then for charge-selfconsistency.
 
 VASP setup
 -------------------------------
@@ -31,7 +31,7 @@ We do this by invoking :program:`plovasp plo.cfg` which is configured by an inpu
 
 .. literalinclude:: images_scripts/plo.cfg
 
-Here, in `[General]' we set the basename and the grid for calculating the density of
+Here, in `[General]` we set the basename and the grid for calculating the density of
 states. In `[Group 1]` we define a group of two shells which are orthonormalized with
 respect to states in an energy window from `-9` to `2` for all ions simultanously
 (`NORMION = False`). We define the two shells, which correspond to the Ni d states
@@ -52,8 +52,23 @@ DMFT
 dmft script
 ------------------------------
 
-Since the python script for performing the dmft loop pretty much resembles that presented in the tutorial on :ref:`srvo3`, we will not go into detail here but simply provide the script :ref:`nio.py`. Following Kunes et al. in `PRB 75 165115 (2007) <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.75.165115>`_ we use :math:`U=8` and :math:`J=1`. Here, we use :math:`\beta=5` instead of :math:`\beta=10` to speed up the calculations.
+Since the python script for performing the dmft loop pretty much resembles that presented in the tutorial on :ref:`srvo3`, we will not go into detail here but simply provide the script :ref:`nio.py`. Following Kunes et al. in `PRB 75 165115 (2007) <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.75.165115>`_ we use :math:`U=8` and :math:`J=1`. We se;ect :math:`\beta=5` instead of :math:`\beta=10` to ease the problem slightly. For simplicity we fix the double-counting potential to :math:`\mu_{DC}=59` eV by::
+
+  DC_value = 59.0
+  SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0, use_dc_value=DC_value)
+
+For sensible results run this script in parallel on at least 20 cores. As a quick check of the results, we can compare the orbital occupation from the paper cited above (:math:`n_{eg} = 0.54` and :math:`n_{t2g}=1.0`) and those from the cthyb output (check lines `Orbital up_0 density:` for a t2g  and `Orbital up_2 density:` for an eg orbital). They should coincide well.
+
 
 Local lattice Green's function for all projected orbitals
 ----------------------
-We calculate the local lattice Green's function - now also for the uncorrelated orbitals, i.e., the O p states. Therefor we use :download:`NiO_local_lattice_GF.py <images_scripts/NiO_local_lattice_GF.py`
+We calculate the local lattice Green's function - now also for the uncorrelated orbitals, i.e., the O p states, for what we use the script :ref:`NiO_local_lattice_GF.py`. The result is saved in the h5 file as `G_latt_orb_it<n_it>`, where `n_it>` is the number of the last DMFT iteration.
+
+Spectral function on real axis: MaxEnt
+----------------------
+To compare to results from literature we make use of the `maxent triqs application <https://triqs.github.io/maxent/master/>`_ and calculate the spectral function on real axis. Use this script to perform a crude but quick calculation: :ref:`maxent.py` using a linear real axis and a line-fit analyzer to determine the optimal :math:`\alpha`. The output is saved in the h5 file in `DMFT_results/Iterations/G_latt_orb_w_o<n_o>_it<n_it>`, where `<n_o>` is the number of the orbital and `n_it` is again the number of the last iteration. The real axis information is stored in `DMFT_results/Iterations/w_it<n_it>`.
+
+
+.. image:: images_scripts/nio_Aw.png
+    :width: 400
+    :align: center

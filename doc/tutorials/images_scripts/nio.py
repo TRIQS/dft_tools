@@ -3,11 +3,17 @@ import numpy as np
 import pytriqs.utility.mpi as mpi
 from pytriqs.archive import *
 from pytriqs.gf import *
+import sys, pytriqs.version as triqs_version
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
 from pytriqs.operators.util.hamiltonians import *
 from pytriqs.operators.util.U_matrix import *
 from triqs_cthyb import *
+import triqs_cthyb.version as cthyb_version
+import triqs_dft_tools.version as dft_tools_version
+
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 filename = 'vasp'
 
@@ -32,7 +38,6 @@ for i_sh in range(len(SK.deg_shells)):
 n_orb = SK.corr_shells[0]['dim']
 spin_names = ['up','down']
 orb_names = [i for i in range(0,n_orb)]
-orb_hyb = False
 
 #gf_struct = set_operator_structure(spin_names, orb_names, orb_hyb)
 gf_struct = SK.gf_struct_solver[0]
@@ -74,6 +79,7 @@ p["perform_tail_fit"] = True
 
 # Double Counting: 0 FLL, 1 Held, 2 AMF
 DC_type = 0
+DC_value = 59.0
 
 # Prepare hdf file and and check for previous iterations
 n_iterations = 10
@@ -83,13 +89,23 @@ if mpi.is_master_node():
     ar = HDFArchive(filename+'.h5','a')
     if not 'DMFT_results' in ar: ar.create_group('DMFT_results')
     if not 'Iterations' in ar['DMFT_results']: ar['DMFT_results'].create_group('Iterations')
+    if not 'DMFT_input' in ar: ar.create_group('DMFT_input')
+    if not 'Iterations' in ar['DMFT_input']: ar['DMFT_input'].create_group('Iterations')
+    if not 'code_versions' in ar['DMFT_input']: ar['DMFT_input'].create_group('code_versio\
+ns')
+    ar['DMFT_input']['code_versions']["triqs_version"] = triqs_version.version
+    ar['DMFT_input']['code_versions']["triqs_git"] = triqs_version.git_hash
+    ar['DMFT_input']['code_versions']["cthyb_version"] = cthyb_version.version
+    ar['DMFT_input']['code_versions']["cthyb_git"] = cthyb_version.cthyb_hash
+    ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.version
+    ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.dft_tools_hash
     if 'iteration_count' in ar['DMFT_results']: 
         iteration_offset = ar['DMFT_results']['iteration_count']+1
         S.Sigma_iw = ar['DMFT_results']['Iterations']['Sigma_it'+str(iteration_offset-1)]
         SK.dc_imp = ar['DMFT_results']['Iterations']['dc_imp'+str(iteration_offset-1)]
         SK.dc_energ = ar['DMFT_results']['Iterations']['dc_energ'+str(iteration_offset-1)]
         SK.chemical_potential = ar['DMFT_results']['Iterations']['chemical_potential'+str(iteration_offset-1)].real
-
+    ar['DMFT_input']["dmft_script_it"+str(iteration_offset)] = open(sys.argv[0]).read()
 iteration_offset = mpi.bcast(iteration_offset)
 S.Sigma_iw = mpi.bcast(S.Sigma_iw)
 SK.dc_imp = mpi.bcast(SK.dc_imp)
@@ -97,6 +113,7 @@ SK.dc_energ = mpi.bcast(SK.dc_energ)
 SK.chemical_potential = mpi.bcast(SK.chemical_potential)
 
 # Calc the first G0
+SK.symm_deg_gf(S.Sigma_iw,orb=0)
 SK.put_Sigma(Sigma_imp = [S.Sigma_iw])
 SK.calc_mu(precision=0.01)
 S.G_iw << SK.extract_G_loc()[0]
@@ -105,7 +122,7 @@ SK.symm_deg_gf(S.G_iw, orb=0)
 #Init the DC term and the self-energy if no previous iteration was found
 if iteration_offset == 0:
     dm = S.G_iw.density()
-    SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0, use_dc_formula=DC_type)
+    SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0, use_dc_formula=DC_type,use_dc_value=DC_value)
     S.Sigma_iw << SK.dc_imp[0]['up'][0,0]
 
 mpi.report('%s DMFT cycles requested. Starting with iteration %s.'%(n_iterations,iteration_offset))
@@ -120,12 +137,13 @@ for it in range(iteration_offset, iteration_offset + n_iterations):
     # Solve the impurity problem
     S.solve(h_int = H, **p)
     if mpi.is_master_node(): 
+        ar['DMFT_input']['Iterations']['solver_dict_it'+str(it)] = p
         ar['DMFT_results']['Iterations']['Gimp_it'+str(it)] = S.G_iw
         ar['DMFT_results']['Iterations']['Gtau_it'+str(it)] = S.G_tau
         ar['DMFT_results']['Iterations']['Sigma_uns_it'+str(it)] = S.Sigma_iw
     # Calculate double counting
     dm = S.G_iw.density()
-    SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0, use_dc_formula=DC_type)
+    SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0, use_dc_formula=DC_type,use_dc_value=DC_value)
     # Get new G
     SK.symm_deg_gf(S.Sigma_iw,orb=0)
     SK.put_Sigma(Sigma_imp=[S.Sigma_iw])

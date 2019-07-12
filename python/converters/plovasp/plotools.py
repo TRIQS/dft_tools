@@ -128,10 +128,14 @@ def generate_plo(conf_pars, el_struct):
     for gr_par in conf_pars.groups:
         pgroup = ProjectorGroup(gr_par, pshells, eigvals)
         pgroup.orthogonalize()
-        if gr_par['complement']:
-            pgroup.complement(eigvals)
+        if pgroup.complement:
+            pgroup.calc_complement(eigvals)
         if conf_pars.general['hk']:
             pgroup.calc_hk(eigvals)
+            #testout = 'hk.out.h5'
+            #from pytriqs.archive import HDFArchive
+            #with HDFArchive(testout, 'w') as h5test:
+            #    h5test['hk'] = pgroup.hk
 # DEBUG output
         print "Density matrix:"
         nimp = 0.0

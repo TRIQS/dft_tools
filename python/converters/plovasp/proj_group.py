@@ -62,11 +62,11 @@ class ProjectorGroup:
         self.ishells = gr_pars['shells']
         self.ortho = gr_pars['normalize']
         self.normion = gr_pars['normion']
+        self.complement = gr_pars['complement']
 
         self.shells = shells
 
 # Determine the minimum and maximum band numbers
-        ib_win, ib_min, ib_max = self.select_bands(eigvals)
         if 'bands' in gr_pars:
             nk, nband, ns_band = eigvals.shape
             ib_win = np.zeros((nk, ns_band, 2), dtype=np.int32)
@@ -81,20 +81,15 @@ class ProjectorGroup:
         self.ib_min = ib_min
         self.ib_max = ib_max
         self.nb_max = ib_max - ib_min + 1
-        
-        print self.ib_win
-        print self.ib_min
-        print self.ib_max
-        print self.nb_max
+       
         
         
-        
-        if gr_pars['complement']:
+        if self.complement:
             n_bands = self.ib_win[:,:,1] - self.ib_win[:,:,0]+1
             n_orbs = sum([x.ndim for x in self.shells])
             assert np.all( n_bands == n_bands[0,0] ), "At each band the same number of bands has to be selected for calculating the complement (to end up with an equal number of orbitals at each k-point)."
             if n_orbs == n_bands[0,0]:
-                gr_pars['complement'] = False
+                self.complement = False
                 print "\nWARNING: The total number of orbitals in this group is  "
                 print "equal to the number of bands. Setting COMPLEMENT to FALSE!\n"
         
@@ -207,8 +202,6 @@ class ProjectorGroup:
 
         _, ns, nk, _, _ = self.shells[0].proj_win.shape
         
-        #print(p_mat.shape)
-        print block_maps, ndim
         self.hk = np.zeros((ns,nk,ndim,ndim), dtype=np.complex128)
 # Note that 'ns' and 'nk' are the same for all shells
         for isp in xrange(ns):
@@ -228,7 +221,7 @@ class ProjectorGroup:
                         nlm = i2 - i1 + 1
                         shell = self.shells[ish]
                         p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
-                        
+                
                 self.hk[isp,ik,:,:] = np.dot(p_mat*eigvals[ik,bmin:bmax,isp],
                                         p_mat.transpose().conjugate())
 
@@ -238,7 +231,7 @@ class ProjectorGroup:
 # complement
 #
 ################################################################################
-    def complement(self,eigvals):
+    def calc_complement(self,eigvals):
         """
         Calculate the complement for a group of projectors.
             
@@ -282,19 +275,20 @@ class ProjectorGroup:
                         p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
                 orbs_done = 1*ndim
                 p_full[0,isp,ik,:ndim,:] = p_mat
-                while orbs_done < self.nb_max:                    
-                    proj_work = p_full[0,isp,ik,:,:] 
+                while orbs_done < self.nb_max:
 #We calculate the overlap of all bloch states: sum_l <n|l><l|m>
-                    overlap = np.dot(proj_work.transpose().conjugate(),proj_work)
+                    overlap = np.dot(p_full[0,isp,ik,:orbs_done,:].transpose().conjugate(),p_full[0,isp,ik,:orbs_done,:])
 # work is the projector onto the orthogonal complment <n| ( 1 - sum_l |l><l| ) |m>
                     work = np.eye(self.nb_max) - overlap
 # calculate the norm of the projected bloch function
-                    norm = np.sqrt(np.sum(work*work.transpose().conjugate(),axis=1))
+                    norm = np.sqrt(np.sum(work*work.transpose(),axis=1))
 # select the bloch function leading to the largest norm
                     max_ind = np.argmax(norm)
 # normalize and put it to the projectors
-                    p_full[0,isp,ik,orbs_done,:] = work[max_ind]/norm[max_ind]
+                    p_full[0,isp,ik,orbs_done,:] = work[:,max_ind].conjugate()/norm[max_ind]
+
                     orbs_done += 1
+
         sh_pars = {}
         sh_pars['lshell'] = -1
         sh_pars['ions'] = {'nion':1,'ion_list':[[1]]}
@@ -303,6 +297,7 @@ class ProjectorGroup:
         sh_pars['ib_min']  = bmin
         sh_pars['ib_max']  = bmax
         sh_pars['ib_win']  = self.ib_win
+        
         self.shells.append(ComplementShell(sh_pars,p_full[:,:,:,ndim:,:],False))
         self.ishells.append(self.ishells[-1]+1)
                                                 
