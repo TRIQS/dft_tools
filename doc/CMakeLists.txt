@@ -56,6 +56,6 @@ generate_docs(${PROJECT_SOURCE_DIR}/c++/app4triqs/toto.hpp)
 # ---------------------------------
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ COMPONENT documentation DESTINATION share/doc/app4triqs
   FILES_MATCHING
-  REGEX "\\.(html|pdf|png|gif|jpg|js|xsl|css|py|txt|inv|bib)$"
+  REGEX "\\.(html|pdf|png|gif|jpg|svg|js|xsl|css|py|txt|inv|bib)$"
   PATTERN "_*"
 )
