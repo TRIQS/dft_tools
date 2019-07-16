@@ -8,7 +8,7 @@ target_link_libraries(app4triqs_c PUBLIC triqs PRIVATE project_warnings)
 target_compile_options(app4triqs_c PUBLIC -fPIC)
 target_include_directories(app4triqs_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
 target_compile_definitions(app4triqs_c PUBLIC
-				APP4TRIQS_GIT_HASH=${APP4TRIQS_GIT_HASH}
+				APP4TRIQS_GIT_HASH=${PROJECT_GIT_HASH}
 				TRIQS_GIT_HASH=${TRIQS_GIT_HASH}
 				$<$<CONFIG:Debug>:APP4TRIQS_DEBUG>
 				$<$<CONFIG:Debug>:TRIQS_DEBUG>

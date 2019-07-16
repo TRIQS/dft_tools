@@ -35,9 +35,9 @@ find_package(TRIQS 2.2 REQUIRED)
 find_package(Cpp2Py 1.6 REQUIRED)
 
 # Get the git hash & print status
-triqs_get_git_hash_of_source_dir(CMAKE_PROJECT_GIT_HASH)
+triqs_get_git_hash_of_source_dir(PROJECT_GIT_HASH)
 message(STATUS "${PROJECT_NAME} version : ${PROJECT_VERSION}")
-message(STATUS "${PROJECT_NAME} Git hash: ${CMAKE_PROJECT_GIT_HASH}")
+message(STATUS "${PROJECT_NAME} Git hash: ${PROJECT_GIT_HASH}")
 
 # Enforce Consistent Versioning
 if(NOT ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR} VERSION_EQUAL ${TRIQS_VERSION_MAJOR}.${TRIQS_VERSION_MINOR})

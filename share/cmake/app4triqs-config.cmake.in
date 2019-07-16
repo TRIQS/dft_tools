@@ -8,7 +8,7 @@ set(APP4TRIQS_FOUND True)
 
 # version
 set(APP4TRIQS_VERSION @PROJECT_VERSION@)
-set(APP4TRIQS_GIT_HASH @APP4TRIQS_GIT_HASH@)
+set(APP4TRIQS_GIT_HASH @PROJECT_GIT_HASH@)
 
 # Root of the installation
 set(APP4TRIQS_ROOT  @CMAKE_INSTALL_PREFIX@)
@@ -16,7 +16,7 @@ set(APP4TRIQS_ROOT  @CMAKE_INSTALL_PREFIX@)
 # Include the exported targets of this project
 include(@CMAKE_INSTALL_PREFIX@/lib/cmake/app4triqs/app4triqs-targets.cmake)
 
-message(STATUS "Found app4triqs-config.cmake with version @PROJECT_VERSION@, hash = @APP4TRIQS_GIT_HASH@")
+message(STATUS "Found app4triqs-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@")
 
 # Was the Project built with Documentation?
 set(APP4TRIQS_WITH_DOCUMENTATION @Build_Documentation@)

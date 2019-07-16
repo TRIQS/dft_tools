@@ -5,7 +5,7 @@
 set     name        app4triqs
 set     version     @APP4TRIQS_VERSION@
 set     root        @CMAKE_INSTALL_PREFIX@
-set     git_hash    @APP4TRIQS_GIT_HASH@
+set     git_hash    @PROJECT_GIT_HASH@
 
 set     url         "https://github.com/TRIQS/app4triqs"
 set     description "An example application using cpp2py and triqs."
