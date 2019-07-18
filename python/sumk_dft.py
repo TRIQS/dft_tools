@@ -1401,8 +1401,10 @@ class SumkDFT(object):
         if write_to_blockstructure:
             if self.block_structure.transformation == None:
                 self.block_structure.transformation = [{} for icrsh in range(self.n_corr_shells)]
-                for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]:
-                    self.block_structure.transformation[icrsh][sp] = numpy.eye(self.corr_shells[icrsh]['dim'], self.corr_shells[icrsh]['dim'], numpy.complex_)
+                for icrsh in range(self. n_corr_shells):
+                    for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]:
+                        self.block_structure.transformation[icrsh][sp] = numpy.eye(self.corr_shells[icrsh]['dim'], dtype=numpy.complex_)
+
         
             self.block_structure.transformation[ish] = trafo
             

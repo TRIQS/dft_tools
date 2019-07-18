@@ -726,7 +726,6 @@ class BlockStructure(object):
         return self._check_gf_or_matrix(G, ish, space)
 
     def _check_gf_or_matrix(self, G, ish=None, space='solver'):
-
         if space == 'solver':
             gf_struct = self.gf_struct_solver
         elif space == 'sumk':
