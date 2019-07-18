@@ -26,7 +26,6 @@ G = SK.extract_G_loc()
 
 # the original block structure
 block_structure1 = SK.block_structure.copy()
-
 G_new = SK.analyse_block_structure_from_gf(G)
 
 # the new block structure
@@ -163,9 +162,9 @@ for conjugate in conjugate_values:
     G_new = SK.analyse_block_structure_from_gf(G, 1.e-7)
 
     # transform G_noisy etc. to the new block structure
-    G_noisy = SK.block_structure.convert_gf(G_noisy, block_structure1, beta = G_noisy.mesh.beta)
-    G_pre_transform = SK.block_structure.convert_gf(G_pre_transform, block_structure1, beta = G_noisy.mesh.beta)
-    G_noisy_pre_transform = SK.block_structure.convert_gf(G_noisy_pre_transform, block_structure1, beta = G_noisy.mesh.beta)
+    G_noisy = SK.block_structure.convert_gf(G_noisy, block_structure1, beta = G_noisy.mesh.beta, space_from='sumk')
+    G_pre_transform = SK.block_structure.convert_gf(G_pre_transform, block_structure1, beta = G_noisy.mesh.beta, space_from='sumk')
+    G_noisy_pre_transform = SK.block_structure.convert_gf(G_noisy_pre_transform, block_structure1, beta = G_noisy.mesh.beta, space_from='sumk')
 
     assert len(SK.deg_shells[0]) == 2, "wrong number of equivalent groups found"
     assert sorted([len(d) for d in SK.deg_shells[0]]) == [2,3], "wrong number of members in the equivalent groups found"
