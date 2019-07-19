@@ -38,6 +38,7 @@ import itertools as it
 import numpy as np
 from proj_group import ProjectorGroup
 from proj_shell import ProjectorShell
+from proj_shell import ComplementShell
 
 np.set_printoptions(suppress=True)
 
@@ -80,6 +81,7 @@ def check_data_consistency(pars, el_struct):
             else:
                 errmsg = "Projector for isite = %s, l = %s does not match PROJCAR"%(ion + 1, lshell)
                 raise Exception(errmsg)
+
         
 ################################################################################
 #
@@ -105,7 +107,8 @@ def generate_plo(conf_pars, el_struct):
 
 # eigvals(nktot, nband, ispin) are defined with respect to the Fermi level
     eigvals = el_struct.eigvals - efermi
-
+# check if at least one shell is correlated
+    assert np.any([shell['corr'] for shell in conf_pars.shells]), 'at least one shell has be CORR = True'
     nshell = len(conf_pars.shells)
     print
     print "  Generating %i shell%s..."%(nshell, '' if nshell == 1 else 's')
@@ -117,39 +120,58 @@ def generate_plo(conf_pars, el_struct):
         print "    Orbital l     : %i"%(pshell.lorb)
         print "    Number of ions: %i"%(pshell.nion)
         print "    Dimension     : %i"%(pshell.ndim)
+        print "    Correlated    : %r"%(pshell.corr)
         pshells.append(pshell)
 
+    
     pgroups = []
     for gr_par in conf_pars.groups:
         pgroup = ProjectorGroup(gr_par, pshells, eigvals)
         pgroup.orthogonalize()
+        if pgroup.complement:
+            pgroup.calc_complement(eigvals)
+        if conf_pars.general['hk']:
+            pgroup.calc_hk(eigvals)
+            #testout = 'hk.out.h5'
+            #from pytriqs.archive import HDFArchive
+            #with HDFArchive(testout, 'w') as h5test:
+            #    h5test['hk'] = pgroup.hk
 # DEBUG output
         print "Density matrix:"
-        dm_all, ov_all = pshells[pgroup.ishells[0]].density_matrix(el_struct)
         nimp = 0.0
-        spin_fac = 2 if dm_all.shape[0] == 1 else 1
-        for io in xrange(dm_all.shape[1]):
-            print "  Site %i"%(io + 1)
-            dm = spin_fac * dm_all[:, io, : ,:].sum(0)
-            for row in dm:
-                print ''.join(map("{0:12.7f}".format, row))
-            ndm = dm.trace()
-            nimp += ndm
-            print "    trace: ", ndm
+        ov_all = []
+        for ish in pgroup.ishells:
+            if  not isinstance(pshells[pgroup.ishells[ish]],ComplementShell):
+                print "  Shell %i"%(ish + 1)
+                dm_all, ov_all_ = pshells[ish].density_matrix(el_struct)
+                ov_all.append(ov_all_[0])
+                spin_fac = 2 if dm_all.shape[0] == 1 else 1
+                for io in xrange(dm_all.shape[1]):
+                    print "    Site %i"%(io + 1)
+                    dm = spin_fac * dm_all[:, io, : ,:].sum(0)
+                    for row in dm:
+                        print ''.join(map("{0:14.7f}".format, row))
+                    ndm = dm.trace()
+                    if pshells[ish].corr:
+                        nimp += ndm
+                    print "      trace: ", ndm
         print
         print "  Impurity density:", nimp
         print
         print "Overlap:"
-        for io, ov in enumerate(ov_all[0]):
+        for io, ov in enumerate(ov_all):
             print "  Site %i"%(io + 1)
-            print ov
+            print ov[0,...]
         print
         print "Local Hamiltonian:"
-        loc_ham = pshells[pgroup.ishells[0]].local_hamiltonian(el_struct)
-        for io in xrange(loc_ham.shape[1]):
-            print "  Site %i"%(io + 1)
-            for row in loc_ham[:, io, :, :].sum(0):
-                print ''.join(map("{0:12.7f}".format, row))
+        for ish in pgroup.ishells:
+            if  not isinstance(pshells[pgroup.ishells[ish]],ComplementShell):
+                print "  Shell %i"%(ish + 1)
+                loc_ham = pshells[pgroup.ishells[ish]].local_hamiltonian(el_struct)
+                for io in xrange(loc_ham.shape[1]):
+                    print "    Site %i"%(io + 1)
+                    for row in loc_ham[:, io, :, :].sum(0):
+                        print ''.join(map("{0:14.7f}".format, row))
 # END DEBUG output
         if 'dosmesh' in conf_pars.general:
             print
@@ -164,12 +186,15 @@ def generate_plo(conf_pars, el_struct):
             n_points = mesh_pars['n_points']
 
             emesh = np.linspace(dos_emin, dos_emax, n_points)
-            dos = pshells[pgroup.ishells[0]].density_of_states(el_struct, emesh)
-            de = emesh[1] - emesh[0]
-            ntot = (dos[1:,...] + dos[:-1,...]).sum(0) / 2 * de
-            print "  Total number of states:", ntot
-            for io in xrange(dos.shape[2]):
-                np.savetxt('pdos_%i.dat'%(io), np.vstack((emesh.T, dos[:, 0, io, :].T)).T)
+            for ish in pgroup.ishells:
+                if  not isinstance(pshells[pgroup.ishells[ish]],ComplementShell) or True:
+                    print "  Shell %i"%(ish + 1)
+                    dos = pshells[pgroup.ishells[ish]].density_of_states(el_struct, emesh)
+                    de = emesh[1] - emesh[0]
+                    ntot = (dos[1:,...] + dos[:-1,...]).sum(0) / 2 * de
+                    print "    Total number of states:", ntot
+                    for io in xrange(dos.shape[2]):
+                        np.savetxt('pdos_%i_%i.dat'%(ish,io), np.vstack((emesh.T, dos[:, 0, io, :].T)).T)
 
         pgroups.append(pgroup)
 
@@ -186,6 +211,8 @@ def output_as_text(pars, el_struct, pshells, pgroups):
     """
     ctrl_output(pars, el_struct, len(pgroups))
     plo_output(pars, el_struct, pshells, pgroups)
+    if pars.general['hk']:
+        hk_output(pars, el_struct, pgroups)
 
 
 # TODO: k-points with weights should be stored once and for all
@@ -308,8 +335,13 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
         print "  Storing PLO-group file '%s'..."%(plo_fname)
         head_dict = {}
 
-        head_dict['ewindow'] = (pgroup.emin, pgroup.emax)
+        
         head_dict['nb_max'] = pgroup.nb_max
+        
+        if 'bands' in conf_pars.groups[ig]:
+            head_dict['bandwindow'] = (pgroup.ib_min, pgroup.ib_max)
+        else:
+            head_dict['ewindow'] = (pgroup.emin, pgroup.emax)
 
 # Number of electrons within the window
         head_dict['nelect'] = pgroup.nelect_window(el_struct)
@@ -322,6 +354,7 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
             sh_dict['shell_index'] = ish
             sh_dict['lorb'] = shell.lorb
             sh_dict['ndim'] = shell.ndim
+            sh_dict['corr'] = shell.corr
 # Convert ion indices from the internal representation (starting from 0)
 # to conventional VASP representation (starting from 1)
             ion_output = [io + 1 for io in shell.ion_list]
@@ -342,7 +375,11 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
             f.write("#END OF HEADER\n")
             
 # Eigenvalues within the window
-            f.write("# Eigenvalues within the energy window: %s, %s\n"%(pgroup.emin, pgroup.emax))
+            if 'bands' in conf_pars.groups[ig]:
+                f.write("# Eigenvalues within the band window: %s, %s\n"%(pgroup.ib_min+1, pgroup.ib_max+1))
+            else:
+                f.write("# Eigenvalues within the energy window: %s, %s\n"%(pgroup.emin, pgroup.emax))
+            
             nk, nband, ns_band = el_struct.eigvals.shape
             for isp in xrange(ns_band):
                 f.write("# is = %i\n"%(isp + 1))
@@ -376,4 +413,79 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                                     f.write("{0:16.10f}{1:16.10f}\n".format(p.real, p.imag))
                                 f.write("\n")
 
+################################################################################
+#
+# plo_output
+#
+################################################################################
+def hk_output(conf_pars, el_struct, pgroups):
+    """
+    Outputs HK into text file.
 
+    Filename is defined by <basename> that is passed from config-file.
+
+    The Hk for each groups is stored in a '<basename>.hk<Ng>' file. The format is
+    similar as defined in the Hk dft_tools format, but does not store info
+    about correlated shells and irreps
+
+    nk                  # number of k-points
+    n_el                # electron density
+    n_sh                # number of total atomic shells
+    at sort l dim       # atom, sort, l, dim
+    at sort l dim       # atom, sort, l, dim
+    
+    After these header lines, the file has to contain the Hamiltonian matrix
+    in orbital space. The standard convention is that you give for each k-point
+    first the matrix of the real part, then the matrix of the imaginary part,
+    and then move on to the next k-point.
+    
+    """
+    
+
+    for ig, pgroup in enumerate(pgroups):
+        
+        hk_fname = conf_pars.general['basename'] + '.hk%i'%(ig + 1)
+        print "  Storing HK-group file '%s'..."%(hk_fname)
+
+        head_shells = []
+        for ish in pgroup.ishells:
+
+            shell = pgroup.shells[ish]
+            
+            ion_output = [io + 1 for io in shell.ion_list]
+
+            for iion in ion_output:
+                sh_dict = {}
+                sh_dict['shell_index'] = ish
+                sh_dict['lorb'] = shell.lorb
+                sh_dict['ndim'] = shell.ndim
+    # Convert ion indices from the internal representation (starting from 0)
+    # to conventional VASP representation (starting from 1)
+                
+    # Derive sorts from equivalence classes
+                sh_dict['ion_list'] = ion_output
+                sh_dict['ion_sort'] = shell.ion_sort
+            
+
+                head_shells.append(sh_dict)
+
+        with open(hk_fname, 'wt') as f:
+            # Eigenvalues within the window
+            nk, nband, ns_band = el_struct.eigvals.shape
+            f.write('%i          # number of kpoints\n'%nk)
+            f.write('{0:0.4f}      # electron density\n'.format(pgroup.nelect_window(el_struct)))
+            f.write('%i            # number of shells\n'%len(head_shells))
+            for head in head_shells:
+                f.write('%i %i %i %i      # atom sort l dim\n'%(head['ion_list'][0],head['ion_sort'][0],head['lorb'],head['ndim']))
+
+            norbs = pgroup.hk.shape[2]
+            for isp in xrange(ns_band):
+                for ik in xrange(nk):
+                    for io in xrange(norbs):
+                        for iop in xrange(norbs):
+                            f.write(" {0:14.10f}".format(pgroup.hk[isp,ik,io,iop].real))
+                        f.write("\n")
+                    for io in xrange(norbs):
+                        for iop in xrange(norbs):
+                            f.write(" {0:14.10f}".format(pgroup.hk[isp,ik,io,iop].imag))
+                        f.write("\n")

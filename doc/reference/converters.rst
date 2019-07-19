@@ -22,6 +22,12 @@ Wannier90 Converter
    :members:
    :special-members:
 
+VASP Converter
+-------------------
+.. autoclass:: triqs_dft_tools.converters.vasp_converter.VaspConverter
+   :members:
+   :special-members:
+
 Converter Tools
 ---------------
 .. autoclass:: triqs_dft_tools.converters.converter_tools.ConverterTools

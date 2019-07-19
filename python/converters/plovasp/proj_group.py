@@ -30,7 +30,7 @@ r"""
     Storage and manipulation of projector groups.
 """
 import numpy as np
-
+from proj_shell import ComplementShell
 np.set_printoptions(suppress=True)
 
 ################################################################################
@@ -62,15 +62,37 @@ class ProjectorGroup:
         self.ishells = gr_pars['shells']
         self.ortho = gr_pars['normalize']
         self.normion = gr_pars['normion']
+        self.complement = gr_pars['complement']
 
         self.shells = shells
 
 # Determine the minimum and maximum band numbers
-        ib_win, ib_min, ib_max = self.select_bands(eigvals)
+        if 'bands' in gr_pars:
+            nk, nband, ns_band = eigvals.shape
+            ib_win = np.zeros((nk, ns_band, 2), dtype=np.int32)
+            ib_win[:,:,0] = gr_pars['bands'][0]-1
+            ib_win[:,:,1] = gr_pars['bands'][1]-1
+            ib_min = gr_pars['bands'][0] - 1
+            ib_max = gr_pars['bands'][1] - 1
+            
+        else:
+            ib_win, ib_min, ib_max = self.select_bands(eigvals)
         self.ib_win = ib_win
         self.ib_min = ib_min
         self.ib_max = ib_max
         self.nb_max = ib_max - ib_min + 1
+       
+        
+        
+        if self.complement:
+            n_bands = self.ib_win[:,:,1] - self.ib_win[:,:,0]+1
+            n_orbs = sum([x.ndim for x in self.shells])
+            assert np.all( n_bands == n_bands[0,0] ), "At each band the same number of bands has to be selected for calculating the complement (to end up with an equal number of orbitals at each k-point)."
+            if n_orbs == n_bands[0,0]:
+                self.complement = False
+                print "\nWARNING: The total number of orbitals in this group is  "
+                print "equal to the number of bands. Setting COMPLEMENT to FALSE!\n"
+        
 
 # Select projectors within the energy window
         for ish in self.ishells:
@@ -155,7 +177,131 @@ class ProjectorGroup:
                         nlm = i2 - i1 + 1
                         shell = self.shells[ish]
                         shell.proj_win[ion, isp, ik, :nlm, :nb] = p_orth[i1:i2, :nb]
+                        
+                        
+################################################################################
+#
+# calc_hk
+#
+################################################################################
+    def calc_hk(self, eigvals):
+        """
+        Calculate H(k) for a group by applying the projectors P
+        to the eigenvalues eps.
+        
+        H_ij(k) = sum_l P*_il eps_l P_lj
+        
+        """
+        
+# here we abuse the get_block_matrix_map(), however, it only works
+# if self.normion is false
+        temp = self.normion
+        self.normion = False
+        block_maps, ndim = self.get_block_matrix_map()
+        self.normion = temp
 
+        _, ns, nk, _, _ = self.shells[0].proj_win.shape
+        
+        self.hk = np.zeros((ns,nk,ndim,ndim), dtype=np.complex128)
+# Note that 'ns' and 'nk' are the same for all shells
+        for isp in xrange(ns):
+            for ik in xrange(nk):
+                bmin = self.ib_win[ik, isp, 0]
+                bmax = self.ib_win[ik, isp, 1]+1
+                
+                nb = bmax - bmin 
+                p_mat = np.zeros((ndim, nb), dtype=np.complex128)
+                #print(bmin,bmax,nb)
+# Combine all projectors of the group to one block projector
+                for bl_map in block_maps:
+                    p_mat[:, :] = 0.0j  # !!! Clean-up from the last k-point and block!
+                    for ibl, block in enumerate(bl_map):
+                        i1, i2 = block['bmat_range']
+                        ish, ion = block['shell_ion']
+                        nlm = i2 - i1 + 1
+                        shell = self.shells[ish]
+                        p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
+                
+                self.hk[isp,ik,:,:] = np.dot(p_mat*eigvals[ik,bmin:bmax,isp],
+                                        p_mat.transpose().conjugate())
+
+
+################################################################################
+#
+# complement
+#
+################################################################################
+    def calc_complement(self,eigvals):
+        """
+        Calculate the complement for a group of projectors.
+            
+        This leads to quadtratic projectors P = <l|n> by using a Gram-Schmidt.
+        
+        The projector on the orthogonal complement of the existing projectors
+        {|l>} is P^u = 1 - sum_l |l><l|
+        We get candidates for complement projectors by applying P^u to a Bloch
+        state |n>: |l*> = P^u |n>. For numerical stability we select that Bloch
+        state which leads to the |l*> with the largest norm (that corresponds to
+        that Bloch state with the smallest overlap with the space spanned by {|l>})
+        We normalize |l*> and add it to {|l>}. We do so untill we have as many
+        |l> states as we have {|n>} states.
+        
+        """
+
+        print '\nCalculating complement\n'
+ 
+        block_maps, ndim = self.get_block_matrix_map()
+        _, ns, nk, _, _ = self.shells[0].proj_win.shape
+        p_mat = np.zeros((ndim, self.nb_max), dtype=np.complex128)
+        p_full = np.zeros((1,ns,nk,self.nb_max, self.nb_max), dtype=np.complex128)        
+        
+# Note that 'ns' and 'nk' are the same for all shells
+        
+            
+        for isp in xrange(ns):
+            for ik in xrange(nk):
+                bmin = self.ib_win[ik, isp, 0]
+                bmax = self.ib_win[ik, isp, 1]+1
+                
+                nb = bmax - bmin 
+# Combine all projectors of the group to one block projector
+                for bl_map in block_maps:
+                    p_mat[:, :] = 0.0j  # !!! Clean-up from the last k-point and block!
+                    for ibl, block in enumerate(bl_map):
+                        i1, i2 = block['bmat_range']
+                        ish, ion = block['shell_ion']
+                        nlm = i2 - i1 + 1
+                        shell = self.shells[ish]
+                        p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
+                orbs_done = 1*ndim
+                p_full[0,isp,ik,:ndim,:] = p_mat
+                while orbs_done < self.nb_max:
+#We calculate the overlap of all bloch states: sum_l <n|l><l|m>
+                    overlap = np.dot(p_full[0,isp,ik,:orbs_done,:].transpose().conjugate(),p_full[0,isp,ik,:orbs_done,:])
+# work is the projector onto the orthogonal complment <n| ( 1 - sum_l |l><l| ) |m>
+                    work = np.eye(self.nb_max) - overlap
+# calculate the norm of the projected bloch function
+                    norm = np.sqrt(np.sum(work*work.transpose(),axis=1))
+# select the bloch function leading to the largest norm
+                    max_ind = np.argmax(norm)
+# normalize and put it to the projectors
+                    p_full[0,isp,ik,orbs_done,:] = work[:,max_ind].conjugate()/norm[max_ind]
+
+                    orbs_done += 1
+
+        sh_pars = {}
+        sh_pars['lshell'] = -1
+        sh_pars['ions'] = {'nion':1,'ion_list':[[1]]}
+        sh_pars['user_index'] = 'complement'
+        sh_pars['corr']  = False
+        sh_pars['ib_min']  = bmin
+        sh_pars['ib_max']  = bmax
+        sh_pars['ib_win']  = self.ib_win
+        
+        self.shells.append(ComplementShell(sh_pars,p_full[:,:,:,ndim:,:],False))
+        self.ishells.append(self.ishells[-1]+1)
+                                                
+                                                
 ################################################################################
 #
 # gen_block_matrix_map

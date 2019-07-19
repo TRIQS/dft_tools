@@ -55,21 +55,25 @@ A PLOVasp input file can contain three types of sections:
 Section [General]
 """""""""""""""""
 
-The entire section is optional and it contains three parameters:
+The entire section is optional and it contains four parameters:
 
 *  **BASENAME** (string): provides a base name for output files.
    Default filenames are :file:`vasp.*`.
 *  **DOSMESH** ([float float] integer): if this parameter is given,
    the projected density of states for each projected orbital will be
-   evaluated and stored to files :file:`pdos_<n>.dat`, where `n` is the
-   orbital index. The energy
-   mesh is defined by three numbers: `EMIN`  `EMAX`  `NPOINTS`. The first two
+   evaluated and stored to files :file:`pdos_<s>_<n>.dat`, where `s` is the
+   shell index and `n` the ion index. The energy mesh is defined by three 
+   numbers: `EMIN`  `EMAX`  `NPOINTS`. The first two
    can be omitted in which case they are taken to be equal to the projector
    energy window. **Important note**: at the moment this option works
    only if the tetrahedron integration method (`ISMEAR = -4` or `-5`)
    is used in VASP to produce `LOCPROJ`.
 *  **EFERMI** (float): provides the Fermi level. This value overrides
    the one extracted from VASP output files.
+*  **HK** (True/False): If True, the projectors are applied the the Kohn-Sham
+   eigenvalues which results in a Hamitlonian H(k) in orbital basis. The H(k)
+   is written for each group to a file :file:`Basename.hk<Ng>`. It is recommended
+   to also set `COMPLEMENT = True` (see below). Default is False.
 
 There are no required parameters in this section.
 
@@ -94,6 +98,8 @@ given by `LSHELL` must be present in the LOCPROJ file.
 There are additional optional parameters that allow one to transform
 the local states:
 
+*  **CORR** (True/False): Determines if shell is correlated or not. At least one
+   shell has to be correlated. Default is True.
 *  **TRANSFORM** (matrix): local transformation matrix applied to all states
    in the projector shell. The matrix is defined by a (multiline) block
    of floats, with each line corresponding to a row. The number of columns
@@ -131,6 +137,13 @@ Optional group parameters:
    condition will be enforced on each site separately but the Wannier functions
    on different sites will not be orthogonal. If `NORMION = False`, the Wannier functions
    on different sites included in the group will be orthogonal to each other.
+*  **BANDS** (int int): the energy window specified by two ints: band index of 
+   lowest band and band index of highest band. Using this overrides the selection
+   in `EWINDOW`. 
+*  **COMPLEMENT** (True/False). If True, the orthogonal complement is calculated 
+   resulting in unitary (quadratic) projectors, i.e., the same number of orbitals
+   as bands. It is required to have an equal number of bands in the energy window
+   at each k-point. Default is False.
 
 
 .. _transformation_file:

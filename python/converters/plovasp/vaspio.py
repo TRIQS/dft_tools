@@ -350,7 +350,7 @@ class Poscar:
         """
 # Convenince local function
         def readline_remove_comments():
-            return f.next().split('!')[0].strip()
+            return f.next().split('!')[0].split('#')[0].strip()
 
 # Add a slash to the path name if necessary
         if vasp_dir[-1] != '/':

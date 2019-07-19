@@ -5,9 +5,7 @@ Interface with VASP
 ===================
 
 .. warning::
-  The VASP interface is in the alpha-version and the VASP part of it is not
-  yet publicly released. The documentation may, thus, be subject to changes
-  before the final release.
+  The VASP interface is in the alpha-version. The documentation may, thus, be subject to changes before the final release.
 
 *Limitations of the alpha-version:*
 
@@ -26,7 +24,8 @@ in the :ref:`PLOVasp User's Guide <plovasp>`. Here, a quick-start guide is prese
 
 The VASP interface relies on new options introduced since version
 5.4.x. In particular, a new INCAR-option `LOCPROJ`
-and new `LORBIT` modes 13 and 14 have been added.
+and new `LORBIT` modes 13 and 14 have been added as well as the new ICHARG
+mode 5 for charge self-consistent calculations
 
 Option `LOCPROJ` selects a set of localized projectors that will
 be written to file `LOCPROJ` after a successful VASP run.
@@ -41,7 +40,7 @@ with the indices corresponding to the site position in the POSCAR file;
 `<projector type>` chooses a particular type of the local basis function.
 The recommended projector type is `Pr 2`. The formalism for this type
 of projectors is presented in
-`M. Schüler et al. 2018 J. Phys.: Condens. Matter 30 475901 <https://doi.org/10.1088/1361-648X/aae80a>`_.
+`M. Schüler et al. 2018 J. Phys.: Condens. Matter 30 475901 <https://doi.org/10.1088/1361-648X/aae80a>`_. For details on `LOCPROJ` also have a look in the `VASP wiki <https://cms.mpi.univie.ac.at/wiki/index.php/LOCPROJ>`_
 
 The allowed labels of the local states defined in terms of cubic
 harmonics are:

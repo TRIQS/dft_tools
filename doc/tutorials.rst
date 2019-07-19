@@ -23,3 +23,12 @@ Full charge self consistency with Wien2k: :math:`\gamma`-Ce
 
    tutorials/ce-gamma-fscs_wien2k
 
+A full example with VASP: NiO
+-----------------------------------------------------------
+
+.. toctree::
+   :maxdepth: 2
+
+
+   tutorials/nio_csc
+

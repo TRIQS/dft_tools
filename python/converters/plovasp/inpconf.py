@@ -84,7 +84,8 @@ class ConfigParameters:
 
         self.sh_optional = {
             'transform': ('tmatrix', lambda s: self.parse_string_tmatrix(s, real=True)),
-            'transfile': ('tmatrices', self.parse_file_tmatrix)}
+            'transfile': ('tmatrices', self.parse_file_tmatrix),
+            'corr': ('corr', self.parse_string_logical, True)}
 
         self.gr_required = {
             'shells': ('shells', lambda s: map(int, s.split())),
@@ -92,12 +93,16 @@ class ConfigParameters:
 
         self.gr_optional = {
             'normalize' : ('normalize', self.parse_string_logical, True),
-            'normion' : ('normion', self.parse_string_logical, True)}
+            'normion' : ('normion', self.parse_string_logical, True),
+            'complement' : ('complement', self.parse_string_logical, False),
+            'bands': ('bands', self.parse_band_window)}
+
 
         self.gen_optional = {
             'basename' : ('basename', str, 'vasp'),
             'efermi' : ('efermi', float),
-            'dosmesh': ('dosmesh', self.parse_string_dosmesh)}
+            'dosmesh': ('dosmesh', self.parse_string_dosmesh),
+            'hk': ('hk', self.parse_string_logical, False)}
 
 #
 # Special parsers
@@ -203,6 +208,21 @@ class ConfigParameters:
         ftmp = map(float, par_str.split())
         assert len(ftmp) == 2, "EWINDOW must be specified by exactly two floats"
         assert ftmp[0] < ftmp[1], "The first float in EWINDOW must be smaller than the second one"
+        return tuple(ftmp)
+
+################################################################################
+#
+# parse_band_window()
+#
+################################################################################
+    def parse_band_window(self, par_str):
+        """
+        Band window is given by two ints, with the first one being smaller
+        than the second one.
+        """
+        ftmp = map(int, par_str.split())
+        assert len(ftmp) == 2, "BANDS must be specified by exactly two ints"
+        assert ftmp[0] < ftmp[1], "The first int in BANDS must be smaller than the second one"
         return tuple(ftmp)
 
 ################################################################################

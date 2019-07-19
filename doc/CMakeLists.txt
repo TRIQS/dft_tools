@@ -18,6 +18,6 @@ add_custom_target(doc_sphinx ALL DEPENDS ${sphinx_top} ${CMAKE_CURRENT_BINARY_DI
 # ---------------------------------
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/ COMPONENT documentation DESTINATION share/doc/triqs_dft_tools
  FILES_MATCHING
- REGEX "\\.(html|pdf|png|gif|jpg|js|xsl|css|py|txt|inv|bib)$"
+ REGEX "\\.(html|pdf|png|gif|jpg|js|xsl|css|py|txt|inv|bib|cfg)$"
  PATTERN "_*"
  )
