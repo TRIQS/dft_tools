@@ -11,7 +11,7 @@ from triqs_cthyb import *
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-filename = 'vasp'
+filename = 'nio'
 SK = SumkDFT(hdf_file = filename+'.h5', use_dft_blocks = False)
 
 beta = 5.0

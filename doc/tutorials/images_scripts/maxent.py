@@ -2,7 +2,7 @@ from pytriqs.gf import *
 from pytriqs.archive import *
 from triqs_maxent import *
 
-filename = 'vasp'
+filename = 'nio'
 
 ar = HDFArchive(filename+'.h5','a')
 if 'iteration_count' in ar['DMFT_results']:

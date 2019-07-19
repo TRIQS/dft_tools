@@ -3,7 +3,8 @@
 DFT and projections
 ==================================================
 
-We will perform charge self-consitent DFT+DMFT calcluations for the charge-transfer insulator NiO. We start from scratch and provide all necessary input files to do the calculations: First for doing a single-shot calculation and then for charge-selfconsistency.
+We will perform DFT+DMFT calcluations for the charge-transfer insulator NiO. We start from scratch and provide all necessary input files to do the calculations: First for doing a single-shot calculation.
+.. (and then for charge-selfconsistency).
 
 VASP setup
 -------------------------------
@@ -62,7 +63,7 @@ For sensible results run this script in parallel on at least 20 cores. As a quic
 
 Local lattice Green's function for all projected orbitals
 ----------------------
-We calculate the local lattice Green's function - now also for the uncorrelated orbitals, i.e., the O p states, for what we use the script :ref:`NiO_local_lattice_GF.py`. The result is saved in the h5 file as `G_latt_orb_it<n_it>`, where `n_it>` is the number of the last DMFT iteration.
+We calculate the local lattice Green's function - now also for the uncorrelated orbitals, i.e., the O p states, for what we use the script :ref:`NiO_local_lattice_GF.py`. The result is saved in the h5 file as `G_latt_orb_it<n_it>`, where `<n_it>` is the number of the last DMFT iteration.
 
 Spectral function on real axis: MaxEnt
 ----------------------
@@ -72,3 +73,27 @@ To compare to results from literature we make use of the `maxent triqs applicati
 .. image:: images_scripts/nio_Aw.png
     :width: 400
     :align: center
+
+.. Charge self-consistent DMFT
+.. ==================================================
+
+
+.. In this part we will perform charge self-consistent DMFT calculations. To do so we have to adapt the VASP `INCAR` such that :program:`VASP` reads the updated charge density after each step. We add the lines
+
+..   ICHARG = 5
+..   NELM = 1000
+..   NELMIN = 1000
+
+.. which makes VASP wait after each step of its iterative diagonalization until the file vasp.lock is created. It then reads the update of the charge density in the file `GAMMA`. It is terminated by an external script after a desired amount of steps, such that we deactivate all automatic stoping criterion by setting the number of steps to a very high number.
+
+.. We take the respective converged DFT and DMFT calculations from before as a starting point. I.e., we copy the `CHGCAR` and `nio.h5` together with the other :program:`VASP` input files and :file:`plo.cfg` in a new directory. We use a script called :program:`vasp_dmft` to invoke :program:`VASP` in the background and start the DMFT calculation together with :program:`plovasp` and the converter. This script assumes that the dmft sript contains a function `dmft_cycle()` and also the conversion from text files to the h5 file. Additionally we have to add a few lines to calculate the density correction and calculate the correlation energy. We adapt the script straightforardly and call it :ref:`nio_csc.py`. The most important new lines are
+
+..  SK.chemical_potential = SK.calc_mu( precision = 0.000001 )
+..  SK.calc_density_correction(dm_type='vasp')
+..  correnerg = 0.5 * (S.G_iw * S.Sigma_iw).total_density()
+
+.. where the chemical potential is determined to a greater precision than before, the correction to the dft density matrix is calculated and output to the file :file:`GAMMA`. The correlation energy is calculated via Migdal-Galitzki formula. We also slightly increase the tolerance for the detection of blocks since the DFT calculation now includes some QMC noise.
+
+.. We can start the whole machinery by excectuing
+
+..  vasp_dmft -n <n_procs> -i <n_iters> -p <vasp_exec>  nio_csc.py
