@@ -15,5 +15,6 @@ endforeach()
 
 # Install python module to proper location
 set(PYTHON_LIB_DEST ${TRIQS_PYTHON_LIB_DEST_ROOT}/app4triqs)
-install(TARGETS toto_module DESTINATION ${PYTHON_LIB_DEST})
+get_property(CPP2PY_MODULES_LIST GLOBAL PROPERTY CPP2PY_MODULES_LIST)
+install(TARGETS ${CPP2PY_MODULES_LIST} DESTINATION ${PYTHON_LIB_DEST})
 install(FILES ${python_sources} ${CMAKE_CURRENT_BINARY_DIR}/version.py DESTINATION ${PYTHON_LIB_DEST})
