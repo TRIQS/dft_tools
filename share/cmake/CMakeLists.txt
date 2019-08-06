@@ -7,4 +7,4 @@ install(
   DESTINATION lib/cmake/app4triqs
 )
 
-install(EXPORT app4triqs-targets DESTINATION lib/cmake/app4triqs)
+install(EXPORT app4triqs-targets NAMESPACE app4triqs:: DESTINATION lib/cmake/app4triqs)
