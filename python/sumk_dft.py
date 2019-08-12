@@ -1345,7 +1345,7 @@ class SumkDFT(object):
         calc_in_solver_blocks : bool, optional
                                 Whether the property shall be diagonalized in the
                                 full sumk structure, or just in the solver structure.
-                                
+
         write_to_blockstructure : bool, optional
                                 Whether the diagonalization matrix shall be written to
                                 the BlockStructure directly.
@@ -1359,8 +1359,8 @@ class SumkDFT(object):
 
         """
         trafo = {}
-        
-        
+
+
         if prop_to_be_diagonal == 'eal':
             prop = self.eff_atomic_levels()[ish]
         elif prop_to_be_diagonal == 'dm':
@@ -1393,7 +1393,7 @@ class SumkDFT(object):
         # measure for the 'unity' of the transformation:
         #wsqr = sum(abs(self.w.diagonal())**2) / self.w.diagonal().size
         #return wsqr
-        
+
         if write_to_blockstructure:
             if self.block_structure.transformation == None:
                 self.block_structure.transformation = [{} for icrsh in range(self.n_corr_shells)]
@@ -1401,11 +1401,11 @@ class SumkDFT(object):
                     for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]:
                         self.block_structure.transformation[icrsh][sp] = numpy.eye(self.corr_shells[icrsh]['dim'], dtype=numpy.complex_)
 
-        
+
             self.block_structure.transformation[ish] = trafo
-            
+
         return trafo
-        
+
 
     def density_matrix(self, method='using_gf', beta=40.0):
         """Calculate density matrices in one of two ways.
@@ -1884,10 +1884,10 @@ class SumkDFT(object):
         # collect data from mpi:
         dens = mpi.all_reduce(mpi.world, dens, lambda x, y: x + y)
         mpi.barrier()
-        import numpy as np
-        if np.abs(np.imag(dens)) > 1e-20:
-            mpi.report("Warning: Imaginary part in density will be ignored ({})".format(str(np.abs(np.imag(dens)))))
-        return np.real(dens)
+
+        if abs(dens.imag) > 1e-20:
+            mpi.report("Warning: Imaginary part in density will be ignored ({})".format(str(abs(dens.imag))))
+        return dens.real
 
     def set_mu(self, mu):
         r"""
