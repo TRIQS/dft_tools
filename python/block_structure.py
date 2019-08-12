@@ -90,7 +90,7 @@ class BlockStructure(object):
         inequivalent correlated shell is given
     transformation : list of numpy.array or list of dict
         a list with entries for each ``ish`` giving transformation matrices
-        that are used on the Green's function in ``sumk`` space when before
+        that are used on the Green's function in ``sumk`` space before
         converting to the ``solver`` space
         Up to the change in block structure,
 

@@ -1330,7 +1330,7 @@ class SumkDFT(object):
                         # a block was found, break out of the loop
                         break
     
-    def calculate_diagonalization_matrix(self, prop_to_be_diagonal='eal', calc_in_solver_blocks=False, write_to_blockstructure = True, ish=0):
+    def calculate_diagonalization_matrix(self, prop_to_be_diagonal='eal', calc_in_solver_blocks=False, write_to_blockstructure = True, shells=None):
         """
         Calculates the diagonalisation matrix, and (optionally) stores it in the BlockStructure.
 
@@ -1349,62 +1349,57 @@ class SumkDFT(object):
         write_to_blockstructure : bool, optional
                                 Whether the diagonalization matrix shall be written to
                                 the BlockStructure directly.
-        ish : int, optional
-              Number of the correlated shell to be diagonalized.
+        shells : list of int, optional
+              Indices of correlated shells to be diagonalized.
+              None: all shells
 
         Returns
         -------
         trafo : dict
                The transformation matrix for each spin-block in the correlated shell
-
         """
-        trafo = {}
 
-
-        if prop_to_be_diagonal == 'eal':
-            prop = self.eff_atomic_levels()[ish]
-        elif prop_to_be_diagonal == 'dm':
-            prop = self.density_matrix(method='using_point_integration')[ish]
-        else:
-            mpi.report(
-                "calculate_diagonalization_matrix: not a valid quantitiy to be diagonal. Choices are 'eal' or 'dm'.")
+        # Use all shells
+        if shells is None:
+            shells = range(self.n_corr_shells)
+        elif max(shells) >= self.n_corr_shells: # Check if the shell indices are present
+            mpi.report("calculate_diagonalization_matrix: shells not correct.")
             return 0
 
-        if calc_in_solver_blocks:
-            trafo_tmp = self.block_structure.transformation
-            self.block_structure.transformation = None
-
-            prop_solver = self.block_structure.convert_matrix(prop, space_from='sumk', space_to='solver')
-            t= {}
-            for name in prop_solver:
-                t[name] = numpy.linalg.eigh(prop_solver[name])[1].conjugate().transpose()
-            trafo = self.block_structure.convert_matrix(t, space_from='solver', space_to='sumk')
-            #self.T = numpy.dot(self.T.transpose().conjugate(),
-             #                  self.w).conjugate().transpose()
-            self.block_structure.transformation = trafo_tmp
+        if prop_to_be_diagonal == 'eal':
+            prop = [self.eff_atomic_levels()[self.corr_to_inequiv[ish]]
+                    for ish in range(self.n_corr_shells)]
+        elif prop_to_be_diagonal == 'dm':
+            prop = self.density_matrix(method='using_point_integration')
         else:
-            for name in prop:
-                t = numpy.linalg.eigh(prop[name])[1].conjugate().transpose()
-                trafo[name] = t
-                # calculate new Transformation matrix
-                #self.T = numpy.dot(self.T.transpose().conjugate(),
-                #                   self.w).conjugate().transpose()
+            mpi.report(
+                "calculate_diagonalization_matrix: Choices for prop_to_be_diagonal are 'eal' or 'dm'.")
+            return 0
 
-        # measure for the 'unity' of the transformation:
-        #wsqr = sum(abs(self.w.diagonal())**2) / self.w.diagonal().size
-        #return wsqr
+        trans = [{block: numpy.eye(len(indices)) for block, indices in gfs} for gfs in self.gf_struct_sumk]
+
+        for ish in shells:
+            trafo = {}
+            # Transform to solver basis if desired, blocks of prop change in this step!
+            if calc_in_solver_blocks:
+                prop[ish] = self.block_structure.convert_matrix(prop[ish], space_from='sumk', space_to='solver')
+            # Get diagonalisation matrix, if not already diagonal
+            for name in prop[ish]:
+                if abs(numpy.sum(prop[ish][name]-numpy.diag(numpy.diagonal(prop[ish][name])))) > 1e-13:
+                    trafo[name] = numpy.linalg.eigh(prop[ish][name])[1].conj().T
+                else:
+                    trafo[name] = numpy.identity(numpy.shape(prop[ish][name])[0])
+            # Transform back to sumk if necessay, blocks change in this step!
+            if calc_in_solver_blocks:
+                trafo = self.block_structure.convert_matrix(trafo, space_from='solver', space_to='sumk')
+            trans[ish] = trafo
+
+        # Write to block_structure object
 
         if write_to_blockstructure:
-            if self.block_structure.transformation == None:
-                self.block_structure.transformation = [{} for icrsh in range(self.n_corr_shells)]
-                for icrsh in range(self. n_corr_shells):
-                    for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]:
-                        self.block_structure.transformation[icrsh][sp] = numpy.eye(self.corr_shells[icrsh]['dim'], dtype=numpy.complex_)
+            self.block_structure.transformation = trans
 
-
-            self.block_structure.transformation[ish] = trafo
-
-        return trafo
+        return trans
 
 
     def density_matrix(self, method='using_gf', beta=40.0):
