@@ -1723,7 +1723,9 @@ class SumkDFT(object):
         dens = mpi.all_reduce(mpi.world, dens, lambda x, y: x + y)
         mpi.barrier()
 
-        return dens
+        if abs(dens.imag) > 1e-20:
+            mpi.report("Warning: Imaginary part in density will be ignored ({})".format(str(abs(dens.imag))))
+        return dens.real
 
     def set_mu(self, mu):
         r"""
