@@ -1088,7 +1088,7 @@ class SumkDFT(object):
                 full_structure, ish, mesh=G[ish].mesh.copy(), show_warnings=threshold,
                 gf_function=type(G[ish]._first()), space_from='sumk', space_to='solver')
             for ish in range(self.n_inequiv_shells)]
-        #print 'c'
+
         if analyse_deg_shells:
             self.analyse_deg_shells(G_transformed, threshold, include_shells)
         return G_transformed
@@ -1358,6 +1358,11 @@ class SumkDFT(object):
         trafo : dict
                The transformation matrix for each spin-block in the correlated shell
         """
+
+        if self.block_structure.transformation:
+            mpi.report(
+                    "calculate_diagonalization_matrix: requires block_structure.transformation = None.")
+            return 0
 
         # Use all shells
         if shells is None:
