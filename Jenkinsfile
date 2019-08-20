@@ -11,12 +11,12 @@ def keepInstall = !env.BRANCH_NAME.startsWith("PR-")
 properties([
   disableConcurrentBuilds(),
   buildDiscarder(logRotator(numToKeepStr: '10', daysToKeepStr: '30')),
-  pipelineTriggers([
+  pipelineTriggers(keepInstall ? [
     upstream(
       threshold: 'SUCCESS',
       upstreamProjects: triqsProject
     )
-  ])
+  ] : [])
 ])
 
 /* map of all builds to run, populated below */
