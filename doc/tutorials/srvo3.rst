@@ -35,20 +35,24 @@ This is setting up a non-magnetic calculation, using the LDA and 5000 k-points i
 Wannier orbitals
 ----------------
 
-As a next step, we calculate localised orbitals for the t2g orbitals. We use the same input file for :program:`dmftproj` as it was used in the :ref:`documentation`:
+As a next step, we calculate localised orbitals for the t2g orbitals with :program:`dmftproj`.
+We create the following input file, :file:`SrVO3.indmftpr`
 
 .. literalinclude:: images_scripts/SrVO3.indmftpr
 
-To prepare the input data for :program:`dmftproj` we execute lapw2 with the `-almd` option ::
+Details on this input file and how to use :program:`dmftproj` are described :ref:`here <convWien2k>`.
+
+To prepare the input data for :program:`dmftproj` we first execute lapw2 with the `-almd` option ::
    
    x lapw2 -almd 
 
-Then  :program:`dmftproj` is executed in its default mode (i.e. without spin-polarization or spin-orbit included) ::
+Then :program:`dmftproj` is executed in its default mode (i.e. without spin-polarization or spin-orbit included) ::
 
    dmftproj 
 
 This program produces the necessary files for the conversion to the hdf5 file structure. This is done using
-the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.Wien2kConverter>`. A simple python script that initialises the converter is::
+the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.Wien2kConverter>`.
+A simple python script that initialises the converter is::
 
   from triqs_dft_tools.converters.wien2k_converter import *
   Converter = Wien2kConverter(filename = "SrVO3")

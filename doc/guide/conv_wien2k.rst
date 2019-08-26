@@ -26,21 +26,20 @@ The orbital construction itself is done by the Fortran program
 :download:`TutorialDmftproj.pdf <images_scripts/TutorialDmftproj.pdf>`.
 Here we will only describe the basic steps.
 
-Let us take the compound SrVO3, a commonly used
-example for DFT+DMFT calculations. The input file for
-:program:`dmftproj` looks like
+In the following, we use SrVO3 as an example to explain the
+input file :file:`case.indmftpr` for :program:`dmftproj`.
+A full tutorial on SrVO3 is available in the :ref:`SrVO3 tutorial <SrVO3>`.
 
-.. literalinclude:: images_scripts/SrVO3.indmftpr
+.. literalinclude:: ../tutorials/images_scripts/SrVO3.indmftpr
 
 The first three lines give the number of inequivalent sites, their
 multiplicity (to be in accordance with the Wien2k *struct* file) and
 the maximum orbital quantum number :math:`l_{max}`. In our case our
 struct file contains the atoms in the order Sr, V, O.
 
-Next we have to
-specify for each of the inequivalent sites, whether we want to treat
-their orbitals as correlated or not. This information is given by the
-following 3 to 5 lines:
+Next we have to specify for each of the inequivalent sites, whether
+we want to treat their orbitals as correlated or not. This information
+is given by the following 3 to 5 lines:
 
 #. We specify which basis set is used (complex or cubic
    harmonics).
@@ -73,7 +72,7 @@ The last line gives the energy window, relative to the Fermi energy,
 that is used for the projective Wannier functions. Note that, in
 accordance with Wien2k, we give energies in Rydberg units!
 
-After setting up this input file, you run:
+After setting up the :file:`case.indmftpr` input file, you run:
 
   `dmftproj`
 
@@ -102,10 +101,9 @@ use the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.W
 
 The only necessary parameter to this construction is the parameter `filename`.
 It has to be the root of the files produces by dmftproj. For our
-example, the :program:`Wien2k` naming convention is that all files are
-called the same, for instance
-:file:`SrVO3.*`, so you would give `filename = "SrVO3"`. The constructor opens
-an hdf5 archive, named :file:`case.h5`, where all the data is
+example, the :program:`Wien2k` naming convention is that all files have the
+same name, but different extensions, :file:`case.*`. The constructor opens
+an hdf5 archive, named :file:`case.h5`, where all relevant data will be
 stored. For other parameters of the constructor please visit the
 :ref:`refconverters` section of the reference manual.
 
@@ -116,8 +114,7 @@ text files to the hdf5 archive by::
 
 This reads all the data, and stores it in the file :file:`case.h5`.
 In this step, the files :file:`case.ctqmcout` and
-:file:`case.symqmc`
-have to be present in the working directory.
+:file:`case.symqmc` have to be present in the working directory.
 
 After this step, all the necessary information for the DMFT loop is
 stored in the hdf5 archive, where the string variable
