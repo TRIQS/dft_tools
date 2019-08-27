@@ -92,10 +92,11 @@ try {
   parallel platforms
   if (keepInstall) { node("docker") {
     /* Publish results */
-    stage("publish") { timeout(time: 1, unit: 'HOURS') {
+    stage("publish") { timeout(time: 5, unit: 'MINUTES') {
       def commit = sh(returnStdout: true, script: "git rev-parse HEAD").trim()
       def release = env.BRANCH_NAME == "master" || env.BRANCH_NAME == "unstable" || sh(returnStdout: true, script: "git describe --exact-match HEAD || true").trim()
       def workDir = pwd()
+      lock('triqs_publish') {
       /* Update documention on gh-pages branch */
       dir("$workDir/gh-pages") {
         def subdir = "${projectName}/${env.BRANCH_NAME}"
@@ -109,7 +110,7 @@ try {
           git commit --author='Flatiron Jenkins <jenkins@flatironinstitute.org>' --allow-empty -m 'Generated documentation for ${subdir}' -m '${env.BUILD_TAG} ${commit}'
         """
         // note: credentials used above don't work (need JENKINS-28335)
-        sh "git push origin master || { git pull --rebase origin master && git push origin master ; }"
+        sh "git push origin master"
       }
       /* Update packaging repo submodule */
       if (release) { dir("$workDir/packaging") { try {
@@ -120,12 +121,13 @@ try {
           [[ -d triqs_\$dir ]] && dir=triqs_\$dir || [[ -d \$dir ]]
           echo "160000 commit ${commit}\t\$dir" | git update-index --index-info
           git commit --author='Flatiron Jenkins <jenkins@flatironinstitute.org>' -m 'Autoupdate ${projectName}' -m '${env.BUILD_TAG}'
-          git push origin ${env.BRANCH_NAME} || { git pull --rebase origin ${env.BRANCH_NAME} && git push origin ${env.BRANCH_NAME} ; }
+          git push origin ${env.BRANCH_NAME}
         """
       } catch (err) {
         /* Ignore, non-critical -- might not exist on this branch */
         echo "Failed to update packaging repo"
       } } }
+      }
     } }
   } }
 } catch (err) {
