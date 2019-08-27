@@ -4,7 +4,7 @@ sudo: required
 dist: xenial
 
 compiler:
-  - gcc
+  #- gcc
   - clang
 
 before_install:
