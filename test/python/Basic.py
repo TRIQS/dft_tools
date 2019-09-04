@@ -2,7 +2,7 @@
 
 import unittest
 
-from app4triqs import Toto
+from app4triqs import Toto, chain
 from pytriqs.archive import *
 from pytriqs.utility import mpi
 
@@ -37,6 +37,14 @@ class test_toto(unittest.TestCase):
 
         self.assertEqual(a, Toto(1))
 
+class test_chain(unittest.TestCase):
+
+    def test_chain(self):
+
+        i = 111
+        j = 222
+        ij = chain(i,j)
+        self.assertEqual(ij, 111222)
 
 if __name__ == '__main__':
     unittest.main()

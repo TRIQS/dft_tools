@@ -1,15 +1,14 @@
 # Generated automatically using the command :
-# c++2py ../../c++/app4triqs/toto.hpp -p --members_read_only -N app4triqs -a app4triqs -m toto_module -o toto_module -C pytriqs --cxxflags="-std=c++17 "
+# c++2py ../../c++/app4triqs/app4triqs.hpp -p --members_read_only -N app4triqs -a app4triqs -m app4triqs_module -o app4triqs_module -C pytriqs --cxxflags="-std=c++17 "
 from cpp2py.wrap_generator import *
 
 # The module
-module = module_(full_name = "toto_module", doc = "", app_name = "app4triqs")
+module = module_(full_name = "app4triqs_module", doc = r"", app_name = "app4triqs")
 
 # Imports
-module.add_imports(*[])
 
 # Add here all includes
-module.add_include("app4triqs/toto.hpp")
+module.add_include("app4triqs/app4triqs.hpp")
 
 # Add here anything to add in the C++ code at the start, e.g. namespace using
 module.add_preamble("""
@@ -54,13 +53,11 @@ c.add_method("""std::string hdf5_scheme ()""",
 
 c.add_property(name = "i",
                getter = cfunction("int get_i ()"),
-               doc = """Simple accessor""")
+               doc = r"""Simple accessor""")
 
 module.add_class(c)
 
 module.add_function ("int app4triqs::chain (int i, int j)", doc = r"""Chain digits of two integers
-
- Chain the decimal digits of two integers i and j, and return the result
 
 Parameters
 ----------

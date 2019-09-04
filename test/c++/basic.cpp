@@ -1,5 +1,5 @@
 #include <triqs/test_tools/gfs.hpp>
-#include <app4triqs/toto.hpp>
+#include <app4triqs/app4triqs.hpp>
 
 using namespace app4triqs;
 

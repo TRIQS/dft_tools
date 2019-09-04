@@ -7,6 +7,7 @@ namespace app4triqs {
    * A very useful and important class
    *
    * @note A Useful note
+   * @include app4triqs/app4triqs.hpp
    */
   class toto {
 
@@ -73,26 +74,5 @@ namespace app4triqs {
    * @remark
    */
   int chain(int i, int j);
- 
-  /**
-   * Chain digits of three integers
-   *
-   * @param i The first integer
-   * @param j The second integer
-   * @param k The third integer
-   * @return An integer containing the digits of both i and j
-   *
-   * @remark
-   */
-  int chain(int i, int j, int k);
-
-  /**
-   * Chain digits of one integers
-   *
-   * @param i The first integer
-   *
-   * @remark
-   */
-  int chain(int i);
 
 } // namespace app4triqs

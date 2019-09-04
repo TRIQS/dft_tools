@@ -36,8 +36,7 @@ Python reference manual
 .. automodule:: app4triqs 
    :members:
 
-.. autoclass:: app4triqs.toto_module.Toto
+.. autoclass:: app4triqs.app4triqs_module.Toto
    :members:
 
-.. autofunction:: app4triqs.toto_module.chain
-      
+.. autofunction:: app4triqs.app4triqs_module.chain
