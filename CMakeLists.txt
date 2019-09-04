@@ -82,6 +82,7 @@ target_compile_options(project_warnings
     -Wshadow
     -Wpedantic
     -Wno-sign-compare
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
 )
 
 # #############
