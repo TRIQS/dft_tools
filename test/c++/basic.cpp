@@ -28,5 +28,3 @@ TEST(Toto, H5) { // NOLINT
 
   EXPECT_EQ(a, a2); // NOLINT
 }
-
-MAKE_MAIN; // NOLINT
