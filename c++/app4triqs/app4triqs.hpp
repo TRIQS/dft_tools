@@ -34,7 +34,7 @@ namespace app4triqs {
     toto &operator=(toto &&) = default;
 
     /// Simple accessor
-    int get_i() const { return i; }
+    [[nodiscard]] int get_i() const { return i; }
 
     /** 
      * A simple function with :math:`G(\tau)`
