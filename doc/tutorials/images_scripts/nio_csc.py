@@ -105,7 +105,7 @@ def dmft_cycle():
         ar['DMFT_input']['code_versions']["cthyb_version"] = cthyb_version.version
         ar['DMFT_input']['code_versions']["cthyb_git"] = cthyb_version.cthyb_hash
         ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.version
-        ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.dft_tools_hash
+        ar['DMFT_input']['code_versions']["dft_tools_git"] = dft_tools_version.dft_tools_hash
         if 'iteration_count' in ar['DMFT_results']: 
             iteration_offset = ar['DMFT_results']['iteration_count']+1
             S.Sigma_iw = ar['DMFT_results']['Iterations']['Sigma_it'+str(iteration_offset-1)]

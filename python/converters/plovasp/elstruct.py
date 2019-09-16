@@ -140,6 +140,7 @@ class ElectronicStructure:
         ions = sorted(list(set([param['isite'] for param in self.proj_params])))
         nions = len(ions)
         norb = nproj / nions
+        print nproj, ns, nk, nb, ions, nions, norb
 
 # Spin factor
         sp_fac = 2.0 if ns == 1 and not self.nc_flag else 1.0
@@ -162,12 +163,15 @@ class ElectronicStructure:
         for ispin in xrange(ns):
             print
             print "  Spin:", ispin + 1
+            print self.proj_params
             for io, ion in enumerate(ions):
                 print "  Site:", ion
                 iorb_inds = [(ip, param['m']) for ip, param in enumerate(self.proj_params) if param['isite'] == ion]
+                print iorb_inds
                 norb = len(iorb_inds)
-                dm = np.zeros((norb, norb))
-                ov = np.zeros((norb, norb))
+                norb2 = self.proj_params[0]['l']*2+1
+                dm = np.zeros((norb2, norb2))
+                ov = np.zeros((norb2, norb2))
                 for ind, iorb in iorb_inds:
                     for ind2, iorb2 in iorb_inds:
                         dm[iorb, iorb2] = den_mat[ispin, ind, ind2]
