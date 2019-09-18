@@ -85,10 +85,6 @@ target_compile_options(project_warnings
 )
 
 # #############
-# Load non-TRIQS Dependencies
-
-
-# #############
 # Build Project
 
 # Build and install the app4triqs library
