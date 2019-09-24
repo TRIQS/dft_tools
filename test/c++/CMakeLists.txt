@@ -27,7 +27,7 @@ foreach(test ${all_tests})
       TARGET ${test_name}
       COMMAND ${CPPCHECK_EXECUTABLE}
       --enable=warning,style,performance,portability
-      --std=c++14
+      --std=c++17
       --template=gcc
       --verbose
       --quiet
