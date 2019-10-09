@@ -3,7 +3,7 @@
 from cpp2py.wrap_generator import *
 
 # The module
-module = module_(full_name = "app4triqs_module", doc = r"", app_name = "app4triqs")
+module = module_(full_name = "app4triqs_module", doc = r"The app4triqs python module", app_name = "app4triqs")
 
 # Imports
 
