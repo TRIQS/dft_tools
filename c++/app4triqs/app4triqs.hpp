@@ -71,7 +71,6 @@ namespace app4triqs {
    * @param j The second integer
    * @return An integer containing the digits of both i and j
    *
-   * @remark
    */
   int chain(int i, int j);
 
