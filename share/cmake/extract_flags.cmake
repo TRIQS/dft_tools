@@ -64,6 +64,6 @@ macro(extract_flags target)
   # We have to replace generator expressions explicitly
   string(REGEX REPLACE "\\$<INSTALL_INTERFACE:([^ ]*)>" "\\1" ${target}_LDFLAGS "${${target}_LDFLAGS}")
   string(REGEX REPLACE "\\$<INSTALL_INTERFACE:([^ ]*)>" "\\1" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
-  string(REGEX REPLACE " [^ ]*\\$<[^ ]*:[^ ]*>" "" ${target}_LDFLAGS "${${target}_LDFLAGS}")
-  string(REGEX REPLACE " [^ ]*\\$<[^ ]*:[^ ]*>" "" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
+  string(REGEX REPLACE " [^ ]*\\$<[^ ]*:[^>]*>" "" ${target}_LDFLAGS "${${target}_LDFLAGS}")
+  string(REGEX REPLACE " [^ ]*\\$<[^ ]*:[^>]*>" "" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
 endmacro()
