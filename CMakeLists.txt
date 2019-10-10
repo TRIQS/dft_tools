@@ -78,9 +78,10 @@ target_compile_options(project_warnings
   INTERFACE
     -Wall
     -Wextra
-    -Wshadow
     -Wpedantic
     -Wno-sign-compare
+    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
+    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
 )
 
