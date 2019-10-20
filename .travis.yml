@@ -1,41 +1,33 @@
 
 language: cpp
 sudo: required
-dist: xenial
+dist: bionic
 
 compiler:
-  #- gcc
+  - gcc
   - clang
 
 before_install:
-  - sudo add-apt-repository 'deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main' -y
-  - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update
-  - sudo rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock # Avoid the occasional apt-get install failure for xenial image
-  - sudo apt-get install -y --allow-unauthenticated g++-8 clang-8
-  - export LIBRARY_PATH=/usr/lib/llvm-8/lib:$LIBRARY_PATH
-  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-8
-  - sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-8 60 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-8
-  - sudo apt-get install -y --allow-unauthenticated cmake git hdf5-tools libblas-dev libboost-all-dev libfftw3-dev libgfortran3 libhdf5-serial-dev libgmp-dev liblapack-dev libopenmpi-dev libclang-8-dev python-clang-8 python-dev python-h5py python-mako python-matplotlib python-mpi4py python-numpy python-scipy python-sphinx libjs-mathjax libnfft3-dev
+  - sudo apt-get install -y --allow-unauthenticated libblas-dev libboost-all-dev libfftw3-dev libgfortran3 libhdf5-serial-dev libgmp-dev liblapack-dev libopenmpi-dev libclang-dev python-clang-6.0 python-dev python-h5py python-mako python-matplotlib python-mpi4py python-numpy python-scipy python-sphinx libjs-mathjax libnfft3-dev
 
 install: true
 
 script:
-  - export INSTALL_DIR=$HOME/root_install # We should install outside the repository
+  - export INSTALL_DIR=$HOME/root_install # We install outside the repository
   # ===== Set up TRIQS
   - cd $TRAVIS_BUILD_DIR
   - git clone https://github.com/TRIQS/triqs --branch unstable
   - mkdir triqs/build && cd triqs/build
-  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DASAN=ON -DUBSAN=ON
+  - cmake .. -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
   - make -j2 install
   - source $INSTALL_DIR/share/triqsvars.sh
   # ===== Set up app4triqs and test
   - cd $TRAVIS_BUILD_DIR
   - mkdir build && cd build
-  - cmake .. -DCMAKE_CXX_COMPILER=/usr/bin/${CXX} -DASAN=ON -DUBSAN=ON
-  - export UBSAN_SYMBOLIZER_PATH=/usr/lib/llvm-8/bin/llvm-symbolizer
-  - export ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-8/bin/llvm-symbolizer
+  - cmake .. -DASAN=ON -DUBSAN=ON
+  - export UBSAN_SYMBOLIZER_PATH=$(which llvm-symbolizer)
+  - export ASAN_SYMBOLIZER_PATH=$(which llvm-symbolizer)
   - export UBSAN_OPTIONS=symbolize=1:print_stacktrace=1
   - export ASAN_OPTIONS=symbolize=1:detect_leaks=0
   - export CTEST_OUTPUT_ON_FAILURE=1
