@@ -25,5 +25,6 @@ elif [ $(uname -s) == Darwin ]; then
     -not -path "*/replace_and_rename.sh" \
     -not -path "*/squash_history.sh" \
     -exec sed -i '' -e "s/app4triqs/${app_name}/g; s/APP4TRIQS/${capital_name}/g" {} \;
-  find . -type f -not -path "./.git/*" -exec rename "s/app4triqs/${app_name}/" {} &> /dev/null \;
+  find . -type f -not -path "./.git/*" -exec rename "s/app4triqs/${app_name}/" {} \; &> /dev/null
+
 fi
