@@ -21,7 +21,7 @@
 #
 ################################################################################
 
-version = "@APP4TRIQS_VERSION@"
+version = "@PROJECT_VERSION@"
 triqs_hash = "@TRIQS_GIT_HASH@"
 app4triqs_hash = "@PROJECT_GIT_HASH@"
 

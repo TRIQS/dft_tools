@@ -21,7 +21,7 @@ source_suffix = '.rst'
 
 project = u'APP4TRIQS - An example triqs application'
 copyright = u'2017-2018 N. Wentzell, O. Parcollet 2018-2019 The Simons Foundation, authors: N. Wentzell, D. Simons, H. Strand, O. Parcollet'
-version = '@APP4TRIQS_VERSION@'
+version = '@PROJECT_VERSION@'
 
 mathjax_path = "@TRIQS_MATHJAX_PATH@/MathJax.js?config=default"
 templates_path = ['@PROJECT_SOURCE_DIR@/doc/_templates']

@@ -1,9 +1,9 @@
 #%Module1.0
 #
-# To be installed as ${MODULEPATH}/app4triqs/@APP4TRIQS_VERSION@
+# To be installed as ${MODULEPATH}/app4triqs/@PROJECT_VERSION@
 
 set     name        app4triqs
-set     version     @APP4TRIQS_VERSION@
+set     version     @PROJECT_VERSION@
 set     root        @CMAKE_INSTALL_PREFIX@
 set     git_hash    @PROJECT_GIT_HASH@
 
