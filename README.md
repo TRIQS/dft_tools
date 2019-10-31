@@ -15,7 +15,7 @@ To adapt this skeleton for a new TRIQS application, the following steps are nece
 git clone https://github.com/triqs/app4triqs --branch unstable appname
 cd appname
 ./share/squash_history.sh
-./share/replace_and_rename.sh appname
+./share/replace_and_rename.py appname
 git add -A && git commit -m "Adjust app4triqs skeleton for appname"
 ```
 
@@ -43,7 +43,7 @@ If you should encounter any conflicts resolve them and `git commit`.
 Finally we repeat the replace and rename command from the initial setup.
 
 ```bash
-./share/replace_and_rename.sh appname
+./share/replace_and_rename.py appname
 git commit --amend
 ```
 
