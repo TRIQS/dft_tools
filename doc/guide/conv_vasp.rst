@@ -24,9 +24,10 @@ Interface with VASP
 A detailed description of the VASP converter tool PLOVasp can be found
 in the :ref:`PLOVasp User's Guide <plovasp>`. Here, a quick-start guide is presented.
 
-The VASP interface relies on new options introduced since version
-5.4.x. In particular, a new INCAR-option `LOCPROJ`
-and new `LORBIT` modes 13 and 14 have been added.
+The VASP interface relies on new options introduced since version 5.4.x. In
+particular, a new INCAR-option `LOCPROJ
+<https://cms.mpi.univie.ac.at/wiki/index.php/LOCPROJ>`_) and new `LORBIT` modes
+13 and 14 have been added.
 
 Option `LOCPROJ` selects a set of localized projectors that will
 be written to file `LOCPROJ` after a successful VASP run.
@@ -35,13 +36,16 @@ labels of the target local states, and projector type:
 
   | `LOCPROJ = <sites> : <shells> : <projector type>`
 
-where `<sites>` represents a list of site indices separated by spaces,
-with the indices corresponding to the site position in the POSCAR file;
-`<shells>` specifies local states (see below);
-`<projector type>` chooses a particular type of the local basis function.
-The recommended projector type is `Pr 2`. The formalism for this type
-of projectors is presented in
-`M. Schüler et al. 2018 J. Phys.: Condens. Matter 30 475901 <https://doi.org/10.1088/1361-648X/aae80a>`_.
+where `<sites>` represents a list of site indices separated by spaces, with the
+indices corresponding to the site position in the POSCAR file; `<shells>`
+specifies local states (see below); `<projector type>` chooses a particular type
+of the local basis function. The recommended projector type is `Pr 2`. This will
+perform a projection of the Kohn-Sham states onto the VASP PAW projector
+functions. The number specified behind `Pr` is selecting a specific PAW channel, see the
+`VASP wiki page
+<https://cms.mpi.univie.ac.at/wiki/index.php/LOCPROJ>`_ for more information. The formalism for this
+type of projectors is presented in `M. Schüler et al. 2018 J. Phys.: Condens.
+Matter 30 475901 <https://doi.org/10.1088/1361-648X/aae80a>`_.
 
 The allowed labels of the local states defined in terms of cubic
 harmonics are:
@@ -55,12 +59,12 @@ harmonics are:
  * `f`-states: `fy(3x2-y2)`, `fxyz`, `fyz2`, `fz3`,
    `fxz2`, `fz(x2-y2)`, `fx(x2-3y2)`.
 
-For projector type `Pr 2`, one should also set `LORBIT = 14` in the INCAR file
-and provide parameters `EMIN`, `EMAX`, defining, in this case, an
-energy range (energy window) corresponding to the valence states.
-Note that, as in the case
-of a DOS calculation, the position of the valence states depends on the
-Fermi level, which can usually be found at the end of the OUTCAR file.
+For projector type `Pr`, one should ideally also set `LORBIT = 14` in the INCAR file and
+provide parameters `EMIN`, `EMAX`, defining, in this case, an energy range
+(energy window) corresponding to the valence states. Note that, as in the case
+of a DOS calculation, the position of the valence states depends on the Fermi
+level, which can usually be found at the end of the OUTCAR file. Setting `LORBIT=14` will perform an automatic optimization of the PAW projector channel as described in `M. Schüler et al. 2018 J. Phys.: Condens.
+Matter 30 475901 <https://doi.org/10.1088/1361-648X/aae80a>`_, by using a linear combination of the PAW channels, to maximize the overlap in the chosen energy window between the projector and the Kohn-Sham state. Therefore, setting `LORBIT=14` will let VASP ignore the channel specified after `Pr`. This optimization is only performed for the projector type `Pr`, not for `Ps` and obviously not for `Hy`. We recommend to specify the PAW channel anyway, in case one forgets to set `LORBIT=14`.
 
 For example, in case of SrVO3 one may first want to perform a self-consistent
 calculation, then set `ICHARGE = 1` and add the following additional
@@ -141,4 +145,3 @@ This can be circumvented by setting a bigger value of the threshold in
 
 However, do this only after a careful study of the density matrix and
 the projected DOS in the localized basis.
-
