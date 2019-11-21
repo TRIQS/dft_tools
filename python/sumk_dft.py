@@ -98,7 +98,7 @@ class SumkDFT(object):
             things_to_read = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                               'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
                               'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'proj_mat_csc', 'bz_weights', 'hopping',
-                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk']
+                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk','kpts_cart']
             self.subgroup_present, self.value_read = self.read_input_from_hdf(
                 subgrp=self.dft_data, things_to_read=things_to_read)
            # if self.proj_or_hk == 'hk':
@@ -152,7 +152,14 @@ class SumkDFT(object):
 
             self.chemical_potential = 0.0  # initialise mu
             self.init_dc()  # initialise the double counting
-
+            
+            # charge mixing parameters
+            self.charge_mixing = False
+            # defaults from PRB 90 235103 ("... slow but stable convergence ...")
+            self.charge_mixing_alpha = 0.1
+            self.charge_mixing_gamma = 1.0
+            self.deltaNOld = None
+            
             # Analyse the block structure and determine the smallest gf_struct
             # blocks and maps, if desired
             if use_dft_blocks:
@@ -321,7 +328,7 @@ class SumkDFT(object):
             dim = self.shells[ish]['dim']
             projmat = self.proj_mat_all[ik, isp, ish, ir, 0:dim, 0:n_orb]
         elif shells == 'csc':
-            projmat = self.proj_mat_csc[ik, isp, 0:n_orb, 0:n_orb]
+            projmat = self.proj_mat_csc[ik, isp, :, 0:n_orb]
 
         gf_downfolded.from_L_G_R(
             projmat, gf_to_downfold, projmat.conjugate().transpose())
@@ -615,6 +622,7 @@ class SumkDFT(object):
                                                               for block, inner in self.gf_struct_sumk[icrsh]], make_copies=False)
                                 for icrsh in range(self.n_corr_shells)]
             SK_Sigma_imp = self.Sigma_imp_w
+            
         else:
             raise ValueError, "put_Sigma: This type of Sigma is not handled."
 
@@ -1773,7 +1781,7 @@ class SumkDFT(object):
 
         """
         F = lambda mu: self.total_density(
-            mu=mu, iw_or_w=iw_or_w, broadening=broadening)
+            mu=mu, iw_or_w=iw_or_w, broadening=broadening).real
         density = self.density_required - self.charge_below
 
         self.chemical_potential = dichotomy.dichotomy(function=F,
@@ -1869,6 +1877,12 @@ class SumkDFT(object):
                     nb = self.n_orbitals[ik, ntoi[bname]]
                     diag_inds = numpy.diag_indices(nb)
                     deltaN[bname][ik][diag_inds] -= dens_mat_dft[bname][ik][:nb]
+                    
+                    if self.charge_mixing and self.deltaNOld is not None:
+                        G2 = numpy.sum(self.kpts_cart[ik,:]**2)
+                        # Kerker mixing
+                        mix_fac = self.charge_mixing_alpha * G2 / (G2 + self.charge_mixing_gamma**2)
+                        deltaN[bname][ik][diag_inds] = (1.0 - mix_fac) * self.deltaNOld[bname][ik][diag_inds] + mix_fac * deltaN[bname][ik][diag_inds]
                     dens[bname] -= self.bz_weights[ik] * dens_mat_dft[bname][ik].sum().real
                     isp = ntoi[bname]
                     b1, b2 = band_window[isp][ik, :2]
@@ -1883,7 +1897,11 @@ class SumkDFT(object):
                     mpi.world, deltaN[bname][ik], lambda x, y: x + y)
             dens[bname] = mpi.all_reduce(
                 mpi.world, dens[bname], lambda x, y: x + y)
+        self.deltaNOld = copy.copy(deltaN)
         mpi.barrier()
+        
+        
+        
         band_en_correction = mpi.all_reduce(mpi.world, band_en_correction, lambda x,y : x+y)
 
         # now save to file:

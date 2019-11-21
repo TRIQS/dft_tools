@@ -73,6 +73,7 @@ class ProjectorShell:
         self.ions = sh_pars['ions']
         self.user_index = sh_pars['user_index']
         self.corr = sh_pars['corr']
+        self.ion_sort = [sh_pars['ion_sort']]
         self.nc_flag = nc_flag        
 #        try:
 #            self.tmatrix = sh_pars['tmatrix']
@@ -85,12 +86,14 @@ class ProjectorShell:
         self.nion = self.ions['nion']
 # Extract ion list and equivalence classes (ion sorts)
         self.ion_list = sorted(it.chain(*self.ions['ion_list']))
-        self.ion_sort = []
-        for ion in self.ion_list:
-            for icl, eq_cl in enumerate(self.ions['ion_list']):
-                if ion in eq_cl:
-                    self.ion_sort.append(icl + 1) # Enumerate classes starting from 1
-                    break
+        
+        if self.ion_sort[0] is None:
+            self.ion_sort = []
+            for ion in self.ion_list:
+                for icl, eq_cl in enumerate(self.ions['ion_list']):
+                    if ion in eq_cl:
+                        self.ion_sort.append(icl + 1) # Enumerate classes starting from 1
+                        break
 
         self.ndim = self.extract_tmatrices(sh_pars)
 

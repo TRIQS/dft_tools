@@ -59,9 +59,9 @@ class TestParseShells(arraytest.ArrayTestCase):
         conf_pars = ConfigParameters(_rpath + 'parse_shells_4.cfg')
         conf_pars.parse_shells()
         res = conf_pars.shells
-        expected = [{'user_index': 1, 'lshell': 2, 'ions': {'nion': 4, 'ion_list': [[4],[5],[6],[7]]},'corr': True},
+        expected = [{'user_index': 1, 'lshell': 2, 'ions': {'nion': 4, 'ion_list': [[4],[5],[6],[7]]},'corr': True,'ion_sort':None},
                     {'user_index': 2, 'lshell': 1, 'ions': {'nion': 4, 'ion_list': [[0],[1],[2],[3]]},
-                        'tmatrix': np.array([[ 0.,  1.,  0.], [ 1.,  0.,  0.], [ 0.,  0.,  1.]]),'corr': True}]
+                        'tmatrix': np.array([[ 0.,  1.,  0.], [ 1.,  0.,  0.], [ 0.,  0.,  1.]]),'corr': True,'ion_sort':None}]
 # ...lousy way to test equality of two dictionaries containing numpy arrays
         self.assertEqual(len(res), len(expected))
 
@@ -84,8 +84,8 @@ class TestParseShells(arraytest.ArrayTestCase):
         conf_pars = ConfigParameters(_rpath + 'parse_shells_5.cfg')
         conf_pars.parse_shells()
         res = conf_pars.shells
-        expected = [{'user_index': 1, 'lshell': 2, 'ions': {'nion': 4, 'ion_list': [[4],[5],[6],[7]]},'corr': True},
-                    {'user_index': 2, 'lshell': 1, 'ions': {'nion': 4, 'ion_list': [[0],[1],[2],[3]]},'corr': False}]
+        expected = [{'user_index': 1, 'lshell': 2, 'ions': {'nion': 4, 'ion_list': [[4],[5],[6],[7]]},'corr': True,'ion_sort':None},
+                    {'user_index': 2, 'lshell': 1, 'ions': {'nion': 4, 'ion_list': [[0],[1],[2],[3]]},'corr': False,'ion_sort':None}]
         self.assertEqual(len(res), len(expected))
 
         arr = res[0].pop('ions')

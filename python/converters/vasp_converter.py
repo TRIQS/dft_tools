@@ -160,12 +160,16 @@ class VaspConverter(ConverterTools):
         SO = ctrl_head['nc_flag']
 
         kpts = numpy.zeros((n_k, 3))
+        kpts_cart = numpy.zeros((n_k, 3))
         bz_weights = numpy.zeros(n_k)
         try:
             for ik in xrange(n_k):
                 kx, ky, kz = rf.next(), rf.next(), rf.next()
                 kpts[ik, :] = kx, ky, kz
                 bz_weights[ik] = rf.next()
+            for ik in xrange(n_k):
+                kx, ky, kz = rf.next(), rf.next(), rf.next()
+                kpts_cart[ik, :] = kx, ky, kz
         except StopIteration:
             raise "VaspConverter: error reading %s"%self.ctrl_file
 
@@ -220,12 +224,13 @@ class VaspConverter(ConverterTools):
 # TODO: check what 'irep' entry does (it seems to be very specific to dmftproj)
                         pars['irep'] = 0
                         shells.append(pars)
-                        shion_to_shell[ish].append(i)
+                        shion_to_shell[ish].append(ish)
                         shorbs_to_globalorbs[ish].append([last_dimension,
                                                  last_dimension+sh['ndim']])
                         last_dimension = last_dimension+sh['ndim']
                         if sh['corr']:
                             corr_shells.append(pars)
+                        print shorbs_to_globalorbs[ish]
 
 
 # TODO: generalize this to the case of multiple shell groups
@@ -336,7 +341,6 @@ class VaspConverter(ConverterTools):
 
 # now save only projectors with flag 'corr' to proj_mat
             proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
-
             if self.proj_or_hk == 'proj': 
                 for ish, sh in enumerate(p_shells):
                     if sh['corr']:
@@ -379,7 +383,7 @@ class VaspConverter(ConverterTools):
             things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                           'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
-                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk']
+                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk','kpts','kpts_cart']
             if self.proj_or_hk == 'hk' or True:
                 things_to_save.append('proj_mat_csc')
             for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]

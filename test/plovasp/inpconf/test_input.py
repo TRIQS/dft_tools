@@ -78,9 +78,9 @@ class TestParseInput(arraytest.ArrayTestCase):
         res = res.replace(" ","") # Remove spaces for comparison
 
         expected = r"""Shells:
-[{'ions':{'nion':4,'ion_list':[[4],[5],[6],[7]]},'user_index':1,'lshell':2,'corr':True},{'tmatrix':array([[0.,1.,0.],
+[{'ions':{'nion':4,'ion_list':[[4],[5],[6],[7]]},'user_index':1,'lshell':2,'corr':True,'ion_sort':None},{'tmatrix':array([[0.,1.,0.],
 [1.,0.,0.],
-[0.,0.,1.]]),'ions':{'nion':4,'ion_list':[[0],[1],[2],[3]]},'user_index':2,'lshell':1,'corr':True},{'ions':{'nion':4,'ion_list':[[0],[1],[2],[3]]},'user_index':3,'lshell':3,'corr':True}]
+[0.,0.,1.]]),'ions':{'nion':4,'ion_list':[[0],[1],[2],[3]]},'lshell':1,'corr':True,'ion_sort':None,'user_index':2},{'ions':{'nion':4,'ion_list':[[0],[1],[2],[3]]},'user_index':3,'lshell':3,'corr':True,'ion_sort':None}]
 
 Groups:
 [{'normalize':True,'index':1,'ewindow':(-7.6,3.0),'shells':[0,1],'complement':False,'normion':True},{'normalize':True,'index':2,'ewindow':(-1.6,2.0),'shells':[2],'complement':False,'normion':True}]"""
@@ -103,7 +103,7 @@ Groups:
         res = res.replace(" ","") # Remove spaces for comparison
 
         expected = r"""Shells:
-[{'ions':{'nion':4,'ion_list':[[4],[5],[6],[7]]},'user_index':1,'lshell':2,'corr':True}]
+[{'ions':{'nion':4,'ion_list':[[4],[5],[6],[7]]},'lshell':2,'corr':True,'ion_sort':None,'user_index':1}]
 
 Groups:
 [{'normalize':True,'index':'1','ewindow':(-7.6,3.0),'normion':True,'complement':False,'shells':[0]}]"""

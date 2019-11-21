@@ -123,14 +123,7 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
                 break
             
 # Tell VASP to stop if the maximum number of iterations is reached
-        iter += 1
-        if iter == n_iter:
-            if mpi.is_master_node():
-                print "\n  Maximum number of iterations reached."
-                print "  Aborting VASP iterations...\n"
-                f_stop = open('STOPCAR', 'wt')
-                f_stop.write("LABORT = .TRUE.\n")
-                f_stop.close()
+        
         
         if debug: print bcolors.MAGENTA + "rank %s"%(mpi.rank) + bcolors.ENDC
         err = 0
@@ -166,6 +159,7 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
         # the hack consists of removing the call of LPRJ_LDApU in VASP src file
         # electron.F around line 644
         iter_dft = 0
+        
         if vasp_version == 'standard':
             copyfile(src='GAMMA',dst='GAMMA_recent')
         while iter_dft < n_iter_dft:
@@ -180,7 +174,13 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
             iter_dft += 1
             if vasp_version == 'standard':
                 copyfile(src='GAMMA_recent',dst='GAMMA')
-                    
+        iter += 1
+        if iter == n_iter:
+            print "\n  Maximum number of iterations reached."
+            print "  Aborting VASP iterations...\n"
+            f_stop = open('STOPCAR', 'wt')
+            f_stop.write("LABORT = .TRUE.\n")
+            f_stop.close()
     if mpi.is_master_node():
         total_energy = dft_energy + corr_energy - dft_dc
         with open('TOTENERGY', 'w') as f:

@@ -85,6 +85,7 @@ class ConfigParameters:
         self.sh_optional = {
             'transform': ('tmatrix', lambda s: self.parse_string_tmatrix(s, real=True)),
             'transfile': ('tmatrices', self.parse_file_tmatrix),
+            'sort': ('ion_sort', self.parse_string_int,None),
             'corr': ('corr', self.parse_string_logical, True)}
 
         self.gr_required = {
@@ -194,6 +195,18 @@ class ConfigParameters:
         first_char = par_str[0].lower()
         assert first_char in 'tf', "Logical parameters should be given by either 'True' or 'False'"
         return first_char == 't'
+    
+    
+################################################################################
+#
+# parse_string_int()
+#
+################################################################################
+    def parse_string_int(self, par_str):
+        """
+        int parameters 
+        """
+        return int(par_str)
 
 ################################################################################
 #

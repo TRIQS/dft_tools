@@ -123,6 +123,21 @@ class ElectronicStructure:
 # Concatenate coordinates grouped by type into one array
         self.structure['qcoords'] = np.vstack(vasp_data.poscar.q_types)
         self.structure['type_of_ion'] = vasp_data.poscar.type_of_ion
+        
+        a = []
+        for ia in range(3):
+            a.append( vasp_data.poscar.a_brav[:,ia])
+        vol = np.dot(a[0],np.cross(a[1],a[2]))
+        b1 = 2.0*np.pi*np.cross(a[1],a[2])/vol
+        b2 = 2.0*np.pi*np.cross(a[2],a[0])/vol
+        b3 = 2.0*np.pi*np.cross(a[0],a[1])/vol
+        b = [b1,b2,b3]
+        self.kmesh['kpoints_cart'] = 0.0 * self.kmesh['kpoints']
+        
+        for ik in range(self.nktot):
+            for ii in range(3):
+                self.kmesh['kpoints_cart'][ik] += self.kmesh['kpoints'][ik,ii]*b[ii]
+                
 # FIXME: This can be removed if ion coordinates are stored in a continuous array
 ## Construct a map to access coordinates by index
 #        self.structure['ion_index'] = []

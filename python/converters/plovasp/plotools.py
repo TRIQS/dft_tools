@@ -121,6 +121,7 @@ def generate_plo(conf_pars, el_struct):
         print "    Number of ions: %i"%(pshell.nion)
         print "    Dimension     : %i"%(pshell.ndim)
         print "    Correlated    : %r"%(pshell.corr)
+        print "    Ion sort          : %r"%(pshell.ion_sort)
         pshells.append(pshell)
 
     
@@ -285,6 +286,13 @@ def ctrl_output(conf_pars, el_struct, ng):
         for ik, kp in enumerate(el_struct.kmesh['kpoints']):
             tmp1 = "".join(map("{0:15.10f}".format, kp))
             out = tmp1 + "{0:16.10f}".format(el_struct.kmesh['kweights'][ik])
+            f.write(out + "\n")
+        f.write("# k-points and weights cartesian\n")
+        labels = ['kx', 'ky', 'kz']
+        out = "".join(map(lambda s: s.center(15), labels))
+        f.write("#" + out + "\n")
+        for ik, kp in enumerate(el_struct.kmesh['kpoints_cart']):
+            out = "".join(map("{0:15.10f}".format, kp))
             f.write(out + "\n")
 
 

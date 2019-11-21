@@ -78,7 +78,6 @@ class SumkDFTTools(SumkDFT):
         DOSproj_orb : Dict of numpy arrays
                       DOS projected to atoms and resolved into orbital contributions.
         """
-
         if (mesh is None) and (not with_Sigma):
             raise ValueError, "lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq."
         if mesh is None:
@@ -185,6 +184,129 @@ class SumkDFTTools(SumkDFT):
                                 f.write("%s    %s    %s\n" % (
                                     om_mesh[iom], DOSproj_orb[ish][sp][iom, i, j].real,DOSproj_orb[ish][sp][iom, i, j].imag))
                             f.close()
+
+        return DOS, DOSproj, DOSproj_orb
+    
+    
+    def dos_wannier_basis_all(self, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True, save_to_file=True):
+        """
+        Calculates the density of states in the basis of the Wannier functions.
+
+        Parameters
+        ----------
+        mu : double, optional
+             Chemical potential, overrides the one stored in the hdf5 archive.
+        broadening : double, optional
+                     Lorentzian broadening of the spectra. If not given, standard value of lattice_gf is used.
+        mesh : real frequency MeshType, optional
+               Omega mesh for the real-frequency Green's function. Given as parameter to lattice_gf.
+        with_Sigma : boolean, optional
+                     If True, the self energy is used for the calculation. If false, the DOS is calculated without self energy.
+        with_dc : boolean, optional
+                  If True the double counting correction is used.
+        save_to_file : boolean, optional
+                       If True, text files with the calculated data will be created.
+
+        Returns
+        -------
+        DOS : Dict of numpy arrays
+              Contains the full density of states.
+        DOSproj :  Dict of numpy arrays
+                   DOS projected to atoms.
+        DOSproj_orb : Dict of numpy arrays
+                      DOS projected to atoms and resolved into orbital contributions.
+        """
+        if (mesh is None) and (not with_Sigma):
+            raise ValueError, "lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq."
+        if mesh is None:
+            om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
+            om_min = om_mesh[0]
+            om_max = om_mesh[-1]
+            n_om = len(om_mesh)
+            mesh = (om_min, om_max, n_om)
+        else:
+            om_min, om_max, n_om = mesh
+            om_mesh = numpy.linspace(om_min, om_max, n_om)
+
+        spn = self.spin_block_names[self.SO]
+        gf_struct_parproj = [[(sp, range(self.shells[ish]['dim'])) for sp in spn]
+                             for ish in range(self.n_shells)]
+        #print(self.proj_mat_csc.shape[2])
+        #print(spn)
+        n_local_orbs = self.proj_mat_csc.shape[2]
+        gf_struct_parproj_all = [[(sp, range(n_local_orbs)) for sp in spn]]
+    
+        glist_all = [GfReFreq(indices=inner, window=(om_min, om_max), n_points=n_om)
+                     for block, inner in gf_struct_parproj_all[0]]
+        G_loc_all = BlockGf(name_list=spn, block_list=glist_all, make_copies=False)
+
+        DOS = {sp: numpy.zeros([n_om], numpy.float_)
+               for sp in self.spin_block_names[self.SO]}
+        DOSproj = {}
+        DOSproj_orb = {}
+
+        for sp in self.spin_block_names[self.SO]:
+            dim = n_local_orbs
+            DOSproj[sp] = numpy.zeros([n_om], numpy.float_)
+            DOSproj_orb[sp] = numpy.zeros(
+                    [n_om, dim, dim], numpy.complex_)
+
+        ikarray = numpy.array(range(self.n_k))
+        for ik in mpi.slice_array(ikarray):
+
+            G_latt_w = self.lattice_gf(
+                ik=ik, mu=mu, iw_or_w="w", broadening=broadening, mesh=mesh, with_Sigma=with_Sigma, with_dc=with_dc)
+            G_latt_w *= self.bz_weights[ik]
+
+            # Non-projected DOS
+            for iom in range(n_om):
+                for bname, gf in G_latt_w:
+                    DOS[bname][iom] -= gf.data[iom, :, :].imag.trace() / \
+                        numpy.pi
+
+            # Projected DOS:
+            for bname, gf in G_latt_w:
+                G_loc_all[bname] << self.downfold(ik, 0, bname, gf, G_loc_all[bname], shells='csc')
+        # Collect data from mpi:
+        for bname in DOS:
+            DOS[bname] = mpi.all_reduce(
+                mpi.world, DOS[bname], lambda x, y: x + y)
+            G_loc_all[bname] << mpi.all_reduce(
+                mpi.world, G_loc_all[bname], lambda x, y: x + y)
+        mpi.barrier()
+
+        # Symmetrize and rotate to local coord. system if needed:
+        #if self.symm_op != 0:
+        #    G_loc_all = self.symmcorr.symmetrize(G_loc_all)
+
+        # G_loc can now also be used to look at orbitally-resolved quantities
+        for bname, gf in G_loc_all:  # loop over spins
+            for iom in range(n_om):
+                DOSproj[bname][iom] -= gf.data[iom,:,:].imag.trace() / numpy.pi
+            DOSproj_orb[bname][:,:,:] += (1.0j*(gf-gf.conjugate().transpose())/2.0/numpy.pi).data[:,:,:]
+        # Write to files
+        if save_to_file and mpi.is_master_node():
+            for sp in self.spin_block_names[self.SO]:
+                f = open('DOS_wann_%s.dat' % sp, 'w')
+                for iom in range(n_om):
+                    f.write("%s    %s\n" % (om_mesh[iom], DOS[sp][iom]))
+                f.close()
+
+                # Partial
+                f = open('DOS_wann_all_%s_proj.dat' % (sp), 'w')
+                for iom in range(n_om):
+                    f.write("%s    %s\n" %
+                            (om_mesh[iom], DOSproj[sp][iom]))
+                f.close()
+
+                # Orbitally-resolved
+                for i in range(n_local_orbs):
+                    for j in range(i, n_local_orbs):
+                        f = open('DOS_wann_all' + sp + '_proj_' + str(i) + '_' + str(j) + '.dat', 'w')
+                        for iom in range(n_om):
+                                f.write("%s    %s    %s\n" % (
+                                    om_mesh[iom], DOSproj_orb[sp][iom, i, j].real,DOSproj_orb[sp][iom, i, j].imag))
+                        f.close()
 
         return DOS, DOSproj, DOSproj_orb
 
