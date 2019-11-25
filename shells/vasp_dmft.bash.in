@@ -9,12 +9,15 @@ Usage: vasp_dmft [-n <number of cores>] -i <number of iterations>  -j <number of
 
        If the number of cores is not specified it is set to 1 by default.
 
-       <dmft_script.py> must provide an importable function 'dmft_cycle()' which is invoked
-       once per DFT+DMFT iteration. If the script name is omitted the default name 
-       'csc_dmft.py' is used.
+       <dmft_script.py> must provide an importable function 'dmft_cycle()'
+       which is invoked once per DFT+DMFT iteration. If the script name is
+       omitted the default name 'csc_dmft.py' is used.
 
        If the path to VASP directory is not specified it must be provided by a
        variable VASP_DIR.
+       
+       Set the version of VASP by -v standard(default)/no_gamma_write to
+       specify if VASP writes the GAMMA file or not.
 "
 }
 
@@ -49,6 +52,7 @@ while getopts ":n:i:j:v:p:h" opt; do
      v)
         if [ -n "$OPTARG" ]; then
            VASP_VERSION=$OPTARG
+#           echo "Version of VASP (writing GAMMA file (standard) or not (no_gamma_write): $VASP_VERSION"
         fi
         ;;
       h)
@@ -108,8 +112,7 @@ echo "  VASP version: $VASP_VERSION"
 echo "  Script name: $DMFT_SCRIPT"
 
 rm -f vasp.lock
-# stdbuf -o 0 $MPIRUN_CMD -np $NPROC "$VASP_DIR" &
-vasp_intel.sh &
+stdbuf -o 0 $MPIRUN_CMD -np $NPROC "$VASP_DIR" &
 
 
 $MPIRUN_CMD -np $NPROC python -m triqs_dft_tools.converters.plovasp.sc_dmft $(jobs -p) $NITER $NDFTITER $DMFT_SCRIPT 'plo.cfg' $VASP_VERSION || kill %1

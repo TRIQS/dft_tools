@@ -230,7 +230,6 @@ class VaspConverter(ConverterTools):
                         last_dimension = last_dimension+sh['ndim']
                         if sh['corr']:
                             corr_shells.append(pars)
-                        print shorbs_to_globalorbs[ish]
 
 
 # TODO: generalize this to the case of multiple shell groups

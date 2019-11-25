@@ -121,7 +121,7 @@ def generate_plo(conf_pars, el_struct):
         print "    Number of ions: %i"%(pshell.nion)
         print "    Dimension     : %i"%(pshell.ndim)
         print "    Correlated    : %r"%(pshell.corr)
-        print "    Ion sort          : %r"%(pshell.ion_sort)
+        print "    Ion sort      : %r"%(pshell.ion_sort)
         pshells.append(pshell)
 
     
