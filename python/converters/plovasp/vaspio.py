@@ -88,8 +88,12 @@ class VaspData:
                 self.doscar.from_file(vasp_dir)
             except (IOError, StopIteration):
                 if efermi_required:
-                    raise Exception("Efermi cannot be read from DOSCAR")
-                    pass
+                    print "!!! WARNING !!!: Error reading from Efermi from DOSCAR, trying LOCPROJ"
+                    try:
+                        self.plocar.efermi
+                        self.doscar.efermi = self.plocar.efermi
+                    except NameError:
+                        raise Exception("Efermi cannot be read from DOSCAR or LOCPROJ")
                 else:
 # TODO: This a hack. Find out a way to determine ncdij without DOSCAR
                     print "!!! WARNING !!!: Error reading from DOSCAR, taking Efermi from config"
@@ -239,6 +243,11 @@ class Plocar:
             self.ncdij, nk, self.nband, nproj = map(int, sline[:4])
             self.nspin = 1 if self.ncdij == 1 else 2
             self.nspin_band = 2 if self.ncdij == 2 else 1
+
+            try:
+                self.efermi = float(sline[4])
+            except:
+                print "!!! WARNING !!!: Error reading E-Fermi from LOCPROJ, trying DOSCAR"
 
             plo = np.zeros((nproj, self.nspin, nk, self.nband), dtype=np.complex128)
             proj_params = [{} for i in xrange(nproj)]
