@@ -57,7 +57,9 @@ option(Sphinx_Only "When building the documentation, skip the Python Modules and
 if(NOT Sphinx_Only)
   # Autodoc usage requires the python modules to be built first
   get_property(CPP2PY_MODULES_LIST GLOBAL PROPERTY CPP2PY_MODULES_LIST)
-  add_dependencies(docs_sphinx ${CPP2PY_MODULES_LIST})
+  if(CPP2PY_MODULES_LIST)
+    add_dependencies(docs_sphinx ${CPP2PY_MODULES_LIST})
+  endif()
 
   # Generation of C++ Api and Example Outputs
   add_dependencies(docs_sphinx docs_cpp2rst docs_example_output)
