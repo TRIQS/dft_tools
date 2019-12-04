@@ -1,6 +1,6 @@
 .. _conversion:
 
-Supported interfaces 
+Supported interfaces
 ====================
 
 The first step for a DMFT calculation is to provide the necessary
@@ -9,12 +9,12 @@ calculation here in this documentation, but refer the user to the
 documentation and tutorials that come with the actual DFT
 package. At the moment, there are two full charge self consistent interfaces, for the
 Wien2k and the VASP DFT packages, resp. In addition, there is an interface to Wannier90, as well
-as a light-weight general-purpose interface. In the following, we will describe the usage of these 
+as a light-weight general-purpose interface. In the following, we will describe the usage of these
 conversion tools.
 
 .. toctree::
-   :maxdepth: 2
-   
+   :maxdepth: 3
+
    conv_wien2k
    conv_vasp
    conv_W90

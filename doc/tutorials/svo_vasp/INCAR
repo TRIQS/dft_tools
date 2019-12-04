@@ -1,0 +1,30 @@
+SYSTEM = SrVO3
+ENCUT = 450
+
+ICHARG=2 ! 5 for fcsc calculations (communication with python)
+
+! switch off symmetries
+ISYM=-1
+
+EDIFF = 1.E-10
+!! DOS energy window
+NEDOS = 2001
+!! Smearing procedure
+ISMEAR = -5
+
+
+!! real/reci projection scheme
+LREAL = .FALSE.
+
+
+NCORE = 4
+
+LMAXMIX=6
+LORBIT=14
+EMIN = 3.9
+EMAX = 7.1
+LOCPROJ = 2 : d : Pr
+
+!! write WAVECAR, CHGCAR
+LWAVE = .FALSE.
+LCHARG = .FALSE.
