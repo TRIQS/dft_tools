@@ -1,4 +1,4 @@
- 
+
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -24,8 +24,8 @@
 #
 ################################################################################
 r"""
-    vasp.plotools
-    =============
+    plovasp.plotools
+    ================
 
     Set of routines for processing and outputting PLOs.
 
@@ -33,6 +33,25 @@ r"""
     the consistency of the input data, generation of projected localized
     orbitals (PLOs) out of raw VASP projectors, and outputting data
     required by DFTTools.
+
+    The first step of PLO processing is to select subsets of projectors
+    corresponding to PLO groups. Each group contains a set of shells. Each
+    projector shell is represented by an object 'ProjectorShell' that contains
+    an array of projectors and information on the shell itself (orbital number,
+    ions, etc.). 'ProjectorShell's are contained in both a list of shells
+    (according to the original list as read from config-file) and in a
+    'ProjectorGroup' object, the latter also providing information about the
+    energy window.
+
+    Order of operations:
+     - transform projectors (all bands) in each shell
+     - select transformed shell projectors for a given group within the window
+     - orthogonalize if necessary projectors within a group by performing
+       the following operations for each k-point:
+       * combine all projector shells into a single array
+       * orthogonalize the array
+       * distribute back the arrays assuming that the order is preserved
+
 """
 import itertools as it
 import numpy as np
@@ -82,7 +101,7 @@ def check_data_consistency(pars, el_struct):
                 errmsg = "Projector for isite = %s, l = %s does not match PROJCAR"%(ion + 1, lshell)
                 raise Exception(errmsg)
 
-        
+
 ################################################################################
 #
 # generate_plo()
@@ -124,7 +143,7 @@ def generate_plo(conf_pars, el_struct):
         print "    Ion sort      : %r"%(pshell.ion_sort)
         pshells.append(pshell)
 
-    
+
     pgroups = []
     for gr_par in conf_pars.groups:
         pgroup = ProjectorGroup(gr_par, pshells, eigvals)
@@ -209,6 +228,7 @@ def generate_plo(conf_pars, el_struct):
 def output_as_text(pars, el_struct, pshells, pgroups):
     """
     Output all information necessary for the converter as text files.
+
     """
     ctrl_output(pars, el_struct, len(pgroups))
     plo_output(pars, el_struct, pshells, pgroups)
@@ -260,6 +280,27 @@ def kpoints_output(basename, el_struct):
 def ctrl_output(conf_pars, el_struct, ng):
     """
     Outputs a ctrl-file.
+
+    Control file format
+    """"""""""""""""""""""""""""""
+
+    Filename '<namebase>.ctrl'. Contains the data shared between all shells.
+    The JSON-header consists of the following elements:
+
+     * *nk*: number of `k`-points
+
+     * *ns*: number of spin channels
+
+     * *nc_flag*: collinear/noncollinear case (False/True)
+
+     * *ng*: number of projector groups
+
+     * Symmetry information (list of symmetry operations)
+
+     * *efermi*: Fermi level (optional)
+
+     * Lattice information
+
     """
     ctrl_fname = conf_pars.general['basename'] + '.ctrl'
     head_dict = {}
@@ -311,31 +352,31 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
     Each group is stored in a '<basename>.plog<Ng>' file. The format is the
     following:
 
-    # Energy window: emin, emax
-    ib_min, ib_max
-    nelect
-    # Eigenvalues
-    isp, ik1, kx, ky, kz, kweight
-    ib1, ib2
-    eig1
-    eig2
-    ...
-    eigN
-    ik2, kx, ky, kz, kweight
-    ...
+    | # Energy window: emin, emax
+    | ib_min, ib_max
+    | nelect
+    | # Eigenvalues
+    | isp, ik1, kx, ky, kz, kweight
+    | ib1, ib2
+    | eig1
+    | eig2
+    | ...
+    | eigN
+    | ik2, kx, ky, kz, kweight
+    | ...
 
-    # Projected shells
-    Nshells
-    # Shells: <shell indices>
-    # Shell <1>
-    Shell 1
-    ndim
-    # complex arrays: plo(ns, nion, ndim, nb)
-    ...
-    # Shells: <shell indices>
-    # Shell <2>
-    Shell 2
-    ...
+    | # Projected shells
+    | Nshells
+    | # Shells: <shell indices>
+    | # Shell <1>
+    | Shell 1
+    | ndim
+    | # complex arrays: plo(ns, nion, ndim, nb)
+    | ...
+    | # Shells: <shell indices>
+    | # Shell <2>
+    | Shell 2
+    | ...
 
     """
     for ig, pgroup in enumerate(pgroups):
@@ -343,9 +384,9 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
         print "  Storing PLO-group file '%s'..."%(plo_fname)
         head_dict = {}
 
-        
+
         head_dict['nb_max'] = pgroup.nb_max
-        
+
         if 'bands' in conf_pars.groups[ig]:
             head_dict['bandwindow'] = (pgroup.ib_min, pgroup.ib_max)
         else:
@@ -381,13 +422,13 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
         with open(plo_fname, 'wt') as f:
             f.write(header + "\n")
             f.write("#END OF HEADER\n")
-            
+
 # Eigenvalues within the window
             if 'bands' in conf_pars.groups[ig]:
                 f.write("# Eigenvalues within the band window: %s, %s\n"%(pgroup.ib_min+1, pgroup.ib_max+1))
             else:
                 f.write("# Eigenvalues within the energy window: %s, %s\n"%(pgroup.emin, pgroup.emax))
-            
+
             nk, nband, ns_band = el_struct.eigvals.shape
             for isp in xrange(ns_band):
                 f.write("# is = %i\n"%(isp + 1))
@@ -441,17 +482,17 @@ def hk_output(conf_pars, el_struct, pgroups):
     n_sh                # number of total atomic shells
     at sort l dim       # atom, sort, l, dim
     at sort l dim       # atom, sort, l, dim
-    
+
     After these header lines, the file has to contain the Hamiltonian matrix
     in orbital space. The standard convention is that you give for each k-point
     first the matrix of the real part, then the matrix of the imaginary part,
     and then move on to the next k-point.
-    
+
     """
-    
+
 
     for ig, pgroup in enumerate(pgroups):
-        
+
         hk_fname = conf_pars.general['basename'] + '.hk%i'%(ig + 1)
         print "  Storing HK-group file '%s'..."%(hk_fname)
 
@@ -459,7 +500,7 @@ def hk_output(conf_pars, el_struct, pgroups):
         for ish in pgroup.ishells:
 
             shell = pgroup.shells[ish]
-            
+
             ion_output = [io + 1 for io in shell.ion_list]
 
             for iion in ion_output:
@@ -469,11 +510,11 @@ def hk_output(conf_pars, el_struct, pgroups):
                 sh_dict['ndim'] = shell.ndim
     # Convert ion indices from the internal representation (starting from 0)
     # to conventional VASP representation (starting from 1)
-                
+
     # Derive sorts from equivalence classes
                 sh_dict['ion_list'] = ion_output
                 sh_dict['ion_sort'] = shell.ion_sort
-            
+
 
                 head_shells.append(sh_dict)
 

@@ -25,7 +25,6 @@ creates a h5 archive from the :ref:`PLOVASP<refPLOVASP>` output readable by
 
 Here, we will present a guide how the interface `can` be used to create input for a DMFT calculation, using SrVO3 as an example. Full examples can be found in the :ref:`tutorial section of DFTTools<tutorials>`.
 
-|
 Limitations of the interface
 ============================
 
@@ -37,7 +36,6 @@ Limitations of the interface
   (this implies no spin-orbit coupling) and spin-polarized projectors have not
   been tested.
 
-|
 VASP: generating raw projectors
 ===============================
 
@@ -118,7 +116,6 @@ At the same time, **LOCPROJ** contains the total number of projectors (as well
 as the number of `k`-points, bands, and spin channels) in the first line, which
 can be used to allocate the arrays before parsing.
 
-|
 Conversion for the DMFT self-consistency cycle
 ==============================================
 
@@ -165,7 +162,7 @@ for user convenience. Several parameters are required
 The Option **TRANSFORM** is optional here, and it is specified to extract
 only the three :math:`t_{2g}` orbitals out of the five `d` orbitals given by
 :math:`l = 2`. A detailed explanation of all input parameters can be found
-further below `PLOVASP guide`_.
+further below `PLOVASP detailed guide`_.
 
 Next, the converter is executed. This can be done by calling :program:`PLOVASP` directly in the command line with the input file as an argument, e.g.:
      | `plovasp plo.cfg`
@@ -198,7 +195,6 @@ in :class:`SumkDFT <dft.sumk_dft.SumkDFT>`, e.g.::
 
 However, this should only be done after a careful study of the density matrix and the projected DOS in the localized basis. For the complete process for SrVO3 see the tutorial for the VASP interface `here <../tutorials/svo_vasp/svo_notebook.html>`_.
 
-|
 PLOVASP detailed guide
 ======================
 

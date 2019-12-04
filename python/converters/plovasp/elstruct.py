@@ -1,4 +1,4 @@
- 
+
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -24,8 +24,8 @@
 #
 ################################################################################
 r"""
-    vasp.elstruct
-    =============
+    plovasp.elstruct
+    ================
 
     Internal representation of VASP electronic structure data.
 """
@@ -51,7 +51,7 @@ class ElectronicStructure:
     - *symmetry* (dict) : paramters of symmetry
 
     When the object is created a simple consistency check
-    of the data coming from different VASP files is performed. 
+    of the data coming from different VASP files is performed.
     """
 
     def __init__(self, vasp_data):
@@ -123,7 +123,7 @@ class ElectronicStructure:
 # Concatenate coordinates grouped by type into one array
         self.structure['qcoords'] = np.vstack(vasp_data.poscar.q_types)
         self.structure['type_of_ion'] = vasp_data.poscar.type_of_ion
-        
+
         a = []
         for ia in range(3):
             a.append( vasp_data.poscar.a_brav[:,ia])
@@ -133,11 +133,11 @@ class ElectronicStructure:
         b3 = 2.0*np.pi*np.cross(a[0],a[1])/vol
         b = [b1,b2,b3]
         self.kmesh['kpoints_cart'] = 0.0 * self.kmesh['kpoints']
-        
+
         for ik in range(self.nktot):
             for ii in range(3):
                 self.kmesh['kpoints_cart'][ik] += self.kmesh['kpoints'][ik,ii]*b[ii]
-                
+
 # FIXME: This can be removed if ion coordinates are stored in a continuous array
 ## Construct a map to access coordinates by index
 #        self.structure['ion_index'] = []

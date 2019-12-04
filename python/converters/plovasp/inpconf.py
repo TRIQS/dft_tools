@@ -1,4 +1,4 @@
- 
+
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -24,8 +24,8 @@
 #
 ################################################################################
 r"""
-  vasp.inpconfig
-  ==============
+  plovasp.inpconfig
+  =================
 
   Module for parsing and checking an input config-file.
 """
@@ -195,8 +195,8 @@ class ConfigParameters:
         first_char = par_str[0].lower()
         assert first_char in 'tf', "Logical parameters should be given by either 'True' or 'False'"
         return first_char == 't'
-    
-    
+
+
 ################################################################################
 #
 # parse_string_int()
@@ -204,7 +204,7 @@ class ConfigParameters:
 ################################################################################
     def parse_string_int(self, par_str):
         """
-        int parameters 
+        int parameters
         """
         return int(par_str)
 
@@ -494,12 +494,11 @@ class ConfigParameters:
 ################################################################################
     def groups_shells_consistency(self):
         """
-        Ensures consistency between groups and shells.
-        In particular:
-        - if no groups are explicitly defined and only shell is defined create
-          a group automatically
-        - check the existance of all shells referenced in the groups
-        - check that all shells are referenced in the groups
+        Ensures consistency between groups and shells. In particular:
+            - if no groups are explicitly defined and only shell is defined create a group automatically
+            - check the existance of all shells referenced in the groups
+            - check that all shells are referenced in the groups
+            
         """
 # Special case: no groups is defined
         if self.ngroups == 0:
@@ -660,4 +659,3 @@ if __name__ == '__main__':
     doscar = vaspio.Doscar()
     doscar.from_file(vasp_dir)
 #    pars = parse_input(filename)
-
