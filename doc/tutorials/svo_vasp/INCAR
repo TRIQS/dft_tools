@@ -1,30 +1,23 @@
 SYSTEM = SrVO3
-ENCUT = 450
+NCORE = 4
+LMAXMIX=6
+EDIFF = 1.E-10
 
-ICHARG=2 ! 5 for fcsc calculations (communication with python)
+# DOS energy window
+NEDOS = 2001
 
 ! switch off symmetries
 ISYM=-1
 
-EDIFF = 1.E-10
-!! DOS energy window
-NEDOS = 2001
-!! Smearing procedure
+# Smearing procedure
 ISMEAR = -5
 
-
-!! real/reci projection scheme
-LREAL = .FALSE.
-
-
-NCORE = 4
-
-LMAXMIX=6
-LORBIT=14
+# the energy window to optimize projector channels
 EMIN = 3.9
 EMAX = 7.1
-LOCPROJ = 2 : d : Pr
 
-!! write WAVECAR, CHGCAR
-LWAVE = .FALSE.
-LCHARG = .FALSE.
+# use the PAW channel optimization
+LORBIT=14
+
+# project to V d
+LOCPROJ = 2 : d : Pr

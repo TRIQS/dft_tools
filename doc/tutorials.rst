@@ -26,8 +26,8 @@ Full charge self consistency with Wien2k: :math:`\gamma`-Ce
 VASP interface examples
 -----------------------
 
-Simple example: SrVO3
-"""""""""""""""""""""
+Simple Converter example: SrVO3
+"""""""""""""""""""""""""""""""
 
 .. toctree::
    :maxdepth: 2

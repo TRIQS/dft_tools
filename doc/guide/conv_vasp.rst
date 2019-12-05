@@ -35,6 +35,9 @@ Limitations of the interface
 * The interface currently supports only collinear-magnetism calculation
   (this implies no spin-orbit coupling) and spin-polarized projectors have not
   been tested.
+* The converter needs the correct Fermi energy from VASP, which is read from
+  the LOCPROJ file. However, VASP by default does not output this information.
+  Please see `Remarks on the VASP version`_.
 
 VASP: generating raw projectors
 ===============================
@@ -58,7 +61,7 @@ for more information. The formalism for this type of projectors is presented in
 <https://cms.mpi.univie.ac.at/wiki/index.php/LOCPROJ>`_.
 
 The allowed labels of the local states defined in terms of cubic
-harmonics are:
+harmonics are (mind the order):
 
  * Entire shells: `s`, `p`, `d`, `f`
 
@@ -373,3 +376,40 @@ For two correlated sites, one can define the file as follows:
     1.0   0.0   0.0   0.0   0.0
     0.0   1.0   0.0   0.0   0.0
     0.0   0.0   0.0   1.0   0.0
+
+Remarks on the VASP version
+===============================
+
+In the current version of the interface the Fermi energy is extracted from the
+`LOCPROJ` file. The file should contain the Fermi energy in the header. One can
+either copy the Fermi energy manually there after a successful VASP run, or
+modify the VASP source code slightly, by replacing the following line in
+`locproj.F` (around line 695):
+::
+  WRITE(99,'(4I6,"  # of spin, # of k-points, # of bands, # of proj" )') NS,NK,NB,NF
+
+with:
+::
+  WRITE(99,'(4I6,F12.7,"  # of spin, # of k-points, # of bands, # of proj, Efermi" )') W%WDES%NCDIJ,NK,NB,NF,EFERMI
+
+Please make sure that mixing in VASP is turned of IMIX=0 for CSC calculations. Otherwise VASP mixes the charge density, which in the worst case removes the effect of CSC completely.
+
+Another critical point for CSC calculations is the function call of
+`LPRJ_LDApU` in VASP. This function is not needed, and was left there for debug
+purposes, but is called every iteration. Removing the call to this function in `electron.F` in line 644 speeds up the calculation significantly in the `ICHARG=5` mode. Moreover, this prevents VASP from generating the `GAMMA` file, which should ideally only be done by the DMFT code after a successful DMFT step, and then be read by VASP.
+
+
+Furthermore, there is an bug in `fileio.F` around line 1710 where the code tries
+print out "reading the density matrix from Gamma", but this should be done only
+by the master node, and VASP gets stuck sometimes. So I added a `IF (IO%IU0>=0)
+THEN ... ENDIF` statement. Also, VASP gets sometimes stuck and does not write
+the `OSZICAR` file correctly due to a stuck buffer. I added a flush to the
+buffer to have a correctly written `OSZICAR` to extract the DFT energy. To do
+so, one can add in `electron.F` around line 580 after
+::
+  CALL STOP_TIMING("G",IO%IU6,"DOS")
+
+two lines:
+::
+  flush(17)
+  print *, ' '

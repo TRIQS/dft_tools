@@ -9,10 +9,10 @@ We will perform DFT+DMFT calcluations for the charge-transfer insulator NiO. We 
 VASP setup
 -------------------------------
 We start by running a simple VASP calculation to converge the charge density initially.
-Use the :ref:`INCAR`, :ref:`POSCAR`, and :ref:`KPOINTS` provided and use your 
+Use the :ref:`INCAR`, :ref:`POSCAR`, and :ref:`KPOINTS` provided and use your
 own :file:`POTCAR` file.
 
-Let us take a look in the :file:`INCAR`, where we have to specify local orbitals as basis 
+Let us take a look in the :file:`INCAR`, where we have to specify local orbitals as basis
 for our many-body calculation.
 
 .. literalinclude:: images_scripts/INCAR
@@ -83,6 +83,7 @@ In this part we will perform charge self-consistent DMFT calculations. To do so 
   ICHARG = 5
   NELM = 1000
   NELMIN = 1000
+  IMIX=0
 
 which makes VASP wait after each step of its iterative diagonalization until the file vasp.lock is created. It then reads the update of the charge density in the file `GAMMA`. It is terminated by an external script after a desired amount of steps, such that we deactivate all automatic stoping criterion by setting the number of steps to a very high number.
 
