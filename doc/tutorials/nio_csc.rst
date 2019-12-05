@@ -25,7 +25,7 @@ For details refer to the VASP wiki on the `LOCPROJ <https://cms.mpi.univi
 e.ac.at/wiki/index.php/LOCPROJ>`_ flag. The projectors are stored in the file `LOCPROJ`.
 
 
-plovasp
+PLOVASP
 ------------------------------
 Next, we postprocess the projectors, which VASP stored in the file `LOCPROJ`.
 We do this by invoking :program:`plovasp plo.cfg` which is configured by an input file, e.g., named :ref:`plo.cfg`.
