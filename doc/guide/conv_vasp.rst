@@ -89,7 +89,7 @@ channel anyway, in case one forgets to set `LORBIT=14`.
 
 In case of SrVO3 one may first want to perform a self-consistent
 calculation to know the Fermi level and the rough position of the target states.
-In the next step one sets `ICHARGE = 1` and adds the following additional lines
+In the next step one sets `ICHARG = 1` and adds the following additional lines
 into INCAR (provided that V is the second ion in POSCAR):
 
   | `EMIN = 3.0`
@@ -299,6 +299,8 @@ the local states:
 
 *  **CORR** (True/False): Determines if shell is correlated or not. At least one
    shell has to be correlated. Default is True.
+*  **SORT** (integer): Overrides the default detection of ion sorts by supplying
+   an integer. Default is `None`, for which the default behavior is retained.
 *  **TRANSFORM** (matrix): local transformation matrix applied to all states
    in the projector shell. The matrix is defined by a (multiline) block
    of floats, with each line corresponding to a row. The number of columns

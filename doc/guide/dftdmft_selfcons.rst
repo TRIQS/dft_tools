@@ -140,18 +140,21 @@ and proceeds with the next iteration. PLOVasp interface provides a shell-script 
 ::
   vasp_dmft [-n <number of cores>] -i <number of iterations>  -j <number of VASP iterations with fixed charge density> [-v <VASP version>] [-p <path to VASP directory>] [<dmft_script.py>]
 
-         If the number of cores is not specified it is set to 1 by default.
+       If the number of cores is not specified it is set to 1 by default.
+       Set the number of times the dmft solver is called with -i <number of iterations>
 
-         <dmft_script.py> must provide an importable function 'dmft_cycle()'
-         which is invoked once per DFT+DMFT iteration. If the script name is
-         omitted the default name 'csc_dmft.py' is used.
+       Set the number of VASP iteration with a fixed charge density update
+       inbetween the dmft runs with -j <number of VASP iterations with fixed charge density>
 
-         If the path to VASP directory is not specified it must be provided by a
-         variable VASP_DIR.
+       Set the version of VASP by -v standard(default)/no_gamma_write to
+       specify if VASP writes the GAMMA file or not.
 
-         Set the version of VASP by -v standard(default)/no_gamma_write to
-         specify if VASP writes the GAMMA file or not.
+       If the path to VASP directory is not specified it must be provided by a
+       variable VASP_DIR.
 
+       <dmft_script.py> must provide an importable function 'dmft_cycle()'
+       which is invoked once per DFT+DMFT iteration. If the script name is
+       omitted the default name 'csc_dmft.py' is used.
 
 which takes care of the process management. The user must, however, specify a path to VASP code and provide the DMFT Python-script. See for an example :ref:`NiO CSC tutorial<nio_csc>`.
 
