@@ -394,8 +394,6 @@ with:
 ::
   WRITE(99,'(4I6,F12.7,"  # of spin, # of k-points, # of bands, # of proj, Efermi" )') W%WDES%NCDIJ,NK,NB,NF,EFERMI
 
-Please make sure that mixing in VASP is turned of IMIX=0 for CSC calculations. Otherwise VASP mixes the charge density, which in the worst case removes the effect of CSC completely.
-
 Another critical point for CSC calculations is the function call of
 `LPRJ_LDApU` in VASP. This function is not needed, and was left there for debug
 purposes, but is called every iteration. Removing the call to this function in `electron.F` in line 644 speeds up the calculation significantly in the `ICHARG=5` mode. Moreover, this prevents VASP from generating the `GAMMA` file, which should ideally only be done by the DMFT code after a successful DMFT step, and then be read by VASP.

@@ -168,9 +168,17 @@ VASP has a special INCAR `ICHARG=5` mode, that has to be switched on to make VAS
   ICHARG = 5
   NELM = 1000
   NELMIN = 1000
-  IMIX=0
 
-Here, the flag `IMIX=0` ensures that VASP does not mix the new charge density with previous iterations. Technically, VASP runs with `ICHARG=5` in a NSCF mode. Therefore, one needs to make sure to start with a converged `WAVECAR` file! To understand the difference please make sure to read `ISTART flag VASP wiki <https://www.vasp.at/wiki/index.php/ISTART>`_. Furthermore, the flags `NELM` and `NELMIN` ensure that VASP does not terminate after the default number of iterations of 60.
+Technically, VASP runs with `ICHARG=5` in a SCF mode, and adding the DMFT
+changes to the DFT density in each step, so that the full DFT+DMFT charge
+density is constructed in every step. This is only done in VASP because only the
+changes to the DFT density are read by VASP not the full DFT+DMFT density.
+Moreover, one should always start with a converged `WAVECAR` file, or make sure,
+that the KS states are well converged before the first projectors are created!
+To understand the difference please make sure to read `ISTART flag VASP wiki
+<https://www.vasp.at/wiki/index.php/ISTART>`_. Furthermore, the flags `NELM` and
+`NELMIN` ensure that VASP does not terminate after the default number of
+iterations of 60.
 
 Other DFT codes
 ---------------
