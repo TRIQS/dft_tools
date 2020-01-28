@@ -108,7 +108,7 @@ try {
             base=\$INSTALL/share/doc
             dir="${projectName}"
             [[ -d \$base/triqs_\$dir ]] && dir=triqs_\$dir || [[ -d \$base/\$dir ]]
-            cp -rp \$base/\$dir ${subdir}"
+            cp -rp \$base/\$dir ${subdir}
           """
         }
         sh "git add -A ${subdir}"
