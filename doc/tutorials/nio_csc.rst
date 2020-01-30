@@ -53,7 +53,7 @@ DMFT
 dmft script
 ------------------------------
 
-Since the python script for performing the dmft loop pretty much resembles that presented in the tutorial on :ref:`SrVO3 <srvo3>`, we will not go into detail here but simply provide the script :ref:`nio.py`. Following Kunes et al. in `PRB 75 165115 (2007) <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.75.165115>`_ we use :math:`U=8` and :math:`J=1`. We se;ect :math:`\beta=5` instead of :math:`\beta=10` to ease the problem slightly. For simplicity we fix the double-counting potential to :math:`\mu_{DC}=59` eV by::
+Since the python script for performing the dmft loop pretty much resembles that presented in the tutorial on :ref:`SrVO3 <srvo3>`, we will not go into detail here but simply provide the script :ref:`nio.py`. Following Kunes et al. in `PRB 75 165115 (2007) <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.75.165115>`_ we use :math:`U=8` and :math:`J=1`. We select :math:`\beta=5` instead of :math:`\beta=10` to ease the problem slightly. For simplicity we fix the double-counting potential to :math:`\mu_{DC}=59` eV by::
 
   DC_value = 59.0
   SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0, use_dc_value=DC_value)

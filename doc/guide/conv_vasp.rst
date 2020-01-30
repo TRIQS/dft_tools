@@ -399,17 +399,19 @@ Another critical point for CSC calculations is the function call of
 purposes, but is called every iteration. Removing the call to this function in `electron.F` in line 644 speeds up the calculation significantly in the `ICHARG=5` mode. Moreover, this prevents VASP from generating the `GAMMA` file, which should ideally only be done by the DMFT code after a successful DMFT step, and then be read by VASP.
 
 
-Furthermore, there is an bug in `fileio.F` around line 1710 where the code tries
-print out "reading the density matrix from Gamma", but this should be done only
-by the master node, and VASP gets stuck sometimes. So I added a `IF (IO%IU0>=0)
-THEN ... ENDIF` statement. Also, VASP gets sometimes stuck and does not write
-the `OSZICAR` file correctly due to a stuck buffer. I added a flush to the
-buffer to have a correctly written `OSZICAR` to extract the DFT energy. To do
-so, one can add in `electron.F` around line 580 after
+Furthermore, there is a bug in `fileio.F` around line 1710 where VASP tries to
+print "reading the density matrix from Gamma". This should be done only by the
+master node, and VASP gets stuck sometimes. Adding a
+::
+  IF (IO%IU0>=0) THEN
+  ...
+  ENDIF
+statement resolves this issue. A similar problem occurs, when VASP writes the
+`OSZICAR` file and a buffer is stuck. Adding a `flush` to the buffer in
+`electron.F` around line 580 after
 ::
   CALL STOP_TIMING("G",IO%IU6,"DOS")
-
-two lines:
-::
   flush(17)
   print *, ' '
+
+resolves this issue. Otherwise the OSZICAR file is not written properly.
