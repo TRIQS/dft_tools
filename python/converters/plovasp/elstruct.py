@@ -1,4 +1,4 @@
- 
+
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -24,8 +24,8 @@
 #
 ################################################################################
 r"""
-    vasp.elstruct
-    =============
+    plovasp.elstruct
+    ================
 
     Internal representation of VASP electronic structure data.
 """
@@ -51,7 +51,7 @@ class ElectronicStructure:
     - *symmetry* (dict) : paramters of symmetry
 
     When the object is created a simple consistency check
-    of the data coming from different VASP files is performed. 
+    of the data coming from different VASP files is performed.
     """
 
     def __init__(self, vasp_data):
@@ -105,7 +105,7 @@ class ElectronicStructure:
             print "eigvals from LOCPROJ"
             self.eigvals = vasp_data.plocar.eigs
             self.ferw = vasp_data.plocar.ferw.transpose((2, 0, 1))
-            self.efermi = vasp_data.plocar.efermi
+            self.efermi = vasp_data.doscar.efermi
 
 # For later use it is more convenient to use a different order of indices
 # [see ProjectorGroup.orthogonalization()]
@@ -123,6 +123,21 @@ class ElectronicStructure:
 # Concatenate coordinates grouped by type into one array
         self.structure['qcoords'] = np.vstack(vasp_data.poscar.q_types)
         self.structure['type_of_ion'] = vasp_data.poscar.type_of_ion
+
+        a = []
+        for ia in range(3):
+            a.append( vasp_data.poscar.a_brav[:,ia])
+        vol = np.dot(a[0],np.cross(a[1],a[2]))
+        b1 = 2.0*np.pi*np.cross(a[1],a[2])/vol
+        b2 = 2.0*np.pi*np.cross(a[2],a[0])/vol
+        b3 = 2.0*np.pi*np.cross(a[0],a[1])/vol
+        b = [b1,b2,b3]
+        self.kmesh['kpoints_cart'] = 0.0 * self.kmesh['kpoints']
+
+        for ik in range(self.nktot):
+            for ii in range(3):
+                self.kmesh['kpoints_cart'][ik] += self.kmesh['kpoints'][ik,ii]*b[ii]
+
 # FIXME: This can be removed if ion coordinates are stored in a continuous array
 ## Construct a map to access coordinates by index
 #        self.structure['ion_index'] = []
@@ -159,8 +174,9 @@ class ElectronicStructure:
 #                ov_min = np.minimum(ov, ov_min)
 
 # Output only the site-diagonal parts of the matrices
+        print
+        print "  Unorthonormalized density matrices and overlaps:"
         for ispin in xrange(ns):
-            print
             print "  Spin:", ispin + 1
             for io, ion in enumerate(ions):
                 print "  Site:", ion
@@ -173,11 +189,9 @@ class ElectronicStructure:
                         dm[iorb, iorb2] = den_mat[ispin, ind, ind2]
                         ov[iorb, iorb2] = overlap[ispin, ind, ind2]
 
-                print "  Density matrix" + (12*norb - 12)*" " + "Overlap"
+                print "  Density matrix" + (12*norb - 12 + 2)*" " + "Overlap"
                 for drow, dov in zip(dm, ov):
                     out = ''.join(map("{0:12.7f}".format, drow))
                     out += "    "
                     out += ''.join(map("{0:12.7f}".format, dov))
                     print out
-
-

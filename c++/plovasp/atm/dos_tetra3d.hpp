@@ -28,7 +28,7 @@ using triqs::arrays::array_view;
 /// DOS of a band by analytical tetrahedron method
 ///
 ///   Returns corner weights for all tetrahedra for a given band and real energy.
-array_view<double, 2> 
+array<double, 2>
 dos_tetra_weights_3d(array_view<double, 1> eigk, /// Band energies for each k-point
                      double en, /// Energy at which DOS weights are to be calculated
                      array_view<long, 2> itt /// Tetrahedra defined by k-point indices

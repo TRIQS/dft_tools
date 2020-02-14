@@ -1,4 +1,4 @@
- 
+
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -24,8 +24,8 @@
 #
 ################################################################################
 r"""
-    vasp.proj_group
-    ===============
+    plovasp.proj_group
+    ==================
 
     Storage and manipulation of projector groups.
 """
@@ -48,10 +48,9 @@ class ProjectorGroup:
     the parameters from the config-file (passed in `pars`).
 
     Parameters:
-
-    - gr_pars (dict) : group parameters from the config-file
-    - shells ([ProjectorShell]) : array of ProjectorShell objects
-    - eigvals (numpy.array) : array of KS eigenvalues
+        - gr_pars (dict) : group parameters from the config-file
+        - shells ([ProjectorShell]) : array of ProjectorShell objects
+        - eigvals (numpy.array) : array of KS eigenvalues
 
     """
     def __init__(self, gr_pars, shells, eigvals):
@@ -74,16 +73,16 @@ class ProjectorGroup:
             ib_win[:,:,1] = gr_pars['bands'][1]-1
             ib_min = gr_pars['bands'][0] - 1
             ib_max = gr_pars['bands'][1] - 1
-            
+
         else:
             ib_win, ib_min, ib_max = self.select_bands(eigvals)
         self.ib_win = ib_win
         self.ib_min = ib_min
         self.ib_max = ib_max
         self.nb_max = ib_max - ib_min + 1
-       
-        
-        
+
+
+
         if self.complement:
             n_bands = self.ib_win[:,:,1] - self.ib_win[:,:,0]+1
             n_orbs = sum([x.ndim for x in self.shells])
@@ -92,14 +91,14 @@ class ProjectorGroup:
                 self.complement = False
                 print "\nWARNING: The total number of orbitals in this group is  "
                 print "equal to the number of bands. Setting COMPLEMENT to FALSE!\n"
-        
+
 
 # Select projectors within the energy window
         for ish in self.ishells:
             shell = self.shells[ish]
             shell.select_projectors(ib_win, ib_min, ib_max)
 
-        
+
 
 ################################################################################
 #
@@ -177,8 +176,8 @@ class ProjectorGroup:
                         nlm = i2 - i1 + 1
                         shell = self.shells[ish]
                         shell.proj_win[ion, isp, ik, :nlm, :nb] = p_orth[i1:i2, :nb]
-                        
-                        
+
+
 ################################################################################
 #
 # calc_hk
@@ -188,11 +187,11 @@ class ProjectorGroup:
         """
         Calculate H(k) for a group by applying the projectors P
         to the eigenvalues eps.
-        
+
         H_ij(k) = sum_l P*_il eps_l P_lj
-        
+
         """
-        
+
 # here we abuse the get_block_matrix_map(), however, it only works
 # if self.normion is false
         temp = self.normion
@@ -201,15 +200,15 @@ class ProjectorGroup:
         self.normion = temp
 
         _, ns, nk, _, _ = self.shells[0].proj_win.shape
-        
+
         self.hk = np.zeros((ns,nk,ndim,ndim), dtype=np.complex128)
 # Note that 'ns' and 'nk' are the same for all shells
         for isp in xrange(ns):
             for ik in xrange(nk):
                 bmin = self.ib_win[ik, isp, 0]
                 bmax = self.ib_win[ik, isp, 1]+1
-                
-                nb = bmax - bmin 
+
+                nb = bmax - bmin
                 p_mat = np.zeros((ndim, nb), dtype=np.complex128)
                 #print(bmin,bmax,nb)
 # Combine all projectors of the group to one block projector
@@ -221,7 +220,7 @@ class ProjectorGroup:
                         nlm = i2 - i1 + 1
                         shell = self.shells[ish]
                         p_mat[i1:i2, :nb] = shell.proj_win[ion, isp, ik, :nlm, :nb]
-                
+
                 self.hk[isp,ik,:,:] = np.dot(p_mat*eigvals[ik,bmin:bmax,isp],
                                         p_mat.transpose().conjugate())
 
@@ -234,36 +233,36 @@ class ProjectorGroup:
     def calc_complement(self,eigvals):
         """
         Calculate the complement for a group of projectors.
-            
+
         This leads to quadtratic projectors P = <l|n> by using a Gram-Schmidt.
-        
+
         The projector on the orthogonal complement of the existing projectors
-        {|l>} is P^u = 1 - sum_l |l><l|
+        |l> is P^u = 1 - sum_l |l><l|
         We get candidates for complement projectors by applying P^u to a Bloch
         state |n>: |l*> = P^u |n>. For numerical stability we select that Bloch
         state which leads to the |l*> with the largest norm (that corresponds to
-        that Bloch state with the smallest overlap with the space spanned by {|l>})
-        We normalize |l*> and add it to {|l>}. We do so untill we have as many
-        |l> states as we have {|n>} states.
-        
+        that Bloch state with the smallest overlap with the space spanned by |l>)
+        We normalize |l*> and add it to |l>. We do so untill we have as many
+        |l> states as we have |n> states.
+
         """
 
         print '\nCalculating complement\n'
- 
+
         block_maps, ndim = self.get_block_matrix_map()
         _, ns, nk, _, _ = self.shells[0].proj_win.shape
         p_mat = np.zeros((ndim, self.nb_max), dtype=np.complex128)
-        p_full = np.zeros((1,ns,nk,self.nb_max, self.nb_max), dtype=np.complex128)        
-        
+        p_full = np.zeros((1,ns,nk,self.nb_max, self.nb_max), dtype=np.complex128)
+
 # Note that 'ns' and 'nk' are the same for all shells
-        
-            
+
+
         for isp in xrange(ns):
             for ik in xrange(nk):
                 bmin = self.ib_win[ik, isp, 0]
                 bmax = self.ib_win[ik, isp, 1]+1
-                
-                nb = bmax - bmin 
+
+                nb = bmax - bmin
 # Combine all projectors of the group to one block projector
                 for bl_map in block_maps:
                     p_mat[:, :] = 0.0j  # !!! Clean-up from the last k-point and block!
@@ -297,11 +296,11 @@ class ProjectorGroup:
         sh_pars['ib_min']  = bmin
         sh_pars['ib_max']  = bmax
         sh_pars['ib_win']  = self.ib_win
-        
+
         self.shells.append(ComplementShell(sh_pars,p_full[:,:,:,ndim:,:],False))
         self.ishells.append(self.ishells[-1]+1)
-                                                
-                                                
+
+
 ################################################################################
 #
 # gen_block_matrix_map
@@ -321,13 +320,13 @@ class ProjectorGroup:
         of projectors to be orthogonalized. Each subset corresponds to a subset of sites
         and spans all orbital indices. defined by 'bl_map' as
 
-           bl_map = [((i1_start, i1_end), (i1_shell, i1_ion)), 
-                     ((i2_start, i2_end), (i2_shell, i2_ion)), 
+           bl_map = [((i1_start, i1_end), (i1_shell, i1_ion)),
+                     ((i2_start, i2_end), (i2_shell, i2_ion)),
                      ...],
 
         where `iX_start`, `iX_end` is the range of indices of the block matrix
         (in Python convention `iX_end = iX_last + 1`, with `iX_last` being the last index
-        of the range), 
+        of the range),
         `iX_shell` and `iX_ion` the shell and site indices. The length of the range
         should be consistent with 'nlm' dimensions of a corresponding shell, i.e.,
         `iX_end - iX_start = nlm[iX_shell]`.
@@ -336,7 +335,7 @@ class ProjectorGroup:
           1. Orthogonality is ensured on each site (NORMION = True).
              For each site 'ion' we have the following mapping:
 
-                 block_maps = [bl_map[ion] for ion in xrange(shell.nion) 
+                 block_maps = [bl_map[ion] for ion in xrange(shell.nion)
                                            for shell in shells]
 
                  bl_map = [((i1_start, i1_end), (i1_shell, ion)),
@@ -438,14 +437,15 @@ class ProjectorGroup:
 
         Parameters
         ----------
-        
+
         eigvals (numpy.array) : all eigenvalues
         emin, emax (float) : energy window
 
         Returns
         -------
 
-        ib_win, nb_min, nb_max : 
+        ib_win, nb_min, nb_max : lowest and highest indices of the selected bands
+
         """
 # Sanity check
         if self.emin > eigvals.max() or self.emax < eigvals.min():
@@ -481,5 +481,3 @@ class ProjectorGroup:
                 ib_max = max(ib_max, ib2)
 
         return ib_win, ib_min, ib_max
-
-

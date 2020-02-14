@@ -1,4 +1,4 @@
- 
+
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -24,8 +24,8 @@
 #
 ################################################################################
 r"""
-    vasp.vaspio
-    ===========
+    plovasp.vaspio
+    ==============
 
     Input of required VASP data.
 
@@ -88,8 +88,12 @@ class VaspData:
                 self.doscar.from_file(vasp_dir)
             except (IOError, StopIteration):
                 if efermi_required:
-#                    raise Exception("Efermi cannot be read from DOSCAR")
-                    pass
+                    print "!!! WARNING !!!: Error reading from Efermi from DOSCAR, trying LOCPROJ"
+                    try:
+                        self.plocar.efermi
+                        self.doscar.efermi = self.plocar.efermi
+                    except NameError:
+                        raise Exception("Efermi cannot be read from DOSCAR or LOCPROJ")
                 else:
 # TODO: This a hack. Find out a way to determine ncdij without DOSCAR
                     print "!!! WARNING !!!: Error reading from DOSCAR, taking Efermi from config"
@@ -103,16 +107,18 @@ class VaspData:
 ################################################################################
 ################################################################################
 class Plocar:
-    r"""
+    """
     Class containing raw PLO data from VASP.
 
-    Properties
-    ----------
+    Properties:
+        - *plo* (numpy.array((nion, ns, nk, nb, nlmmax))) : raw projectors
+        - *params* (dict) : parameters read from PLOCAR
+        - *ferw* (array(nion, ns, nk, nb)) : Fermi weights from VASP
 
-    - *plo* (numpy.array((nion, ns, nk, nb, nlmmax))) : raw projectors
-    - *params* (dict) : parameters read from PLOCAR
-    - *ferw* (array(nion, ns, nk, nb)) : Fermi weights from VASP
     """
+    def __init__(self):
+        self.plo = None
+        self.proj_params = None
 
     def from_file(self, vasp_dir='./', plocar_filename='PLOCAR'):
         r"""
@@ -240,7 +246,10 @@ class Plocar:
             self.nspin = 1 if self.ncdij == 1 else 2
             self.nspin_band = 2 if self.ncdij == 2 else 1
 
-            self.efermi = float(sline[4])
+            try:
+                self.efermi = float(sline[4])
+            except:
+                print "!!! WARNING !!!: Error reading E-Fermi from LOCPROJ, trying DOSCAR"
 
             plo = np.zeros((nproj, self.nspin, nk, self.nband), dtype=np.complex128)
             proj_params = [{} for i in xrange(nproj)]
@@ -323,14 +332,12 @@ class Poscar:
     """
     Class containing POSCAR data from VASP.
 
-    Properties
-    ----------
-
-      nq (int) : total number of ions
-      ntypes ([int]) : number of ion types
-      nions (int) : a list of number of ions of each type
-      a_brav (numpy.array((3, 3), dtype=float)) : lattice vectors
-      q_types ([numpy.array((nions, 3), dtype=float)]) : a list of
+    Properties:
+        - nq (int) : total number of ions
+        - ntypes ([int]) : number of ion types
+        - nions (int) : a list of number of ions of each type
+        - a_brav (numpy.array((3, 3), dtype=float)) : lattice vectors
+        - q_types ([numpy.array((nions, 3), dtype=float)]) : a list of
           arrays each containing fractional coordinates of ions of a given type
     """
     def __init__(self):
@@ -443,16 +450,18 @@ class Kpoints:
     """
     Class describing k-points and optionally tetrahedra.
 
-    Properties
-    ----------
-
-    - nktot (int) : total number of k-points in the IBZ
-    - kpts (numpy.array((nktot, 3), dtype=float)) : k-point vectors (fractional coordinates)
-    - ntet (int) : total number of k-point tetrahedra
-    - itet (numpy.array((ntet, 5), dtype=float) : array of tetrahedra
-    - volt (float) : volume of a tetrahedron (the k-grid is assumed to
-          be uniform)
+    Properties:
+        - nktot (int) : total number of k-points in the IBZ
+        - kpts (numpy.array((nktot, 3), dtype=float)) : k-point vectors (fractional coordinates)
+        - ntet (int) : total number of k-point tetrahedra
+        - itet (numpy.array((ntet, 5), dtype=float) : array of tetrahedra
+        - volt (float) : volume of a tetrahedron (the k-grid is assumed to
+              be uniform)
     """
+    def __init__(self):
+        self.kpts = None
+        self.nktot = None
+        self.kwghts = None
 #
 # Reads IBZKPT file
 #
@@ -496,7 +505,7 @@ class Kpoints:
             self.kwghts[ik] = float(sline[3])
 
         self.kwghts /= self.nktot
-        
+
 # Attempt to read tetrahedra
 #   Skip comment line ("Tetrahedra")
         try:
@@ -597,7 +606,7 @@ class Eigenval:
                 assert len(tmp) == 2 * self.ispin + 1, "EIGENVAL file is incorrect (probably from old versions of VASP)"
                 self.eigs[ik, ib, :] = tmp[1:self.ispin+1]
                 self.ferw[ik, ib, :] = tmp[self.ispin+1:]
-                
+
 
 ################################################################################
 ################################################################################
@@ -610,6 +619,10 @@ class Doscar:
     """
     Class containing some data from DOSCAR
     """
+    def __init__(self):
+        self.ncdij = None
+        self.efermi = None
+
     def from_file(self, vasp_dir='./', dos_filename='DOSCAR'):
         """
         Reads only E_Fermi from DOSCAR.
@@ -705,5 +718,3 @@ def read_symmcar(vasp_dir, symm_filename='SYMMCAR'):
     data.update({ 'nrot': nrot, 'ntrans': ntrans,
                   'lmax': lmax, 'nion': nion,
                   'sym_rots': rot_mats, 'perm_map': rot_map })
-
-
