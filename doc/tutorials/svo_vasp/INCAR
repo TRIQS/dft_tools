@@ -1,0 +1,23 @@
+SYSTEM = SrVO3
+NCORE = 4
+LMAXMIX=6
+EDIFF = 1.E-10
+
+# DOS energy window
+NEDOS = 2001
+
+! switch off symmetries
+ISYM=-1
+
+# Smearing procedure
+ISMEAR = -5
+
+# the energy window to optimize projector channels
+EMIN = 3.9
+EMAX = 7.1
+
+# use the PAW channel optimization
+LORBIT=14
+
+# project to V d
+LOCPROJ = 2 : d : Pr

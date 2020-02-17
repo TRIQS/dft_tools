@@ -25,7 +25,8 @@ class TestProjectorGroup(mytest.MyTestCase):
 
     Scenarios:
     - **test** that orthogonalization is correct
-    - **test** that NORMION = True gives the same result
+    - **test** that NORMION = True gives the same results
+    - **test that HK = TRUE gives correct H(k)
     """
     def setUp(self):
         conf_file = _rpath + 'example.cfg'
@@ -88,5 +89,13 @@ class TestProjectorGroup(mytest.MyTestCase):
 #        self.assertFileEqual(testout, expected_file)
         expected_file = _rpath + 'projortho.out.h5'
         self.assertH5FileEqual(testout, expected_file)
-
-
+        
+    def test_hk(self):
+        self.proj_gr.orthogonalize()
+        self.proj_gr.calc_hk(self.eigvals)
+        
+        testout = _rpath + 'hk.test.h5'
+        with HDFArchive(testout, 'w') as h5test:
+            h5test['hk'] = self.proj_gr.hk
+        expected_file = _rpath + 'hk.out.h5'
+        self.assertH5FileEqual(testout, expected_file)

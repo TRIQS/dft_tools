@@ -5,20 +5,30 @@ MPIRUN_CMD=mpirun
 show_help()
 {
 echo "
-Usage: vasp_dmft [-n <number of cores>] -i <number of iterations> [-p <path to VASP directory>] [<dmft_script.py>]
+Usage: vasp_dmft [-n <number of cores>] -i <number of iterations>  -j <number of VASP iterations with fixed charge density> [-v <VASP version>] [-p <path to VASP directory>] [<dmft_script.py>]
 
-       If the number of cores is note specified it is set to 1 by default.
+       If the number of cores is not specified it is set to 1 by default.
 
-       <dmft_script.py> must provide an importable function 'dmft_cycle()' which is invoked
-       once per DFT+DMFT iteration. If the script name is omitted the default name 
-       'csc_dmft.py' is used.
+       Set the number of times the dmft solver is called with -i <number of iterations>
+
+       Set the number of VASP iteration with a fixed charge density update
+       inbetween the dmft runs with -j <number of VASP iterations with fixed charge density>
+
+       Set the version of VASP by -v standard(default)/no_gamma_write to
+       specify if VASP writes the GAMMA file or not.
 
        If the path to VASP directory is not specified it must be provided by a
        variable VASP_DIR.
+
+       <dmft_script.py> must provide an importable function 'dmft_cycle()'
+       which is invoked once per DFT+DMFT iteration. If the script name is
+       omitted the default name 'csc_dmft.py' is used.
+       
+       
 "
 }
 
-while getopts ":n:i:p:" opt; do
+while getopts ":n:i:j:v:p:h" opt; do
   case $opt in
      n)
 #        echo "Option: Ncpu, argument: $OPTARG"
@@ -34,10 +44,27 @@ while getopts ":n:i:p:" opt; do
 #           echo "Number of iterations: $NITER"
         fi
         ;;
+     j)
+#        echo "Option: Ndftiter"
+        if [ -n "$OPTARG" ]; then
+           NDFTITER=$OPTARG
+#           echo "Number of iterations with fixed density: $NDFTITER"
+        fi
+        ;;
      p)
         if [ -n "$OPTARG" ]; then
            VASP_DIR=$OPTARG
         fi
+        ;;
+     v)
+        if [ -n "$OPTARG" ]; then
+           VASP_VERSION=$OPTARG
+#           echo "Version of VASP (writing GAMMA file (standard) or not (no_gamma_write): $VASP_VERSION"
+        fi
+        ;;
+      h)
+        show_help
+        exit 1
         ;;
       :)
         echo "  Error: Option -$OPTARG requires an argument" >&2
@@ -55,6 +82,7 @@ if [ -z "$NITER" ]; then
   exit 1
 fi
 
+
 if [ -z "$VASP_DIR" ]; then
   echo "  Error: A path to VASP directory must be given either with option -p or by setting variable VASP_DIR" >&2
   show_help
@@ -64,6 +92,16 @@ fi
 if [ -z "$NPROC" ]; then
   echo "  Number of cores not specified, setting to 1"
   NPROC=1
+fi
+
+if [ -z "$NDFTITER" ]; then
+  echo "  Number of VASP iterations without updating density not specified, setting to 1"
+  NDFTITER=1
+fi
+
+if [ -z "$VASP_VERSION" ]; then
+  echo "  VASP version not specified, setting to standard"
+  VASP_VERSION="standard"
 fi
 
 shift $((OPTIND-1))
@@ -76,11 +114,13 @@ fi
 
 echo "  Number of cores: $NPROC"
 echo "  Number of iterations: $NITER"
+echo "  Number of iterations with fixed density: $NDFTITER"
+echo "  VASP version: $VASP_VERSION"
 echo "  Script name: $DMFT_SCRIPT"
 
 rm -f vasp.lock
 stdbuf -o 0 $MPIRUN_CMD -np $NPROC "$VASP_DIR" &
 
 
-$MPIRUN_CMD -np $NPROC python -m triqs_dft_tools.converters.plovasp.sc_dmft $(jobs -p) $NITER $DMFT_SCRIPT 'plo.cfg' || kill %1
+$MPIRUN_CMD -np $NPROC python -m triqs_dft_tools.converters.plovasp.sc_dmft $(jobs -p) $NITER $NDFTITER $DMFT_SCRIPT 'plo.cfg' $VASP_VERSION || kill %1
 

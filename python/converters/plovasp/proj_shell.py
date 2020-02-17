@@ -1,4 +1,4 @@
- 
+
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -24,8 +24,8 @@
 #
 ################################################################################
 r"""
-    vasp.proj_shell
-    ===============
+    plovasp.proj_shell
+    ==================
 
     Storage and manipulation on projector shells.
 """
@@ -72,6 +72,8 @@ class ProjectorShell:
         self.lorb = sh_pars['lshell']
         self.ions = sh_pars['ions']
         self.user_index = sh_pars['user_index']
+        self.corr = sh_pars['corr']
+        self.ion_sort = [sh_pars['ion_sort']]
         self.nc_flag = nc_flag
 #        try:
 #            self.tmatrix = sh_pars['tmatrix']
@@ -84,12 +86,14 @@ class ProjectorShell:
         self.nion = self.ions['nion']
 # Extract ion list and equivalence classes (ion sorts)
         self.ion_list = sorted(it.chain(*self.ions['ion_list']))
-        self.ion_sort = []
-        for ion in self.ion_list:
-            for icl, eq_cl in enumerate(self.ions['ion_list']):
-                if ion in eq_cl:
-                    self.ion_sort.append(icl + 1) # Enumerate classes starting from 1
-                    break
+
+        if self.ion_sort[0] is None:
+            self.ion_sort = []
+            for ion in self.ion_list:
+                for icl, eq_cl in enumerate(self.ions['ion_list']):
+                    if ion in eq_cl:
+                        self.ion_sort.append(icl + 1) # Enumerate classes starting from 1
+                        break
 
         self.ndim = self.extract_tmatrices(sh_pars)
 
@@ -215,7 +219,7 @@ class ProjectorShell:
     def extract_projectors(self, proj_raw, proj_params, kmesh, structure):
         """
         Extracts projectors for the given shell.
-        
+
         Projectors are selected from the raw-projector array 'proj_raw'
         according to the shell parameters.
         If necessary the projectors are transformed usin 'self.tmatrices'.
@@ -449,5 +453,60 @@ class ProjectorShell:
 
         return dos
 
+################################################################################
+################################################################################
+#
+# class ProjectorShell
+#
+################################################################################
+################################################################################
+class ComplementShell(ProjectorShell):
+    """
+    Container of projectors related to a complement shell.
 
 
+    Parameters:
+
+    - sh_pars (dict) : shell parameters from the config-file
+    - proj_compl (numpy.array) : array of complement projectors
+
+    """
+    def __init__(self, sh_pars, proj_compl, nc_flag):
+        self.lorb = sh_pars['lshell']
+        self.ions = sh_pars['ions']
+        self.user_index = sh_pars['user_index']
+        self.corr = sh_pars['corr']
+        self.nc_flag = nc_flag
+
+        self.ib_min = sh_pars['ib_min']
+        self.ib_max = sh_pars['ib_max']
+        self.ib_win = sh_pars['ib_win']
+
+
+        #self.lm1 = self.lorb**2
+        #self.lm2 = (self.lorb+1)**2
+
+        self.nion = self.ions['nion']
+# Extract ion list and equivalence classes (ion sorts)
+        self.ion_list = sorted(it.chain(*self.ions['ion_list']))
+        self.ion_sort = []
+        for ion in self.ion_list:
+            for icl, eq_cl in enumerate(self.ions['ion_list']):
+                if ion in eq_cl:
+                    self.ion_sort.append(icl + 1) # Enumerate classes starting from 1
+                    break
+
+        self.ndim = proj_compl.shape[3]
+        self.proj_win = proj_compl
+
+    def extract_tmatrices(self, sh_pars):
+        raise Exception('not implemented')
+
+    def local_hamiltonian(self, el_struct, site_diag=True, spin_diag=True):
+        raise Exception('not implemented')
+
+    def density_matrix(self, el_struct, site_diag=True, spin_diag=True):
+        raise Exception('not implemented')
+
+    #def density_of_states(self, el_struct, emesh):
+    #    raise Exception('not implemented')

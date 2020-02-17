@@ -23,3 +23,22 @@ Full charge self consistency with Wien2k: :math:`\gamma`-Ce
 
    tutorials/ce-gamma-fscs_wien2k
 
+VASP interface examples
+-----------------------
+
+Simple Converter example: SrVO3
+"""""""""""""""""""""""""""""""
+
+.. toctree::
+   :maxdepth: 2
+
+   tutorials/svo_vasp/svo_notebook
+
+Complex example: NiO
+"""""""""""""""""""""""""""""
+
+.. toctree::
+   :maxdepth: 2
+
+
+   tutorials/nio_csc

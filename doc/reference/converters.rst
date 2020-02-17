@@ -22,6 +22,42 @@ Wannier90 Converter
    :members:
    :special-members:
 
+PLOVASP
+----------
+.. _refPLOVASP:
+
+PLOVASP reference, the classes / functions are sorted the way the converter uses them.
+
+.. automodule:: triqs_dft_tools.converters.plovasp.converter
+  :members: generate_and_output_as_text
+
+.. automodule:: triqs_dft_tools.converters.plovasp.inpconf
+  :members: ConfigParameters
+
+.. automodule:: triqs_dft_tools.converters.plovasp.vaspio
+  :members: VaspData, Plocar, Poscar, Kpoints, Eigenval, Doscar, read_symmcar
+
+.. automodule:: triqs_dft_tools.converters.plovasp.elstruct
+  :members: ElectronicStructure
+
+.. automodule:: triqs_dft_tools.converters.plovasp.plotools
+  :members:
+
+.. automodule:: triqs_dft_tools.converters.plovasp.proj_shell
+  :members:
+
+.. automodule:: triqs_dft_tools.converters.plovasp.proj_group
+  :members:
+
+
+VASP Converter
+-------------------
+.. _refVASPconverter:
+.. autoclass:: triqs_dft_tools.converters.vasp_converter.VaspConverter
+   :members:
+   :special-members:
+
+
 Converter Tools
 ---------------
 .. autoclass:: triqs_dft_tools.converters.converter_tools.ConverterTools

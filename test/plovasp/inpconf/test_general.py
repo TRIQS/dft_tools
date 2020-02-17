@@ -30,7 +30,8 @@ class TestParseGeneral(arraytest.ArrayTestCase):
         conf_pars.parse_general()
         res = conf_pars.general
         expected = {'basename': 'test_base', 'efermi': 0.1,
-                    'dosmesh': {'n_points': 101, 'emin': -8.0, 'emax': 4.0}}
+                    'dosmesh': {'n_points': 101, 'emin': -8.0, 'emax': 4.0},
+                    'hk' : False}
         self.assertDictEqual(res, expected)
 
 

@@ -43,9 +43,36 @@ class VaspConverter(ConverterTools):
                        dft_subgrp = 'dft_input', symmcorr_subgrp = 'dft_symmcorr_input',
                        parproj_subgrp='dft_parproj_input', symmpar_subgrp='dft_symmpar_input',
                        bands_subgrp = 'dft_bands_input', misc_subgrp = 'dft_misc_input',
-                       transp_subgrp = 'dft_transp_input', repacking = False):
+                       transp_subgrp = 'dft_transp_input', repacking = False,
+                       proj_or_hk='proj'):
         """
         Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so on. 
+
+        Parameters
+        ----------
+        filename : string
+                   Base name of DFT files.
+        hdf_filename : string, optional
+                       Name of hdf5 archive to be created.
+        dft_subgrp : string, optional
+                     Name of subgroup storing necessary DFT data.
+        symmcorr_subgrp : string, optional
+                          Name of subgroup storing correlated-shell symmetry data.
+        parproj_subgrp : string, optional
+                         Name of subgroup storing partial projector data.
+        symmpar_subgrp : string, optional
+                         Name of subgroup storing partial-projector symmetry data.
+        bands_subgrp : string, optional
+                       Name of subgroup storing band data.
+        misc_subgrp : string, optional
+                      Name of subgroup storing miscellaneous DFT data.
+        transp_subgrp : string, optional
+                        Name of subgroup storing transport data.
+        repacking : boolean, optional
+                    Does the hdf5 archive need to be repacked to save space?
+        proj_or_hk : string, optional
+                    Select scheme to convert between KS bands and localized orbitals.
+
         """
 
         assert type(filename)==StringType, "Please provide the DFT files' base name as a string."
@@ -61,15 +88,22 @@ class VaspConverter(ConverterTools):
         self.bands_subgrp = bands_subgrp
         self.misc_subgrp = misc_subgrp
         self.transp_subgrp = transp_subgrp
-
+        assert (proj_or_hk == 'proj') or (proj_or_hk == 'hk'), "proj_or_hk has to be 'proj' of 'hk'"
+        self.proj_or_hk = proj_or_hk
+        
         # Checks if h5 file is there and repacks it if wanted:
         if (os.path.exists(self.hdf_file) and repacking):
             ConverterTools.repack(self)
 
-
+        # this is to test pull request
     def read_data(self, fh):
         """
         Generator for reading plain data.
+        
+        Parameters
+        ----------
+        fh : file object
+              file object which is read in.
         """
         for line in fh:
             line_ = line.strip()
@@ -82,6 +116,11 @@ class VaspConverter(ConverterTools):
     def read_header_and_data(self, filename):
         """
         Opens a file and returns a JSON-header and the generator for the plain data.
+        
+        Parameters
+        ----------
+        filename : string
+              file name of the file to read.
         """
         fh = open(filename, 'rt')
         header = ""
@@ -121,12 +160,16 @@ class VaspConverter(ConverterTools):
         SO = ctrl_head['nc_flag']
 
         kpts = numpy.zeros((n_k, 3))
+        kpts_cart = numpy.zeros((n_k, 3))
         bz_weights = numpy.zeros(n_k)
         try:
             for ik in xrange(n_k):
                 kx, ky, kz = rf.next(), rf.next(), rf.next()
                 kpts[ik, :] = kx, ky, kz
                 bz_weights[ik] = rf.next()
+            for ik in xrange(n_k):
+                kx, ky, kz = rf.next(), rf.next(), rf.next()
+                kpts_cart[ik, :] = kx, ky, kz
         except StopIteration:
             raise "VaspConverter: error reading %s"%self.ctrl_file
 
@@ -147,18 +190,24 @@ class VaspConverter(ConverterTools):
                 gr_file = self.basename + '.pg%i'%(ig + 1)
                 jheader, rf = self.read_header_and_data(gr_file)
                 gr_head = json.loads(jheader)
+                
 
-                e_win = gr_head['ewindow']
                 nb_max = gr_head['nb_max']
                 p_shells = gr_head['shells']
                 density_required = gr_head['nelect']
                 charge_below = 0.0 # This is not defined in VASP interface
 
 # Note that in the DftTools convention each site gives a separate correlated shell!
+                n_shells = sum([len(sh['ion_list']) for sh in p_shells])
                 n_corr_shells = sum([len(sh['ion_list']) for sh in p_shells])
 
+                shells = []
                 corr_shells = []
-                shion_to_corr_shell = [[] for ish in xrange(len(p_shells))]
+                shion_to_shell = [[] for ish in xrange(len(p_shells))]
+                cr_shion_to_shell = [[] for ish in xrange(len(p_shells))]
+                shorbs_to_globalorbs = [[] for ish in xrange(len(p_shells))]
+                last_dimension = 0
+                crshorbs_to_globalorbs = []
                 icsh = 0
                 for ish, sh in enumerate(p_shells):
                     ion_list = sh['ion_list']
@@ -168,16 +217,25 @@ class VaspConverter(ConverterTools):
 # We set all sites inequivalent
                         pars['sort'] = sh['ion_sort'][i]
                         pars['l'] = sh['lorb']
+                        #pars['corr'] = sh['corr']
                         pars['dim'] = sh['ndim']
+                        #pars['ion_list'] = sh['ion_list']
                         pars['SO'] = SO
 # TODO: check what 'irep' entry does (it seems to be very specific to dmftproj)
                         pars['irep'] = 0
-                        corr_shells.append(pars)
-                        shion_to_corr_shell[ish].append(i)
+                        shells.append(pars)
+                        shion_to_shell[ish].append(ish)
+                        shorbs_to_globalorbs[ish].append([last_dimension,
+                                                 last_dimension+sh['ndim']])
+                        last_dimension = last_dimension+sh['ndim']
+                        if sh['corr']:
+                            corr_shells.append(pars)
+
 
 # TODO: generalize this to the case of multiple shell groups
-                n_shells = n_corr_shells # No non-correlated shells at the moment
-                shells = corr_shells
+                n_corr_shells = len(corr_shells)
+
+            n_orbs = sum([sh['dim'] for sh in shells])
 
 # FIXME: atomic sorts in Wien2K are not the same as in VASP.
 #        A symmetry analysis from OUTCAR or symmetry file should be used
@@ -217,6 +275,7 @@ class VaspConverter(ConverterTools):
             band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in xrange(n_spin_blocs)]
             n_orbitals = numpy.zeros([n_k, n_spin_blocs], numpy.int)
 
+            
             for isp in xrange(n_spin_blocs):
                 for ik in xrange(n_k):
                     ib1, ib2 = int(rf.next()), int(rf.next())
@@ -226,11 +285,34 @@ class VaspConverter(ConverterTools):
                     for ib in xrange(nb):
                         hopping[ik, isp, ib, ib] = rf.next()
                         f_weights[ik, isp, ib] = rf.next()
+                        
+            if self.proj_or_hk == 'hk':
+                hopping = numpy.zeros([n_k, n_spin_blocs, n_orbs, n_orbs], numpy.complex_)
+                # skip header lines
+                hk_file = self.basename + '.hk%i'%(ig + 1)
+                f_hk = open(hk_file, 'rt')
+                # skip the header (1 line for n_kpoints, n_electrons, n_shells)
+                # and one line per shell
+                count = 0
+                while count <  3 + n_shells:
+                    f_hk.readline()
+                    count += 1
+                rf_hk = self.read_data(f_hk)
+                for isp in xrange(n_spin_blocs):
+                    for ik in xrange(n_k):
+                        n_orbitals[ik, isp] = n_orbs
+                        for ib in xrange(n_orbs):
+                            for jb in xrange(n_orbs):
+                                hopping[ik, isp, ib, jb] = rf_hk.next()
+                        for ib in xrange(n_orbs):
+                            for jb in xrange(n_orbs):
+                                hopping[ik, isp, ib, jb] += 1j*rf_hk.next()
+                rf_hk.close()
 
 # Projectors
 #            print n_orbitals
 #            print [crsh['dim'] for crsh in corr_shells]
-            proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
+            proj_mat_csc = numpy.zeros([n_k, n_spin_blocs, sum([sh['dim'] for sh in shells]), numpy.max(n_orbitals)], numpy.complex_)
 
 # TODO: implement reading from more than one projector group
 # In 'dmftproj' each ion represents a separate correlated shell.
@@ -244,19 +326,42 @@ class VaspConverter(ConverterTools):
 #
 # At the moment I choose i.2 for its simplicity. But one should consider possible
 # use cases and decide which solution is to be made permanent.
-#
+#   
             for ish, sh in enumerate(p_shells):
                 for isp in xrange(n_spin_blocs):
                     for ik in xrange(n_k):
                         for ion in xrange(len(sh['ion_list'])):
-                            icsh = shion_to_corr_shell[ish][ion]
-                            for ilm in xrange(sh['ndim']):
+                            for ilm in xrange(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1]):
                                 for ib in xrange(n_orbitals[ik, isp]):
                                     # This is to avoid confusion with the order of arguments
                                     pr = rf.next()
                                     pi = rf.next()
-                                    proj_mat[ik, isp, icsh, ilm, ib] = complex(pr, pi)
+                                    proj_mat_csc[ik, isp, ilm, ib] = complex(pr, pi)
 
+# now save only projectors with flag 'corr' to proj_mat
+            proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
+            if self.proj_or_hk == 'proj': 
+                for ish, sh in enumerate(p_shells):
+                    if sh['corr']:
+                        for isp in xrange(n_spin_blocs):
+                            for ik in xrange(n_k):
+                                for ion in xrange(len(sh['ion_list'])):
+                                    icsh = shion_to_shell[ish][ion]
+                                    for iclm,ilm in enumerate(xrange(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1])):
+                                        for ib in xrange(n_orbitals[ik, isp]):
+                                            proj_mat[ik,isp,icsh,iclm,ib] = proj_mat_csc[ik,isp,ilm,ib]
+            elif self.proj_or_hk == 'hk':
+
+                for ish, sh in enumerate(p_shells):
+                    if sh['corr']:
+                        for ion in xrange(len(sh['ion_list'])):
+                            icsh = shion_to_shell[ish][ion]
+                            for isp in xrange(n_spin_blocs):
+                                for ik in xrange(n_k):
+                                    for iclm,ilm in enumerate(xrange(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1])):
+                                        proj_mat[ik,isp,icsh,iclm,ilm] = 1.0
+
+            #corr_shell.pop('ion_list')
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
             for it in things_to_set:
 #                print "%s:"%(it), locals()[it]
@@ -267,6 +372,8 @@ class VaspConverter(ConverterTools):
 
         rf.close()
 
+
+        proj_or_hk = self.proj_or_hk
         
         # Save it to the HDF:
         with HDFArchive(self.hdf_file,'a') as ar:
@@ -275,7 +382,9 @@ class VaspConverter(ConverterTools):
             things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                           'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
-                          'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
+                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk','kpts','kpts_cart']
+            if self.proj_or_hk == 'hk' or True:
+                things_to_save.append('proj_mat_csc')
             for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
 
             # Store Fermi weights to 'dft_misc_input'
@@ -296,6 +405,24 @@ class VaspConverter(ConverterTools):
         Reads input for the band window from bandwin_file, which is case.oubwin,
                             structure from struct_file, which is case.struct,
                             symmetries from outputs_file, which is case.outputs.
+        
+        Parameters
+        ----------
+        bandwin_file : string
+                    filename of .oubwin/up/dn file.
+        struct_file : string
+                    filename of .struct file.
+        outputs_file : string
+                    filename of .outputs file.
+        misc_subgrp : string
+                    name of the subgroup in which to save
+        SO : boolean
+            spin-orbit switch
+        SP : int
+            spin
+        n_k : int
+            number of k-points
+                    
         """
 
         if not (mpi.is_master_node()): return
@@ -390,6 +517,15 @@ class VaspConverter(ConverterTools):
     def convert_symmetry_input(self, ctrl_head, orbits, symm_subgrp):
         """
         Reads input for the symmetrisations from symm_file, which is case.sympar or case.symqmc.
+        
+        Parameters
+        ----------
+        ctrl_head : dict
+                dictionary of header of .ctrl file
+        orbits : list of shells
+                contains all shells 
+        symm_subgrp : name of symmetry group in h5 archive
+        
         """
 
 # In VASP interface the symmetries are read directly from *.ctrl file

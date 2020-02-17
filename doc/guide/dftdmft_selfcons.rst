@@ -124,28 +124,66 @@ example how such a self-consistent calculation is performed from scratch.
 VASP + PLOVasp
 --------------
 
-.. warning::
-  This is a preliminary documentation valid for the alpha-version of the interface.
-  Modifications to the implementation might be introduced before the final release.
+Unlike Wien2k implementation the charge self-consistent DMFT cycle in the
+framework of PLOVasp interface is controlled by an external script. Because of
+the specific way the DFT self-consistency is implemented in VASP the latter has
+to run parallel to the DMFT script, with the synchronisation being ensured by a
+lock file.
 
-Unlike Wien2k implementation the charge self-consistent DMFT cycle
-in the framework of PLOVasp interface is controlled by an external script.
-Because of the specific way the DFT self-consistency is implemented in VASP
-the latter has to run parallel to the DMFT script, with the synchronisation being
-ensured by a lock file. PLOVasp interface provides a shell-script :program:`vasp_dmft.sh`
-which takes care of the process management. The user must, however, specify a path
-to VASP code and provide the DMFT Python-script.
+Once VASP reaches the point where the projectors are generated
+it creates a lock file `vasp.lock` and waits until the lock file is
+removed. The shell script, in turn, waits for the VASP process and once
+the lock file is created it starts a DMFT iteration. The DMFT iteration
+must finish by generating a Kohn-Sham (KS) density matrix (file `GAMMA`)
+and removing the lock file. The VASP process then reads in `GAMMA`
+and proceeds with the next iteration. PLOVasp interface provides a shell-script :program:`vasp_dmft` (in the triqs bin directory):
+::
+  vasp_dmft [-n <number of cores>] -i <number of iterations>  -j <number of VASP iterations with fixed charge density> [-v <VASP version>] [-p <path to VASP directory>] [<dmft_script.py>]
+
+       If the number of cores is not specified it is set to 1 by default.
+       Set the number of times the dmft solver is called with -i <number of iterations>
+
+       Set the number of VASP iteration with a fixed charge density update
+       inbetween the dmft runs with -j <number of VASP iterations with fixed charge density>
+
+       Set the version of VASP by -v standard(default)/no_gamma_write to
+       specify if VASP writes the GAMMA file or not.
+
+       If the path to VASP directory is not specified it must be provided by a
+       variable VASP_DIR.
+
+       <dmft_script.py> must provide an importable function 'dmft_cycle()'
+       which is invoked once per DFT+DMFT iteration. If the script name is
+       omitted the default name 'csc_dmft.py' is used.
+
+which takes care of the process management. The user must, however, specify a path to VASP code and provide the DMFT Python-script. See for an example :ref:`NiO CSC tutorial<nio_csc>`.
 
 The user-provided script is almost the same as for Wien2k charge self-consistent
-calculations with the main difference that its functionality (apart from
-the lines importing other modules) should be placed inside a function `dmft_cycle()`
-which will be called every DMFT cycle. Another difference is the way
-function `calc_density_correction()` works.
+calculations with the main difference that its functionality (apart from the
+lines importing other modules) should be placed inside a function `dmft_cycle()`
+which will be called every DMFT cycle.
+
+VASP has a special INCAR `ICHARG=5` mode, that has to be switched on to make VASP wait for the `vasp.lock` file, and read the updated charge density after each step. One should add the following lines to the `INCAR` file::
+
+  ICHARG = 5
+  NELM = 1000
+  NELMIN = 1000
+
+Technically, VASP runs with `ICHARG=5` in a SCF mode, and adding the DMFT
+changes to the DFT density in each step, so that the full DFT+DMFT charge
+density is constructed in every step. This is only done in VASP because only the
+changes to the DFT density are read by VASP not the full DFT+DMFT density.
+Moreover, one should always start with a converged `WAVECAR` file, or make sure,
+that the KS states are well converged before the first projectors are created!
+To understand the difference please make sure to read `ISTART flag VASP wiki
+<https://www.vasp.at/wiki/index.php/ISTART>`_. Furthermore, the flags `NELM` and
+`NELMIN` ensure that VASP does not terminate after the default number of
+iterations of 60.
 
 Other DFT codes
 ---------------
 
-The extension to other DFT codes is straight forward. As described
+The extension to other DFT codes is straightforward. As described
 here, one needs to implement the correlated density matrix to be used
 for the calculation of the charge density. This implementation will of
 course depend on the DFT package, and might be easy to do or a quite
