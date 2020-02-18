@@ -1,3 +1,12 @@
+Version 3.0.x
+-------------
+
+* Major rework of the VASP interface, including thorough documentation and tutorials
+
+Thanks to all commit-contributors (in alphabetical order):
+Markus Aichhorn, Alexander Hampel, Oleg Peil, Malte Schueler, Nils Wentzell, Manuel Zingl
+
+
 Version 2.2.x
 -------------
 
