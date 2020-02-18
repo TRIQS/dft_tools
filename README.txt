@@ -1,5 +1,7 @@
-Wien2TRIQS interface to Wien2k
-Copyright (C) 2011-2013, M. Aichhorn, L. Pourovskii, V. Vildosola and C. Martins
+DFT_Tools - A TRIQS application for ab initio calculations
+ 
+Copyright (C) 2011-2019: M. Aichhorn, L. Pourovskii, V. Vildosola and C. Martins
+Copyright (C) 2020: The Simons Foundation
 
 1. Documentation
 
