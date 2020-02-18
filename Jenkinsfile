@@ -47,8 +47,8 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
 
 /****************** osx builds (on host) */
 def osxPlatforms = [
-  ["gcc", ['CC=gcc-9', 'CXX=g++-9']],
-  ["clang", ['CC=$BREW/opt/llvm/bin/clang', 'CXX=$BREW/opt/llvm/bin/clang++', 'CXXFLAGS=-I$BREW/opt/llvm/include', 'LDFLAGS=-L$BREW/opt/llvm/lib']]
+  ["gcc", ['CC=gcc-9', 'CXX=g++-9', 'FC=gfortran-9']],
+  ["clang", ['CC=$BREW/opt/llvm/bin/clang', 'CXX=$BREW/opt/llvm/bin/clang++', 'CXXFLAGS=-I$BREW/opt/llvm/include', 'LDFLAGS=-L$BREW/opt/llvm/lib', 'FC=gfortran-9']]
 ]
 for (int i = 0; i < osxPlatforms.size(); i++) {
   def platformEnv = osxPlatforms[i]
