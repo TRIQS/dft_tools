@@ -288,7 +288,11 @@ In each `[Shell]` section two parameters are required:
 *  **IONS** (list of integer): indices of sites included in the shell.
    The sites can be given either by a list of integers `IONS = 5 6 7 8`
    or by a range `IONS = 5..8`. The site indices must be compatible with
-   the POSCAR file.
+   the POSCAR file. Morever, sites can be marked to be identical by 
+   grouping them with brackets, i.e. `IONS = [5 6] [7 8]` will mark the
+   sites 5 and 6 in the POSCAR (and of course also 7 and 8) to be idential.
+   This will mark these correlated site as equivalent, and only one 
+   impurity problem per bracket group is generated.
 *  **LSHELL** (integer): :math:`l` quantum number of the desired local states.
 
 It is important that a given combination of site indices and local states
