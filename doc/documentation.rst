@@ -33,8 +33,16 @@ DFT+DMFT
 
    guide/dftdmft_singleshot
    guide/dftdmft_selfcons
-   guide/Sr2RuO4
-   guide/BasisRotation
+
+Advanced Topics
+---------------
+
+.. toctree::
+   :maxdepth: 2
+
+   guide/basisrotation
+   guide/soc
+   guide/removeorbitals
 
 Postprocessing
 --------------

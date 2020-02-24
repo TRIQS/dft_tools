@@ -1,16 +1,15 @@
-.. _plovasp:
+.. _basisrotation:
 
 Numerical Treatment of the Sign-Problem: Basis Rotations
 =======
 
-When performing calculations with off-diagonal complex hybridisation or local Hamiltonian, one is
-often limited by the fermionic sign-problem. However, as the sign is no
-physical observable, one can try to improve the calculation by rotating
-to another basis.
+When performing calculations with off-diagonal terms in the hybridisation function or in the local Hamiltonian, one is
+often limited by the fermionic sign-problem slowing down the QMC calculations significantly. This can occur for instance if the crystal shows locally rotated or distorted cages, or when spin-orbit coupling is included. The examples for this are included in the :ref:`tutorials` of this documentation.
 
-While the choice of basis to perform the calculation in can be chosen
-arbitrarily, two choices which have shown good results are the basis
-which diagonalizes the local Hamiltonian or the density matrix of then
+However, as the fermonic sign in the QMC calculation is no
+physical observable, one can try to improve the calculation by rotating
+to another basis. While this basis can in principle be chosen arbitrarily, 
+two choices which have shown good results; name the basis sets that diagonalize the local Hamiltonian or the local density matrix of the
 system.
 
 The transformation matrix can be stored in the :class:`BlockStructure` and the
@@ -21,7 +20,7 @@ and :meth:`put_Sigma` (see below).
 Finding the Transformation Matrix
 -----------------
 
-The :class:`TransBasis` class offers a simple mehod to calculate the transformation
+The :class:`TransBasis` class offers a simple method to calculate the transformation
 matrices to a basis where either the local Hamiltonian or the density matrix
 is diagonal::
 
@@ -46,9 +45,10 @@ One can transform Green's functions manually using the :meth:`convert_gf` method
 Automatic transformation during the DMFT loop
 -----------------
 
-During a DMFT loop one is switching back and forth between Sumk-Space and Solver-Space
-in each iteration. Once the block_structure.transformation property is set, this can be
-done automatically::
+During a DMFT loop one is often switching back and forth between the unrotated basis (Sumk-Space) and the rotated basis that is used by the QMC Solver. However, this need not be done manually each time. Instead, 
+once the block_structure.transformation property is set as shown above, this is
+done automatically, meaning that :class:`SumkDFT`'s :meth:`extract_G_loc`
+and :meth:`put_Sigma` are doing the transformations by default::
 
     for it in range(iteration_offset, iteration_offset + n_iterations):
         # every GF is in solver space here
