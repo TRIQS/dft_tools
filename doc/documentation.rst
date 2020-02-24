@@ -40,7 +40,7 @@ Advanced Topics
 .. toctree::
    :maxdepth: 2
 
-   guide/basisrotation
+   guide/BasisRotation
    guide/soc
    guide/removeorbitals
 
