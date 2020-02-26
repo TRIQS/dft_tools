@@ -1390,7 +1390,7 @@ class SumkDFT(object):
                 prop[ish] = self.block_structure.convert_matrix(prop[ish], space_from='sumk', space_to='solver')
             # Get diagonalisation matrix, if not already diagonal
             for name in prop[ish]:
-                if abs(numpy.sum(prop[ish][name]-numpy.diag(numpy.diagonal(prop[ish][name])))) > 1e-13:
+                if numpy.sum(abs(prop[ish][name]-numpy.diag(numpy.diagonal(prop[ish][name])))) > 1e-13:
                     trafo[name] = numpy.linalg.eigh(prop[ish][name])[1].conj().T
                 else:
                     trafo[name] = numpy.identity(numpy.shape(prop[ish][name])[0])
