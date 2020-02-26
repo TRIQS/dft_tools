@@ -40,9 +40,9 @@ Advanced Topics
 .. toctree::
    :maxdepth: 2
 
+   guide/blockstructure
    guide/BasisRotation
    guide/soc
-   guide/removeorbitals
 
 Postprocessing
 --------------

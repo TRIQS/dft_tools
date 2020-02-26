@@ -1,7 +1,7 @@
 .. _basisrotation:
 
-Numerical Treatment of the Sign-Problem: Basis Rotations
-=======
+Automatic basis rotations in DFT+DMFT
+=====================================
 
 When performing calculations with off-diagonal terms in the hybridisation function or in the local Hamiltonian, one is
 often limited by the fermionic sign-problem slowing down the QMC calculations significantly. This can occur for instance if the crystal shows locally rotated or distorted cages, or when spin-orbit coupling is included. The examples for this are included in the :ref:`tutorials` of this documentation.
@@ -16,9 +16,10 @@ The transformation matrix can be stored in the :class:`BlockStructure` and the
 transformation is automatically performed when using :class:`SumkDFT`'s :meth:`extract_G_loc`
 and :meth:`put_Sigma` (see below).
 
+[UPDATE EVERYTHING FROM HERE ON:]
 
-Finding the Transformation Matrix
------------------
+Finding the transformation matrix
+---------------------------------
 
 The :class:`TransBasis` class offers a simple method to calculate the transformation
 matrices to a basis where either the local Hamiltonian or the density matrix
@@ -33,7 +34,7 @@ is diagonal::
 
 
 Transforming Green's functions manually
------------------
+---------------------------------------
 
 One can transform Green's functions manually using the :meth:`convert_gf` method::
 
@@ -43,7 +44,7 @@ One can transform Green's functions manually using the :meth:`convert_gf` method
 
 
 Automatic transformation during the DMFT loop
------------------
+---------------------------------------------
 
 During a DMFT loop one is often switching back and forth between the unrotated basis (Sumk-Space) and the rotated basis that is used by the QMC Solver. However, this need not be done manually each time. Instead, 
 once the block_structure.transformation property is set as shown above, this is
