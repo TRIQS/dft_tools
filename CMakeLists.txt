@@ -32,7 +32,7 @@ message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} ---------
 # Define the dft_tools version numbers and get the git hash
 set(DFT_TOOLS_VERSION_MAJOR 2)
 set(DFT_TOOLS_VERSION_MINOR 2)
-set(DFT_TOOLS_VERSION_PATCH 0)
+set(DFT_TOOLS_VERSION_PATCH 1)
 set(DFT_TOOLS_VERSION ${DFT_TOOLS_VERSION_MAJOR}.${DFT_TOOLS_VERSION_MINOR}.${DFT_TOOLS_VERSION_PATCH})
 triqs_get_git_hash_of_source_dir(DFT_TOOLS_GIT_HASH)
 message(STATUS "Dft_tools version : ${DFT_TOOLS_VERSION}")
