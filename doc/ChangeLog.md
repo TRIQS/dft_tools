@@ -1,4 +1,4 @@
-Version 3.0.x
+Version 3.0.0
 -------------
 
 * Major rework of the VASP interface, including thorough documentation and tutorials
@@ -7,7 +7,20 @@ Thanks to all commit-contributors (in alphabetical order):
 Markus Aichhorn, Alexander Hampel, Oleg Peil, Malte Schueler, Nils Wentzell, Manuel Zingl
 
 
-Version 2.2.x
+Version 2.2.1
+-------------
+
+CTHYB Version 2.2.1 makes the application available
+through the Anaconda package manager. We adjust
+the install pages of the documentation accordingly.
+It further introduces two minor fixes.
+We provide a more detailed description of the changes below.
+
+* Add a section on the Anaconda package to the install page
+* Add a LICENSE and AUTHORS file to the repository
+
+
+Version 2.2.0
 -------------
 
 * Ensure that the chemical potential calculations results in a real number
