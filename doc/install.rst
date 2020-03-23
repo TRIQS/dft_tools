@@ -6,11 +6,29 @@
 Packaged Versions of DFTTools
 =============================
 
-A Docker image including the latest version of DFTTools is available `here <https://hub.docker.com/r/flatironinstitute/triqs>`_. For more information, please see the page on :ref:`TRIQS Docker <triqslibs:triqs_docker>`.
+.. _ubuntu_debian:
+Ubuntu Debian packages
+----------------------
 
-We further provide a Debian package for the Ubuntu LTS Versions 16.04 (xenial) and 18.04 (bionic), which can be installed by following the steps outlined :ref:`here <triqslibs:triqs_docker>`, and the subsequent command::
+We provide a Debian package for the Ubuntu LTS Versions 16.04 (xenial) and 18.04 (bionic), which can be installed by following the steps outlined :ref:`here <triqslibs:triqs_debian>`, and the subsequent command::
 
         sudo apt-get install -y triqs_dft_tools
+
+.. _anaconda:
+Anaconda (experimental)
+-----------------------
+
+We provide Linux and OSX packages for the `Anaconda <https://www.anaconda.com/>`_ distribution. The packages are provided through the `conda-forge <https://conda-forge.org/>`_ repositories. After `installing conda <https://docs.conda.io/en/latest/miniconda.html>`_ you can install DFTTools with::
+
+        conda install -c conda-forge triqs_dft_tools
+
+See also `github.com/conda-forge/triqs_dft_tools-feedstock <https://github.com/conda-forge/triqs_dft_tools-feedstock/>`_.
+
+.. _docker:
+Docker
+------
+
+A Docker image including the latest version of DFTTools is available `here <https://hub.docker.com/r/flatironinstitute/triqs>`_. For more information, please see the page on :ref:`TRIQS Docker <triqslibs:triqs_docker>`.
 
 
 Compiling DFTTools from source

@@ -1,4 +1,16 @@
-Version 2.2.x
+Version 2.2.1
+-------------
+
+DFTTools Version 2.2.1 makes the application available
+through the Anaconda package manager. We adjust
+the install pages of the documentation accordingly.
+We provide a more detailed description of the changes below.
+
+* Add a section on the Anaconda package to the install page
+* Add a LICENSE and AUTHORS file to the repository
+
+
+Version 2.2.0
 -------------
 
 * Ensure that the chemical potential calculations results in a real number
