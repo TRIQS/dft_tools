@@ -44,4 +44,4 @@ html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = 'TRIQSDFTToolsdoc'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('http://triqs.github.io/triqs/master', None), 'triqscthyb': ('https://triqs.github.io/cthyb/master', None)}
+intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('http://triqs.github.io/triqs/latest', None), 'triqscthyb': ('https://triqs.github.io/cthyb/latest', None)}
