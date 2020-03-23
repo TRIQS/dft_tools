@@ -10,10 +10,9 @@ Markus Aichhorn, Alexander Hampel, Oleg Peil, Malte Schueler, Nils Wentzell, Man
 Version 2.2.1
 -------------
 
-CTHYB Version 2.2.1 makes the application available
+DFTTools Version 2.2.1 makes the application available
 through the Anaconda package manager. We adjust
 the install pages of the documentation accordingly.
-It further introduces two minor fixes.
 We provide a more detailed description of the changes below.
 
 * Add a section on the Anaconda package to the install page
