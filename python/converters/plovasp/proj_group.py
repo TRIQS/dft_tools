@@ -115,7 +115,7 @@ class ProjectorGroup:
         for isp in xrange(ns_band):
             for ik in xrange(nk):
                 ib1 = self.ib_win[ik, isp, 0]
-                ib2 = self.ib_win[ik, isp, 1]
+                ib2 = self.ib_win[ik, isp, 1]+1
                 occ = el_struct.ferw[isp, ik, ib1:ib2]
                 kwght = el_struct.kmesh['kweights'][ik]
                 self.nelect += occ.sum() * kwght * rspin
