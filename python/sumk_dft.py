@@ -1330,7 +1330,7 @@ class SumkDFT(object):
                         # a block was found, break out of the loop
                         break
     
-    def calculate_diagonalization_matrix(self, prop_to_be_diagonal='eal', calc_in_solver_blocks=False, write_to_blockstructure = True, shells=None):
+    def calculate_diagonalization_matrix(self, prop_to_be_diagonal='eal', calc_in_solver_blocks=True, write_to_blockstructure = True, shells=None):
         """
         Calculates the diagonalisation matrix, and (optionally) stores it in the BlockStructure.
 
