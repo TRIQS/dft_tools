@@ -12,44 +12,41 @@ to another basis. While this basis can in principle be chosen arbitrarily,
 two choices which have shown good results; name the basis sets that diagonalize the local Hamiltonian or the local density matrix of the
 system.
 
-The transformation matrix can be stored in the :class:`BlockStructure` and the
-transformation is automatically performed when using :class:`SumkDFT`'s :meth:`extract_G_loc`
-and :meth:`put_Sigma` (see below).
+As outlined in section :ref:`blockstructure`, the :class:`BlockStructure` includes all necessary functionalities. While it is possible to manually transform each Green's functions and self energies between the *sumk* and the *solver* basis, this leads to cumbersum code and is discouraged. Instead, in order to facilitate the block-structure manipulations for an actual DFT+DMFT calculation, some of the necessary steps are automatically included automatically. As soon as the 
+transformation matrix is stored in the :class:`BlockStructure`, the
+transformation is automatically performed when using :class:`SumkDFT`'s :meth:`extract_G_loc`,
+:meth:`put_Sigma`, and :meth:`calc_dc` (see below).
 
-[UPDATE EVERYTHING FROM HERE ON:]
+Setting up the initial solver structure from DFT
+------------------------------------------------
+
+Before the actual calculation one has to specify the *solver* basis structure, in which the impurity problem will be tackled. The different available approximation were introduced in section :ref:`blockstructure`. An important feature of DFTTools is that there is an automatic way to determine the entries of the Green's function matrix that are zero by symmetry, when initialising the class::
+
+    from triqs_dft_tools.sumk_dft import *
+    SK = SumkDFT(hdf_file,use_dft_blocks='True')
+
+The flag *use_dft_blocks=True* analysis the local density matrix, determines the zero entries, and sets up a minimal *solver* structure. Alternatively, this step can be achieved by (see the reference manual for options)::
+
+    SK.analyse_block_structure()
+
 
 Finding the transformation matrix
 ---------------------------------
 
-The :class:`TransBasis` class offers a simple method to calculate the transformation
-matrices to a basis where either the local Hamiltonian or the density matrix
-is diagonal::
+The SumkDFT class offers a method that can determine transformation matrices to certain new basis. It is called as follows::
 
-    from triqs_dft_tools.trans_basis import TransBasis
-    TB = TransBasis(SK)
-    TB.calculate_diagonalisation_matrix(prop_to_be_diagonal='eal', calc_in_solver_blocks = True)
+    SK.calculate_diagonalization_matrix(prop_to_be_diagonal='eal')
 
-    SK.block_structure.transformation = [{'ud':TB.w}]
-
-
-
-Transforming Green's functions manually
----------------------------------------
-
-One can transform Green's functions manually using the :meth:`convert_gf` method::
-
-    # Rotate a Green's function from solver-space to sumk-space
-    new_gf = block_structure.convert_gf(old_gf, space_from='solver', space_to='sumk')
+Possible option for *prop_to_be_diagonal* are *eal* (diagonalises the local hamiltonian) or *dm* (diagonalises the local density matrix). This routine stores the transformation matrix in the :class:`SK.block_structure` class, such that it can be used to rotate the basis. 
 
 
 
 Automatic transformation during the DMFT loop
 ---------------------------------------------
 
-During a DMFT loop one is often switching back and forth between the unrotated basis (Sumk-Space) and the rotated basis that is used by the QMC Solver. However, this need not be done manually each time. Instead, 
-once the block_structure.transformation property is set as shown above, this is
-done automatically, meaning that :class:`SumkDFT`'s :meth:`extract_G_loc`
-and :meth:`put_Sigma` are doing the transformations by default::
+During a DMFT loop one is often switching back and forth between the unrotated basis (Sumk-Space) and the rotated basis that is used by the QMC Solver.
+Once the SK.block_structure.transformation property is set as shown above, this is
+done automatically, meaning that :class:`SumkDFT`'s :meth:`extract_G_loc`, :meth:`put_Sigma`, and :meth:`calc_dc` are doing the transformations by default::
 
     for it in range(iteration_offset, iteration_offset + n_iterations):
         # every GF is in solver space here
@@ -70,7 +67,7 @@ and :meth:`put_Sigma` are doing the transformations by default::
         S.G_iw << SK.extract_G_loc()[0]
 
 .. warning::
-  One must not forget to also transform the interaction Hamiltonian to the diagonal basis!
+  Before doing the DMFT self-consistency loop, one must not forget to also transform the interaction Hamiltonian to the diagonal basis!
   This can be done with the :meth:`transform_U_matrix` method. However, due to different 
   conventions in this method, one must pass the conjugated version of the transformation matrix::
   
