@@ -9,12 +9,14 @@ DFT+DMFT calculations:
 -   by performing a DFT calculation including SOC and then doing a DMFT calculation on top, or
 -   by performing a DFT calculation without SOC and then adding the SOC term on the model level.
 
+The second variant is a bit more involved and needs quite some expertise, so this guide will cover only the first variant with SOC included in the DFT calculations.
+
 Treatment of SOC in DFT
 -----------------------
 
 For now, TRIQS/DFTTools does only work with Wien2k when performing calculations with SO.
 The treatment of SOC in the VASP package is fundamentally different to the way Wien2k treats it, and the interface does not handle that at the moment.
-Therefore, this guide describes how to do an AOC calculation using the Wien2k DFT package.
+Therefore, this guide describes how to do an SOC calculation using the Wien2k DFT package.
 
 First, a Wien2k calculation including SOC has to be performed.
 For details, we refer the reader to the documentation of Wien2k. As a matter of fact, we need the output for the DFT band structure for both spin directions explicitly. That means that one needs to do a spin-polarised DFT calculation with SOC, but, however, with magnetic moment set to zero. In the Wien2k initialisation procedure, one can choose for the option -nom when ``lstart`` is called. This means that the charge densities are initialised without magnetic splitting. The SOC calculation is then performed in a standard way as described in the Wien2k manual.
