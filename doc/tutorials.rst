@@ -14,6 +14,14 @@ A simple example: SrVO3
    tutorials/srvo3
 
 
+Basis rotations: Sr2MgOsO6 without SOC
+--------------------------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   tutorials/sr2mgoso6_nosoc
+
 Full charge self consistency with Wien2k: :math:`\gamma`-Ce
 -----------------------------------------------------------
 
