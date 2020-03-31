@@ -90,7 +90,7 @@ It is easy to check that the following matrix diagonalises this local Hamiltonia
 
     T_{mm'} = \begin{pmatrix} 1.0 & 0.0 & 0.0 \\0.0  & 1/\sqrt{2} & -1/\sqrt{2}\\0.0 & 1/\sqrt{2} & 1/\sqrt{2} \end{pmatrix}
 
-With this unitary matrix, we can do a basis rotation to reduce the size of the off-diagonal matrix elements. Note that the transformation matrix has to be given in the *solver* basis form (a 3x3 matrix in this case)::
+With this unitary matrix, we can do a basis rotation to reduce the size of the off-diagonal matrix elements. Note that the transformation matrix has to be given in the *sumk* basis form (a 3x3 matrix in this case)::
 
     import numpy as np
     # Unitary transformation matrix
