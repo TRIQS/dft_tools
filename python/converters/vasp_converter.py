@@ -1,4 +1,4 @@
- 
+
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -46,7 +46,7 @@ class VaspConverter(ConverterTools):
                        transp_subgrp = 'dft_transp_input', repacking = False,
                        proj_or_hk='proj'):
         """
-        Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so on. 
+        Init of the class. Variable filename gives the root of all filenames, e.g. case.ctqmcout, case.h5, and so on.
 
         Parameters
         ----------
@@ -90,7 +90,7 @@ class VaspConverter(ConverterTools):
         self.transp_subgrp = transp_subgrp
         assert (proj_or_hk == 'proj') or (proj_or_hk == 'hk'), "proj_or_hk has to be 'proj' of 'hk'"
         self.proj_or_hk = proj_or_hk
-        
+
         # Checks if h5 file is there and repacks it if wanted:
         if (os.path.exists(self.hdf_file) and repacking):
             ConverterTools.repack(self)
@@ -99,7 +99,7 @@ class VaspConverter(ConverterTools):
     def read_data(self, fh):
         """
         Generator for reading plain data.
-        
+
         Parameters
         ----------
         fh : file object
@@ -116,7 +116,7 @@ class VaspConverter(ConverterTools):
     def read_header_and_data(self, filename):
         """
         Opens a file and returns a JSON-header and the generator for the plain data.
-        
+
         Parameters
         ----------
         filename : string
@@ -190,7 +190,7 @@ class VaspConverter(ConverterTools):
                 gr_file = self.basename + '.pg%i'%(ig + 1)
                 jheader, rf = self.read_header_and_data(gr_file)
                 gr_head = json.loads(jheader)
-                
+
 
                 nb_max = gr_head['nb_max']
                 p_shells = gr_head['shells']
@@ -224,7 +224,7 @@ class VaspConverter(ConverterTools):
 # TODO: check what 'irep' entry does (it seems to be very specific to dmftproj)
                         pars['irep'] = 0
                         shells.append(pars)
-                        shion_to_shell[ish].append(ish)
+                        shion_to_shell[ish].append(i)
                         shorbs_to_globalorbs[ish].append([last_dimension,
                                                  last_dimension+sh['ndim']])
                         last_dimension = last_dimension+sh['ndim']
@@ -258,14 +258,14 @@ class VaspConverter(ConverterTools):
                 n_reps[ish] = 1   # Always 1 in VASP
                 ineq_first = inequiv_to_corr[ish]
                 dim_reps[ish] = [corr_shells[ineq_first]['dim']]   # Just the dimension of the shell
-            
+
                 # The transformation matrix:
                 # is of dimension 2l+1 without SO, and 2*(2l+1) with SO!
                 ll = 2 * corr_shells[inequiv_to_corr[ish]]['l']+1
                 lmax = ll * (corr_shells[inequiv_to_corr[ish]]['SO'] + 1)
 # TODO: at the moment put T-matrices to identities
                 T.append(numpy.identity(lmax, numpy.complex_))
-                
+
 #            if nc_flag:
 ## TODO: implement the noncollinear part
 #                raise NotImplementedError("Noncollinear calculations are not implemented")
@@ -275,7 +275,7 @@ class VaspConverter(ConverterTools):
             band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in xrange(n_spin_blocs)]
             n_orbitals = numpy.zeros([n_k, n_spin_blocs], numpy.int)
 
-            
+
             for isp in xrange(n_spin_blocs):
                 for ik in xrange(n_k):
                     ib1, ib2 = int(rf.next()), int(rf.next())
@@ -285,7 +285,7 @@ class VaspConverter(ConverterTools):
                     for ib in xrange(nb):
                         hopping[ik, isp, ib, ib] = rf.next()
                         f_weights[ik, isp, ib] = rf.next()
-                        
+
             if self.proj_or_hk == 'hk':
                 hopping = numpy.zeros([n_k, n_spin_blocs, n_orbs, n_orbs], numpy.complex_)
                 # skip header lines
@@ -326,7 +326,7 @@ class VaspConverter(ConverterTools):
 #
 # At the moment I choose i.2 for its simplicity. But one should consider possible
 # use cases and decide which solution is to be made permanent.
-#   
+#
             for ish, sh in enumerate(p_shells):
                 for isp in xrange(n_spin_blocs):
                     for ik in xrange(n_k):
@@ -340,7 +340,7 @@ class VaspConverter(ConverterTools):
 
 # now save only projectors with flag 'corr' to proj_mat
             proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
-            if self.proj_or_hk == 'proj': 
+            if self.proj_or_hk == 'proj':
                 for ish, sh in enumerate(p_shells):
                     if sh['corr']:
                         for isp in xrange(n_spin_blocs):
@@ -362,7 +362,7 @@ class VaspConverter(ConverterTools):
                                         proj_mat[ik,isp,icsh,iclm,ilm] = 1.0
 
             #corr_shell.pop('ion_list')
-            things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit'] 
+            things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit']
             for it in things_to_set:
 #                print "%s:"%(it), locals()[it]
                 setattr(self,it,locals()[it])
@@ -374,10 +374,10 @@ class VaspConverter(ConverterTools):
 
 
         proj_or_hk = self.proj_or_hk
-        
+
         # Save it to the HDF:
         with HDFArchive(self.hdf_file,'a') as ar:
-            if not (self.dft_subgrp in ar): ar.create_group(self.dft_subgrp) 
+            if not (self.dft_subgrp in ar): ar.create_group(self.dft_subgrp)
             # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
             things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
                           'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
@@ -391,7 +391,7 @@ class VaspConverter(ConverterTools):
             if not (self.misc_subgrp in ar): ar.create_group(self.misc_subgrp)
             ar[self.misc_subgrp]['dft_fermi_weights'] = f_weights
             ar[self.misc_subgrp]['band_window'] = band_window
-        
+
         # Symmetries are used, so now convert symmetry information for *correlated* orbitals:
         self.convert_symmetry_input(ctrl_head, orbits=self.corr_shells, symm_subgrp=self.symmcorr_subgrp)
 
@@ -405,7 +405,7 @@ class VaspConverter(ConverterTools):
         Reads input for the band window from bandwin_file, which is case.oubwin,
                             structure from struct_file, which is case.struct,
                             symmetries from outputs_file, which is case.outputs.
-        
+
         Parameters
         ----------
         bandwin_file : string
@@ -422,7 +422,7 @@ class VaspConverter(ConverterTools):
             spin
         n_k : int
             number of k-points
-                    
+
         """
 
         if not (mpi.is_master_node()): return
@@ -439,7 +439,7 @@ class VaspConverter(ConverterTools):
             files = [self.bandwin_file+'up', self.bandwin_file+'dn']
         else: # SO and SP can't both be 1
             assert 0, "convert_transport_input: Reding oubwin error! Check SP and SO!"
-        
+
         band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(SP + 1 - SO)]
         for isp, f in enumerate(files):
             if os.path.exists(f):
@@ -464,7 +464,7 @@ class VaspConverter(ConverterTools):
 
         if (os.path.exists(self.struct_file)):
             mpi.report("Reading input from %s..."%self.struct_file)
-        
+
             with open(self.struct_file) as R:
                 try:
                     R.readline()
@@ -481,10 +481,10 @@ class VaspConverter(ConverterTools):
         # Read relevant data from .outputs file
         #######################################
         # rot_symmetries: matrix representation of all (space group) symmetry operations
-        
+
         if (os.path.exists(self.outputs_file)):
             mpi.report("Reading input from %s..."%self.outputs_file)
-        
+
             rot_symmetries = []
             with open(self.outputs_file) as R:
                 try:
@@ -517,15 +517,15 @@ class VaspConverter(ConverterTools):
     def convert_symmetry_input(self, ctrl_head, orbits, symm_subgrp):
         """
         Reads input for the symmetrisations from symm_file, which is case.sympar or case.symqmc.
-        
+
         Parameters
         ----------
         ctrl_head : dict
                 dictionary of header of .ctrl file
         orbits : list of shells
-                contains all shells 
+                contains all shells
         symm_subgrp : name of symmetry group in h5 archive
-        
+
         """
 
 # In VASP interface the symmetries are read directly from *.ctrl file
