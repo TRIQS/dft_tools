@@ -13,7 +13,6 @@ module.add_include("app4triqs/app4triqs.hpp")
 # Add here anything to add in the C++ code at the start, e.g. namespace using
 module.add_preamble("""
 #include <cpp2py/converters/string.hpp>
-#include <triqs/cpp2py_converters/h5.hpp>
 
 using namespace app4triqs;
 """)
@@ -47,7 +46,7 @@ Parameters
 u
      Nothing useful""")
 
-c.add_method("""std::string hdf5_scheme ()""",
+c.add_method("""std::string hdf5_format ()""",
              is_static = True,
              doc = r"""HDF5""")
 

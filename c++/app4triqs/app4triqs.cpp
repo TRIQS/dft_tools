@@ -16,13 +16,13 @@ namespace app4triqs {
 
   bool toto::operator==(toto const &b) const { return (this->i == b.i); }
 
-  void h5_write(triqs::h5::group grp, std::string subgroup_name, toto const &m) {
+  void h5_write(h5::group grp, std::string subgroup_name, toto const &m) {
     grp = subgroup_name.empty() ? grp : grp.create_group(subgroup_name);
     h5_write(grp, "i", m.i);
-    h5_write_attribute(grp, "TRIQS_HDF5_data_scheme", toto::hdf5_scheme());
+    h5_write_attribute(grp, "TRIQS_HDF5_data_scheme", toto::hdf5_format());
   }
 
-  void h5_read(triqs::h5::group grp, std::string subgroup_name, toto &m) {
+  void h5_read(h5::group grp, std::string subgroup_name, toto &m) {
     grp = subgroup_name.empty() ? grp : grp.open_group(subgroup_name);
     int i;
     h5_read(grp, "i", i);
