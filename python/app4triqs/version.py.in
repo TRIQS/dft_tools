@@ -26,7 +26,7 @@ triqs_hash = "@TRIQS_GIT_HASH@"
 app4triqs_hash = "@PROJECT_GIT_HASH@"
 
 def show_version():
-  print "\nYou are using app4triqs version %s\n"%version
+  print("\nYou are using app4triqs version %s\n"%version)
 
 def show_git_hash():
-  print "\nYou are using app4triqs git hash %s based on triqs git hash %s\n"%(app4triqs_hash, triqs_hash)
+  print("\nYou are using app4triqs git hash %s based on triqs git hash %s\n"%(app4triqs_hash, triqs_hash))

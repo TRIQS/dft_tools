@@ -5,7 +5,7 @@ import os
 import glob
 
 if len(sys.argv) != 2:
-    print "Please pass the application name"
+    print("Please pass the application name")
     sys.exit()
 
 app_name = str(sys.argv[1]).lower()
