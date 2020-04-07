@@ -1,19 +1,121 @@
-# Conversion:
+# Import the modules:
+from triqs_dft_tools.sumk_dft import *
+from pytriqs.gf import *
+from pytriqs.archive import HDFArchive
+from pytriqs.operators.util import *
+from pytriqs.operators.util.U_matrix import *
+from triqs_cthyb import *
+import pytriqs.utility.mpi as mpi
+
+# Convert the input
 from triqs_dft_tools.converters.wien2k_converter import *
 Converter = Wien2kConverter(filename = "Sr2MgOsO6_noSOC")
 Converter.convert_dft_input()
 
-import numpy
-numpy.set_printoptions(precision=3, suppress=True)
+# Init the SumK class:
+filename = 'Sr2MgOsO6_noSOC.h5'
+SK = SumkDFT(hdf_file=filename,use_dft_blocks=True)
 
-# Set up SK class:
-from triqs_dft_tools.sumk_dft import *
-SK = SumkDFT(hdf_file='Sr2MgOsO6.h5',use_dft_blocks=True)
+# Find diagonal local basis set:
+SK.calculate_diagonalization_matrix(prop_to_be_diagonal='eal',calc_in_solver_blocks=True)
 
-eal = SK.eff_atomic_levels()
+###########################
+# Now we pick the orbitals:
+# BE CAREFUL: THIS NEEDS TO BE DONE PROPERLY 
+# AND IS DIFFERENT FORM CASE TO CASE!
+indices_to_pick_sumk = [1,3,4]
+SK.block_structure.pick_gf_struct_solver([{'up_1': [0],'up_2': [0],'up_3': [0],'down_1': [0],'down_2': [0],'down_3': [0]}])
+###########################
 
-mat = SK.calculate_diagonalization_matrix(prop_to_be_diagonal='eal')
+# Now we set up the U matrix, first in cubic (Wien2k) convention:
+U = 2.0
+J = 0.2
+U_mat = U_matrix(l=2,U_int=U,J_hund=J,basis='other', T=SK.T[0].conjugate())
 
+# Now we transform the U Matrix:
+U_trans = transform_U_matrix(U_mat, SK.block_structure.transformation[0]['up'].conjugate())
+# pick out the relevant orbitals:
+U_red = subarray(U_trans,len(U_trans.shape)*[indices_to_pick_sumk])
 
+# Finally, set up the Hamiltonian:
+h_int = h_int_slater(['up','down'], indices_to_pick_sumk, U_red, map_operator_structure=SK.block_structure.sumk_to_solver[0], off_diag=False, complex=False)
 
+# Solver Init:
+beta = 40.0
+S = Solver(beta=beta, gf_struct=SK.block_structure.gf_struct_solver_list[0])
+
+# Solver parameters:
+p = {}
+# solver
+p["random_seed"] = 123 * mpi.rank + 567
+p["length_cycle"] = 200
+p["n_warmup_cycles"] = 100000
+p["n_cycles"] = 1000000
+# tail fit
+p["perform_tail_fit"] = True
+p["fit_max_moment"] = 4
+p["fit_min_n"] = 30
+p["fit_max_n"] = 70
+
+# double counting correction:
+dc_type = 0  # FLL
+# DMFT loops:
+n_loops = 1
+
+#for first iteration, add the outout group:
+if mpi.is_master_node():
+    with HDFArchive(filename) as ar:
+        if (not ar.is_group('dmft_output')):
+            ar.create_group('dmft_output')
+
+for iteration_number in range(1,n_loops+1):
+
+    mpi.report("Iteration = %s"%iteration_number)
+    
+    SK.symm_deg_gf(S.Sigma_iw)                # symmetrizing Sigma
+    SK.set_Sigma([ S.Sigma_iw ])                    # put Sigma into the SumK class
+    chemical_potential = SK.calc_mu( precision = 0.01 )  # find the chemical potential for given density
+    S.G_iw << SK.extract_G_loc()[0]
+
+    if (iteration_number==1):
+        # Put Hartree energy on Re Sigma
+        dm = S.G_iw.density()
+        SK.calc_dc(dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
+        S.Sigma_iw << SK.block_structure.convert_matrix(SK.dc_imp[0],space_from='sumk',space_to='solver')['up_1'][0,0]
+
+    mpi.report("Orbital densities of local Green function :")
+    for s,gf in S.G_iw:
+        mpi.report("Orbital %s: %s"%(s,dm[s].real))
+    mpi.report("Total charge of Gloc : %.6f"%S.G_iw.total_density().real)
+
+    # Calculate new G0_iw to input into the solver:
+    S.G0_iw << S.Sigma_iw + inverse(S.G_iw)
+    S.G0_iw << inverse(S.G0_iw)
+
+    # Solve the impurity problem:
+    S.solve(h_int=h_int, **p)
+
+    # Solved. Now do post-solution stuff:
+    dm = S.G_iw.density()
+    mpi.report("Orbital densities of impurity Green function:")
+    for s,gf in S.G_iw:
+        mpi.report("Orbital %s: %s"%(s,dm[s].real))
+    mpi.report("Total charge of impurity problem : %.6f"%S.G_iw.total_density().real)
+
+    # Write the final Sigma and G to the hdf5 archive:
+    if mpi.is_master_node():
+        with HDFArchive(filename) as ar:
+              ar['dmft_output']['iterations'] = iteration_number
+              ar['dmft_output']['G_0'] = S.G0_iw
+              ar['dmft_output']['G_tau'] = S.G_tau
+              ar['dmft_output']['G_iw'] = S.G_iw
+              ar['dmft_output']['Sigma_iw_%s'%iteration_number] = S.Sigma_iw
+
+    # Set the new double counting:
+    dm = S.G_iw.density() # compute the density matrix of the impurity problem
+    SK.calc_dc(dm, U_interact = U, J_hund = J, orb = 0, use_dc_formula = dc_type)
+
+    # Save stuff into the user_data group of hdf5 archive in case of rerun:
+    SK.save(['chemical_potential','dc_imp','dc_energ'])
+    
 
