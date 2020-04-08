@@ -1,6 +1,6 @@
 
 import os
-from . import rpath
+import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import numpy as np
@@ -9,7 +9,7 @@ from triqs_dft_tools.converters.plovasp.elstruct import ElectronicStructure
 from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 from triqs_dft_tools.converters.plovasp.proj_shell import ProjectorShell
 from triqs_dft_tools.converters.plovasp.proj_group import ProjectorGroup
-from . import mytest
+import mytest
 
 ################################################################################
 #

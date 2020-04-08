@@ -2,10 +2,10 @@ r"""
 Tests of 'parse_shells()' defined in ConfigParameters class
 """
 import os
-from . import rpath
+import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
-from . import arraytest
+import arraytest
 import numpy as np
 from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 
