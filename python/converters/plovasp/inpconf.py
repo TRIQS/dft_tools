@@ -396,7 +396,7 @@ class ConfigParameters:
         except (ValueError, AttributeError):
             raise ValueError("Failed to extract shell indices from a list: %s"%(sec_shells))
 
-        self.sh_sections = {ind: sec for ind, sec in it.izip(sh_inds, sec_shells)}
+        self.sh_sections = {ind: sec for ind, sec in zip(sh_inds, sec_shells)}
 
 # Check that all indices are unique
 # In principle redundant because the list of sections will contain only unique names

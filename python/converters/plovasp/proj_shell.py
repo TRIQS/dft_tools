@@ -329,7 +329,7 @@ class ProjectorShell:
         ib2 = self.ib_max + 1
         if site_diag:
             for isp in range(ns):
-                for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
+                for ik, weight, occ in zip(it.count(), kweights, occnums[isp, :, :]):
                     for io in range(nion):
                         proj_k = self.proj_win[io, isp, ik, ...]
                         occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
@@ -339,7 +339,7 @@ class ProjectorShell:
         else:
             proj_k = np.zeros((ndim, nbtot), dtype=np.complex128)
             for isp in range(ns):
-                for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
+                for ik, weight, occ in zip(it.count(), kweights, occnums[isp, :, :]):
                     for io in range(nion):
                         i1 = io * nlm
                         i2 = (io + 1) * nlm
@@ -376,7 +376,7 @@ class ProjectorShell:
         ib1 = self.ib_min
         ib2 = self.ib_max + 1
         for isp in range(ns):
-            for ik, weight, occ, eigk in it.izip(it.count(), kweights, occnums[isp, :, :],
+            for ik, weight, occ, eigk in zip(it.count(), kweights, occnums[isp, :, :],
                                           el_struct.eigvals[:, ib1:ib2, isp]):
                 for io in range(nion):
                     proj_k = self.proj_win[io, isp, ik, ...]
@@ -439,9 +439,9 @@ class ProjectorShell:
                             dos[ie, isp, io, im] += np.sum((cti * w_k[itt[1:, :], ib, isp, io, im].real).sum(0) * itt[0, :])
 
         dos *= 2 * el_struct.kmesh['volt']
-#        for isp in xrange(ns):
-#            for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
-#                for io in xrange(nion):
+#        for isp in range(ns):
+#            for ik, weight, occ in zip(it.count(), kweights, occnums[isp, :, :]):
+#                for io in range(nion):
 #                    proj_k = self.proj_win[isp, io, ik, ...]
 #                    occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
 #                                                 proj_k.conj().T).real * weight
