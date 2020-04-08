@@ -142,7 +142,7 @@ class ElectronicStructure:
 ## Construct a map to access coordinates by index
 #        self.structure['ion_index'] = []
 #        for isort, nq in enumerate(self.structure['nq_types']):
-#            for iq in xrange(nq):
+#            for iq in range(nq):
 #                self.structure['ion_index'].append((isort, iq))
 
 

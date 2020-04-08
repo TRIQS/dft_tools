@@ -335,7 +335,7 @@ class ProjectorGroup:
           1. Orthogonality is ensured on each site (NORMION = True).
              For each site 'ion' we have the following mapping:
 
-                 block_maps = [bl_map[ion] for ion in xrange(shell.nion)
+                 block_maps = [bl_map[ion] for ion in range(shell.nion)
                                            for shell in shells]
 
                  bl_map = [((i1_start, i1_end), (i1_shell, ion)),

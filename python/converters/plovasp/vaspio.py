@@ -435,7 +435,7 @@ class Poscar:
 
 #        print
 #        print "  Coords:"
-#        for it in xrange(ntypes):
+#        for it in range(ntypes):
 #            print "    Element:", el_names[it]
 #            print q_at[it]
 

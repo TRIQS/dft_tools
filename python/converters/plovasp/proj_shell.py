@@ -262,7 +262,7 @@ class ProjectorShell:
                     for ip, par in enumerate(proj_params):
                         if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
                             self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :]
-#                            for ik in xrange(nk):
+#                            for ik in range(nk):
 #                                kp = kmesh['kpoints'][ik]
 ##                                kphase = np.exp(-2.0j * np.pi * np.dot(kp, qcoord))
 #                                kphase = 1.0
