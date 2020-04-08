@@ -1,6 +1,6 @@
 # === Build and install atm module 
 add_cpp2py_module(atm)
-target_link_libraries(atm atm_c triqs)
+target_link_libraries(atm PRIVATE atm_c triqs)
 target_compile_options(atm PRIVATE -std=c++17)
 target_include_directories(atm PRIVATE ${CMAKE_SOURCE_DIR}/c++)
 
