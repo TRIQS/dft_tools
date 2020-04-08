@@ -51,7 +51,7 @@ class ConverterTools:
             for old, new in to_replace.items():
                 line = line.replace(old, new)
             for x in line.split():
-                yield string.atof(x)
+                yield float(x)
 
     def repack(self):
         """
