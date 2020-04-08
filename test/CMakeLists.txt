@@ -7,10 +7,10 @@ FILE(COPY SrVO3.pmat SrVO3.struct SrVO3.outputs SrVO3.oubwin SrVO3.ctqmcout SrVO
 # List all tests
 set(all_tests wien2k_convert hk_convert w90_convert sumkdft_basic srvo3_Gloc srvo3_transp sigma_from_file blockstructure analyse_block_structure_from_gf analyse_block_structure_from_gf2)
 
-set(python_executable python)
+set(python_executable ${TRIQS_PYTHON_EXECUTABLE})
 
-if(${TEST_COVERAGE})
-    set(python_executable ${PYTHON_COVERAGE} run --append --source "${CMAKE_BINARY_DIR}/python" )
+if(TEST_COVERAGE)
+  set(python_executable ${PYTHON_COVERAGE} run --append --source "${CMAKE_BINARY_DIR}/python")
 endif()
 
 foreach(t ${all_tests})
