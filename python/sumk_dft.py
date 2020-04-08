@@ -888,7 +888,7 @@ class SumkDFT(object):
                 make_copies=False) for g_sh in G]
             for ish in range(len(gf)):
                 for name, g in gf[ish]:
-                    g.set_from_inverse_fourier(G[ish][name])
+                    g.set_from_fourier(G[ish][name])
         # keep a GfImTime from the supplied GfImTime
         elif all(isinstance(g_sh._first(), GfImTime) for g_sh in G):
             gf = G

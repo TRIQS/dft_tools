@@ -90,7 +90,7 @@ Gt = BlockGf(name_block_generator = [(name,
 
 known_moments = np.zeros((2,10,10), dtype=np.complex)
 known_moments[1,:] = np.eye(10)
-Gt['ud'].set_from_inverse_fourier(G['ud'], known_moments)
+Gt['ud'].set_from_fourier(G['ud'], known_moments)
 
 G_new = SK.analyse_block_structure_from_gf([Gt])
 G_new_symm = G_new[0].copy()
