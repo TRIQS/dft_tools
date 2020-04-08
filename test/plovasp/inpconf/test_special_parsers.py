@@ -2,10 +2,10 @@ r"""
 Tests of special parseres defined in ConfigParameters class
 """
 import os
-import rpath
+from . import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
-import arraytest
+from . import arraytest
 import numpy as np
 from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 
@@ -87,7 +87,7 @@ class TestParseStringIonList(arraytest.ArrayTestCase):
 # Scenario 3
     def test_out_of_bounds(self):
         err_mess = "Lowest ion index is"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             self.cpars.parse_string_ion_list('0 1')
 
 # Scenario 4
@@ -99,7 +99,7 @@ class TestParseStringIonList(arraytest.ArrayTestCase):
 # Scenario 5
     def test_range_wrong_order(self):
         err_mess = "First index of the range"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             self.cpars.parse_string_ion_list('8..5')
 
 # Scenario 6
@@ -140,14 +140,14 @@ class TestParseStringTmatrix(arraytest.ArrayTestCase):
     def test_number_of_columns(self):
         par_str = "1.0 0.0\n1.0"
         err_mess = "Number of columns"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             self.cpars.parse_string_tmatrix(par_str, real=True)
 
 # Scenario 2
     def test_complex_matrix_odd(self):
         par_str = "1.0 0.0 2.0 1.0 0.0\n0.0 1.0 2.0 3.0 -1.0"
         err_mess = "Complex matrix must"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             self.cpars.parse_string_tmatrix(par_str, real=False)
 
 # Scenario 3
@@ -192,13 +192,13 @@ class TestParseEnergyWindow(arraytest.ArrayTestCase):
 # Scenario 2
     def test_wrong_range(self):
         err_mess = "The first float in EWINDOW"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             self.cpars.parse_energy_window('3.0 -1.5')
 
 # Scenario 3
     def test_one_float(self):
         err_mess = "EWINDOW must be specified"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             self.cpars.parse_energy_window('1.0')
 
 # Scenario 4
@@ -209,7 +209,7 @@ class TestParseEnergyWindow(arraytest.ArrayTestCase):
 # Scenario 5
     def test_three_floats(self):
         err_mess = "EWINDOW must be specified"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             self.cpars.parse_energy_window('1.5 3.0 2.0')
 
 ################################################################################
@@ -246,13 +246,13 @@ class TestParseBandWindow(arraytest.ArrayTestCase):
 # Scenario 2
     def test_wrong_range(self):
         err_mess = "The first int in BANDS"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             self.cpars.parse_band_window('10 1')
 
 # Scenario 3
     def test_one_float(self):
         err_mess = "BANDS must be specified"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             self.cpars.parse_band_window('1')
 
 # Scenario 4
@@ -263,7 +263,7 @@ class TestParseBandWindow(arraytest.ArrayTestCase):
 # Scenario 5
     def test_three_ints(self):
         err_mess = "BANDS must be specified"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             self.cpars.parse_band_window('1 2 3')
 
 ################################################################################
@@ -345,7 +345,7 @@ class TestParseStringDosmesh(arraytest.ArrayTestCase):
 # Scenario 3
     def test_two_numbers(self):
         err_mess = "DOSMESH must be either"
-        with self.assertRaisesRegexp(ValueError, err_mess):
+        with self.assertRaisesRegex(ValueError, err_mess):
             self.cpars.parse_string_dosmesh('-8.0 101')
 
 # Scenario 4

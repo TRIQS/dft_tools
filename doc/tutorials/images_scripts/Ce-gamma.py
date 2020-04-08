@@ -111,7 +111,7 @@ for iteration_number in range(1,Loops+1):
         #Save essential SumkDFT data:
         SK.save(['chemical_potential','dc_imp','dc_energ','correnerg'])
         if (mpi.is_master_node()):
-            print 'DC after solver: ',SK.dc_imp[0]
+            print('DC after solver: ',SK.dc_imp[0])
 
         # print out occupancy matrix of Ce 4f
         mpi.report("Orbital densities of impurity Green function:")

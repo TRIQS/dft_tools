@@ -48,7 +48,7 @@ from types import *
 import numpy
 import math
 from pytriqs.archive import *
-from converter_tools import *
+from .converter_tools import *
 from itertools import product
 import os.path
 
@@ -125,19 +125,19 @@ class Wannier90Converter(ConverterTools):
         # conversion
         try:
             # read k - point mesh generation option
-            kmesh_mode = int(R.next())
+            kmesh_mode = int(next(R))
             if kmesh_mode >= 0:
                 # read k-point mesh size from input
-                nki = [int(R.next()) for idir in range(3)]
+                nki = [int(next(R)) for idir in range(3)]
             else:
                 # some default grid, if everything else fails...
                 nki = [8, 8, 8]
             # read the total number of electrons per cell
-            density_required = float(R.next())
+            density_required = float(next(R))
             # we do not read shells, because we have no additional shells beyond correlated ones,
             # and the data will be copied from corr_shells into shells (see below)
             # number of corr. shells (e.g. Fe d, Ce f) in the unit cell,
-            n_corr_shells = int(R.next())
+            n_corr_shells = int(next(R))
             # now read the information about the correlated shells (atom, sort,
             # l, dim, SO flag, irep):
             corr_shells = [{name: int(val) for name, val in zip(
@@ -423,7 +423,7 @@ class Wannier90Converter(ConverterTools):
                     ir += 1
             # for each direct lattice vector R read the block of the
             # Hamiltonian H(R)
-            for ir, jj, ii in product(range(nrpt), range(num_wf), range(num_wf)):
+            for ir, jj, ii in product(list(range(nrpt)), list(range(num_wf)), list(range(num_wf))):
                 # advance one line, split the line into tokens
                 currpos += 1
                 cline = hr_data[currpos].split()
@@ -569,7 +569,7 @@ class Wannier90Converter(ConverterTools):
         nkpt = msize[0] * msize[1] * msize[2]
         kmesh = numpy.zeros((nkpt, 3), dtype=float)
         ii = 0
-        for ix, iy, iz in product(range(msize[0]), range(msize[1]), range(msize[2])):
+        for ix, iy, iz in product(list(range(msize[0])), list(range(msize[1])), list(range(msize[2]))):
             kmesh[ii, :] = [float(ix) / msize[0], float(iy) /
                             msize[1], float(iz) / msize[2]]
             ii += 1
@@ -601,8 +601,8 @@ class Wannier90Converter(ConverterTools):
         twopi = 2 * numpy.pi
         h_of_k = [numpy.zeros((norb, norb), dtype=numpy.complex_)
                   for ik in range(self.n_k)]
-        ridx = numpy.array(range(self.nrpt))
-        for ik, ir in product(range(self.n_k), ridx):
+        ridx = numpy.array(list(range(self.nrpt)))
+        for ik, ir in product(list(range(self.n_k)), ridx):
             rdotk = twopi * numpy.dot(self.k_mesh[ik], self.rvec[ir])
             factor = (math.cos(rdotk) + 1j * math.sin(rdotk)) / \
                 float(self.rdeg[ir])

@@ -23,8 +23,8 @@ from types import *
 import numpy
 from pytriqs.gf import *
 import pytriqs.utility.mpi as mpi
-from symmetry import *
-from sumk_dft import SumkDFT
+from .symmetry import *
+from .sumk_dft import SumkDFT
 from scipy.integrate import *
 from scipy.interpolate import *
 
@@ -79,7 +79,7 @@ class SumkDFTTools(SumkDFT):
                       DOS projected to atoms and resolved into orbital contributions.
         """
         if (mesh is None) and (not with_Sigma):
-            raise ValueError, "lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq."
+            raise ValueError("lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq.")
         if mesh is None:
             om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
             om_min = om_mesh[0]
@@ -111,7 +111,7 @@ class SumkDFTTools(SumkDFT):
                 DOSproj_orb[ish][sp] = numpy.zeros(
                     [n_om, dim, dim], numpy.complex_)
 
-        ikarray = numpy.array(range(self.n_k))
+        ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
 
             G_latt_w = self.lattice_gf(
@@ -217,7 +217,7 @@ class SumkDFTTools(SumkDFT):
                       DOS projected to atoms and resolved into orbital contributions.
         """
         if (mesh is None) and (not with_Sigma):
-            raise ValueError, "lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq."
+            raise ValueError("lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq.")
         if mesh is None:
             om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
             om_min = om_mesh[0]
@@ -229,12 +229,12 @@ class SumkDFTTools(SumkDFT):
             om_mesh = numpy.linspace(om_min, om_max, n_om)
 
         spn = self.spin_block_names[self.SO]
-        gf_struct_parproj = [[(sp, range(self.shells[ish]['dim'])) for sp in spn]
+        gf_struct_parproj = [[(sp, list(range(self.shells[ish]['dim']))) for sp in spn]
                              for ish in range(self.n_shells)]
         #print(self.proj_mat_csc.shape[2])
         #print(spn)
         n_local_orbs = self.proj_mat_csc.shape[2]
-        gf_struct_parproj_all = [[(sp, range(n_local_orbs)) for sp in spn]]
+        gf_struct_parproj_all = [[(sp, list(range(n_local_orbs))) for sp in spn]]
     
         glist_all = [GfReFreq(indices=inner, window=(om_min, om_max), n_points=n_om)
                      for block, inner in gf_struct_parproj_all[0]]
@@ -251,7 +251,7 @@ class SumkDFTTools(SumkDFT):
             DOSproj_orb[sp] = numpy.zeros(
                     [n_om, dim, dim], numpy.complex_)
 
-        ikarray = numpy.array(range(self.n_k))
+        ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
 
             G_latt_w = self.lattice_gf(
@@ -352,7 +352,7 @@ class SumkDFTTools(SumkDFT):
             self.symmpar = Symmetry(self.hdf_file, subgroup=self.symmpar_data)
 
         if (mesh is None) and (not with_Sigma):
-            raise ValueError, "lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq."
+            raise ValueError("lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq.")
         if mesh is None:
             om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
             om_min = om_mesh[0]
@@ -365,7 +365,7 @@ class SumkDFTTools(SumkDFT):
 
         G_loc = []
         spn = self.spin_block_names[self.SO]
-        gf_struct_parproj = [[(sp, range(self.shells[ish]['dim'])) for sp in spn]
+        gf_struct_parproj = [[(sp, list(range(self.shells[ish]['dim']))) for sp in spn]
                              for ish in range(self.n_shells)]
         for ish in range(self.n_shells):
             glist = [GfReFreq(indices=inner, window=(om_min, om_max), n_points=n_om)
@@ -386,7 +386,7 @@ class SumkDFTTools(SumkDFT):
                 DOSproj_orb[ish][sp] = numpy.zeros(
                     [n_om, dim, dim], numpy.complex_)
 
-        ikarray = numpy.array(range(self.n_k))
+        ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
 
             G_latt_w = self.lattice_gf(
@@ -526,12 +526,12 @@ class SumkDFTTools(SumkDFT):
 
         if not ishell is None:
             gf_struct_parproj = [
-                (sp, range(self.shells[ishell]['dim'])) for sp in spn]
+                (sp, list(range(self.shells[ishell]['dim']))) for sp in spn]
             G_loc = BlockGf(name_block_generator=[(block, GfReFreq(indices=inner, mesh=self.Sigma_imp_w[0].mesh))
                                                   for block, inner in gf_struct_parproj], make_copies=False)
             G_loc.zero()
 
-        ikarray = numpy.array(range(self.n_k))
+        ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
 
             G_latt_w = self.lattice_gf(
@@ -653,7 +653,7 @@ class SumkDFTTools(SumkDFT):
                                  for ish in range(self.n_shells)]
                                 for isp in range(len(spn))]
         # Set up G_loc
-        gf_struct_parproj = [[(sp, range(self.shells[ish]['dim'])) for sp in spn]
+        gf_struct_parproj = [[(sp, list(range(self.shells[ish]['dim']))) for sp in spn]
                              for ish in range(self.n_shells)]
         if with_Sigma:
             G_loc = [BlockGf(name_block_generator=[(block, GfImFreq(indices=inner, mesh=self.Sigma_imp_iw[0].mesh))
@@ -667,7 +667,7 @@ class SumkDFTTools(SumkDFT):
         for ish in range(self.n_shells):
             G_loc[ish].zero()
 
-        ikarray = numpy.array(range(self.n_k))
+        ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
 
             G_latt_iw = self.lattice_gf(
@@ -828,10 +828,10 @@ class SumkDFTTools(SumkDFT):
         if mpi.is_master_node():
             ar = HDFArchive(self.hdf_file, 'r')
             if not (self.transp_data in ar):
-                raise IOError, "transport_distribution: No %s subgroup in hdf file found! Call convert_transp_input first." % self.transp_data
+                raise IOError("transport_distribution: No %s subgroup in hdf file found! Call convert_transp_input first." % self.transp_data)
             # check if outputs file was converted
             if not ('n_symmetries' in ar['dft_misc_input']):
-                raise IOError,  "transport_distribution: n_symmetries missing. Check if case.outputs file is present and call convert_misc_input() or convert_dft_input()."
+                raise IOError("transport_distribution: n_symmetries missing. Check if case.outputs file is present and call convert_misc_input() or convert_dft_input().")
 
         self.read_transport_input_from_hdf()
 
@@ -894,7 +894,7 @@ class SumkDFTTools(SumkDFT):
                     for i, g in self.Sigma_imp_w[icrsh]:
                         for iL in g.indices[0]:
                             for iR in g.indices[0]:
-                                for iom in xrange(n_om):
+                                for iom in range(n_om):
                                     g.data[iom, int(iL), int(iR)] = Sigma_save[
                                         i].data[ioffset + iom, int(iL), int(iR)]
         else:
@@ -913,18 +913,18 @@ class SumkDFTTools(SumkDFT):
         self.Om_mesh = iOm_mesh * d_omega
 
         if mpi.is_master_node():
-            print "Chemical potential: ", mu
-            print "Using n_om = %s points in the energy_window [%s,%s]" % (n_om, self.omega[0], self.omega[-1]),
-            print "where the omega vector is:"
-            print self.omega
-            print "Calculation requested for Omega mesh:   ", numpy.array(Om_mesh)
-            print "Omega mesh automatically repined to:  ", self.Om_mesh
+            print("Chemical potential: ", mu)
+            print("Using n_om = %s points in the energy_window [%s,%s]" % (n_om, self.omega[0], self.omega[-1]), end=' ')
+            print("where the omega vector is:")
+            print(self.omega)
+            print("Calculation requested for Omega mesh:   ", numpy.array(Om_mesh))
+            print("Omega mesh automatically repined to:  ", self.Om_mesh)
 
         self.Gamma_w = {direction: numpy.zeros(
             (len(self.Om_mesh), n_om), dtype=numpy.float_) for direction in self.directions}
 
         # Sum over all k-points
-        ikarray = numpy.array(range(self.n_k))
+        ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
             # Calculate G_w  for ik and initialize A_kw
             G_w = self.lattice_gf(ik, mu, iw_or_w="w", beta=beta,
@@ -938,7 +938,7 @@ class SumkDFTTools(SumkDFT):
                 A_kw[isp] = copy.deepcopy(G_w[self.spin_block_names[self.SO][
                                           isp]].data.swapaxes(0, 1).swapaxes(1, 2))
                 # calculate A(k,w) for each frequency
-                for iw in xrange(n_om):
+                for iw in range(n_om):
                     A_kw[isp][:, :, iw] = -1.0 / (2.0 * numpy.pi * 1j) * (
                         A_kw[isp][:, :, iw] - numpy.conjugate(numpy.transpose(A_kw[isp][:, :, iw])))
 
@@ -963,7 +963,7 @@ class SumkDFTTools(SumkDFT):
                     # calculate Gamma_w for each direction from the velocities
                     # vel_R and the spectral function A_kw
                     for direction in self.directions:
-                        for iw in xrange(n_om):
+                        for iw in range(n_om):
                             for iq in range(len(self.Om_mesh)):
                                 if(iw + iOm_mesh[iq] >= n_om or self.omega[iw] < -self.Om_mesh[iq] + energy_window[0] or self.omega[iw] > self.Om_mesh[iq] + energy_window[1]):
                                     continue
@@ -1033,7 +1033,7 @@ class SumkDFTTools(SumkDFT):
             else:
                 # rectangular integration for w-grid (orignal implementation)
                 d_w = self.omega[1] - self.omega[0]
-                for iw in xrange(self.Gamma_w[direction].shape[1]):
+                for iw in range(self.Gamma_w[direction].shape[1]):
                     A += A_int[iw] * d_w
             A = A * numpy.pi * (2.0 - self.SP)
         else:
@@ -1083,16 +1083,16 @@ class SumkDFTTools(SumkDFT):
             (n_q,), numpy.nan) for direction in self.directions}
 
         for direction in self.directions:
-            for iq in xrange(n_q):
+            for iq in range(n_q):
                 A0[direction][iq] = self.transport_coefficient(
                     direction, iq=iq, n=0, beta=beta, method=method)
                 A1[direction][iq] = self.transport_coefficient(
                     direction, iq=iq, n=1, beta=beta, method=method)
                 A2[direction][iq] = self.transport_coefficient(
                     direction, iq=iq, n=2, beta=beta, method=method)
-                print "A_0 in direction %s for Omega = %.2f    %e a.u." % (direction, self.Om_mesh[iq], A0[direction][iq])
-                print "A_1 in direction %s for Omega = %.2f    %e a.u." % (direction, self.Om_mesh[iq], A1[direction][iq])
-                print "A_2 in direction %s for Omega = %.2f    %e a.u." % (direction, self.Om_mesh[iq], A2[direction][iq])
+                print("A_0 in direction %s for Omega = %.2f    %e a.u." % (direction, self.Om_mesh[iq], A0[direction][iq]))
+                print("A_1 in direction %s for Omega = %.2f    %e a.u." % (direction, self.Om_mesh[iq], A1[direction][iq]))
+                print("A_2 in direction %s for Omega = %.2f    %e a.u." % (direction, self.Om_mesh[iq], A2[direction][iq]))
                 if ~numpy.isnan(A1[direction][iq]):
                     # Seebeck and kappa are overwritten if there is more than one Omega =
                     # 0 in Om_mesh
@@ -1102,11 +1102,11 @@ class SumkDFTTools(SumkDFT):
                     self.kappa[direction] *= 293178.0
             self.optic_cond[direction] = beta * \
                 A0[direction] * 10700.0 / numpy.pi
-            for iq in xrange(n_q):
-                print "Conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" % (direction, self.Om_mesh[iq], self.optic_cond[direction][iq])
+            for iq in range(n_q):
+                print("Conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" % (direction, self.Om_mesh[iq], self.optic_cond[direction][iq]))
                 if not (numpy.isnan(A1[direction][iq])):
-                    print "Seebeck in direction      %s for Omega = 0.00      %f  x 10^(-6) V/K" % (direction, self.seebeck[direction])
-                    print "kappa in direction      %s for Omega = 0.00      %f  W/(m * K)" % (direction, self.kappa[direction])
+                    print("Seebeck in direction      %s for Omega = 0.00      %f  x 10^(-6) V/K" % (direction, self.seebeck[direction]))
+                    print("kappa in direction      %s for Omega = 0.00      %f  W/(m * K)" % (direction, self.kappa[direction]))
 
         return self.optic_cond, self.seebeck, self.kappa
 

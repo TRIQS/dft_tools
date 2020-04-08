@@ -30,7 +30,7 @@ for i_sh in range(len(SK.deg_shells)):
     mpi.report('found {0:d} blocks of degenerate orbitals in shell {1:d}'.format(num_block_deg_orbs, i_sh))
     for iblock in range(num_block_deg_orbs):
         mpi.report('block {0:d} consists of orbitals:'.format(iblock))
-        for keys in SK.deg_shells[i_sh][iblock].keys():
+        for keys in list(SK.deg_shells[i_sh][iblock].keys()):
             mpi.report('  '+keys)
 
 # Setup CTQMC Solver

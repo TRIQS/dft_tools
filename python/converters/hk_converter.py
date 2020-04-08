@@ -25,7 +25,7 @@ import numpy
 from pytriqs.archive import *
 import pytriqs.utility.mpi as mpi
 from math import sqrt
-from converter_tools import *
+from .converter_tools import *
 
 
 class HkConverter(ConverterTools):
@@ -96,20 +96,20 @@ class HkConverter(ConverterTools):
             # the energy conversion factor is 1.0, we assume eV in files
             energy_unit = 1.0
             # read the number of k points
-            n_k = int(R.next())
+            n_k = int(next(R))
             k_dep_projection = 0
             SP = 0                                        # no spin-polarision
             SO = 0                                        # no spin-orbit
             # total charge below energy window is set to 0
             charge_below = 0.0
             # density required, for setting the chemical potential
-            density_required = R.next()
+            density_required = next(R)
             symm_op = 0                                   # No symmetry groups for the k-sum
 
             # the information on the non-correlated shells is needed for
             # defining dimension of matrices:
             # number of shells considered in the Wanniers
-            n_shells = int(R.next())
+            n_shells = int(next(R))
             # corresponds to index R in formulas
             # now read the information about the shells (atom, sort, l, dim):
             shell_entries = ['atom', 'sort', 'l', 'dim']
@@ -117,7 +117,7 @@ class HkConverter(ConverterTools):
                 shell_entries, R)} for ish in range(n_shells)]
 
             # number of corr. shells (e.g. Fe d, Ce f) in the unit cell,
-            n_corr_shells = int(R.next())
+            n_corr_shells = int(next(R))
             # corresponds to index R in formulas
             # now read the information about the shells (atom, sort, l, dim, SO
             # flag, irep):
@@ -141,8 +141,8 @@ class HkConverter(ConverterTools):
             T = []
             for ish in range(n_inequiv_shells):
                 # number of representatives ("subsets"), e.g. t2g and eg
-                n_reps[ish] = int(R.next())
-                dim_reps[ish] = [int(R.next()) for i in range(
+                n_reps[ish] = int(next(R))
+                dim_reps[ish] = [int(next(R)) for i in range(
                     n_reps[ish])]   # dimensions of the subsets
 
                 # The transformation matrix:
@@ -201,7 +201,7 @@ class HkConverter(ConverterTools):
             if (weights_in_file):
                 # weights in the file
                 for ik in range(n_k):
-                    bz_weights[ik] = R.next()
+                    bz_weights[ik] = next(R)
 
             # if the sum over spins is in the weights, take it out again!!
             sm = sum(bz_weights)
@@ -222,7 +222,7 @@ class HkConverter(ConverterTools):
                             else:
                                 istart = 0
                             for j in range(istart, n_orb):
-                                hopping[ik, isp, i, j] = R.next()
+                                hopping[ik, isp, i, j] = next(R)
 
                         for i in range(n_orb):
                             if (only_upper_triangle):
@@ -230,7 +230,7 @@ class HkConverter(ConverterTools):
                             else:
                                 istart = 0
                             for j in range(istart, n_orb):
-                                hopping[ik, isp, i, j] += R.next() * 1j
+                                hopping[ik, isp, i, j] += next(R) * 1j
                                 if ((only_upper_triangle)and(i != j)):
                                     hopping[ik, isp, j, i] = hopping[
                                         ik, isp, i, j].conjugate()
@@ -243,8 +243,8 @@ class HkConverter(ConverterTools):
                             else:
                                 istart = 0
                             for j in range(istart, n_orb):
-                                hopping[ik, isp, i, j] = R.next()
-                                hopping[ik, isp, i, j] += R.next() * 1j
+                                hopping[ik, isp, i, j] = next(R)
+                                hopping[ik, isp, i, j] += next(R) * 1j
 
                                 if ((only_upper_triangle)and(i != j)):
                                     hopping[ik, isp, j, i] = hopping[

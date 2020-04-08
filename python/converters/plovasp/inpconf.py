@@ -29,20 +29,20 @@ r"""
 
   Module for parsing and checking an input config-file.
 """
-import ConfigParser
+import configparser
 import numpy as np
 import re
 import sys
 import itertools as it
-import vaspio
+from . import vaspio
 
 def issue_warning(message):
     """
     Issues a warning.
     """
-    print
-    print "  !!! WARNING !!!: " + message
-    print
+    print()
+    print("  !!! WARNING !!!: " + message)
+    print()
 
 ################################################################################
 ################################################################################
@@ -73,7 +73,7 @@ class ConfigParameters:
 ################################################################################
     def __init__(self, input_filename, verbosity=1):
         self.verbosity = verbosity
-        self.cp = ConfigParser.SafeConfigParser()
+        self.cp = configparser.SafeConfigParser()
         self.cp.readfp(open(input_filename, 'r'))
 
         self.parameters = {}
@@ -89,7 +89,7 @@ class ConfigParameters:
             'corr': ('corr', self.parse_string_logical, True)}
 
         self.gr_required = {
-            'shells': ('shells', lambda s: map(int, s.split())),
+            'shells': ('shells', lambda s: list(map(int, s.split()))),
             'ewindow': ('ewindow', self.parse_energy_window)}
 
         self.gr_optional = {
@@ -142,7 +142,7 @@ class ConfigParameters:
         else:
 # Check if a set of indices is given
             try:
-                l_tmp = map(int, par_str.split())
+                l_tmp = list(map(int, par_str.split()))
                 l_tmp.sort()
 # Subtract 1 so that VASP indices (starting with 1) are converted
 # to Python indices (starting with 0)
@@ -160,7 +160,7 @@ class ConfigParameters:
                 ion_list = []
                 nion = 0
                 for cl in classes:
-                    ions = map(int, re.findall(patt2, cl))
+                    ions = list(map(int, re.findall(patt2, cl)))
                     ion_list.append([ion - 1 for ion in ions])
                     nion += len(ions)
 
@@ -218,7 +218,7 @@ class ConfigParameters:
         Energy window is given by two floats, with the first one being smaller
         than the second one.
         """
-        ftmp = map(float, par_str.split())
+        ftmp = list(map(float, par_str.split()))
         assert len(ftmp) == 2, "EWINDOW must be specified by exactly two floats"
         assert ftmp[0] < ftmp[1], "The first float in EWINDOW must be smaller than the second one"
         return tuple(ftmp)
@@ -233,7 +233,7 @@ class ConfigParameters:
         Band window is given by two ints, with the first one being smaller
         than the second one.
         """
-        ftmp = map(int, par_str.split())
+        ftmp = list(map(int, par_str.split()))
         assert len(ftmp) == 2, "BANDS must be specified by exactly two ints"
         assert ftmp[0] < ftmp[1], "The first int in BANDS must be smaller than the second one"
         return tuple(ftmp)
@@ -250,7 +250,7 @@ class ConfigParameters:
         """
         str_rows = par_str.split('\n')
         try:
-            rows = [map(float, s.split()) for s in str_rows]
+            rows = [list(map(float, s.split())) for s in str_rows]
         except ValueError:
             err_mess = "Cannot parse a matrix string:\n%s"%(par_str)
             raise ValueError(err_mess)
@@ -339,11 +339,11 @@ class ConfigParameters:
         For required parameters `exception=True` must be set.
         """
         parsed = {}
-        for par in param_set.keys():
+        for par in list(param_set.keys()):
             key = param_set[par][0]
             try:
                 par_str = self.cp.get(section, par)
-            except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+            except (configparser.NoOptionError, configparser.NoSectionError):
                 if exception:
                     message = "Required parameter '%s' not found in section [%s]"%(par, section)
                     raise Exception(message)
@@ -354,7 +354,7 @@ class ConfigParameters:
                     continue
 
             if self.verbosity > 0:
-                print "  %s = %s"%(par, par_str)
+                print("  %s = %s"%(par, par_str))
 
             parse_fun = param_set[par][1]
             parsed[key] = parse_fun(par_str)
@@ -376,23 +376,23 @@ class ConfigParameters:
         sections = self.cp.sections()
 
         sh_patt1 = re.compile('shell +.*', re.IGNORECASE)
-        sec_shells = filter(sh_patt1.match, sections)
+        sec_shells = list(filter(sh_patt1.match, sections))
 
         self.nshells = len(sec_shells)
         assert self.nshells > 0, "No projected shells found in the input file"
 
         if self.verbosity > 0:
-            print
+            print()
             if self.nshells > 1:
-                print "  Found %i projected shells"%(self.nshells)
+                print("  Found %i projected shells"%(self.nshells))
             else:
-                print "  Found 1 projected shell"
+                print("  Found 1 projected shell")
 
 # Get shell indices
         sh_patt2 = re.compile('shell +([0-9]*)$', re.IGNORECASE)
         try:
             get_ind = lambda s: int(sh_patt2.match(s).groups()[0])
-            sh_inds = map(get_ind, sec_shells)
+            sh_inds = list(map(get_ind, sec_shells))
         except (ValueError, AttributeError):
             raise ValueError("Failed to extract shell indices from a list: %s"%(sec_shells))
 
@@ -405,7 +405,7 @@ class ConfigParameters:
 # Ideally, indices should run from 1 to <nshells>
 # If it's not the case, issue a warning
         sh_inds.sort()
-        if sh_inds != range(1, len(sh_inds) + 1):
+        if sh_inds != list(range(1, len(sh_inds) + 1)):
             issue_warning("Shell indices are not uniform or not starting from 1. "
                "This might be an indication of a incorrect setup.")
 
@@ -418,8 +418,8 @@ class ConfigParameters:
             section = self.sh_sections[ind]
 
             if self.verbosity > 0:
-                print
-                print "  Shell parameters:"
+                print()
+                print("  Shell parameters:")
 # Shell required parameters
             parsed = self.parse_parameter_set(section, self.sh_required, exception=True)
             shell.update(parsed)
@@ -453,7 +453,7 @@ class ConfigParameters:
         sections = self.cp.sections()
 
         gr_patt = re.compile('group +(.*)', re.IGNORECASE)
-        sec_groups = filter(gr_patt.match, sections)
+        sec_groups = list(filter(gr_patt.match, sections))
 
         self.ngroups = len(sec_groups)
 
@@ -471,8 +471,8 @@ class ConfigParameters:
             group['index'] = gr_ind
 
             if self.verbosity > 0:
-                print
-                print "  Group parameters:"
+                print()
+                print("  Group parameters:")
 # Group required parameters
             parsed = self.parse_parameter_set(section, self.gr_required, exception=True)
             group.update(parsed)
@@ -514,18 +514,18 @@ class ConfigParameters:
             sh_gr_required = dict(self.gr_required)
             sh_gr_required.pop('shells')
             try:
-                for par in sh_gr_required.keys():
+                for par in list(sh_gr_required.keys()):
                     key = sh_gr_required[par][0]
                     value = self.shells[0].pop(key)
                     self.groups[0][key] = value
             except KeyError:
                 message = "One [Shell] section is specified but no explicit [Group] section is provided."
                 message += " In this case the [Shell] section must contain all required group information.\n"
-                message += "  Required parameters are: %s"%(sh_gr_required.keys())
+                message += "  Required parameters are: %s"%(list(sh_gr_required.keys()))
                 raise KeyError(message)
 
 # Do the same for optional group parameters, but do not raise an exception
-            for par in self.gr_optional.keys():
+            for par in list(self.gr_optional.keys()):
                 try:
                     key = self.gr_optional[par][0]
                     value = self.shells[0].pop(key)
@@ -562,7 +562,7 @@ class ConfigParameters:
 # remove them and issue a warning.
 #
 # First, required group parameters
-                for par in self.gr_required.keys():
+                for par in list(self.gr_required.keys()):
                     try:
                         key = self.gr_required[par][0]
                         value = shell.pop(key)
@@ -573,7 +573,7 @@ class ConfigParameters:
                         continue
 
 # Second, optional group parameters
-                for par in self.gr_optional.keys():
+                for par in list(self.gr_optional.keys()):
                     try:
                         key = self.gr_optional[par][0]
                         value = shell.pop(key)
@@ -591,7 +591,7 @@ class ConfigParameters:
         sh_refs_used.sort()
 
 # Check that all shells are referenced in the groups
-        assert sh_refs_used == range(self.nshells), "Some shells are not inside any of the groups"
+        assert sh_refs_used == list(range(self.nshells)), "Some shells are not inside any of the groups"
 
 
 ################################################################################
@@ -605,7 +605,7 @@ class ConfigParameters:
         """
         self.general = {}
         sections = self.cp.sections()
-        gen_section = filter(lambda s: s.lower() == 'general', sections)
+        gen_section = [s for s in sections if s.lower() == 'general']
 # If no [General] section is found parse a dummy section name to the parser
 # to reset parameters to their default values
         if len(gen_section) > 1:

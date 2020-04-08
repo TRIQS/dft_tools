@@ -27,8 +27,8 @@ if __name__ == '__main__':
     if results.wasSuccessful():
         raise SystemExit(0)
     else:
-        print "Failed tests:"
+        print("Failed tests:")
         for failure in results.failures:
-            print failure[0].__str__()
+            print(failure[0].__str__())
         raise SystemExit(1)
 

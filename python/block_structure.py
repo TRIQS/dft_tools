@@ -145,14 +145,14 @@ class BlockStructure(object):
             # create new solver_to_sumk
             so2su={}
             so2su_block = {}
-            for blk,idxs in gf_struct.items():
+            for blk,idxs in list(gf_struct.items()):
                 for i in range(len(idxs)):
                     so2su[(blk,i)]=self.solver_to_sumk[ish][(blk,idxs[i])]
                     so2su_block[blk]=so2su[(blk,i)][0]
             self.solver_to_sumk[ish] = so2su
             self.solver_to_sumk_block[ish] = so2su_block
             # create new sumk_to_solver
-            for k,v in self.sumk_to_solver[ish].items():
+            for k,v in list(self.sumk_to_solver[ish].items()):
                 blk,ind=v
                 if blk in gf_struct and ind in gf_struct[blk]:
                     new_ind = gf_struct[blk].index(ind)
@@ -161,7 +161,7 @@ class BlockStructure(object):
                     self.sumk_to_solver[ish][k]=(None,None)
             # reindexing gf_struct so that it starts with 0
             for k in gf_struct:
-                gf_struct[k]=range(len(gf_struct[k]))
+                gf_struct[k]=list(range(len(gf_struct[k])))
             self.gf_struct_solver[ish]=gf_struct
 
     def pick_gf_struct_sumk(self,new_gf_struct):
@@ -207,7 +207,7 @@ class BlockStructure(object):
         # mapping
         for ish in range(len(new_gf_struct)):
             gfs.append({})
-            for block in new_gf_struct[ish].keys():
+            for block in list(new_gf_struct[ish].keys()):
                 for ind in new_gf_struct[ish][block]:
                     ind_sol = self.sumk_to_solver[ish][(block,ind)]
                     if not ind_sol[0] in gfs[ish]:
@@ -232,7 +232,7 @@ class BlockStructure(object):
             so2su = {}
             su2so = {}
             so2su_block = {}
-            for frm,to in mapping[ish].iteritems():
+            for frm,to in mapping[ish].items():
                 if not to[0] in gf_struct:
                     gf_struct[to[0]]=[]
                 gf_struct[to[0]].append(to[1])
@@ -247,7 +247,7 @@ class BlockStructure(object):
                 else:
                     so2su_block[to[0]]=\
                         self.solver_to_sumk_block[ish][frm[0]]
-            for k in self.sumk_to_solver[ish].keys():
+            for k in list(self.sumk_to_solver[ish].keys()):
                 if not k in su2so:
                     su2so[k] = (None,None)
             self.gf_struct_solver[ish]=gf_struct
@@ -273,7 +273,7 @@ class BlockStructure(object):
             blocks
         """
 
-        names = self.gf_struct_solver[ish].keys()
+        names = list(self.gf_struct_solver[ish].keys())
         blocks=[]
         for n in names:
             G = gf_function(indices=self.gf_struct_solver[ish][n],**kwargs)
@@ -315,7 +315,7 @@ class BlockStructure(object):
             show_warnings = True
 
         G_new = self.create_gf(ish=ish,**kwargs)
-        for block in G_struct.gf_struct_solver[ish].keys():
+        for block in list(G_struct.gf_struct_solver[ish].keys()):
             for i1 in G_struct.gf_struct_solver[ish][block]:
                 for i2 in G_struct.gf_struct_solver[ish][block]:
                     i1_sumk = G_struct.solver_to_sumk[ish][(block,i1)]
@@ -356,7 +356,7 @@ class BlockStructure(object):
             self.gf_struct_solver.append({})
             self.solver_to_sumk.append({})
             self.solver_to_sumk_block.append({})
-            for frm,to in self.sumk_to_solver[ish].iteritems():
+            for frm,to in self.sumk_to_solver[ish].items():
                 if to[0] is not None:
                     self.gf_struct_solver[ish][frm[0]+'_'+str(frm[1])]=[0]
                     self.sumk_to_solver[ish][frm]=(frm[0]+'_'+str(frm[1]),0)
@@ -384,7 +384,7 @@ class BlockStructure(object):
             elif isinstance(one,dict):
                 if set(one.keys()) != set(two.keys()):
                     return False
-                for k in set(one.keys()).intersection(two.keys()):
+                for k in set(one.keys()).intersection(list(two.keys())):
                     if not compare(one[k],two[k]):
                         return False
                 return True
@@ -413,7 +413,7 @@ class BlockStructure(object):
             d = []
             for ish in range(len(mapping)):
                 d.append({})
-                for k,v in mapping[ish].iteritems():
+                for k,v in mapping[ish].items():
                     d[ish][repr(k)] = repr(v)
             return d
 
@@ -429,7 +429,7 @@ class BlockStructure(object):
             d = []
             for ish in range(len(mapping)):
                 d.append({})
-                for k,v in mapping[ish].iteritems():
+                for k,v in mapping[ish].items():
                     # literal_eval is a saje alternative to eval
                     d[ish][literal_eval(k)] = literal_eval(v)
             return d
@@ -450,7 +450,7 @@ class BlockStructure(object):
                 s+=' shell '+str(ish)+'\n'
                 def keyfun(el):
                     return '{}_{:05d}'.format(el[0],el[1])
-                keys = sorted(element[ish].keys(),key=keyfun)
+                keys = sorted(list(element[ish].keys()),key=keyfun)
                 for k in keys:
                     s+='  '+str(k)+str(element[ish][k])+'\n'
         s += "deg_shells\n"
@@ -459,7 +459,7 @@ class BlockStructure(object):
             for l in range(len(self.deg_shells[ish])):
                 s+='  equivalent group '+str(l)+'\n'
                 if isinstance(self.deg_shells[ish][l],dict):
-                    for key, val in self.deg_shells[ish][l].iteritems():
+                    for key, val in self.deg_shells[ish][l].items():
                         s+='   '+key+('*' if val[1] else '')+':\n'
                         s+='    '+str(val[0]).replace('\n','\n    ')+'\n'
                 else:

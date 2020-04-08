@@ -2,10 +2,10 @@ r"""
 Tests of 'parse_general()' defined in ConfigParameters class
 """
 import os
-import rpath
+from . import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
-import arraytest
+from . import arraytest
 import numpy as np
 from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 

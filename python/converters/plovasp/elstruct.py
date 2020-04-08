@@ -92,7 +92,7 @@ class ElectronicStructure:
 #        removed completely.
 #        if not vasp_data.eigenval.eigs is None:
         if False:
-            print "eigvals from EIGENVAL"
+            print("eigvals from EIGENVAL")
             self.eigvals = vasp_data.eigenval.eigs
             self.ferw = vasp_data.eigenval.ferw.transpose((2, 0, 1))
 
@@ -102,7 +102,7 @@ class ElectronicStructure:
 # Check that the number of band is the same in PROJCAR and EIGENVAL
             assert nb_plo == self.nband, "PLOCAR is inconsistent with EIGENVAL (number of bands)"
         else:
-            print "eigvals from LOCPROJ"
+            print("eigvals from LOCPROJ")
             self.eigvals = vasp_data.plocar.eigs
             self.ferw = vasp_data.plocar.ferw.transpose((2, 0, 1))
             self.efermi = vasp_data.doscar.efermi
@@ -163,8 +163,8 @@ class ElectronicStructure:
         overlap = np.zeros((ns, nproj, nproj), dtype=np.float64)
 #        ov_min = np.ones((ns, nproj, nproj), dtype=np.float64) * 100.0
 #        ov_max = np.zeros((ns, nproj, nproj), dtype=np.float64)
-        for ispin in xrange(ns):
-            for ik in xrange(nk):
+        for ispin in range(ns):
+            for ik in range(nk):
                 kweight = self.kmesh['kweights'][ik]
                 occ = self.ferw[ispin, ik, :]
                 den_mat[ispin, :, :] += np.dot(plo[:, ispin, ik, :] * occ, plo[:, ispin, ik, :].T.conj()).real * kweight * sp_fac
@@ -174,12 +174,12 @@ class ElectronicStructure:
 #                ov_min = np.minimum(ov, ov_min)
 
 # Output only the site-diagonal parts of the matrices
-        print
-        print "  Unorthonormalized density matrices and overlaps:"
-        for ispin in xrange(ns):
-            print "  Spin:", ispin + 1
+        print()
+        print("  Unorthonormalized density matrices and overlaps:")
+        for ispin in range(ns):
+            print("  Spin:", ispin + 1)
             for io, ion in enumerate(ions):
-                print "  Site:", ion
+                print("  Site:", ion)
                 iorb_inds = [(ip, param['m']) for ip, param in enumerate(self.proj_params) if param['isite'] == ion]
                 norb = len(iorb_inds)
                 dm = np.zeros((norb, norb))
@@ -189,9 +189,9 @@ class ElectronicStructure:
                         dm[iorb, iorb2] = den_mat[ispin, ind, ind2]
                         ov[iorb, iorb2] = overlap[ispin, ind, ind2]
 
-                print "  Density matrix" + (12*norb - 12 + 2)*" " + "Overlap"
+                print("  Density matrix" + (12*norb - 12 + 2)*" " + "Overlap")
                 for drow, dov in zip(dm, ov):
                     out = ''.join(map("{0:12.7f}".format, drow))
                     out += "    "
                     out += ''.join(map("{0:12.7f}".format, dov))
-                    print out
+                    print(out)

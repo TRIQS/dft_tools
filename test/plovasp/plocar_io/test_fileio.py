@@ -27,19 +27,19 @@ class TestFileIO(mytest.MyTestCase):
 # Scenario 1
     def test_no_plocar(self):
         err_mess = "Error opening xPLOCAR"
-        with self.assertRaisesRegexp(IOError, err_mess):
+        with self.assertRaisesRegex(IOError, err_mess):
             read_plocar('xPLOCAR')
 
 # Scenario 2
     def test_end_of_file(self):
         err_mess = "End-of-file reading"
-        with self.assertRaisesRegexp(IOError, err_mess):
+        with self.assertRaisesRegex(IOError, err_mess):
             read_plocar('PLOCAR.trunc')
 
 # Scenario 3
     def test_wrong_prec(self):
         err_mess = "only 'prec = 4, 8' are supported"
-        with self.assertRaisesRegexp(ValueError, err_mess):
+        with self.assertRaisesRegex(ValueError, err_mess):
             read_plocar('PLOCAR.noprec')
 
 # Scenario 4
@@ -52,10 +52,10 @@ class TestFileIO(mytest.MyTestCase):
             f.write(" nlm =%5i\n"%(nlm))
             ion = 1
             isp = 1
-            for ik in xrange(nk):
-                for ib in xrange(nb):
+            for ik in range(nk):
+                for ib in range(nb):
                     f.write("%5i%5i%5i%5i%10.5f\n"%(ion, isp, ik+1, ib+1, ferw[0, 0, ik, ib]))
-                    for ilm in xrange(nlm):
+                    for ilm in range(nlm):
                         p = plo[0, 0, ik, ib, ilm]
                         f.write("%5i%15.7f%15.7f\n"%(ilm+1, p.real, p.imag))
             
@@ -75,13 +75,13 @@ class TestFileIO(mytest.MyTestCase):
         test_file = 'PLOCAR.example.out.test' 
         with open(test_file, 'wt') as f:
             f.write("pars: %s\n"%(pars))
-            for ion in xrange(nion):
-                for isp in xrange(ns):
-                    for ik in xrange(nk):
-                        for ib in xrange(nb):
+            for ion in range(nion):
+                for isp in range(ns):
+                    for ik in range(nk):
+                        for ib in range(nb):
                             f.write("%5i%5i%5i%5i  %s\n"%(ion+1, isp+1, ik+1, ib+1,
                                     ferw[ion, isp, ik, ib]))
-                            for ilm in xrange(nlm):
+                            for ilm in range(nlm):
                                 p = plo[ion, isp, ik, ib, ilm]
                                 f.write("%5i  %s\n"%(ilm+1, p))
             

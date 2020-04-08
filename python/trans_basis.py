@@ -113,7 +113,7 @@ class TransBasis:
         # transform the CTQMC blocks to the full matrix:
         # ish is the index of the inequivalent shell corresponding to icrsh
         ish = self.SK.corr_to_inequiv[0]
-        for block, inner in self.gf_struct_solver[ish].iteritems():
+        for block, inner in self.gf_struct_solver[ish].items():
             for ind1 in inner:
                 for ind2 in inner:
                     gfrotated[self.SK.solver_to_sumk_block[ish][block]][
@@ -126,7 +126,7 @@ class TransBasis:
 
         gfreturn = gf_to_rot.copy()
         # Put back into CTQMC basis:
-        for block, inner in self.gf_struct_solver[ish].iteritems():
+        for block, inner in self.gf_struct_solver[ish].items():
             for ind1 in inner:
                 for ind2 in inner:
                     gfreturn[block][ind1, ind2] << gfrotated[

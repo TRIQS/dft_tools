@@ -1,6 +1,6 @@
 
 import os
-import rpath
+from . import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import numpy as np
@@ -10,7 +10,7 @@ from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 from triqs_dft_tools.converters.plovasp.proj_shell import ProjectorShell
 from triqs_dft_tools.converters.plovasp.proj_group import ProjectorGroup
 from pytriqs.archive import HDFArchive
-import mytest
+from . import mytest
 
 ################################################################################
 #

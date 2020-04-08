@@ -1,6 +1,6 @@
 
 import os
-import rpath
+from . import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import numpy as np
@@ -9,7 +9,7 @@ from triqs_dft_tools.converters.plovasp.elstruct import ElectronicStructure
 from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 from triqs_dft_tools.converters.plovasp.proj_shell import ProjectorShell
 from triqs_dft_tools.converters.plovasp.proj_group import ProjectorGroup
-import mytest
+from . import mytest
 
 ################################################################################
 #
@@ -58,14 +58,14 @@ class TestSelectBands(mytest.MyTestCase):
     def test_emin_too_large(self):
         self.proj_gr.emin = 20.0
         self.proj_gr.emax = 25.0
-        with self.assertRaisesRegexp(Exception, "No bands inside the window"):
+        with self.assertRaisesRegex(Exception, "No bands inside the window"):
             ib_win, nb_min, nb_max = self.proj_gr.select_bands(self.eigvals)
 
 # Scenario 3
     def test_emax_too_small(self):
         self.proj_gr.emin = -50.0
         self.proj_gr.emax = -55.0
-        with self.assertRaisesRegexp(Exception, "Energy window does not overlap"):
+        with self.assertRaisesRegex(Exception, "Energy window does not overlap"):
             ib_win, nb_min, nb_max = self.proj_gr.select_bands(self.eigvals)
 
 

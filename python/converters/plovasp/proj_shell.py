@@ -33,9 +33,9 @@ def issue_warning(message):
     """
     Issues a warning.
     """
-    print
-    print "  !!! WARNING !!!: " + message
-    print
+    print()
+    print("  !!! WARNING !!!: " + message)
+    print()
 
 import itertools as it
 import numpy as np
@@ -165,7 +165,7 @@ class ProjectorShell:
             if is_complex:
                 raw_matrices = raw_matrices[:, ::2] + raw_matrices[:, 1::2] * 1j
 
-            for io in xrange(nion):
+            for io in range(nion):
                 i1 = io * nr
                 i2 = (io + 1) * nr
                 self.tmatrices[io, :, :] = raw_matrices[i1:i2, :]
@@ -193,7 +193,7 @@ class ProjectorShell:
             ndim = nrow
 
             self.tmatrices = np.zeros((nion, nrow, nm), dtype=np.complex128)
-            for io in xrange(nion):
+            for io in range(nion):
                 self.tmatrices[io, :, :] = raw_matrix
 
             return ndim
@@ -206,7 +206,7 @@ class ProjectorShell:
 
 # We still need the matrices for the output
         self.tmatrices = np.zeros((nion, ndim, ndim), dtype=np.complex128)
-        for io in xrange(nion):
+        for io in range(nion):
             self.tmatrices[io, :, :] = np.identity(ndim, dtype=np.complex128)
 
         return ndim
@@ -236,20 +236,20 @@ class ProjectorShell:
 #       for a non-collinear case 'ndim' is 'ns * nm'
             ndim = self.tmatrices.shape[1]
             self.proj_arr = np.zeros((nion, ns, nk, ndim, nb), dtype=np.complex128)
-            for ik in xrange(nk):
+            for ik in range(nk):
                 kp = kmesh['kpoints'][ik]
                 for io, ion in enumerate(self.ion_list):
                     proj_k = np.zeros((ns, nlm, nb), dtype=np.complex128)
                     qcoord = structure['qcoords'][ion]
 #                    kphase = np.exp(-2.0j * np.pi * np.dot(kp, qcoord))
 #                    kphase = 1.0
-                    for m in xrange(nlm):
+                    for m in range(nlm):
 # Here we search for the index of the projector with the given isite/l/m indices
                         for ip, par in enumerate(proj_params):
                             if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
                                 proj_k[:, m, :] = proj_raw[ip, :, ik, :]  #* kphase
                                 break
-                    for isp in xrange(ns):
+                    for isp in range(ns):
                         self.proj_arr[io, isp, ik, :, :] = np.dot(self.tmatrices[io, :, :], proj_k[isp, :, :])
 
         else:
@@ -257,7 +257,7 @@ class ProjectorShell:
             self.proj_arr = np.zeros((nion, ns, nk, nlm, nb), dtype=np.complex128)
             for io, ion in enumerate(self.ion_list):
                 qcoord = structure['qcoords'][ion]
-                for m in xrange(nlm):
+                for m in range(nlm):
 # Here we search for the index of the projector with the given isite/l/m indices
                     for ip, par in enumerate(proj_params):
                         if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
@@ -291,8 +291,8 @@ class ProjectorShell:
 
 # Select projectors for a given energy window
         ns_band = self.ib_win.shape[1]
-        for isp in xrange(ns):
-            for ik in xrange(nk):
+        for isp in range(ns):
+            for ik in range(nk):
 # TODO: for non-collinear case something else should be done here
                 is_b = min(isp, ns_band)
                 ib1 = self.ib_win[ik, is_b, 0]
@@ -328,9 +328,9 @@ class ProjectorShell:
         ib1 = self.ib_min
         ib2 = self.ib_max + 1
         if site_diag:
-            for isp in xrange(ns):
+            for isp in range(ns):
                 for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
-                    for io in xrange(nion):
+                    for io in range(nion):
                         proj_k = self.proj_win[io, isp, ik, ...]
                         occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
                                                      proj_k.conj().T).real * weight
@@ -338,9 +338,9 @@ class ProjectorShell:
                                                      proj_k.conj().T).real * weight
         else:
             proj_k = np.zeros((ndim, nbtot), dtype=np.complex128)
-            for isp in xrange(ns):
+            for isp in range(ns):
                 for ik, weight, occ in it.izip(it.count(), kweights, occnums[isp, :, :]):
-                    for io in xrange(nion):
+                    for io in range(nion):
                         i1 = io * nlm
                         i2 = (io + 1) * nlm
                         proj_k[i1:i2, :] = self.proj_win[io, isp, ik, ...]
@@ -375,10 +375,10 @@ class ProjectorShell:
         occnums = el_struct.ferw
         ib1 = self.ib_min
         ib2 = self.ib_max + 1
-        for isp in xrange(ns):
+        for isp in range(ns):
             for ik, weight, occ, eigk in it.izip(it.count(), kweights, occnums[isp, :, :],
                                           el_struct.eigvals[:, ib1:ib2, isp]):
-                for io in xrange(nion):
+                for io in range(nion):
                     proj_k = self.proj_win[io, isp, ik, ...]
                     loc_ham[isp, io, :, :] += np.dot(proj_k * (eigk - el_struct.efermi),
                                                  proj_k.conj().T).real * weight
@@ -410,13 +410,13 @@ class ProjectorShell:
         ne = len(emesh)
         dos = np.zeros((ne, ns, nion, nlm))
         w_k = np.zeros((nk, nb_max, ns, nion, nlm), dtype=np.complex128)
-        for isp in xrange(ns):
-            for ik in xrange(nk):
+        for isp in range(ns):
+            for ik in range(nk):
                 is_b = min(isp, ns_band)
                 ib1 = self.ib_win[ik, is_b, 0]
                 ib2 = self.ib_win[ik, is_b, 1] + 1
-                for ib_g in xrange(ib1, ib2):
-                    for io in xrange(nion):
+                for ib_g in range(ib1, ib2):
+                    for io in range(nion):
 # Note the difference between 'ib' and 'ibn':
 #  'ib'  counts from 0 to 'nb_k - 1'
 #  'ibn' counts from 'ib1 - ib_min' to 'ib2 - ib_min'
@@ -429,13 +429,13 @@ class ProjectorShell:
         itt = el_struct.kmesh['itet'].T
 # k-indices are starting from 0 in Python
         itt[1:, :] -= 1
-        for isp in xrange(ns):
+        for isp in range(ns):
             for ib, eigk in enumerate(el_struct.eigvals[:, self.ib_min:self.ib_max+1, isp].T):
                 for ie, e in enumerate(emesh):
                     eigk_ef = eigk - el_struct.efermi
                     cti = atm.dos_tetra_weights_3d(eigk_ef, e, itt)
-                    for im in xrange(nlm):
-                        for io in xrange(nion):
+                    for im in range(nlm):
+                        for io in range(nion):
                             dos[ie, isp, io, im] += np.sum((cti * w_k[itt[1:, :], ib, isp, io, im].real).sum(0) * itt[0, :])
 
         dos *= 2 * el_struct.kmesh['volt']

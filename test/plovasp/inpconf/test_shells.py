@@ -2,10 +2,10 @@ r"""
 Tests of 'parse_shells()' defined in ConfigParameters class
 """
 import os
-import rpath
+from . import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
-import arraytest
+from . import arraytest
 import numpy as np
 from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 
@@ -37,21 +37,21 @@ class TestParseShells(arraytest.ArrayTestCase):
     def test_no_shell(self):
         conf_pars = ConfigParameters(_rpath + 'parse_shells_1.cfg')
         err_mess = "No projected shells"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             conf_pars.parse_shells()
 
 # Scenario 2
     def test_bad_indices(self):
         conf_pars = ConfigParameters(_rpath + 'parse_shells_2.cfg')
         err_mess = "Failed to extract shell indices"
-        with self.assertRaisesRegexp(ValueError, err_mess):
+        with self.assertRaisesRegex(ValueError, err_mess):
             conf_pars.parse_shells()
 
 # Scenario 3
     def test_sh_required(self):
         conf_pars = ConfigParameters(_rpath + 'parse_shells_3.cfg')
         err_mess = "Required parameter"
-        with self.assertRaisesRegexp(Exception, err_mess):
+        with self.assertRaisesRegex(Exception, err_mess):
             conf_pars.parse_shells()
 
 # Scenario 4

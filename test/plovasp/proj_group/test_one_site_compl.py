@@ -1,6 +1,6 @@
 
 import os
-import rpath
+from . import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import numpy as np
@@ -10,7 +10,7 @@ from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 from triqs_dft_tools.converters.plovasp.proj_shell import ProjectorShell
 from triqs_dft_tools.converters.plovasp.proj_group import ProjectorGroup
 from pytriqs.archive import HDFArchive
-import mytest
+from . import mytest
 
 ################################################################################
 #
@@ -46,7 +46,7 @@ class TestProjectorGroupCompl(mytest.MyTestCase):
     def test_num_bands(self):
         self.pars.groups[0]['complement'] = True        
         err_mess = "At each band the same number"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             self.proj_gr = ProjectorGroup(self.pars.groups[0], [self.proj_sh], self.eigvals)        
         
     def test_compl(self):
@@ -66,9 +66,9 @@ class TestProjectorGroupCompl(mytest.MyTestCase):
         _, ns, nk, _, _ = self.proj_gr.shells[0].proj_win.shape
         
 # Note that 'ns' and 'nk' are the same for all shells
-        for isp in xrange(ns):
-            for ik in xrange(nk):
-                print('ik',ik)
+        for isp in range(ns):
+            for ik in range(nk):
+                print(('ik',ik))
                 bmin = self.proj_gr.ib_win[ik, isp, 0]
                 bmax = self.proj_gr.ib_win[ik, isp, 1]+1
                 

@@ -27,7 +27,7 @@
 from types import *
 import numpy
 from pytriqs.archive import *
-from converter_tools import *
+from .converter_tools import *
 import os.path
 try:
     import simplejson as json
@@ -150,7 +150,7 @@ class VaspConverter(ConverterTools):
 
         # R is a generator : each R.Next() will return the next number in the file
         jheader, rf = self.read_header_and_data(self.ctrl_file)
-        print jheader
+        print(jheader)
         ctrl_head = json.loads(jheader)
 
         ng = ctrl_head['ngroups']
@@ -163,12 +163,12 @@ class VaspConverter(ConverterTools):
         kpts_cart = numpy.zeros((n_k, 3))
         bz_weights = numpy.zeros(n_k)
         try:
-            for ik in xrange(n_k):
-                kx, ky, kz = rf.next(), rf.next(), rf.next()
+            for ik in range(n_k):
+                kx, ky, kz = next(rf), next(rf), next(rf)
                 kpts[ik, :] = kx, ky, kz
-                bz_weights[ik] = rf.next()
-            for ik in xrange(n_k):
-                kx, ky, kz = rf.next(), rf.next(), rf.next()
+                bz_weights[ik] = next(rf)
+            for ik in range(n_k):
+                kx, ky, kz = next(rf), next(rf), next(rf)
                 kpts_cart[ik, :] = kx, ky, kz
         except StopIteration:
             raise "VaspConverter: error reading %s"%self.ctrl_file
@@ -186,7 +186,7 @@ class VaspConverter(ConverterTools):
         assert ng == 1, "Only one group is allowed at the moment"
 
         try:
-            for ig in xrange(ng):
+            for ig in range(ng):
                 gr_file = self.basename + '.pg%i'%(ig + 1)
                 jheader, rf = self.read_header_and_data(gr_file)
                 gr_head = json.loads(jheader)
@@ -203,9 +203,9 @@ class VaspConverter(ConverterTools):
 
                 shells = []
                 corr_shells = []
-                shion_to_shell = [[] for ish in xrange(len(p_shells))]
-                cr_shion_to_shell = [[] for ish in xrange(len(p_shells))]
-                shorbs_to_globalorbs = [[] for ish in xrange(len(p_shells))]
+                shion_to_shell = [[] for ish in range(len(p_shells))]
+                cr_shion_to_shell = [[] for ish in range(len(p_shells))]
+                shorbs_to_globalorbs = [[] for ish in range(len(p_shells))]
                 last_dimension = 0
                 crshorbs_to_globalorbs = []
                 icsh = 0
@@ -243,7 +243,7 @@ class VaspConverter(ConverterTools):
             n_inequiv_shells, corr_to_inequiv, inequiv_to_corr = ConverterTools.det_shell_equivalence(self, corr_shells)
 
             if mpi.is_master_node():
-                print "  No. of inequivalent shells:", n_inequiv_shells
+                print("  No. of inequivalent shells:", n_inequiv_shells)
 
 # NB!: these rotation matrices are specific to Wien2K! Set to identity in VASP
             use_rotations = 1
@@ -272,19 +272,19 @@ class VaspConverter(ConverterTools):
 #            else:
             hopping = numpy.zeros([n_k, n_spin_blocs, nb_max, nb_max], numpy.complex_)
             f_weights = numpy.zeros([n_k, n_spin_blocs, nb_max], numpy.complex_)
-            band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in xrange(n_spin_blocs)]
+            band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(n_spin_blocs)]
             n_orbitals = numpy.zeros([n_k, n_spin_blocs], numpy.int)
 
 
-            for isp in xrange(n_spin_blocs):
-                for ik in xrange(n_k):
-                    ib1, ib2 = int(rf.next()), int(rf.next())
+            for isp in range(n_spin_blocs):
+                for ik in range(n_k):
+                    ib1, ib2 = int(next(rf)), int(next(rf))
                     band_window[isp][ik, :2] = ib1, ib2
                     nb = ib2 - ib1 + 1
                     n_orbitals[ik, isp] = nb
-                    for ib in xrange(nb):
-                        hopping[ik, isp, ib, ib] = rf.next()
-                        f_weights[ik, isp, ib] = rf.next()
+                    for ib in range(nb):
+                        hopping[ik, isp, ib, ib] = next(rf)
+                        f_weights[ik, isp, ib] = next(rf)
 
             if self.proj_or_hk == 'hk':
                 hopping = numpy.zeros([n_k, n_spin_blocs, n_orbs, n_orbs], numpy.complex_)
@@ -298,15 +298,15 @@ class VaspConverter(ConverterTools):
                     f_hk.readline()
                     count += 1
                 rf_hk = self.read_data(f_hk)
-                for isp in xrange(n_spin_blocs):
-                    for ik in xrange(n_k):
+                for isp in range(n_spin_blocs):
+                    for ik in range(n_k):
                         n_orbitals[ik, isp] = n_orbs
-                        for ib in xrange(n_orbs):
-                            for jb in xrange(n_orbs):
-                                hopping[ik, isp, ib, jb] = rf_hk.next()
-                        for ib in xrange(n_orbs):
-                            for jb in xrange(n_orbs):
-                                hopping[ik, isp, ib, jb] += 1j*rf_hk.next()
+                        for ib in range(n_orbs):
+                            for jb in range(n_orbs):
+                                hopping[ik, isp, ib, jb] = next(rf_hk)
+                        for ib in range(n_orbs):
+                            for jb in range(n_orbs):
+                                hopping[ik, isp, ib, jb] += 1j*next(rf_hk)
                 rf_hk.close()
 
 # Projectors
@@ -328,14 +328,14 @@ class VaspConverter(ConverterTools):
 # use cases and decide which solution is to be made permanent.
 #
             for ish, sh in enumerate(p_shells):
-                for isp in xrange(n_spin_blocs):
-                    for ik in xrange(n_k):
-                        for ion in xrange(len(sh['ion_list'])):
-                            for ilm in xrange(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1]):
-                                for ib in xrange(n_orbitals[ik, isp]):
+                for isp in range(n_spin_blocs):
+                    for ik in range(n_k):
+                        for ion in range(len(sh['ion_list'])):
+                            for ilm in range(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1]):
+                                for ib in range(n_orbitals[ik, isp]):
                                     # This is to avoid confusion with the order of arguments
-                                    pr = rf.next()
-                                    pi = rf.next()
+                                    pr = next(rf)
+                                    pi = next(rf)
                                     proj_mat_csc[ik, isp, ilm, ib] = complex(pr, pi)
 
 # now save only projectors with flag 'corr' to proj_mat
@@ -343,22 +343,22 @@ class VaspConverter(ConverterTools):
             if self.proj_or_hk == 'proj':
                 for ish, sh in enumerate(p_shells):
                     if sh['corr']:
-                        for isp in xrange(n_spin_blocs):
-                            for ik in xrange(n_k):
-                                for ion in xrange(len(sh['ion_list'])):
+                        for isp in range(n_spin_blocs):
+                            for ik in range(n_k):
+                                for ion in range(len(sh['ion_list'])):
                                     icsh = shion_to_shell[ish][ion]
-                                    for iclm,ilm in enumerate(xrange(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1])):
-                                        for ib in xrange(n_orbitals[ik, isp]):
+                                    for iclm,ilm in enumerate(range(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1])):
+                                        for ib in range(n_orbitals[ik, isp]):
                                             proj_mat[ik,isp,icsh,iclm,ib] = proj_mat_csc[ik,isp,ilm,ib]
             elif self.proj_or_hk == 'hk':
 
                 for ish, sh in enumerate(p_shells):
                     if sh['corr']:
-                        for ion in xrange(len(sh['ion_list'])):
+                        for ion in range(len(sh['ion_list'])):
                             icsh = shion_to_shell[ish][ion]
-                            for isp in xrange(n_spin_blocs):
-                                for ik in xrange(n_k):
-                                    for iclm,ilm in enumerate(xrange(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1])):
+                            for isp in range(n_spin_blocs):
+                                for ik in range(n_k):
+                                    for iclm,ilm in enumerate(range(shorbs_to_globalorbs[ish][ion][0],shorbs_to_globalorbs[ish][ion][1])):
                                         proj_mat[ik,isp,icsh,iclm,ilm] = 1.0
 
             #corr_shell.pop('ion_list')
@@ -445,13 +445,13 @@ class VaspConverter(ConverterTools):
             if os.path.exists(f):
                 mpi.report("Reading input from %s..."%f)
                 R = ConverterTools.read_fortran_file(self, f, self.fortran_to_replace)
-                assert int(R.next()) == n_k, "convert_misc_input: Number of k-points is inconsistent in oubwin file!"
-                assert int(R.next()) == SO, "convert_misc_input: SO is inconsistent in oubwin file!"
-                for ik in xrange(n_k):
-                    R.next()
-                    band_window[isp][ik,0] = R.next() # lowest band
-                    band_window[isp][ik,1] = R.next() # highest band
-                    R.next()
+                assert int(next(R)) == n_k, "convert_misc_input: Number of k-points is inconsistent in oubwin file!"
+                assert int(next(R)) == SO, "convert_misc_input: SO is inconsistent in oubwin file!"
+                for ik in range(n_k):
+                    next(R)
+                    band_window[isp][ik,0] = next(R) # lowest band
+                    band_window[isp][ik,1] = next(R) # highest band
+                    next(R)
                 things_to_save.append('band_window')
 
         R.close() # Reading done!

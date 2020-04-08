@@ -23,7 +23,7 @@
 from types import *
 import numpy
 from pytriqs.archive import *
-from converter_tools import *
+from .converter_tools import *
 import os.path
 
 
@@ -114,23 +114,23 @@ class Wien2kConverter(ConverterTools):
         R = ConverterTools.read_fortran_file(
             self, self.dft_file, self.fortran_to_replace)
         try:
-            energy_unit = R.next()                        # read the energy convertion factor
+            energy_unit = next(R)                        # read the energy convertion factor
             # read the number of k points
-            n_k = int(R.next())
+            n_k = int(next(R))
             k_dep_projection = 1
             # flag for spin-polarised calculation
-            SP = int(R.next())
+            SP = int(next(R))
             # flag for spin-orbit calculation
-            SO = int(R.next())
-            charge_below = R.next()                       # total charge below energy window
+            SO = int(next(R))
+            charge_below = next(R)                       # total charge below energy window
             # total density required, for setting the chemical potential
-            density_required = R.next()
+            density_required = next(R)
             symm_op = 1                                   # Use symmetry groups for the k-sum
 
             # the information on the non-correlated shells is not important
             # here, maybe skip:
             # number of shells (e.g. Fe d, As p, O p) in the unit cell,
-            n_shells = int(R.next())
+            n_shells = int(next(R))
             # corresponds to index R in formulas
             # now read the information about the shells (atom, sort, l, dim):
             shell_entries = ['atom', 'sort', 'l', 'dim']
@@ -138,7 +138,7 @@ class Wien2kConverter(ConverterTools):
                 shell_entries, R)} for ish in range(n_shells)]
 
             # number of corr. shells (e.g. Fe d, Ce f) in the unit cell,
-            n_corr_shells = int(R.next())
+            n_corr_shells = int(next(R))
             # corresponds to index R in formulas
             # now read the information about the shells (atom, sort, l, dim, SO
             # flag, irep):
@@ -161,14 +161,14 @@ class Wien2kConverter(ConverterTools):
             for icrsh in range(n_corr_shells):
                 for i in range(corr_shells[icrsh]['dim']):    # read real part:
                     for j in range(corr_shells[icrsh]['dim']):
-                        rot_mat[icrsh][i, j] = R.next()
+                        rot_mat[icrsh][i, j] = next(R)
                 # read imaginary part:
                 for i in range(corr_shells[icrsh]['dim']):
                     for j in range(corr_shells[icrsh]['dim']):
-                        rot_mat[icrsh][i, j] += 1j * R.next()
+                        rot_mat[icrsh][i, j] += 1j * next(R)
 
                 if (SP == 1):             # read time inversion flag:
-                    rot_mat_time_inv[icrsh] = int(R.next())
+                    rot_mat_time_inv[icrsh] = int(next(R))
 
             # Read here the info for the transformation of the basis:
             n_reps = [1 for i in range(n_inequiv_shells)]
@@ -176,8 +176,8 @@ class Wien2kConverter(ConverterTools):
             T = []
             for ish in range(n_inequiv_shells):
                 # number of representatives ("subsets"), e.g. t2g and eg
-                n_reps[ish] = int(R.next())
-                dim_reps[ish] = [int(R.next()) for i in range(
+                n_reps[ish] = int(next(R))
+                dim_reps[ish] = [int(next(R)) for i in range(
                     n_reps[ish])]   # dimensions of the subsets
 
                 # The transformation matrix:
@@ -189,10 +189,10 @@ class Wien2kConverter(ConverterTools):
                 # now read it from file:
                 for i in range(lmax):
                     for j in range(lmax):
-                        T[ish][i, j] = R.next()
+                        T[ish][i, j] = next(R)
                 for i in range(lmax):
                     for j in range(lmax):
-                        T[ish][i, j] += 1j * R.next()
+                        T[ish][i, j] += 1j * next(R)
 
             # Spin blocks to be read:
             n_spin_blocs = SP + 1 - SO
@@ -201,7 +201,7 @@ class Wien2kConverter(ConverterTools):
             n_orbitals = numpy.zeros([n_k, n_spin_blocs], numpy.int)
             for isp in range(n_spin_blocs):
                 for ik in range(n_k):
-                    n_orbitals[ik, isp] = int(R.next())
+                    n_orbitals[ik, isp] = int(next(R))
 
             # Initialise the projectors:
             proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max(
@@ -216,12 +216,12 @@ class Wien2kConverter(ConverterTools):
                     for isp in range(n_spin_blocs):
                         for i in range(n_orb):
                             for j in range(n_orbitals[ik][isp]):
-                                proj_mat[ik, isp, icrsh, i, j] = R.next()
+                                proj_mat[ik, isp, icrsh, i, j] = next(R)
                     # now Imag part:
                     for isp in range(n_spin_blocs):
                         for i in range(n_orb):
                             for j in range(n_orbitals[ik][isp]):
-                                proj_mat[ik, isp, icrsh, i, j] += 1j * R.next()
+                                proj_mat[ik, isp, icrsh, i, j] += 1j * next(R)
 
             # now define the arrays for weights and hopping ...
             # w(k_index),  default normalisation
@@ -231,7 +231,7 @@ class Wien2kConverter(ConverterTools):
 
             # weights in the file
             for ik in range(n_k):
-                bz_weights[ik] = R.next()
+                bz_weights[ik] = next(R)
 
             # if the sum over spins is in the weights, take it out again!!
             sm = sum(bz_weights)
@@ -244,7 +244,7 @@ class Wien2kConverter(ConverterTools):
                 for ik in range(n_k):
                     n_orb = n_orbitals[ik, isp]
                     for i in range(n_orb):
-                        hopping[ik, isp, i, i] = R.next() * energy_unit
+                        hopping[ik, isp, i, i] = next(R) * energy_unit
 
             # keep some things that we need for reading parproj:
             things_to_set = ['n_shells', 'shells', 'n_corr_shells', 'corr_shells',
@@ -252,7 +252,7 @@ class Wien2kConverter(ConverterTools):
             for it in things_to_set:
                 setattr(self, it, locals()[it])
         except StopIteration:  # a more explicit error if the file is corrupted.
-            raise IOError, "Wien2k_converter : reading file %s failed!" % self.dft_file
+            raise IOError("Wien2k_converter : reading file %s failed!" % self.dft_file)
 
         R.close()
         # Reading done!
@@ -308,7 +308,7 @@ class Wien2kConverter(ConverterTools):
         R = ConverterTools.read_fortran_file(
             self, self.parproj_file, self.fortran_to_replace)
 
-        n_parproj = [int(R.next()) for i in range(self.n_shells)]
+        n_parproj = [int(next(R)) for i in range(self.n_shells)]
         n_parproj = numpy.array(n_parproj)
 
         # Initialise P, here a double list of matrices:
@@ -328,39 +328,39 @@ class Wien2kConverter(ConverterTools):
                         # read real part:
                         for i in range(self.shells[ish]['dim']):
                             for j in range(self.n_orbitals[ik][isp]):
-                                proj_mat_all[ik, isp, ish, ir, i, j] = R.next()
+                                proj_mat_all[ik, isp, ish, ir, i, j] = next(R)
 
                     for isp in range(self.n_spin_blocs):
                         # read imaginary part:
                         for i in range(self.shells[ish]['dim']):
                             for j in range(self.n_orbitals[ik][isp]):
                                 proj_mat_all[ik, isp, ish,
-                                             ir, i, j] += 1j * R.next()
+                                             ir, i, j] += 1j * next(R)
 
             # now read the Density Matrix for this orbital below the energy
             # window:
             for isp in range(self.n_spin_blocs):
                 for i in range(self.shells[ish]['dim']):    # read real part:
                     for j in range(self.shells[ish]['dim']):
-                        dens_mat_below[isp][ish][i, j] = R.next()
+                        dens_mat_below[isp][ish][i, j] = next(R)
             for isp in range(self.n_spin_blocs):
                 # read imaginary part:
                 for i in range(self.shells[ish]['dim']):
                     for j in range(self.shells[ish]['dim']):
-                        dens_mat_below[isp][ish][i, j] += 1j * R.next()
+                        dens_mat_below[isp][ish][i, j] += 1j * next(R)
                 if (self.SP == 0):
                     dens_mat_below[isp][ish] /= 2.0
 
             # Global -> local rotation matrix for this shell:
             for i in range(self.shells[ish]['dim']):    # read real part:
                 for j in range(self.shells[ish]['dim']):
-                    rot_mat_all[ish][i, j] = R.next()
+                    rot_mat_all[ish][i, j] = next(R)
             for i in range(self.shells[ish]['dim']):    # read imaginary part:
                 for j in range(self.shells[ish]['dim']):
-                    rot_mat_all[ish][i, j] += 1j * R.next()
+                    rot_mat_all[ish][i, j] += 1j * next(R)
 
             if (self.SP):
-                rot_mat_all_time_inv[ish] = int(R.next())
+                rot_mat_all_time_inv[ish] = int(next(R))
 
         R.close()
         # Reading done!
@@ -404,13 +404,13 @@ class Wien2kConverter(ConverterTools):
             mpi.report("Reading input from %s..." % self.band_file)
             R = ConverterTools.read_fortran_file(
                 self, self.band_file, self.fortran_to_replace)
-            n_k = int(R.next())
+            n_k = int(next(R))
 
             # read the list of n_orbitals for all k points
             n_orbitals = numpy.zeros([n_k, self.n_spin_blocs], numpy.int)
             for isp in range(self.n_spin_blocs):
                 for ik in range(n_k):
-                    n_orbitals[ik, isp] = int(R.next())
+                    n_orbitals[ik, isp] = int(next(R))
 
             # Initialise the projectors:
             proj_mat = numpy.zeros([n_k, self.n_spin_blocs, self.n_corr_shells, max(
@@ -425,12 +425,12 @@ class Wien2kConverter(ConverterTools):
                     for isp in range(self.n_spin_blocs):
                         for i in range(n_orb):
                             for j in range(n_orbitals[ik, isp]):
-                                proj_mat[ik, isp, icrsh, i, j] = R.next()
+                                proj_mat[ik, isp, icrsh, i, j] = next(R)
                     # now Imag part:
                     for isp in range(self.n_spin_blocs):
                         for i in range(n_orb):
                             for j in range(n_orbitals[ik, isp]):
-                                proj_mat[ik, isp, icrsh, i, j] += 1j * R.next()
+                                proj_mat[ik, isp, icrsh, i, j] += 1j * next(R)
 
             hopping = numpy.zeros([n_k, self.n_spin_blocs, numpy.max(
                 n_orbitals), numpy.max(n_orbitals)], numpy.complex_)
@@ -441,10 +441,10 @@ class Wien2kConverter(ConverterTools):
                 for ik in range(n_k):
                     n_orb = n_orbitals[ik, isp]
                     for i in range(n_orb):
-                        hopping[ik, isp, i, i] = R.next() * self.energy_unit
+                        hopping[ik, isp, i, i] = next(R) * self.energy_unit
 
             # now read the partial projectors:
-            n_parproj = [int(R.next()) for i in range(self.n_shells)]
+            n_parproj = [int(next(R)) for i in range(self.n_shells)]
             n_parproj = numpy.array(n_parproj)
 
             # Initialise P, here a double list of matrices:
@@ -460,20 +460,20 @@ class Wien2kConverter(ConverterTools):
                             for i in range(self.shells[ish]['dim']):
                                 for j in range(n_orbitals[ik, isp]):
                                     proj_mat_all[ik, isp, ish,
-                                                 ir, i, j] = R.next()
+                                                 ir, i, j] = next(R)
 
                             # read imaginary part:
                             for i in range(self.shells[ish]['dim']):
                                 for j in range(n_orbitals[ik, isp]):
                                     proj_mat_all[ik, isp, ish,
-                                                 ir, i, j] += 1j * R.next()
+                                                 ir, i, j] += 1j * next(R)
 
             R.close()
 
         except KeyError:
-            raise IOError, "convert_bands_input : Needed data not found in hdf file. Consider calling convert_dft_input first!"
+            raise IOError("convert_bands_input : Needed data not found in hdf file. Consider calling convert_dft_input first!")
         except StopIteration:  # a more explicit error if the file is corrupted.
-            raise IOError, "Wien2k_converter : reading file %s failed!" % self.band_file
+            raise IOError("Wien2k_converter : reading file %s failed!" % self.band_file)
 
         # Reading done!
 
@@ -507,7 +507,7 @@ class Wien2kConverter(ConverterTools):
         # Check if SP, SO and n_k are already in h5
         with HDFArchive(self.hdf_file, 'r') as ar:
             if not (self.dft_subgrp in ar):
-                raise IOError, "convert_misc_input: No %s subgroup in hdf file found! Call convert_dft_input first." % self.dft_subgrp
+                raise IOError("convert_misc_input: No %s subgroup in hdf file found! Call convert_dft_input first." % self.dft_subgrp)
             SP = ar[self.dft_subgrp]['SP']
             SO = ar[self.dft_subgrp]['SO']
             n_k = ar[self.dft_subgrp]['n_k']
@@ -539,19 +539,19 @@ class Wien2kConverter(ConverterTools):
                 mpi.report("Reading input from %s..." % f)
                 R = ConverterTools.read_fortran_file(
                     self, f, self.fortran_to_replace)
-                n_k_oubwin = int(R.next())
+                n_k_oubwin = int(next(R))
                 if (n_k_oubwin != n_k):
                     mpi.report(
                         "convert_misc_input : WARNING : n_k in case.oubwin is different from n_k in case.klist")
                 assert int(
-                    R.next()) == SO, "convert_misc_input: SO is inconsistent in oubwin file!"
+                    next(R)) == SO, "convert_misc_input: SO is inconsistent in oubwin file!"
 
                 band_window[isp] = numpy.zeros((n_k_oubwin, 2), dtype=int)
-                for ik in xrange(n_k_oubwin):
-                    R.next()
-                    band_window[isp][ik, 0] = R.next()  # lowest band
-                    band_window[isp][ik, 1] = R.next()  # highest band
-                    R.next()
+                for ik in range(n_k_oubwin):
+                    next(R)
+                    band_window[isp][ik, 0] = next(R)  # lowest band
+                    band_window[isp][ik, 1] = next(R)  # highest band
+                    next(R)
                 things_to_save.append('band_window')
 
                 R.close()  # Reading done!
@@ -578,7 +578,7 @@ class Wien2kConverter(ConverterTools):
                     things_to_save.extend(
                         ['lattice_type', 'lattice_constants', 'lattice_angles'])
                 except IOError:
-                    raise IOError, "convert_misc_input: reading file %s failed" % self.struct_file
+                    raise IOError("convert_misc_input: reading file %s failed" % self.struct_file)
 
         # Read relevant data from .outputs file
         #######################################
@@ -610,7 +610,7 @@ class Wien2kConverter(ConverterTools):
                     things_to_save.extend(['n_symmetries', 'rot_symmetries'])
                     things_to_save.append('rot_symmetries')
                 except IOError:
-                    raise IOError, "convert_misc_input: reading file %s failed" % self.outputs_file
+                    raise IOError("convert_misc_input: reading file %s failed" % self.outputs_file)
 
         # Save it to the HDF:
         with HDFArchive(self.hdf_file, 'a') as ar:
@@ -635,7 +635,7 @@ class Wien2kConverter(ConverterTools):
         # Check if SP, SO and n_k are already in h5
         with HDFArchive(self.hdf_file, 'r') as ar:
             if not (self.dft_subgrp in ar):
-                raise IOError, "convert_transport_input: No %s subgroup in hdf file found! Call convert_dft_input first." % self.dft_subgrp
+                raise IOError("convert_transport_input: No %s subgroup in hdf file found! Call convert_dft_input first." % self.dft_subgrp)
             SP = ar[self.dft_subgrp]['SP']
             SO = ar[self.dft_subgrp]['SO']
             n_k = ar[self.dft_subgrp]['n_k']
@@ -665,20 +665,20 @@ class Wien2kConverter(ConverterTools):
         band_window_optics = []
         for isp, f in enumerate(files):
             if not os.path.exists(f):
-                raise IOError, "convert_transport_input: File %s does not exist" % f
+                raise IOError("convert_transport_input: File %s does not exist" % f)
             mpi.report("Reading input from %s..." % f)
 
             R = ConverterTools.read_fortran_file(
                 self, f, {'D': 'E', '(': '', ')': '', ',': ' '})
             band_window_optics_isp = []
-            for ik in xrange(n_k):
-                R.next()
-                nu1 = int(R.next())
-                nu2 = int(R.next())
+            for ik in range(n_k):
+                next(R)
+                nu1 = int(next(R))
+                nu2 = int(next(R))
                 band_window_optics_isp.append((nu1, nu2))
                 n_bands = nu2 - nu1 + 1
                 for _ in range(4):
-                    R.next()
+                    next(R)
                 if n_bands <= 0:
                     velocity_xyz = numpy.zeros((1, 1, 3), dtype=complex)
                 else:
@@ -688,7 +688,7 @@ class Wien2kConverter(ConverterTools):
                         for nu_j in range(nu_i, n_bands):
                             for i in range(3):
                                 velocity_xyz[nu_i][nu_j][
-                                    i] = R.next() + R.next() * 1j
+                                    i] = next(R) + next(R) * 1j
                                 if (nu_i != nu_j):
                                     velocity_xyz[nu_j][nu_i][i] = velocity_xyz[
                                         nu_i][nu_j][i].conjugate()
@@ -737,13 +737,13 @@ class Wien2kConverter(ConverterTools):
             self, symm_file, self.fortran_to_replace)
 
         try:
-            n_symm = int(R.next())           # Number of symmetry operations
-            n_atoms = int(R.next())       # number of atoms involved
-            perm = [[int(R.next()) for i in range(n_atoms)]
+            n_symm = int(next(R))           # Number of symmetry operations
+            n_atoms = int(next(R))       # number of atoms involved
+            perm = [[int(next(R)) for i in range(n_atoms)]
                     for j in range(n_symm)]    # list of permutations of the atoms
             if SP:
                 # time inversion for SO coupling
-                time_inv = [int(R.next()) for j in range(n_symm)]
+                time_inv = [int(next(R)) for j in range(n_symm)]
             else:
                 time_inv = [0 for j in range(n_symm)]
 
@@ -757,11 +757,11 @@ class Wien2kConverter(ConverterTools):
                     for i in range(orbits[orb]['dim']):
                         for j in range(orbits[orb]['dim']):
                             # real part
-                            mat[i_symm][orb][i, j] = R.next()
+                            mat[i_symm][orb][i, j] = next(R)
                     for i in range(orbits[orb]['dim']):
                         for j in range(orbits[orb]['dim']):
                             mat[i_symm][orb][i, j] += 1j * \
-                                R.next()      # imaginary part
+                                next(R)      # imaginary part
 
             mat_tinv = [numpy.identity(orbits[orb]['dim'], numpy.complex_)
                         for orb in range(n_orbits)]
@@ -773,14 +773,14 @@ class Wien2kConverter(ConverterTools):
                     for i in range(orbits[orb]['dim']):
                         for j in range(orbits[orb]['dim']):
                             # real part
-                            mat_tinv[orb][i, j] = R.next()
+                            mat_tinv[orb][i, j] = next(R)
                     for i in range(orbits[orb]['dim']):
                         for j in range(orbits[orb]['dim']):
                             mat_tinv[orb][i, j] += 1j * \
-                                R.next()      # imaginary part
+                                next(R)      # imaginary part
 
         except StopIteration:  # a more explicit error if the file is corrupted.
-            raise IOError, "Wien2k_converter : reading file %s failed!" %symm_file
+            raise IOError("Wien2k_converter : reading file %s failed!" %symm_file)
 
         R.close()
         # Reading done!

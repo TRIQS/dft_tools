@@ -2,10 +2,10 @@ r"""
 Tests for class 'Eigneval' from module 'vaspio'
 """
 import os
-import rpath
+from . import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
-import mytest
+from . import mytest
 import numpy as np
 from triqs_dft_tools.converters.plovasp.vaspio import Eigenval
 
@@ -55,6 +55,6 @@ class TestEigenval(mytest.MyTestCase):
         eigenval = Eigenval()
 
         err_mess = "EIGENVAL file is incorrect"
-        with self.assertRaisesRegexp(AssertionError, err_mess):
+        with self.assertRaisesRegex(AssertionError, err_mess):
             eigenval.from_file(vasp_dir=_rpath, eig_filename=filename)
 

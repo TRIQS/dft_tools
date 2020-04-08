@@ -2,10 +2,10 @@ r"""
 Tests for class 'Poscar' from module 'vaspio'
 """
 import os
-import rpath
+from . import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
-import mytest
+from . import mytest
 import numpy as np
 from triqs_dft_tools.converters.plovasp.vaspio import Poscar
 

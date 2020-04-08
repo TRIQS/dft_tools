@@ -27,8 +27,8 @@ from pytriqs.gf import *
 import pytriqs.utility.mpi as mpi
 from pytriqs.utility.comparison_tests import assert_arrays_are_close
 from pytriqs.archive import *
-from symmetry import *
-from block_structure import BlockStructure
+from .symmetry import *
+from .block_structure import BlockStructure
 from sets import Set
 from itertools import product
 from warnings import warn
@@ -127,10 +127,10 @@ class SumkDFT(object):
             # GF structure used for the local things in the k sums
             # Most general form allowing for all hybridisation, i.e. largest
             # blocks possible
-            self.gf_struct_sumk = [[(sp, range(self.corr_shells[icrsh]['dim'])) for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]]
+            self.gf_struct_sumk = [[(sp, list(range(self.corr_shells[icrsh]['dim']))) for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]]
                                    for icrsh in range(self.n_corr_shells)]
             # First set a standard gf_struct solver:
-            self.gf_struct_solver = [dict([(sp, range(self.corr_shells[self.inequiv_to_corr[ish]]['dim']))
+            self.gf_struct_solver = [dict([(sp, list(range(self.corr_shells[self.inequiv_to_corr[ish]]['dim'])))
                                            for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]])
                                      for ish in range(self.n_inequiv_shells)]
             # Set standard (identity) maps from gf_struct_sumk <->
@@ -273,7 +273,7 @@ class SumkDFT(object):
                 try:
                     list_to_return.append(ar[subgrp][it])
                 except:
-                    raise ValueError, "load: %s not found, and so not loaded." % it
+                    raise ValueError("load: %s not found, and so not loaded." % it)
         return list_to_return
 
 ################
@@ -324,7 +324,7 @@ class SumkDFT(object):
             projmat = self.proj_mat[ik, isp, ish, 0:dim, 0:n_orb]
         elif shells == 'all':
             if ir is None:
-                raise ValueError, "downfold: provide ir if treating all shells."
+                raise ValueError("downfold: provide ir if treating all shells.")
             dim = self.shells[ish]['dim']
             projmat = self.proj_mat_all[ik, isp, ish, ir, 0:dim, 0:n_orb]
         elif shells == 'csc':
@@ -379,7 +379,7 @@ class SumkDFT(object):
             projmat = self.proj_mat[ik, isp, ish, 0:dim, 0:n_orb]
         elif shells == 'all':
             if ir is None:
-                raise ValueError, "upfold: provide ir if treating all shells."
+                raise ValueError("upfold: provide ir if treating all shells.")
             dim = self.shells[ish]['dim']
             projmat = self.proj_mat_all[ik, isp, ish, ir, 0:dim, 0:n_orb]
         elif shells == 'csc':
@@ -495,7 +495,7 @@ class SumkDFT(object):
         ntoi = self.spin_names_to_ind[self.SO]
         spn = self.spin_block_names[self.SO]
         if (iw_or_w != "iw") and (iw_or_w != "w"):
-            raise ValueError, "lattice_gf: Implemented only for Re/Im frequency functions."
+            raise ValueError("lattice_gf: Implemented only for Re/Im frequency functions.")
         if not hasattr(self, "Sigma_imp_" + iw_or_w):
             with_Sigma = False
         if broadening is None:
@@ -521,12 +521,12 @@ class SumkDFT(object):
         else:
             if iw_or_w == "iw":
                 if beta is None:
-                    raise ValueError, "lattice_gf: Give the beta for the lattice GfReFreq."
+                    raise ValueError("lattice_gf: Give the beta for the lattice GfReFreq.")
                 # Default number of Matsubara frequencies
                 mesh = MeshImFreq(beta=beta, S='Fermion', n_max=1025)
             elif iw_or_w == "w":
                 if mesh is None:
-                    raise ValueError, "lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq."
+                    raise ValueError("lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq.")
                 mesh = MeshReFreq(mesh[0], mesh[1], mesh[2])
 
         # Check if G_latt is present
@@ -547,7 +547,7 @@ class SumkDFT(object):
         # Set up G_latt
         if set_up_G_latt:
             block_structure = [
-                range(self.n_orbitals[ik, ntoi[sp]]) for sp in spn]
+                list(range(self.n_orbitals[ik, ntoi[sp]])) for sp in spn]
             gf_struct = [(spn[isp], block_structure[isp])
                          for isp in range(self.n_spin_blocks[self.SO])]
             block_ind_list = [block for block, inner in gf_struct]
@@ -624,13 +624,13 @@ class SumkDFT(object):
             SK_Sigma_imp = self.Sigma_imp_w
             
         else:
-            raise ValueError, "put_Sigma: This type of Sigma is not handled."
+            raise ValueError("put_Sigma: This type of Sigma is not handled.")
 
         # transform the CTQMC blocks to the full matrix:
         for icrsh in range(self.n_corr_shells):
             # ish is the index of the inequivalent shell corresponding to icrsh
             ish = self.corr_to_inequiv[icrsh]
-            for block, inner in self.gf_struct_solver[ish].iteritems():
+            for block, inner in self.gf_struct_solver[ish].items():
                 for ind1 in inner:
                     for ind2 in inner:
                         block_sumk, ind1_sumk = self.solver_to_sumk[
@@ -678,19 +678,19 @@ class SumkDFT(object):
             G_loc = [self.Sigma_imp_iw[icrsh].copy() for icrsh in range(
                 self.n_corr_shells)]   # this list will be returned
             beta = G_loc[0].mesh.beta
-            G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfImFreq(indices=inner, mesh=G_loc[0].mesh)) for block, inner in self.gf_struct_solver[ish].iteritems()],
+            G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfImFreq(indices=inner, mesh=G_loc[0].mesh)) for block, inner in self.gf_struct_solver[ish].items()],
                                      make_copies=False) for ish in range(self.n_inequiv_shells)]
         elif iw_or_w == "w":
             G_loc = [self.Sigma_imp_w[icrsh].copy() for icrsh in range(
                 self.n_corr_shells)]   # this list will be returned
             mesh = G_loc[0].mesh
-            G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfReFreq(indices=inner, mesh=mesh)) for block, inner in self.gf_struct_solver[ish].iteritems()],
+            G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfReFreq(indices=inner, mesh=mesh)) for block, inner in self.gf_struct_solver[ish].items()],
                                      make_copies=False) for ish in range(self.n_inequiv_shells)]
 
         for icrsh in range(self.n_corr_shells):
             G_loc[icrsh].zero()                          # initialize to zero
 
-        ikarray = numpy.array(range(self.n_k))
+        ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
             if iw_or_w == 'iw':
                 G_latt = self.lattice_gf(
@@ -729,7 +729,7 @@ class SumkDFT(object):
 
         # transform to CTQMC blocks:
         for ish in range(self.n_inequiv_shells):
-            for block, inner in self.gf_struct_solver[ish].iteritems():
+            for block, inner in self.gf_struct_solver[ish].items():
                 for ind1 in inner:
                     for ind2 in inner:
                         block_sumk, ind1_sumk = self.solver_to_sumk[
@@ -782,7 +782,7 @@ class SumkDFT(object):
                  for ish in range(self.n_corr_shells)]
 
         if include_shells is None:
-            include_shells = range(self.n_inequiv_shells)
+            include_shells = list(range(self.n_inequiv_shells))
         for ish in include_shells:
 
             for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]:
@@ -815,7 +815,7 @@ class SumkDFT(object):
                 for i in range(num_blocs):
                     blocs[i].sort()
                     self.gf_struct_solver[ish].update(
-                        [('%s_%s' % (sp, i), range(len(blocs[i])))])
+                        [('%s_%s' % (sp, i), list(range(len(blocs[i]))))])
 
                 # Construct sumk_to_solver taking (sumk_block, sumk_index) --> (solver_block, solver_inner)
                 # and solver_to_sumk taking (solver_block, solver_inner) -->
@@ -834,7 +834,7 @@ class SumkDFT(object):
 
             # Now calculate degeneracies of orbitals
             dm = {}
-            for block, inner in self.gf_struct_solver[ish].iteritems():
+            for block, inner in self.gf_struct_solver[ish].items():
                 # get dm for the blocks:
                 dm[block] = numpy.zeros(
                     [len(inner), len(inner)], numpy.complex_)
@@ -847,8 +847,8 @@ class SumkDFT(object):
                         dm[block][ind1, ind2] = dens_mat[ish][
                             block_sumk][ind1_sumk, ind2_sumk]
 
-            for block1 in self.gf_struct_solver[ish].iterkeys():
-                for block2 in self.gf_struct_solver[ish].iterkeys():
+            for block1 in self.gf_struct_solver[ish].keys():
+                for block2 in self.gf_struct_solver[ish].keys():
                     if dm[block1].shape == dm[block2].shape:
                         if ((abs(dm[block1] - dm[block2]) < threshold).all()) and (block1 != block2):
                             ind1 = -1
@@ -969,7 +969,7 @@ class SumkDFT(object):
 
         if include_shells is None:
             # include all shells
-            include_shells = range(self.n_inequiv_shells)
+            include_shells = list(range(self.n_inequiv_shells))
 
         for ish in include_shells:
             for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]:
@@ -1002,7 +1002,7 @@ class SumkDFT(object):
                 for i in range(num_blocs):
                     blocs[i].sort()
                     self.gf_struct_solver[ish].update(
-                        [('%s_%s' % (sp, i), range(len(blocs[i])))])
+                        [('%s_%s' % (sp, i), list(range(len(blocs[i]))))])
 
                 # Construct sumk_to_solver taking (sumk_block, sumk_index) --> (solver_block, solver_inner)
                 # and solver_to_sumk taking (solver_block, solver_inner) -->
@@ -1021,7 +1021,7 @@ class SumkDFT(object):
 
         # transform G to the new structure
         full_structure = BlockStructure.full_structure(
-            [{sp:range(self.corr_shells[self.inequiv_to_corr[ish]]['dim'])
+            [{sp:list(range(self.corr_shells[self.inequiv_to_corr[ish]]['dim']))
                 for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]}
                 for ish in range(self.n_inequiv_shells)],None)
         G_transformed = [
@@ -1073,7 +1073,7 @@ class SumkDFT(object):
 
         if include_shells is None:
             # include all shells
-            include_shells = range(self.n_inequiv_shells)
+            include_shells = list(range(self.n_inequiv_shells))
 
         # We consider two blocks equal, if their Green's functions obey
         # maybe_conjugate1( v1^dagger G1 v1 ) = maybe_conjugate2( v2^dagger G2 v2 )
@@ -1086,8 +1086,8 @@ class SumkDFT(object):
         # where our goal is to find T
         # we just try whether there is such a T with and without conjugation
         for ish in include_shells:
-            for block1 in self.gf_struct_solver[ish].iterkeys():
-                for block2 in self.gf_struct_solver[ish].iterkeys():
+            for block1 in self.gf_struct_solver[ish].keys():
+                for block2 in self.gf_struct_solver[ish].keys():
                     if block1==block2: continue
 
                     # check if the blocks are already present in the deg_shells
@@ -1298,7 +1298,7 @@ class SumkDFT(object):
                 dens_mat[icrsh][sp] = numpy.zeros(
                     [self.corr_shells[icrsh]['dim'], self.corr_shells[icrsh]['dim']], numpy.complex_)
 
-        ikarray = numpy.array(range(self.n_k))
+        ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
 
             if method == "using_gf":
@@ -1327,7 +1327,7 @@ class SumkDFT(object):
                             MMat[isp][inu, inu] = 0.0
 
             else:
-                raise ValueError, "density_matrix: the method '%s' is not supported." % method
+                raise ValueError("density_matrix: the method '%s' is not supported." % method)
 
             for icrsh in range(self.n_corr_shells):
                 for isp, sp in enumerate(self.spin_block_names[self.corr_shells[icrsh]['SO']]):
@@ -1527,10 +1527,10 @@ class SumkDFT(object):
             spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
 
             Ncr = {sp: 0.0 for sp in spn}
-            for block, inner in self.gf_struct_solver[ish].iteritems():
+            for block, inner in self.gf_struct_solver[ish].items():
                 bl = self.solver_to_sumk_block[ish][block]
                 Ncr[bl] += dens_mat[block].real.trace()
-            Ncrtot = sum(Ncr.itervalues())
+            Ncrtot = sum(Ncr.values())
             for sp in spn:
                 self.dc_imp[icrsh][sp] = numpy.identity(dim, numpy.float_)
                 if self.SP == 0:  # average the densities if there is no SP:
@@ -1543,7 +1543,7 @@ class SumkDFT(object):
             if use_dc_value is None:
 
                 if U_interact is None and J_hund is None:
-                    raise ValueError, "set_dc: either provide U_interact and J_hund or set use_dc_value to dc value."
+                    raise ValueError("set_dc: either provide U_interact and J_hund or set use_dc_value to dc value.")
 
                 if use_dc_formula == 0:  # FLL
 
@@ -1733,7 +1733,7 @@ class SumkDFT(object):
         if mu is None:
             mu = self.chemical_potential
         dens = 0.0
-        ikarray = numpy.array(range(self.n_k))
+        ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
             G_latt = self.lattice_gf(
                 ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening)
@@ -1848,7 +1848,7 @@ class SumkDFT(object):
 # Convert Fermi weights to a density matrix
             dens_mat_dft = {}
             for sp in spn:
-                dens_mat_dft[sp] = [fermi_weights[ik, ntoi[sp], :].astype(numpy.complex_) for ik in xrange(self.n_k)]
+                dens_mat_dft[sp] = [fermi_weights[ik, ntoi[sp], :].astype(numpy.complex_) for ik in range(self.n_k)]
 
 
         # Set up deltaN:
@@ -1857,7 +1857,7 @@ class SumkDFT(object):
             deltaN[sp] = [numpy.zeros([self.n_orbitals[ik, ntoi[sp]], self.n_orbitals[
                                       ik, ntoi[sp]]], numpy.complex_) for ik in range(self.n_k)]
 
-        ikarray = numpy.array(range(self.n_k))
+        ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
             G_latt_iw = self.lattice_gf(
                 ik=ik, mu=self.chemical_potential, iw_or_w="iw")
@@ -1946,7 +1946,7 @@ class SumkDFT(object):
                         to_write = {f: (0, 'up'), f1: (1, 'down')}
                     if self.SO == 1:
                         to_write = {f: (0, 'ud'), f1: (0, 'ud')}
-                    for fout in to_write.iterkeys():
+                    for fout in to_write.keys():
                         isp, sp = to_write[fout]
                         for ik in range(self.n_k):
                             fout.write("%s\n" % self.n_orbitals[ik, isp])
@@ -1963,12 +1963,12 @@ class SumkDFT(object):
             if mpi.is_master_node():
                 with open(filename, 'w') as f:
                     f.write(" %i  -1  ! Number of k-points, default number of bands\n"%(self.n_k))
-                    for ik in xrange(self.n_k):
+                    for ik in range(self.n_k):
                         ib1 = band_window[0][ik, 0]
                         ib2 = band_window[0][ik, 1]
                         f.write(" %i  %i  %i\n"%(ik + 1, ib1, ib2))
-                        for inu in xrange(self.n_orbitals[ik, 0]):
-                            for imu in xrange(self.n_orbitals[ik, 0]):
+                        for inu in range(self.n_orbitals[ik, 0]):
+                            for imu in range(self.n_orbitals[ik, 0]):
                                 valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
                                 valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
                                 f.write(" %.14f  %.14f"%(valre, valim))

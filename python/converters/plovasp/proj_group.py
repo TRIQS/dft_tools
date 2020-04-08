@@ -30,7 +30,7 @@ r"""
     Storage and manipulation of projector groups.
 """
 import numpy as np
-from proj_shell import ComplementShell
+from .proj_shell import ComplementShell
 np.set_printoptions(suppress=True)
 
 ################################################################################
@@ -89,8 +89,8 @@ class ProjectorGroup:
             assert np.all( n_bands == n_bands[0,0] ), "At each band the same number of bands has to be selected for calculating the complement (to end up with an equal number of orbitals at each k-point)."
             if n_orbs == n_bands[0,0]:
                 self.complement = False
-                print "\nWARNING: The total number of orbitals in this group is  "
-                print "equal to the number of bands. Setting COMPLEMENT to FALSE!\n"
+                print("\nWARNING: The total number of orbitals in this group is  ")
+                print("equal to the number of bands. Setting COMPLEMENT to FALSE!\n")
 
 
 # Select projectors within the energy window
@@ -112,8 +112,8 @@ class ProjectorGroup:
         self.nelect = 0
         nk, ns_band, _ = self.ib_win.shape
         rspin = 2.0 if ns_band == 1 else 1.0
-        for isp in xrange(ns_band):
-            for ik in xrange(nk):
+        for isp in range(ns_band):
+            for ik in range(nk):
                 ib1 = self.ib_win[ik, isp, 0]
                 ib2 = self.ib_win[ik, isp, 1]+1
                 occ = el_struct.ferw[isp, ik, ib1:ib2]
@@ -154,8 +154,8 @@ class ProjectorGroup:
         _, ns, nk, _, _ = self.shells[0].proj_win.shape
         p_mat = np.zeros((ndim, self.nb_max), dtype=np.complex128)
 # Note that 'ns' and 'nk' are the same for all shells
-        for isp in xrange(ns):
-            for ik in xrange(nk):
+        for isp in range(ns):
+            for ik in range(nk):
                 nb = self.ib_win[ik, isp, 1] - self.ib_win[ik, isp, 0] + 1
 # Combine all projectors of the group to one block projector
                 for bl_map in block_maps:
@@ -203,8 +203,8 @@ class ProjectorGroup:
 
         self.hk = np.zeros((ns,nk,ndim,ndim), dtype=np.complex128)
 # Note that 'ns' and 'nk' are the same for all shells
-        for isp in xrange(ns):
-            for ik in xrange(nk):
+        for isp in range(ns):
+            for ik in range(nk):
                 bmin = self.ib_win[ik, isp, 0]
                 bmax = self.ib_win[ik, isp, 1]+1
 
@@ -247,7 +247,7 @@ class ProjectorGroup:
 
         """
 
-        print '\nCalculating complement\n'
+        print('\nCalculating complement\n')
 
         block_maps, ndim = self.get_block_matrix_map()
         _, ns, nk, _, _ = self.shells[0].proj_win.shape
@@ -257,8 +257,8 @@ class ProjectorGroup:
 # Note that 'ns' and 'nk' are the same for all shells
 
 
-        for isp in xrange(ns):
-            for ik in xrange(nk):
+        for isp in range(ns):
+            for ik in range(nk):
                 bmin = self.ib_win[ik, isp, 0]
                 bmax = self.ib_win[ik, isp, 1]+1
 
@@ -362,7 +362,7 @@ class ProjectorGroup:
                 _shell = self.shells[ish]
                 nion, ns, nk, nlm, nb_max = _shell.proj_win.shape
                 ndim = max(ndim, nlm)
-                for ion in xrange(nion):
+                for ion in range(nion):
                     i1_bl = 0
                     i2_bl = nlm
                     block = {'bmat_range': (i1_bl, i2_bl)}
@@ -378,7 +378,7 @@ class ProjectorGroup:
             for ish in self.ishells:
                 _shell = self.shells[ish]
                 nion, ns, nk, nlm, nb_max = _shell.proj_win.shape
-                for ion in xrange(nion):
+                for ion in range(nion):
                     i2_bl = i1_bl + nlm
                     block = {'bmat_range': (i1_bl, i2_bl)}
                     block['shell_ion'] = (ish, ion)
@@ -456,14 +456,14 @@ class ProjectorGroup:
 
         ib_min = 10000000
         ib_max = 0
-        for isp in xrange(ns_band):
-            for ik in xrange(nk):
-                for ib in xrange(nband):
+        for isp in range(ns_band):
+            for ik in range(nk):
+                for ib in range(nband):
                     en = eigvals[ik, ib, isp]
                     if en >= self.emin:
                         break
                 ib1 = ib
-                for ib in xrange(ib1, nband):
+                for ib in range(ib1, nband):
                     en = eigvals[ik, ib, isp]
                     if en > self.emax:
                         break

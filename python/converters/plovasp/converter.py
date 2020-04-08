@@ -36,10 +36,10 @@ r"""
     Usage: python converter.py <conf-file> [<path-to-vasp-calculation>]
 """
 import sys
-import vaspio
-from inpconf import ConfigParameters
-from elstruct import ElectronicStructure
-from plotools import generate_plo, output_as_text
+from . import vaspio
+from .inpconf import ConfigParameters
+from .elstruct import ElectronicStructure
+from .plotools import generate_plo, output_as_text
 
 def generate_and_output_as_text(conf_filename, vasp_dir):
     """

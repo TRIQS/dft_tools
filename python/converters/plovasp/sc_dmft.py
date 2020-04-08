@@ -31,7 +31,7 @@ import time
 import signal
 import sys
 import pytriqs.utility.mpi as mpi
-import converter
+from . import converter
 from shutil import copyfile
 
 xch = sys.excepthook
@@ -63,7 +63,7 @@ def is_vasp_running(vasp_pid):
     if mpi.is_master_node():
         try:
             os.kill(vasp_pid, 0)
-        except OSError, e:
+        except OSError as e:
             pid_exists = e.errno == errno.EPERM
         else:
             pid_exists = True
@@ -85,7 +85,7 @@ def get_dft_energy():
     try:
         dft_energy = float(line.split()[2])
     except ValueError:
-        print "Cannot read energy from OSZICAR, setting it to zero"
+        print("Cannot read energy from OSZICAR, setting it to zero")
         dft_energy = 0.0
 
     return dft_energy
@@ -111,7 +111,7 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
 
     iter = 0
     while vasp_running:
-        if debug: print bcolors.RED + "rank %s"%(mpi.rank) + bcolors.ENDC
+        if debug: print(bcolors.RED + "rank %s"%(mpi.rank) + bcolors.ENDC)
         mpi.report("  Waiting for VASP lock to disappear...")
         mpi.barrier()
         while is_vasp_lock_present():
@@ -125,30 +125,30 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
 # Tell VASP to stop if the maximum number of iterations is reached
         
         
-        if debug: print bcolors.MAGENTA + "rank %s"%(mpi.rank) + bcolors.ENDC
+        if debug: print(bcolors.MAGENTA + "rank %s"%(mpi.rank) + bcolors.ENDC)
         err = 0
         exc = None
-        if debug: print bcolors.BLUE + "plovasp: rank %s"%(mpi.rank) + bcolors.ENDC
+        if debug: print(bcolors.BLUE + "plovasp: rank %s"%(mpi.rank) + bcolors.ENDC)
         if mpi.is_master_node():
             converter.generate_and_output_as_text(cfg_file, vasp_dir='./')
             # Read energy from OSZICAR
             dft_energy = get_dft_energy()
         mpi.barrier()
 
-        if debug: print bcolors.GREEN + "rank %s"%(mpi.rank) + bcolors.ENDC
+        if debug: print(bcolors.GREEN + "rank %s"%(mpi.rank) + bcolors.ENDC)
         corr_energy, dft_dc = dmft_cycle()
         mpi.barrier()
 
         if mpi.is_master_node():
             total_energy = dft_energy + corr_energy - dft_dc
-            print
-            print "="*80
-            print "  Total energy: ", total_energy
-            print "  DFT energy: ", dft_energy
-            print "  Corr. energy: ", corr_energy
-            print "  DFT DC: ", dft_dc
-            print "="*80
-            print
+            print()
+            print("="*80)
+            print("  Total energy: ", total_energy)
+            print("  DFT energy: ", dft_energy)
+            print("  Corr. energy: ", corr_energy)
+            print("  DFT DC: ", dft_dc)
+            print("="*80)
+            print()
         
         # check if we should do additional VASP calculations
         # in the standard VASP version, VASP writes out GAMMA itself
@@ -176,8 +176,8 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
                 copyfile(src='GAMMA_recent',dst='GAMMA')
         iter += 1
         if iter == n_iter:
-            print "\n  Maximum number of iterations reached."
-            print "  Aborting VASP iterations...\n"
+            print("\n  Maximum number of iterations reached.")
+            print("  Aborting VASP iterations...\n")
             f_stop = open('STOPCAR', 'wt')
             f_stop.write("LABORT = .TRUE.\n")
             f_stop.close()
@@ -200,28 +200,28 @@ def main():
         vasp_pid = int(sys.argv[1])
     except (ValueError, KeyError):
         if mpi.is_master_node():
-            print "ERROR: VASP process pid must be provided as the first argument"
+            print("ERROR: VASP process pid must be provided as the first argument")
         raise
 
     try:
         n_iter = int(sys.argv[2])
     except (ValueError, KeyError):
         if mpi.is_master_node():
-            print "ERROR: Number of iterations must be provided as the second argument"
+            print("ERROR: Number of iterations must be provided as the second argument")
         raise
         
     try:
         n_iter_dft = int(sys.argv[3])
     except (ValueError, KeyError):
         if mpi.is_master_node():
-            print "ERROR: Number of VASP iterations with fixed charge density must be provided as the third argument"
+            print("ERROR: Number of VASP iterations with fixed charge density must be provided as the third argument")
         raise
 
     try:
         dmft_script = re.sub("\.py$", "", sys.argv[4])
     except:
         if mpi.is_master_node():
-            print "ERROR: User-defined DMFT script must be provided as the fourth argument"
+            print("ERROR: User-defined DMFT script must be provided as the fourth argument")
         raise
 
 # Optional parameter: config-file name

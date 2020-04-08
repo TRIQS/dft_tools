@@ -45,8 +45,8 @@ class MyTestCase(unittest.TestCase):
 # Make a diff
 #
 # Remove empty lines
-        lstr1 = filter(lambda s: s.strip() != '', str1.splitlines(True))
-        lstr2 = filter(lambda s: s.strip() != '', str2.splitlines(True))
+        lstr1 = [s for s in str1.splitlines(True) if s.strip() != '']
+        lstr2 = [s for s in str2.splitlines(True) if s.strip() != '']
 # diff
         delta = difflib.unified_diff(lstr1, lstr2)
 # combine delta's to a string

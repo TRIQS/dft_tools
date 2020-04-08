@@ -2,10 +2,10 @@ r"""
 Tests of 'parse_groups()' defined in ConfigParameters class
 """
 import os
-import rpath
+from . import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
-import arraytest
+from . import arraytest
 import numpy as np
 from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 
@@ -30,7 +30,7 @@ class TestParseGroups(arraytest.ArrayTestCase):
     def test_gr_required(self):
         conf_pars = ConfigParameters(_rpath + 'parse_groups_1.cfg')
         err_mess = "Required parameter"
-        with self.assertRaisesRegexp(Exception, err_mess):
+        with self.assertRaisesRegex(Exception, err_mess):
             conf_pars.parse_groups()
 
 # Scenario 2
@@ -42,8 +42,8 @@ class TestParseGroups(arraytest.ArrayTestCase):
                      'normalize': True, 'normion': True,'complement': False},
                     {'index': 2, 'shells': [3], 'ewindow': (-1.6, 2.0),
                      'normalize': True, 'normion': True,'complement': False}]
-        print res
-        print expected
+        print(res)
+        print(expected)
         self.assertListEqual(res, expected)
 
 

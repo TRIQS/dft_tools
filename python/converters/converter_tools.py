@@ -46,9 +46,9 @@ class ConverterTools:
         import os.path
         import string
         if not(os.path.exists(filename)):
-            raise IOError, "File %s does not exist." % filename
+            raise IOError("File %s does not exist." % filename)
         for line in open(filename, 'r'):
-            for old, new in to_replace.iteritems():
+            for old, new in to_replace.items():
                 line = line.replace(old, new)
             for x in line.split():
                 yield string.atof(x)

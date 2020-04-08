@@ -2,10 +2,10 @@ r"""
 Tests of 'parse_parameter_set()' defined in ConfigParameters class
 """
 import os
-import rpath
+from . import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
-import arraytest
+from . import arraytest
 import numpy as np
 from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 
@@ -47,6 +47,6 @@ class TestParseParameterSet(arraytest.ArrayTestCase):
         section = 'Shell 1'
         param_set = self.cpars.sh_required  # contains 'lshell' and 'ions'
         err_mess = "Required parameter" # .* in section [%s]"%(section)
-        with self.assertRaisesRegexp(Exception, err_mess):
+        with self.assertRaisesRegex(Exception, err_mess):
             self.cpars.parse_parameter_set(section, param_set, exception=True)
  

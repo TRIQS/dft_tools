@@ -12,7 +12,7 @@ if 'iteration_count' in ar['DMFT_results']:
 
 tm = TauMaxEnt(cost_function='bryan', probability='normal')
 
-print(G_latt['up'][0,0])
+print((G_latt['up'][0,0]))
 t2g_orbs = [0,1,3]
 eg_orbs = [2,4]
 op_orbs = [5,6,7]
@@ -22,7 +22,7 @@ orbs = [t2g_orbs, eg_orbs, op_orbs]
 
 for orb in orbs:
 
-    print '\n'+str(orb[0])+'\n'
+    print('\n'+str(orb[0])+'\n')
 
     gf = 0*G_latt['up'][0,0]
     for iO in orb:

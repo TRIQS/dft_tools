@@ -76,7 +76,7 @@ spin_names = ["up","down"]
 orb_names = [i for i in range(n_orb)]
 
 # Use GF structure determined by DFT blocks
-gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].iteritems()]
+gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].items()]
 
 # Construct Solver
 S = Solver(beta=beta, gf_struct=gf_struct)
@@ -97,7 +97,7 @@ if previous_present:
   SK.set_dc(dc_imp,dc_energ)
 
 for iteration_number in range(1,loops+1):
-    if mpi.is_master_node(): print "Iteration = ", iteration_number
+    if mpi.is_master_node(): print("Iteration = ", iteration_number)
 
     SK.symm_deg_gf(S.Sigma_iw,orb=0)                        # symmetrise Sigma
     SK.set_Sigma([ S.Sigma_iw ])                            # set Sigma into the SumK class

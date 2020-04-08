@@ -5,15 +5,15 @@ import numpy
 import subprocess
 
 if len(sys.argv) < 2:
-    print "Usage: python update_archive.py old_archive [v1.0|v1.2]"
+    print("Usage: python update_archive.py old_archive [v1.0|v1.2]")
     sys.exit()
 
-print """
+print("""
 This script is an attempt to update your archive to TRIQS 1.2.
 Please keep a copy of your old archive as this script is
 ** not guaranteed ** to work for your archive.
 If you encounter any problem please report it on github!
-"""
+""")
 
 
 def convert_shells(shells):
@@ -63,26 +63,26 @@ A = h5py.File(filename)
 old_to_new = {'SumK_LDA': 'dft_input', 'SumK_LDA_ParProj': 'dft_parproj_input',
               'SymmCorr': 'dft_symmcorr_input', 'SymmPar': 'dft_symmpar_input', 'SumK_LDA_Bands': 'dft_bands_input'}
 
-for old, new in old_to_new.iteritems():
-    if old not in A.keys():
+for old, new in old_to_new.items():
+    if old not in list(A.keys()):
         continue
-    print "Changing %s to %s ..." % (old, new)
+    print("Changing %s to %s ..." % (old, new))
     A.copy(old, new)
     del(A[old])
 
 # Move output items from dft_input to user_data
 move_to_output = ['chemical_potential', 'dc_imp', 'dc_energ']
 for obj in move_to_output:
-    if obj in A['dft_input'].keys():
+    if obj in list(A['dft_input'].keys()):
         if 'user_data' not in A:
             A.create_group('user_data')
-        print "Moving %s to user_data ..." % obj
+        print("Moving %s to user_data ..." % obj)
         A.copy('dft_input/' + obj, 'user_data/' + obj)
         del(A['dft_input'][obj])
 # Delete obsolete quantities
 to_delete = ['gf_struct_solver', 'map_inv', 'map', 'deg_shells', 'h_field']
 for obj in to_delete:
-    if obj in A['dft_input'].keys():
+    if obj in list(A['dft_input'].keys()):
         del(A['dft_input'][obj])
 
 if from_v == 'v1.0':
@@ -109,11 +109,11 @@ if 'n_inequiv_shells' not in A['dft_input']:
 # Rename variables
 groups = ['dft_symmcorr_input', 'dft_symmpar_input']
 for group in groups:
-    if group not in A.keys():
+    if group not in list(A.keys()):
         continue
     if 'n_s' not in A[group]:
         continue
-    print "Changing n_s to n_symm ..."
+    print("Changing n_s to n_symm ...")
     A[group].move('n_s', 'n_symm')
     # Convert orbits to list of dicts
     orbits_old = HDFArchive(filename, 'r')[group]['orbits']
@@ -125,11 +125,11 @@ for group in groups:
 
 groups = ['dft_parproj_input']
 for group in groups:
-    if group not in A.keys():
+    if group not in list(A.keys()):
         continue
     if 'proj_mat_pc' not in A[group]:
         continue
-    print "Changing proj_mat_pc to proj_mat_all ..."
+    print("Changing proj_mat_pc to proj_mat_all ...")
     A[group].move('proj_mat_pc', 'proj_mat_all')
 
 A.close()
@@ -137,6 +137,6 @@ A.close()
 # Repack to reclaim disk space
 retcode = subprocess.call(["h5repack", "-i%s" % filename, "-otemphgfrt.h5"])
 if retcode != 0:
-    print "h5repack failed!"
+    print("h5repack failed!")
 else:
     subprocess.call(["mv", "-f", "temphgfrt.h5", "%s" % filename])

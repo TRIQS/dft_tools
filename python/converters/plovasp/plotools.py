@@ -55,9 +55,9 @@ r"""
 """
 import itertools as it
 import numpy as np
-from proj_group import ProjectorGroup
-from proj_shell import ProjectorShell
-from proj_shell import ComplementShell
+from .proj_group import ProjectorGroup
+from .proj_shell import ProjectorShell
+from .proj_shell import ComplementShell
 
 np.set_printoptions(suppress=True)
 
@@ -71,9 +71,9 @@ def issue_warning(message):
     """
     Issues a warning.
     """
-    print
-    print "  !!! WARNING !!!: " + message
-    print
+    print()
+    print("  !!! WARNING !!!: " + message)
+    print()
 
 ################################################################################
 # check_data_consistency()
@@ -129,18 +129,18 @@ def generate_plo(conf_pars, el_struct):
 # check if at least one shell is correlated
     assert np.any([shell['corr'] for shell in conf_pars.shells]), 'at least one shell has be CORR = True'
     nshell = len(conf_pars.shells)
-    print
-    print "  Generating %i shell%s..."%(nshell, '' if nshell == 1 else 's')
+    print()
+    print("  Generating %i shell%s..."%(nshell, '' if nshell == 1 else 's'))
     pshells = []
     for sh_par in conf_pars.shells:
         pshell = ProjectorShell(sh_par, proj_raw, el_struct.proj_params, el_struct.kmesh, el_struct.structure, el_struct.nc_flag)
-        print
-        print "    Shell         : %s"%(pshell.user_index)
-        print "    Orbital l     : %i"%(pshell.lorb)
-        print "    Number of ions: %i"%(pshell.nion)
-        print "    Dimension     : %i"%(pshell.ndim)
-        print "    Correlated    : %r"%(pshell.corr)
-        print "    Ion sort      : %r"%(pshell.ion_sort)
+        print()
+        print("    Shell         : %s"%(pshell.user_index))
+        print("    Orbital l     : %i"%(pshell.lorb))
+        print("    Number of ions: %i"%(pshell.nion))
+        print("    Dimension     : %i"%(pshell.ndim))
+        print("    Correlated    : %r"%(pshell.corr))
+        print("    Ion sort      : %r"%(pshell.ion_sort))
         pshells.append(pshell)
 
 
@@ -157,45 +157,45 @@ def generate_plo(conf_pars, el_struct):
             #with HDFArchive(testout, 'w') as h5test:
             #    h5test['hk'] = pgroup.hk
 # DEBUG output
-        print "Density matrix:"
+        print("Density matrix:")
         nimp = 0.0
         ov_all = []
         for ish in pgroup.ishells:
             if  not isinstance(pshells[pgroup.ishells[ish]],ComplementShell):
-                print "  Shell %i"%(ish + 1)
+                print("  Shell %i"%(ish + 1))
                 dm_all, ov_all_ = pshells[ish].density_matrix(el_struct)
                 ov_all.append(ov_all_[0])
                 spin_fac = 2 if dm_all.shape[0] == 1 else 1
-                for io in xrange(dm_all.shape[1]):
-                    print "    Site %i"%(io + 1)
+                for io in range(dm_all.shape[1]):
+                    print("    Site %i"%(io + 1))
                     dm = spin_fac * dm_all[:, io, : ,:].sum(0)
                     for row in dm:
-                        print ''.join(map("{0:14.7f}".format, row))
+                        print(''.join(map("{0:14.7f}".format, row)))
                     ndm = dm.trace()
                     if pshells[ish].corr:
                         nimp += ndm
-                    print "      trace: ", ndm
-        print
-        print "  Impurity density:", nimp
-        print
-        print "Overlap:"
+                    print("      trace: ", ndm)
+        print()
+        print("  Impurity density:", nimp)
+        print()
+        print("Overlap:")
         for io, ov in enumerate(ov_all):
-            print "  Site %i"%(io + 1)
-            print ov[0,...]
-        print
-        print "Local Hamiltonian:"
+            print("  Site %i"%(io + 1))
+            print(ov[0,...])
+        print()
+        print("Local Hamiltonian:")
         for ish in pgroup.ishells:
             if  not isinstance(pshells[pgroup.ishells[ish]],ComplementShell):
-                print "  Shell %i"%(ish + 1)
+                print("  Shell %i"%(ish + 1))
                 loc_ham = pshells[pgroup.ishells[ish]].local_hamiltonian(el_struct)
-                for io in xrange(loc_ham.shape[1]):
-                    print "    Site %i"%(io + 1)
+                for io in range(loc_ham.shape[1]):
+                    print("    Site %i"%(io + 1))
                     for row in loc_ham[:, io, :, :].sum(0):
-                        print ''.join(map("{0:14.7f}".format, row))
+                        print(''.join(map("{0:14.7f}".format, row)))
 # END DEBUG output
         if 'dosmesh' in conf_pars.general:
-            print
-            print "Evaluating DOS..."
+            print()
+            print("Evaluating DOS...")
             mesh_pars = conf_pars.general['dosmesh']
             if np.isnan(mesh_pars['emin']):
                 dos_emin = pgroup.emin
@@ -208,12 +208,12 @@ def generate_plo(conf_pars, el_struct):
             emesh = np.linspace(dos_emin, dos_emax, n_points)
             for ish in pgroup.ishells:
                 if  not isinstance(pshells[pgroup.ishells[ish]],ComplementShell) or True:
-                    print "  Shell %i"%(ish + 1)
+                    print("  Shell %i"%(ish + 1))
                     dos = pshells[pgroup.ishells[ish]].density_of_states(el_struct, emesh)
                     de = emesh[1] - emesh[0]
                     ntot = (dos[1:,...] + dos[:-1,...]).sum(0) / 2 * de
-                    print "    Total number of states:", ntot
-                    for io in xrange(dos.shape[2]):
+                    print("    Total number of states:", ntot)
+                    for io in range(dos.shape[2]):
                         np.savetxt('pdos_%i_%i.dat'%(ish,io), np.vstack((emesh.T, dos[:, 0, io, :].T)).T)
 
         pgroups.append(pgroup)
@@ -254,7 +254,7 @@ def kpoints_output(basename, el_struct):
         f.write("%i\n"%(nktot))
 # TODO: add the output of reciprocal lattice vectors
         f.write("# List of k-points with weights\n")
-        for ik in xrange(nktot):
+        for ik in range(nktot):
             kx, ky, kz = kmesh['kpoints'][ik, :]
             kwght = kmesh['kweights'][ik]
             f.write("%15.10f%15.10f%15.10f%20.10f\n"%(kx, ky, kz, kwght))
@@ -266,7 +266,7 @@ def kpoints_output(basename, el_struct):
             f.write("\n# Number of tetrahedra and volume: ntet, volt\n")
             f.write("%i %s\n"%(ntet, volt))
             f.write("# List of tetrahedra: imult, ik1, ..., ik4\n")
-            for it in xrange(ntet):
+            for it in range(ntet):
                 f.write('  '.join(map("{0:d}".format, *kmesh['itet'][it, :])) + '\n')
         except KeyError:
             pass
@@ -315,14 +315,14 @@ def ctrl_output(conf_pars, el_struct, ng):
 
     header = json.dumps(head_dict, indent=4, separators=(',', ': '))
 
-    print "  Storing ctrl-file..."
+    print("  Storing ctrl-file...")
     with open(ctrl_fname, 'wt') as f:
         f.write(header + "\n")
         f.write("#END OF HEADER\n")
 
         f.write("# k-points and weights\n")
         labels = ['kx', 'ky', 'kz', 'kweight']
-        out = "".join(map(lambda s: s.center(15), labels))
+        out = "".join([s.center(15) for s in labels])
         f.write("#" + out + "\n")
         for ik, kp in enumerate(el_struct.kmesh['kpoints']):
             tmp1 = "".join(map("{0:15.10f}".format, kp))
@@ -330,7 +330,7 @@ def ctrl_output(conf_pars, el_struct, ng):
             f.write(out + "\n")
         f.write("# k-points and weights cartesian\n")
         labels = ['kx', 'ky', 'kz']
-        out = "".join(map(lambda s: s.center(15), labels))
+        out = "".join([s.center(15) for s in labels])
         f.write("#" + out + "\n")
         for ik, kp in enumerate(el_struct.kmesh['kpoints_cart']):
             out = "".join(map("{0:15.10f}".format, kp))
@@ -381,7 +381,7 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
     """
     for ig, pgroup in enumerate(pgroups):
         plo_fname = conf_pars.general['basename'] + '.pg%i'%(ig + 1)
-        print "  Storing PLO-group file '%s'..."%(plo_fname)
+        print("  Storing PLO-group file '%s'..."%(plo_fname))
         head_dict = {}
 
 
@@ -394,7 +394,7 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
 
 # Number of electrons within the window
         head_dict['nelect'] = pgroup.nelect_window(el_struct)
-        print "  Density within window:", head_dict['nelect']
+        print("  Density within window:", head_dict['nelect'])
 
         head_shells = []
         for ish in pgroup.ishells:
@@ -430,13 +430,13 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                 f.write("# Eigenvalues within the energy window: %s, %s\n"%(pgroup.emin, pgroup.emax))
 
             nk, nband, ns_band = el_struct.eigvals.shape
-            for isp in xrange(ns_band):
+            for isp in range(ns_band):
                 f.write("# is = %i\n"%(isp + 1))
-                for ik in xrange(nk):
+                for ik in range(nk):
                     ib1, ib2 = pgroup.ib_win[ik, isp, 0], pgroup.ib_win[ik, isp, 1]
 # Output band indices in Fortran convention!
                     f.write(" %i  %i\n"%(ib1 + 1, ib2 + 1))
-                    for ib in xrange(ib1, ib2 + 1):
+                    for ib in range(ib1, ib2 + 1):
                         eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
                         f_weight = el_struct.ferw[isp, ik, ib]
                         f.write("%13.8f %12.7f\n"%(eigv_ef, f_weight))
@@ -449,15 +449,15 @@ def plo_output(conf_pars, el_struct, pshells, pgroups):
                 f.write("# Shell %i\n"%(ish))
 
                 nion, ns, nk, nlm, nb = shell.proj_win.shape
-                for isp in xrange(ns):
+                for isp in range(ns):
                     f.write("# is = %i\n"%(isp + 1))
-                    for ik in xrange(nk):
+                    for ik in range(nk):
                         f.write("# ik = %i\n"%(ik + 1))
-                        for ion in xrange(nion):
-                            for ilm in xrange(nlm):
+                        for ion in range(nion):
+                            for ilm in range(nlm):
                                 ib1, ib2 = pgroup.ib_win[ik, isp, 0], pgroup.ib_win[ik, isp, 1]
                                 ib_win = ib2 - ib1 + 1
-                                for ib in xrange(ib_win):
+                                for ib in range(ib_win):
                                     p = shell.proj_win[ion, isp, ik, ilm, ib]
                                     f.write("{0:16.10f}{1:16.10f}\n".format(p.real, p.imag))
                                 f.write("\n")
@@ -494,7 +494,7 @@ def hk_output(conf_pars, el_struct, pgroups):
     for ig, pgroup in enumerate(pgroups):
 
         hk_fname = conf_pars.general['basename'] + '.hk%i'%(ig + 1)
-        print "  Storing HK-group file '%s'..."%(hk_fname)
+        print("  Storing HK-group file '%s'..."%(hk_fname))
 
         head_shells = []
         for ish in pgroup.ishells:
@@ -528,13 +528,13 @@ def hk_output(conf_pars, el_struct, pgroups):
                 f.write('%i %i %i %i      # atom sort l dim\n'%(head['ion_list'][0],head['ion_sort'][0],head['lorb'],head['ndim']))
 
             norbs = pgroup.hk.shape[2]
-            for isp in xrange(ns_band):
-                for ik in xrange(nk):
-                    for io in xrange(norbs):
-                        for iop in xrange(norbs):
+            for isp in range(ns_band):
+                for ik in range(nk):
+                    for io in range(norbs):
+                        for iop in range(norbs):
                             f.write(" {0:14.10f}".format(pgroup.hk[isp,ik,io,iop].real))
                         f.write("\n")
-                    for io in xrange(norbs):
-                        for iop in xrange(norbs):
+                    for io in range(norbs):
+                        for iop in range(norbs):
                             f.write(" {0:14.10f}".format(pgroup.hk[isp,ik,io,iop].imag))
                         f.write("\n")

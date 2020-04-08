@@ -35,13 +35,13 @@ Hloc[8:,8:] = Hloc1
 V = get_random_hermitian(2) # the hopping elements from impurity to bath
 b1 = np.random.rand() # the bath energy of the first bath level
 b2 = np.random.rand() # the bath energy of the second bath level
-delta = GfReFreq(window=(-10,10), indices=range(2), n_points=1001)
+delta = GfReFreq(window=(-10,10), indices=list(range(2)), n_points=1001)
 delta[0,0] << (V[0,0]*V[0,0].conjugate()*inverse(Omega-b1)+V[0,1]*V[0,1].conjugate()*inverse(Omega-b2+0.02j))/2.0
 delta[0,1] << (V[0,0]*V[1,0].conjugate()*inverse(Omega-b1)+V[0,1]*V[1,1].conjugate()*inverse(Omega-b2+0.02j))/2.0
 delta[1,0] << (V[1,0]*V[0,0].conjugate()*inverse(Omega-b1)+V[1,1]*V[0,1].conjugate()*inverse(Omega-b2+0.02j))/2.0
 delta[1,1] << (V[1,0]*V[1,0].conjugate()*inverse(Omega-b1)+V[1,1]*V[1,1].conjugate()*inverse(Omega-b2+0.02j))/2.0
 # construct G
-G = BlockGf(name_block_generator=[('ud',GfReFreq(window=(-10,10), indices=range(10), n_points=1001))], make_copies=False)
+G = BlockGf(name_block_generator=[('ud',GfReFreq(window=(-10,10), indices=list(range(10)), n_points=1001))], make_copies=False)
 for i in range(0,10,2):
     G['ud'][i:i+2,i:i+2] << inverse(Omega-delta+0.02j)
 G['ud'] << inverse(inverse(G['ud']) - Hloc)
@@ -58,7 +58,7 @@ assert SK.gf_struct_sumk == [[('ud', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])], [('ud', [
     "wrong gf_struct_sumk"
 for i in range(5):
     assert 'ud_{}'.format(i) in SK.gf_struct_solver[0], "missing block"
-    assert SK.gf_struct_solver[0]['ud_{}'.format(i)] == range(2), "wrong block size"
+    assert SK.gf_struct_solver[0]['ud_{}'.format(i)] == list(range(2)), "wrong block size"
 for i in range(10):
     assert SK.sumk_to_solver[0]['ud',i] == ('ud_{}'.format(i/2), i%2), "wrong mapping"
 
@@ -101,7 +101,7 @@ assert SK.gf_struct_sumk == [[('ud', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])], [('ud', [
     "wrong gf_struct_sumk"
 for i in range(5):
     assert 'ud_{}'.format(i) in SK.gf_struct_solver[0], "missing block"
-    assert SK.gf_struct_solver[0]['ud_{}'.format(i)] == range(2), "wrong block size"
+    assert SK.gf_struct_solver[0]['ud_{}'.format(i)] == list(range(2)), "wrong block size"
 for i in range(10):
     assert SK.sumk_to_solver[0]['ud',i] == ('ud_{}'.format(i/2), i%2), "wrong mapping"
 

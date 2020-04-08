@@ -83,12 +83,12 @@ class VaspData:
             except (IOError, StopIteration):
                 self.eigenval.eigs = None
                 self.eigenval.ferw = None
-                print "!!! WARNING !!!: Error reading from EIGENVAL, trying LOCPROJ"
+                print("!!! WARNING !!!: Error reading from EIGENVAL, trying LOCPROJ")
             try:
                 self.doscar.from_file(vasp_dir)
             except (IOError, StopIteration):
                 if efermi_required:
-                    print "!!! WARNING !!!: Error reading from Efermi from DOSCAR, trying LOCPROJ"
+                    print("!!! WARNING !!!: Error reading from Efermi from DOSCAR, trying LOCPROJ")
                     try:
                         self.plocar.efermi
                         self.doscar.efermi = self.plocar.efermi
@@ -96,7 +96,7 @@ class VaspData:
                         raise Exception("Efermi cannot be read from DOSCAR or LOCPROJ")
                 else:
 # TODO: This a hack. Find out a way to determine ncdij without DOSCAR
-                    print "!!! WARNING !!!: Error reading from DOSCAR, taking Efermi from config"
+                    print("!!! WARNING !!!: Error reading from DOSCAR, taking Efermi from config")
                     self.doscar.ncdij = self.plocar.nspin
 
 ################################################################################
@@ -161,10 +161,10 @@ class Plocar:
 # Read the first line of LOCPROJ to get the dimensions
         with open(locproj_filename, 'rt') as f:
             line = f.readline()
-            nproj, nspin, nk, nband = map(int, line.split())
+            nproj, nspin, nk, nband = list(map(int, line.split()))
 
         plo = np.zeros((nproj, nspin, nk, nband), dtype=np.complex128)
-        proj_params = [{} for i in xrange(nproj)]
+        proj_params = [{} for i in range(nproj)]
 
         iproj_site = 0
         is_first_read = True
@@ -173,7 +173,7 @@ class Plocar:
             while line:
                 isite = int(line.split()[1])
                 if not is_first_read:
-                    for il in xrange(norb):
+                    for il in range(norb):
                         ip_new = iproj_site * norb + il
                         ip_prev = (iproj_site - 1) * norb + il
                         proj_params[ip_new]['label'] = proj_params[ip_prev]['label']
@@ -181,8 +181,8 @@ class Plocar:
                         proj_params[ip_new]['l'] = proj_params[ip_prev]['l']
                         proj_params[ip_new]['m'] = proj_params[ip_prev]['m']
 
-                for ispin in xrange(nspin):
-                    for ik in xrange(nk):
+                for ispin in range(nspin):
+                    for ik in range(nk):
 # Parse the orbital labels and convert them to l,m-indices
                         line = self.search_for(f, "^ *band")
                         if is_first_read:
@@ -202,10 +202,10 @@ class Plocar:
                             is_first_read = False
 
 # Read the block of nk * ns * nband complex numbers
-                        for ib in xrange(nband):
+                        for ib in range(nband):
                             line = f.readline()
-                            rtmp = map(float, line.split()[1:])
-                            for il in xrange(norb):
+                            rtmp = list(map(float, line.split()[1:]))
+                            for il in range(norb):
                                 ctmp = complex(rtmp[2 * il], rtmp[2 * il + 1])
                                 plo[iproj_site * norb + il, ispin, ik, ib] = ctmp
 
@@ -213,9 +213,9 @@ class Plocar:
                 iproj_site += 1
                 line = self.search_for(f, "^ *ISITE")
 
-        print "Read parameters:"
+        print("Read parameters:")
         for il, par in enumerate(proj_params):
-            print il, " -> ", par
+            print(il, " -> ", par)
 
         return proj_params, plo
 
@@ -242,17 +242,17 @@ class Plocar:
             line = f.readline()
             line = line.split("#")[0]
             sline = line.split()
-            self.ncdij, nk, self.nband, nproj = map(int, sline[:4])
+            self.ncdij, nk, self.nband, nproj = list(map(int, sline[:4]))
             self.nspin = 1 if self.ncdij == 1 else 2
             self.nspin_band = 2 if self.ncdij == 2 else 1
 
             try:
                 self.efermi = float(sline[4])
             except:
-                print "!!! WARNING !!!: Error reading E-Fermi from LOCPROJ, trying DOSCAR"
+                print("!!! WARNING !!!: Error reading E-Fermi from LOCPROJ, trying DOSCAR")
 
             plo = np.zeros((nproj, self.nspin, nk, self.nband), dtype=np.complex128)
-            proj_params = [{} for i in xrange(nproj)]
+            proj_params = [{} for i in range(nproj)]
 
             iproj_site = 0
             is_first_read = True
@@ -284,26 +284,26 @@ class Plocar:
             patt = re.compile("^orbital")
 # FIXME: fix spin indices for NCDIJ = 4 (non-collinear)
             assert self.ncdij < 4, "Non-collinear case is not implemented"
-            for ispin in xrange(self.nspin):
-                for ik in xrange(nk):
-                    for ib in xrange(self.nband):
+            for ispin in range(self.nspin):
+                for ik in range(nk):
+                    for ib in range(self.nband):
                         line = ""
                         while not line:
                             line = f.readline().strip()
                         sline = line.split()
-                        isp_, ik_, ib_ = map(int, sline[1:4])
+                        isp_, ik_, ib_ = list(map(int, sline[1:4]))
                         assert isp_ == ispin + 1 and ik_ == ik + 1 and ib_ == ib + 1, "Inconsistency in reading LOCPROJ"
                         self.eigs[ik, ib, ispin] = float(sline[4])
                         self.ferw[ik, ib, ispin] = float(sline[5])
-                        for ip in xrange(nproj):
+                        for ip in range(nproj):
                             line = f.readline()
                             sline = line.split()
                             ctmp = complex(float(sline[1]), float(sline[2]))
                             plo[ip, ispin, ik, ib] = ctmp
 
-        print "Read parameters:"
+        print("Read parameters:")
         for il, par in enumerate(proj_params):
-            print il, " -> ", par
+            print(il, " -> ", par)
 
         return proj_params, plo
 
@@ -366,16 +366,16 @@ class Poscar:
         f = read_lines(vasp_dir + poscar_filename)
 # Comment line
         comment = f.next().rstrip()
-        print "  Found POSCAR, title line: %s"%(comment)
+        print("  Found POSCAR, title line: %s"%(comment))
 
 # Read scale
         sline = readline_remove_comments()
         ascale = float(sline)
 # Read lattice vectors
         self.a_brav = np.zeros((3, 3))
-        for ia in xrange(3):
+        for ia in range(3):
             sline = readline_remove_comments()
-            self.a_brav[ia, :] = map(float, sline.split())
+            self.a_brav[ia, :] = list(map(float, sline.split()))
 # Negative scale means that it is a volume scale
         if ascale < 0:
             vscale = -ascale
@@ -389,13 +389,13 @@ class Poscar:
         sline = readline_remove_comments()
         try:
 # Old v4.6 format: no element names
-            self.nions = map(int, sline.split())
-            self.el_names = ['El%i'%(i) for i in xrange(len(self.nions))]
+            self.nions = list(map(int, sline.split()))
+            self.el_names = ['El%i'%(i) for i in range(len(self.nions))]
         except ValueError:
 # New v5.x format: read element names first
             self.el_names = sline.split()
             sline = readline_remove_comments()
-            self.nions = map(int, sline.split())
+            self.nions = list(map(int, sline.split()))
 
 # Set the number of atom sorts (types) and the total
 # number of atoms in the unit cell
@@ -415,23 +415,23 @@ class Poscar:
 # Read atomic positions
         self.q_types = []
         self.type_of_ion = []
-        for it in xrange(self.ntypes):
+        for it in range(self.ntypes):
 # Array mapping ion index to type
             self.type_of_ion += self.nions[it] * [it]
 
             q_at_it = np.zeros((self.nions[it], 3))
-            for iq in xrange(self.nions[it]):
+            for iq in range(self.nions[it]):
                 sline = readline_remove_comments()
-                qcoord = map(float, sline.split()[:3])
+                qcoord = list(map(float, sline.split()[:3]))
                 if cartesian:
                     qcoord = np.dot(brec, qcoord)
                 q_at_it[iq, :] = qcoord
 
             self.q_types.append(q_at_it)
 
-        print "  Total number of ions:", self.nq
-        print "  Number of types:", self.ntypes
-        print "  Number of ions for each type:", self.nions
+        print("  Total number of ions:", self.nq)
+        print("  Number of types:", self.ntypes)
+        print("  Number of ions for each type:", self.nions)
 
 #        print
 #        print "  Coords:"
@@ -485,23 +485,23 @@ class Kpoints:
         ibz_file = read_lines(vasp_dir + ibz_filename)
 
 #   Skip comment line
-        line = ibz_file.next()
+        line = next(ibz_file)
 #   Number of k-points
-        line = ibz_file.next()
+        line = next(ibz_file)
         self.nktot = int(line.strip().split()[0])
 
-        print
-        print "   {0:>26} {1:d}".format("Total number of k-points:", self.nktot)
+        print()
+        print("   {0:>26} {1:d}".format("Total number of k-points:", self.nktot))
 
         self.kpts = np.zeros((self.nktot, 3))
         self.kwghts = np.zeros((self.nktot))
 
 #   Skip comment line
-        line = ibz_file.next()
-        for ik in xrange(self.nktot):
-            line = ibz_file.next()
+        line = next(ibz_file)
+        for ik in range(self.nktot):
+            line = next(ibz_file)
             sline = line.strip().split()
-            self.kpts[ik, :] = map(float, sline[:3])
+            self.kpts[ik, :] = list(map(float, sline[:3]))
             self.kwghts[ik] = float(sline[3])
 
         self.kwghts /= self.nktot
@@ -509,23 +509,23 @@ class Kpoints:
 # Attempt to read tetrahedra
 #   Skip comment line ("Tetrahedra")
         try:
-            line = ibz_file.next()
+            line = next(ibz_file)
 
 #   Number of tetrahedra and volume = 1/(6*nkx*nky*nkz)
-            line = ibz_file.next()
+            line = next(ibz_file)
             sline = line.split()
             self.ntet = int(sline[0])
             self.volt = float(sline[1])
 
-            print "   {0:>26} {1:d}".format("Total number of tetrahedra:", self.ntet)
+            print("   {0:>26} {1:d}".format("Total number of tetrahedra:", self.ntet))
 
 #   Traditionally, itet[it, 0] contains multiplicity
             self.itet = np.zeros((self.ntet, 5), dtype=int)
-            for it in xrange(self.ntet):
-               line = ibz_file.next()
-               self.itet[it, :] = map(int, line.split()[:5])
-        except StopIteration, ValueError:
-            print "  No tetrahedron data found in %s. Skipping..."%(ibz_filename)
+            for it in range(self.ntet):
+               line = next(ibz_file)
+               self.itet[it, :] = list(map(int, line.split()[:5]))
+        except StopIteration as ValueError:
+            print("  No tetrahedron data found in %s. Skipping..."%(ibz_filename))
             self.ntet = 0
 
 #        data = { 'nktot': nktot,
@@ -572,14 +572,14 @@ class Eigenval:
         self.ispin = int(sline[3])
 
 # Second line: cell volume and lengths of lattice vectors (skip)
-        sline = f.next()
+        sline = next(f)
 
 # Third line: temperature (skip)
-        sline = f.next()
+        sline = next(f)
 
 # Fourth and fifth line: useless
-        sline = f.next()
-        sline = f.next()
+        sline = next(f)
+        sline = next(f)
 
 # Sixth line: NELECT, NKTOT, NBTOT
         sline = f.next().split()
@@ -593,16 +593,16 @@ class Eigenval:
         self.eigs = np.zeros((self.nktot, self.nband, self.ispin))
         self.ferw = np.zeros((self.nktot, self.nband, self.ispin))
 
-        for ik in xrange(self.nktot):
-            sline = f.next() # Empty line
-            sline = f.next() # k-point info
-            tmp = map(float, sline.split())
+        for ik in range(self.nktot):
+            sline = next(f) # Empty line
+            sline = next(f) # k-point info
+            tmp = list(map(float, sline.split()))
             self.kpts[ik, :] = tmp[:3]
             self.kwghts[ik] = tmp[3]
 
-            for ib in xrange(self.nband):
+            for ib in range(self.nband):
                 sline = f.next().split()
-                tmp = map(float, sline)
+                tmp = list(map(float, sline))
                 assert len(tmp) == 2 * self.ispin + 1, "EIGENVAL file is incorrect (probably from old versions of VASP)"
                 self.eigs[ik, ib, :] = tmp[1:self.ispin+1]
                 self.ferw[ik, ib, :] = tmp[self.ispin+1:]
@@ -639,8 +639,8 @@ class Doscar:
         self.ncdij = int(sline[3])
 
 # Skip next 4 lines
-        for _ in xrange(4):
-            sline = f.next()
+        for _ in range(4):
+            sline = next(f)
 
 # Sixth line: EMAX, EMIN, NEDOS, EFERMI, 1.0
         sline = f.next().split()
@@ -666,54 +666,54 @@ def read_symmcar(vasp_dir, symm_filename='SYMMCAR'):
 
     symmcar_exist = False
     sym_file = read_lines(vasp_dir + symm_filename)
-    line = sym_file.next()
+    line = next(sym_file)
     nrot = extract_int_par('NROT')
 
-    line = sym_file.next()
+    line = next(sym_file)
     ntrans = extract_int_par('NPCELL')
 #   Lmax
-    line = sym_file.next()
+    line = next(sym_file)
     lmax = extract_int_par('LMAX')
     mmax = 2 * lmax + 1
 #   Nion
-    line = sym_file.next()
+    line = next(sym_file)
     nion = extract_int_par('NION')
 
-    print "   {0:>26} {1:d}".format("Number of rotations:", nrot)
-    print "   {0:>26} {1:d}".format("Number of translations:", ntrans)
-    print "   {0:>26} {1:d}".format("Number of ions:", nion)
-    print "   {0:>26} {1:d}".format("L_max:", lmax)
+    print("   {0:>26} {1:d}".format("Number of rotations:", nrot))
+    print("   {0:>26} {1:d}".format("Number of translations:", ntrans))
+    print("   {0:>26} {1:d}".format("Number of ions:", nion))
+    print("   {0:>26} {1:d}".format("L_max:", lmax))
 
     rot_mats = np.zeros((nrot, lmax+1, mmax, mmax))
     rot_map = np.zeros((nrot, ntrans, nion), dtype=np.int32)
 
-    for irot in xrange(nrot):
+    for irot in range(nrot):
 #   Empty line
-        line = sym_file.next()
+        line = next(sym_file)
 #   IROT index (skip it)
-        line = sym_file.next()
+        line = next(sym_file)
 #   ISYMOP matrix (can be also skipped)
-        line = sym_file.next()
-        line = sym_file.next()
-        line = sym_file.next()
+        line = next(sym_file)
+        line = next(sym_file)
+        line = next(sym_file)
 
 #   Skip comment "  Permutation map..."
-        line = sym_file.next()
+        line = next(sym_file)
 #   Permutations (in chunks of 20 indices per line)
-        for it in xrange(ntrans):
-            for ibl in xrange((nion - 1) / 20 + 1):
+        for it in range(ntrans):
+            for ibl in range((nion - 1) / 20 + 1):
                 i1 = ibl * 20
                 i2 = (ibl + 1) * 20
-                line = sym_file.next()
-                rot_map[irot, it, i1:i2] = map(int, line.split())
+                line = next(sym_file)
+                rot_map[irot, it, i1:i2] = list(map(int, line.split()))
 
-            for l in xrange(lmax + 1):
+            for l in range(lmax + 1):
                 mmax = 2 * l + 1
 #   Comment: "L = ..."
-            line = sym_file.next()
-            for m in xrange(mmax):
-                line = sym_file.next()
-                rot_mats[irot, l, m, :mmax] = map(float, line.split()[:mmax])
+            line = next(sym_file)
+            for m in range(mmax):
+                line = next(sym_file)
+                rot_mats[irot, l, m, :mmax] = list(map(float, line.split()[:mmax]))
 
     data.update({ 'nrot': nrot, 'ntrans': ntrans,
                   'lmax': lmax, 'nion': nion,

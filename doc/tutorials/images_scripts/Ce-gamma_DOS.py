@@ -31,7 +31,7 @@ SK.dc_imp = mpi.bcast(SK.dc_imp)
 SK.dc_energ = mpi.bcast(SK.dc_energ)
 
 if (mpi.is_master_node()):
-    print 'DC after reading SK: ',SK.dc_imp[0]
+    print('DC after reading SK: ',SK.dc_imp[0])
 
 N = SK.corr_shells[0]['dim']
 l = SK.corr_shells[0]['l']

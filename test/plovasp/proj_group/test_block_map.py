@@ -1,13 +1,13 @@
 
 import os
-import rpath
+from . import rpath
 _rpath = os.path.dirname(rpath.__file__) + '/'
 
 import numpy as np
 from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 from triqs_dft_tools.converters.plovasp.proj_shell import ProjectorShell
 from triqs_dft_tools.converters.plovasp.proj_group import ProjectorGroup
-import mytest
+from . import mytest
 
 ################################################################################
 #
@@ -30,19 +30,19 @@ class TestBlockMap(mytest.MyTestCase):
 
         nproj = 16
         self.mock_plo = np.zeros((nproj, 1, 1, 11), dtype=np.complex128)
-        self.mock_proj_params = [{} for i in xrange(nproj)]
+        self.mock_proj_params = [{} for i in range(nproj)]
         ip = 0
 # Mock d-sites
-        for isite in xrange(2):
-            for im in xrange(5):
+        for isite in range(2):
+            for im in range(5):
                 self.mock_proj_params[ip]['label'] = 'd-orb'
                 self.mock_proj_params[ip]['isite'] = isite + 1
                 self.mock_proj_params[ip]['l'] = 2
                 self.mock_proj_params[ip]['m'] = im
                 ip += 1
 # Mock p-sites
-        for isite in xrange(2, 4):
-            for im in xrange(3):
+        for isite in range(2, 4):
+            for im in range(3):
                 self.mock_proj_params[ip]['label'] = 'p-orb'
                 self.mock_proj_params[ip]['isite'] = isite + 1
                 self.mock_proj_params[ip]['l'] = 1

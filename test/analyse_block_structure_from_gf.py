@@ -213,7 +213,7 @@ for conjugate in conjugate_values:
     # first, construct the old format of the deg shells
     for ish in range(len(SK.deg_shells)):
         for gr in range(len(SK.deg_shells[ish])):
-            SK.deg_shells[ish][gr] = SK.deg_shells[ish][gr].keys()
+            SK.deg_shells[ish][gr] = list(SK.deg_shells[ish][gr].keys())
 
     # symmetrizing the GF as is has to leave it unchanged
     G_new_symm << G_pre_transform
