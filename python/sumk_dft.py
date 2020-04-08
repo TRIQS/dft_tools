@@ -29,7 +29,6 @@ from pytriqs.utility.comparison_tests import assert_arrays_are_close
 from pytriqs.archive import *
 from .symmetry import *
 from .block_structure import BlockStructure
-from sets import Set
 from itertools import product
 from warnings import warn
 from scipy import compress
@@ -793,7 +792,7 @@ class SumkDFT(object):
 
                 # Determine off-diagonal entries in upper triangular part of
                 # density matrix
-                offdiag = Set([])
+                offdiag = set([])
                 for i in range(n_orb):
                     for j in range(i + 1, n_orb):
                         if dmbool[i, j] or hlocbool[i, j]:
@@ -980,7 +979,7 @@ class SumkDFT(object):
 
                 # Determine off-diagonal entries in upper triangular part of the
                 # Green's function
-                offdiag = Set([])
+                offdiag = set([])
                 for i in range(n_orb):
                     for j in range(i + 1, n_orb):
                         if maxgf_bool[i, j]:
