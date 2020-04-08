@@ -60,7 +60,7 @@ for i in range(5):
     assert 'ud_{}'.format(i) in SK.gf_struct_solver[0], "missing block"
     assert SK.gf_struct_solver[0]['ud_{}'.format(i)] == list(range(2)), "wrong block size"
 for i in range(10):
-    assert SK.sumk_to_solver[0]['ud',i] == ('ud_{}'.format(i/2), i%2), "wrong mapping"
+    assert SK.sumk_to_solver[0]['ud',i] == ('ud_{}'.format(i//2), i%2), "wrong mapping"
 
 assert len(SK.deg_shells[0]) == 2, "wrong number of equivalent groups found"
 assert sorted([len(d) for d in SK.deg_shells[0]]) == [2,3], "wrong number of members in the equivalent groups found"
@@ -103,7 +103,7 @@ for i in range(5):
     assert 'ud_{}'.format(i) in SK.gf_struct_solver[0], "missing block"
     assert SK.gf_struct_solver[0]['ud_{}'.format(i)] == list(range(2)), "wrong block size"
 for i in range(10):
-    assert SK.sumk_to_solver[0]['ud',i] == ('ud_{}'.format(i/2), i%2), "wrong mapping"
+    assert SK.sumk_to_solver[0]['ud',i] == ('ud_{}'.format(i//2), i%2), "wrong mapping"
 
 assert len(SK.deg_shells[0]) == 2, "wrong number of equivalent groups found"
 assert sorted([len(d) for d in SK.deg_shells[0]]) == [2,3], "wrong number of members in the equivalent groups found"

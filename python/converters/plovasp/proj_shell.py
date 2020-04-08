@@ -135,8 +135,8 @@ class ProjectorShell:
             assert nrow%nion == 0, "Number of rows in TRANSFILE must be divisible by the number of ions"
             assert ncol%nm == 0, "Number of columns in TRANSFILE must be divisible by the number of orbitals 2*l + 1"
 
-            nr = nrow / nion
-            nsize = ncol / nm
+            nr = nrow // nion
+            nsize = ncol // nm
             assert nsize in (1, 2, 4), "Number of columns in TRANSFILE must be divisible by either 1, 2, or 4"
 #
 # Determine the spin-dimension and whether the matrices are real or complex
@@ -154,11 +154,11 @@ class ProjectorShell:
 #                is_complex = True
 #
             is_complex = nsize > 1
-            ns_dim = max(1, nsize / 2)
+            ns_dim = max(1, nsize // 2)
 
 # Dimension of the orbital subspace
             assert nr%ns_dim == 0, "Number of rows in TRANSFILE is not compatible with the spin dimension"
-            ndim = nr / ns_dim
+            ndim = nr // ns_dim
 
             self.tmatrices = np.zeros((nion, nr, nm * ns_dim), dtype=np.complex128)
 
@@ -181,7 +181,7 @@ class ProjectorShell:
             assert ncol%nm == 0, "Number of columns in TRANSFORM must be divisible by the number of orbitals 2*l + 1"
 
 # Only spin-independent matrices are expected here
-            nsize = ncol / nm
+            nsize = ncol // nm
             assert nsize in (1, 2), "Number of columns in TRANSFORM must be divisible by either 1 or 2"
 
             is_complex = nsize > 1

@@ -701,7 +701,7 @@ def read_symmcar(vasp_dir, symm_filename='SYMMCAR'):
         line = next(sym_file)
 #   Permutations (in chunks of 20 indices per line)
         for it in range(ntrans):
-            for ibl in range((nion - 1) / 20 + 1):
+            for ibl in range((nion - 1) // 20 + 1):
                 i1 = ibl * 20
                 i2 = (ibl + 1) * 20
                 line = next(sym_file)
