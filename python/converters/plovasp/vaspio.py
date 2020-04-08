@@ -357,7 +357,7 @@ class Poscar:
         """
 # Convenince local function
         def readline_remove_comments():
-            return f.next().split('!')[0].split('#')[0].strip()
+            return next(f).split('!')[0].split('#')[0].strip()
 
 # Add a slash to the path name if necessary
         if vasp_dir[-1] != '/':
@@ -365,7 +365,7 @@ class Poscar:
 
         f = read_lines(vasp_dir + poscar_filename)
 # Comment line
-        comment = f.next().rstrip()
+        comment = next(f).rstrip()
         print("  Found POSCAR, title line: %s"%(comment))
 
 # Read scale
@@ -567,7 +567,7 @@ class Eigenval:
 
 # First line: only the first and the last number out of four
 # are used; these are 'nions' and 'ispin'
-        sline = f.next().split()
+        sline = next(f).split()
         self.nq = int(sline[0])
         self.ispin = int(sline[3])
 
@@ -582,7 +582,7 @@ class Eigenval:
         sline = next(f)
 
 # Sixth line: NELECT, NKTOT, NBTOT
-        sline = f.next().split()
+        sline = next(f).split()
         self.nelect = int(sline[0])
         self.nktot = int(sline[1])
         self.nband = int(sline[2])
@@ -601,7 +601,7 @@ class Eigenval:
             self.kwghts[ik] = tmp[3]
 
             for ib in range(self.nband):
-                sline = f.next().split()
+                sline = next(f).split()
                 tmp = list(map(float, sline))
                 assert len(tmp) == 2 * self.ispin + 1, "EIGENVAL file is incorrect (probably from old versions of VASP)"
                 self.eigs[ik, ib, :] = tmp[1:self.ispin+1]
@@ -635,7 +635,7 @@ class Doscar:
         f = read_lines(vasp_dir + dos_filename)
 
 # First line: NION, NION, JOBPAR, NCDIJ
-        sline = f.next().split()
+        sline = next(f).split()
         self.ncdij = int(sline[3])
 
 # Skip next 4 lines
@@ -643,7 +643,7 @@ class Doscar:
             sline = next(f)
 
 # Sixth line: EMAX, EMIN, NEDOS, EFERMI, 1.0
-        sline = f.next().split()
+        sline = next(f).split()
         self.efermi = float(sline[3])
 
 # TODO: implement output of SYMMCAR in VASP and read it here
