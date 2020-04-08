@@ -26,7 +26,7 @@ import pytriqs.utility.dichotomy as dichotomy
 from pytriqs.gf import *
 import pytriqs.utility.mpi as mpi
 from pytriqs.utility.comparison_tests import assert_arrays_are_close
-from pytriqs.archive import *
+from h5 import *
 from .symmetry import *
 from .block_structure import BlockStructure
 from itertools import product

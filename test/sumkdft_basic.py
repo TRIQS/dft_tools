@@ -20,7 +20,7 @@
 #
 ################################################################################
 
-from pytriqs.archive import *
+from h5 import *
 from triqs_dft_tools.sumk_dft_tools import SumkDFTTools
 import pytriqs.utility.mpi as mpi
 from pytriqs.utility.comparison_tests import *

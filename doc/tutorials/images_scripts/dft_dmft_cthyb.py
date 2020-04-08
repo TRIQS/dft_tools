@@ -1,6 +1,6 @@
 import pytriqs.utility.mpi as mpi
 from pytriqs.operators.util import *
-from pytriqs.archive import HDFArchive
+from h5 import HDFArchive
 from triqs_cthyb import *
 from pytriqs.gf import *
 from triqs_dft_tools.sumk_dft import *

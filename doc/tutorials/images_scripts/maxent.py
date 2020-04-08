@@ -1,5 +1,5 @@
 from pytriqs.gf import *
-from pytriqs.archive import *
+from h5 import *
 from triqs_maxent import *
 
 filename = 'nio'

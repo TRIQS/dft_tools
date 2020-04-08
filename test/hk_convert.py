@@ -21,7 +21,7 @@
 ################################################################################
 
 
-from pytriqs.archive import *
+from h5 import *
 from pytriqs.utility.h5diff import h5diff
 import pytriqs.utility.mpi as mpi
 

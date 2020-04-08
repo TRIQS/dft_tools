@@ -47,7 +47,7 @@
 from types import *
 import numpy
 import math
-from pytriqs.archive import *
+from h5 import *
 from .converter_tools import *
 from itertools import product
 import os.path

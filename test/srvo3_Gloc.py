@@ -19,7 +19,7 @@
 #
 ################################################################################
 
-from pytriqs.archive import *
+from h5 import *
 from pytriqs.gf import *
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.converters.wien2k_converter import *

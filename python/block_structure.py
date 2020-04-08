@@ -467,5 +467,5 @@ class BlockStructure(object):
                         s+='   '+key+'\n'
         return s
 
-from pytriqs.archive.hdf_archive_schemes import register_class
+from h5.formats import register_class
 register_class(BlockStructure)

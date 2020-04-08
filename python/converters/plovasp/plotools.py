@@ -153,7 +153,7 @@ def generate_plo(conf_pars, el_struct):
         if conf_pars.general['hk']:
             pgroup.calc_hk(eigvals)
             #testout = 'hk.out.h5'
-            #from pytriqs.archive import HDFArchive
+            #from h5 import HDFArchive
             #with HDFArchive(testout, 'w') as h5test:
             #    h5test['hk'] = pgroup.hk
 # DEBUG output

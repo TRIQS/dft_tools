@@ -22,7 +22,7 @@
 
 from types import *
 import numpy
-from pytriqs.archive import *
+from h5 import *
 from .converter_tools import *
 import os.path
 

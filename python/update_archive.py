@@ -1,4 +1,4 @@
-from pytriqs.archive import HDFArchive
+from h5 import HDFArchive
 import h5py
 import sys
 import numpy

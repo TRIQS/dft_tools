@@ -9,7 +9,7 @@ from triqs_dft_tools.converters.plovasp.elstruct import ElectronicStructure
 from triqs_dft_tools.converters.plovasp.inpconf import ConfigParameters
 from triqs_dft_tools.converters.plovasp.proj_shell import ProjectorShell
 from triqs_dft_tools.converters.plovasp.proj_group import ProjectorGroup
-from pytriqs.archive import HDFArchive
+from h5 import HDFArchive
 import mytest
 
 ################################################################################

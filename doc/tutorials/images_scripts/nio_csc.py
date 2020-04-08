@@ -1,7 +1,7 @@
 from itertools import *
 import numpy as np
 import pytriqs.utility.mpi as mpi
-from pytriqs.archive import *
+from h5 import *
 from pytriqs.gf import *
 import sys, pytriqs.version as triqs_version
 from triqs_dft_tools.sumk_dft import *
