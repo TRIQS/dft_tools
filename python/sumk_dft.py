@@ -81,7 +81,7 @@ class SumkDFT(object):
                     Name of hdf5 subgroup in which miscellaneous DFT data are stored.
         """
 
-        if not type(hdf_file) == StringType:
+        if not isinstance(hdf_file, str):
             mpi.report("Give a string for the hdf5 filename to read the input!")
         else:
             self.hdf_file = hdf_file
@@ -1826,7 +1826,7 @@ class SumkDFT(object):
             elif dm_type == 'vasp':
                 filename = 'GAMMA'
 
-        assert type(filename) == StringType, ("calc_density_correction: "
+        assert isinstance(filename, str), ("calc_density_correction: "
                                               "filename has to be a string!")
 
         ntoi = self.spin_names_to_ind[self.SO]

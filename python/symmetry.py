@@ -48,8 +48,7 @@ class Symmetry:
                    the data is stored at the root of the hdf5 archive.
         """
 
-        assert type(
-            hdf_file) == StringType, "Symmetry: hdf_file must be a filename."
+        assert isinstance(hdf_file, str), "Symmetry: hdf_file must be a filename."
         self.hdf_file = hdf_file
         things_to_read = ['n_symm', 'n_atoms', 'perm',
                           'orbits', 'SO', 'SP', 'time_inv', 'mat', 'mat_tinv']
@@ -118,7 +117,7 @@ class Symmetry:
             # to be complex since self.mat is complex!
             symm_obj = [copy.deepcopy(obj[i]) for i in range(len(obj))]
             for iorb in range(self.n_orbits):
-                if type(symm_obj[iorb]) == DictType:
+                if isinstance(symm_obj[iorb], dict):
                     for ii in symm_obj[iorb]:
                         symm_obj[iorb][ii] *= 0.0
                 else:
@@ -143,7 +142,7 @@ class Symmetry:
 
                 else:
 
-                    if type(obj[iorb]) == DictType:
+                    if isinstance(obj[iorb], dict):
                         for ii in obj[iorb]:
                             if self.time_inv[i_symm] == 0:
                                 symm_obj[jorb][ii] += numpy.dot(numpy.dot(self.mat[i_symm][iorb], obj[iorb][ii]),
@@ -172,7 +171,7 @@ class Symmetry:
 #                    symm_obj[iorb] /= 2.0
 #
 #                else:
-#                    if type(symm_obj[iorb]) == DictType:
+#                    if isinstance(symm_obj[iorb], dict):
 #                        for ii in symm_obj[iorb]:
 #                            symm_obj[iorb][ii] += numpy.dot(numpy.dot(self.mat_tinv[iorb],symm_obj[iorb][ii].conjugate()),
 #                                                            self.mat_tinv[iorb].transpose().conjugate())

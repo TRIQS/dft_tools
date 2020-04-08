@@ -79,7 +79,7 @@ class Wannier90Converter(ConverterTools):
         """
 
         self._name = "Wannier90Converter"
-        assert type(seedname) == StringType, self._name + \
+        assert isinstance(seedname, str), self._name + \
             ": Please provide the DFT files' base name as a string."
         if hdf_filename is None:
             hdf_filename = seedname + '.h5'

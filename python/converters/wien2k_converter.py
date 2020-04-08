@@ -65,8 +65,7 @@ class Wien2kConverter(ConverterTools):
 
         """
 
-        assert type(
-            filename) == StringType, "Wien2kConverter: Please provide the DFT files' base name as a string."
+        assert isinstance(filename, str), "Wien2kConverter: Please provide the DFT files' base name as a string."
         if hdf_filename is None:
             hdf_filename = filename + '.h5'
         self.hdf_file = hdf_filename

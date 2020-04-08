@@ -53,8 +53,7 @@ class HkConverter(ConverterTools):
 
         """
 
-        assert type(
-            filename) == StringType, "HkConverter: filename must be a filename."
+        assert isinstance(filename, str), "HkConverter: filename must be a filename."
         if hdf_filename is None:
             hdf_filename = filename + '.h5'
         self.hdf_file = hdf_filename
