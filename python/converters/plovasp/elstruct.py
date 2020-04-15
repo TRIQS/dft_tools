@@ -154,7 +154,7 @@ class ElectronicStructure:
         nproj, ns, nk, nb = plo.shape
         ions = sorted(list(set([param['isite'] for param in self.proj_params])))
         nions = len(ions)
-        norb = nproj / nions
+        norb = nproj // nions
 
 # Spin factor
         sp_fac = 2.0 if ns == 1 and not self.nc_flag else 1.0
