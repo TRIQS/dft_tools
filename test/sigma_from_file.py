@@ -42,7 +42,7 @@ for name, s in Sigma_hdf:
 # Read self energy from txt files
 SK = SumkDFTTools(hdf_file =  'SrVO3.h5', use_dft_blocks = True)
 
-a_list = [a for a,al in SK.gf_struct_solver[0].iteritems()]
+a_list = sorted([a for a,al in SK.gf_struct_solver[0].iteritems()])
 g_list = [read_gf_from_txt([['Sigma_' + a + '.dat']], a)  for a in a_list]
 Sigma_txt = BlockGf(name_list = a_list, block_list = g_list, make_copies=False)
 
