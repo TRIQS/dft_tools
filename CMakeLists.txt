@@ -53,6 +53,10 @@ endif()
 message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} --------")
 
 # ############
+# Dependencies
+add_subdirectory(deps)
+
+# ############
 # Options
 
 # Default to Release build type

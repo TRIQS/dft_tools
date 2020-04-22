@@ -1,7 +1,3 @@
-# Build googletest
-set(PYTHON_EXECUTABLE ${TRIQS_PYTHON_EXECUTABLE})
-add_subdirectory(gtest EXCLUDE_FROM_ALL)
-
 # Copy h5 files to binary dir
 file(GLOB_RECURSE all_h5_ref_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.ref.h5)
 foreach(file ${all_h5_ref_files})
