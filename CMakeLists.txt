@@ -50,7 +50,9 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTA
   set(CMAKE_INSTALL_PREFIX ${TRIQS_ROOT} CACHE PATH "default install path" FORCE)
   set(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT FALSE)
 endif()
-message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} --------")
+if(NOT IS_SUBPROJECT)
+  message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} --------")
+endif()
 
 # ############
 # Dependencies
@@ -63,7 +65,9 @@ add_subdirectory(deps)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Type of build" FORCE)
 endif()
-message(STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} --------")
+if(NOT IS_SUBPROJECT)
+  message(STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} --------")
+endif()
 
 # Export the list of compile-commands into compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -77,21 +81,21 @@ add_compile_options(
 # Create an Interface target for compiler warnings
 if(NOT TARGET project_warnings)
   add_library(project_warnings INTERFACE)
+  target_compile_options(project_warnings
+    INTERFACE
+      -Wall
+      -Wextra
+      -Wpedantic
+      -Wno-sign-compare
+      $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
+      $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
+      $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
+      $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
+      $<$<CXX_COMPILER_ID:AppleClang>:-Wshadow>
+      $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gcc-compat>
+  )
 endif()
 install(TARGETS project_warnings EXPORT app4triqs-targets)
-target_compile_options(project_warnings
-  INTERFACE
-    -Wall
-    -Wextra
-    -Wpedantic
-    -Wno-sign-compare
-    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
-    $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
-    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
-    $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
-    $<$<CXX_COMPILER_ID:AppleClang>:-Wshadow>
-    $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gcc-compat>
-)
 
 # #############
 # Build Project
