@@ -73,6 +73,7 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Global compiler options
+option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" FALSE)
 add_compile_options(
   $<$<CONFIG:Debug>:-Og>
   $<$<CONFIG:Debug>:-ggdb3>
