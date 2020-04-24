@@ -410,7 +410,7 @@ class Poscar:
         cartesian = (sline[0].lower() in 'ck')
 
         # determine reciprocal basis in units of 2*pi
-        self.kpt_basis = 2*np.pi*np.linalg.inv(self.a_brav.T)
+        self.kpt_basis = np.linalg.inv(self.a_brav.T)
 
 # Read atomic positions
         self.q_types = []

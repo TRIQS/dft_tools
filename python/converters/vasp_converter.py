@@ -390,7 +390,7 @@ class VaspConverter(ConverterTools):
                               'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                               'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights',
                               'hopping','n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk',
-                              'kpts','kpts_cart','kpt_weights', 'kpt_basis']
+                              'kpts','kpt_weights', 'kpt_basis']
             if self.proj_or_hk == 'hk' or self.proj_or_hk ==  True:
                 things_to_save.append('proj_mat_csc')
             for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
@@ -398,6 +398,7 @@ class VaspConverter(ConverterTools):
             # Store Fermi weights to 'dft_misc_input'
             if not (self.misc_subgrp in ar): ar.create_group(self.misc_subgrp)
             ar[self.misc_subgrp]['dft_fermi_weights'] = f_weights
+            ar[self.misc_subgrp]['kpts_cart'] = kpts_cart
             ar[self.misc_subgrp]['band_window'] = band_window
 
         # Symmetries are used, so now convert symmetry information for *correlated* orbitals:
