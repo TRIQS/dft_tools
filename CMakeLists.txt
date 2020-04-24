@@ -53,6 +53,7 @@ endif()
 if(NOT IS_SUBPROJECT)
   message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} --------")
 endif()
+set(APP4TRIQS_BINARY_DIR ${PROJECT_BINARY_DIR} CACHE STRING "Binary directory of the APP4TRIQS Project")
 
 # ############
 # Dependencies
@@ -73,7 +74,7 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Global compiler options
-option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" FALSE)
+option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
 add_compile_options(
   $<$<CONFIG:Debug>:-Og>
   $<$<CONFIG:Debug>:-ggdb3>
@@ -131,6 +132,7 @@ endif()
 
 # Additional configuration files
 add_subdirectory(share)
+
 
 # #############
 # Debian Package
