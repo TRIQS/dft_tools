@@ -64,6 +64,7 @@ def generate_and_output_as_text(conf_filename, vasp_dir):
     pshells, pgroups = generate_plo(pars, el_struct)
     output_as_text(pars, el_struct, pshells, pgroups)
 
+
 def main():
     """
     This function should not be called directly but via a bash script

@@ -118,25 +118,19 @@ class ElectronicStructure:
 #        assert natom_plo == self.natom, "PLOCAR is inconsistent with POSCAR (number of atoms)"
         self.structure = {'a_brav': vasp_data.poscar.a_brav}
         self.structure['nqtot'] = vasp_data.poscar.nq
+        self.structure['kpt_basis'] = vasp_data.poscar.kpt_basis
         self.structure['ntypes'] = vasp_data.poscar.ntypes
         self.structure['nq_types'] = vasp_data.poscar.nions
 # Concatenate coordinates grouped by type into one array
         self.structure['qcoords'] = np.vstack(vasp_data.poscar.q_types)
         self.structure['type_of_ion'] = vasp_data.poscar.type_of_ion
 
-        a = []
-        for ia in range(3):
-            a.append( vasp_data.poscar.a_brav[:,ia])
-        vol = np.dot(a[0],np.cross(a[1],a[2]))
-        b1 = 2.0*np.pi*np.cross(a[1],a[2])/vol
-        b2 = 2.0*np.pi*np.cross(a[2],a[0])/vol
-        b3 = 2.0*np.pi*np.cross(a[0],a[1])/vol
-        b = [b1,b2,b3]
         self.kmesh['kpoints_cart'] = 0.0 * self.kmesh['kpoints']
 
         for ik in range(self.nktot):
             for ii in range(3):
-                self.kmesh['kpoints_cart'][ik] += self.kmesh['kpoints'][ik,ii]*b[ii]
+                self.kmesh['kpoints_cart'][ik] += self.kmesh['kpoints'][ik,ii]*self.structure['kpt_basis'][:,ii]
+
 
 # FIXME: This can be removed if ion coordinates are stored in a continuous array
 ## Construct a map to access coordinates by index

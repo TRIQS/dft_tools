@@ -159,14 +159,22 @@ class VaspConverter(ConverterTools):
         SP = ctrl_head['ns'] - 1
         SO = ctrl_head['nc_flag']
 
+        # load reciprocal basis
+        kpt_basis = numpy.zeros((3,3))
+        kpt_basis[:,0] = ctrl_head['kvec1']
+        kpt_basis[:,1] = ctrl_head['kvec2']
+        kpt_basis[:,2] = ctrl_head['kvec3']
+
         kpts = numpy.zeros((n_k, 3))
         kpts_cart = numpy.zeros((n_k, 3))
         bz_weights = numpy.zeros(n_k)
+        kpt_weights = numpy.zeros(n_k)
         try:
             for ik in xrange(n_k):
                 kx, ky, kz = rf.next(), rf.next(), rf.next()
                 kpts[ik, :] = kx, ky, kz
                 bz_weights[ik] = rf.next()
+                kpt_weights[ik] = bz_weights[ik]
             for ik in xrange(n_k):
                 kx, ky, kz = rf.next(), rf.next(), rf.next()
                 kpts_cart[ik, :] = kx, ky, kz
@@ -374,16 +382,16 @@ class VaspConverter(ConverterTools):
 
 
         proj_or_hk = self.proj_or_hk
-
         # Save it to the HDF:
         with HDFArchive(self.hdf_file,'a') as ar:
             if not (self.dft_subgrp in ar): ar.create_group(self.dft_subgrp)
             # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
             things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
-                          'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
-                          'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
-                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk','kpts','kpts_cart']
-            if self.proj_or_hk == 'hk' or True:
+                              'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
+                              'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights',
+                              'hopping','n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk',
+                              'kpts','kpts_cart','kpt_weights', 'kpt_basis']
+            if self.proj_or_hk == 'hk' or self.proj_or_hk ==  True:
                 things_to_save.append('proj_mat_csc')
             for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
 
