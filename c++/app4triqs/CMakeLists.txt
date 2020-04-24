@@ -4,9 +4,10 @@ add_library(app4triqs_c ${sources})
 # Link against triqs and enable warnings
 target_link_libraries(app4triqs_c PUBLIC triqs PRIVATE project_warnings)
 
-# Configure compilation
+# Configure target and compilation
 target_compile_options(app4triqs_c PUBLIC -fPIC)
 target_include_directories(app4triqs_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
+target_include_directories(app4triqs_c SYSTEM INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 target_compile_definitions(app4triqs_c PUBLIC
 				APP4TRIQS_GIT_HASH=${PROJECT_GIT_HASH}
 				TRIQS_GIT_HASH=${TRIQS_GIT_HASH}
