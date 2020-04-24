@@ -55,9 +55,6 @@ if(NOT IS_SUBPROJECT)
 endif()
 set(APP4TRIQS_BINARY_DIR ${PROJECT_BINARY_DIR} CACHE STRING "Binary directory of the APP4TRIQS Project")
 
-# ############
-# Dependencies
-add_subdirectory(deps)
 
 # ############
 # Options
@@ -101,6 +98,9 @@ install(TARGETS project_warnings EXPORT app4triqs-targets)
 
 # #############
 # Build Project
+
+# Find / Build dependencies
+add_subdirectory(deps)
 
 # Build and install the app4triqs library
 add_subdirectory(c++/app4triqs)
