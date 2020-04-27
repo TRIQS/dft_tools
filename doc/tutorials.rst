@@ -22,6 +22,16 @@ Basis rotations: Sr2MgOsO6 without SOC
 
    tutorials/sr2mgoso6_nosoc
 
+
+Sr2MgOsO6 with SOC (non-magnetic)
+---------------------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   tutorials/sr2mgoso6_soc
+
+
 Full charge self consistency with Wien2k: :math:`\gamma`-Ce
 -----------------------------------------------------------
 
