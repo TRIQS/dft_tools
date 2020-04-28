@@ -5,7 +5,7 @@ include(external_dependency.cmake)
 #   external_dependency(name
 #       [VERSION <version-number>]
 #       [GIT_REPO <url>]
-#       [TAG <tag>]
+#       [GIT_TAG <tag>]
 #       [EXCLUDE_FROM_ALL]
 #   )
 #
@@ -23,7 +23,7 @@ include(external_dependency.cmake)
 #
 # Addtional options:
 #
-#  TAG - Use this keyword to specify the git tag or branch
+#  GIT_TAG - Use this keyword to specify the git-tag, branch or commit hash
 #
 #  EXCLUDE_FROM_ALL - If set, targets of the dependency cmake subproject
 #                     will not be included in the ALL target of the project.
@@ -42,6 +42,6 @@ endif()
 # -- GTest --
 external_dependency(GTest
   GIT_REPO https://github.com/google/googletest
-  TAG release-1.10.0
+  GIT_TAG release-1.10.0
   EXCLUDE_FROM_ALL
 )

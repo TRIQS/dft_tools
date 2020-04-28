@@ -1,6 +1,6 @@
 
 function(external_dependency)
-  cmake_parse_arguments(ARG "EXCLUDE_FROM_ALL" "VERSION;GIT_REPO;TAG" "" ${ARGN})
+  cmake_parse_arguments(ARG "EXCLUDE_FROM_ALL" "VERSION;GIT_REPO;GIT_TAG" "" ${ARGN})
 
   # -- Was dependency already found?
   get_property(${ARGV0}_FOUND GLOBAL PROPERTY ${ARGV0}_FOUND)
@@ -32,8 +32,8 @@ function(external_dependency)
     set(bin_dir ${CMAKE_CURRENT_BINARY_DIR}/${ARGV0})
     set(src_dir ${bin_dir}_src)
     if(NOT IS_DIRECTORY ${src_dir})
-      if(ARG_TAG)
-        set(clone_opts --branch ${ARG_TAG} -c advice.detachedHead=false)
+      if(ARG_GIT_TAG)
+	set(clone_opts --branch ${ARG_GIT_TAG} -c advice.detachedHead=false)
       endif()
       execute_process(COMMAND git clone ${ARG_GIT_REPO} --depth 1 ${clone_opts} ${src_dir})
     endif()
