@@ -16,7 +16,7 @@ function(external_dependency)
       message(STATUS "Found dependency ${ARGV0} in system.")
       return()
     elseif(Build_Deps STREQUAL "Never")
-      message(FATAL_ERROR "Could not find dependency ${ARGV0} in system.")
+      message(FATAL_ERROR "Could not find dependency ${ARGV0} in system. Please install the dependency manually or use -DBuild_Deps=IfNotFound during cmake configuration to automatically build all dependencies that are not found.")
     endif()
   endif()
 
