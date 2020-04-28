@@ -29,11 +29,19 @@ include(external_dependency.cmake)
 #                     will not be included in the ALL target of the project.
 #                     In particular the dependency will not be installed.
 
-option(Build_Deps "Build dependencies from source" OFF)
+if(NOT DEFINED Build_Deps)
+  set(Build_Deps "Never" CACHE STRING "Do we build dependencies from source? [Never/Always/IfNotFound]")
+else()
+  set(Build_Deps_Opts "Never" "Always" "IfNotFound")
+  if(NOT ${Build_Deps} IN_LIST Build_Deps_Opts)
+    message(FATAL_ERROR "Build_Deps option should be either 'Never', 'Always' or 'IfNotFound'")
+  endif()
+  set(Build_Deps ${Build_Deps} CACHE STRING "Do we build dependencies from source? [Never/Always/IfNotFound]")
+endif()
 
 # -- GTest --
 external_dependency(GTest
-  GIT_REPO github:google/googletest
+  GIT_REPO https://github.com/google/googletest
   TAG release-1.10.0
   EXCLUDE_FROM_ALL
 )
