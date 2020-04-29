@@ -27,12 +27,12 @@ endif()
 
 # ############
 # Define Project
-project(APP4TRIQS VERSION 2.2.0 LANGUAGES C CXX)
+project(APP4TRIQS VERSION 3.0.0 LANGUAGES C CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # ############
 # Load TRIQS and CPP2PY
-find_package(TRIQS 2.2 REQUIRED)
+find_package(TRIQS 3.0 REQUIRED)
 
 # Get the git hash & print status
 triqs_get_git_hash_of_source_dir(PROJECT_GIT_HASH)
