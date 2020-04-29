@@ -56,7 +56,7 @@ macro(extract_flags target)
 
   get_property_recursive(libs TARGET ${target} PROPERTY INTERFACE_LINK_LIBRARIES)
   foreach(lib ${libs})
-    if(NOT TARGET ${lib})
+    if(NOT TARGET ${lib} AND NOT IS_DIRECTORY ${lib})
       set(${target}_LDFLAGS "${${target}_LDFLAGS} ${lib}")
     endif()
   endforeach()
