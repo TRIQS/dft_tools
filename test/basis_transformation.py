@@ -68,3 +68,32 @@ dm = SK.density_matrix(method='using_point_integration')
 for dmi in dm:
     for e in dmi:
         assert is_diagonal_matrix(np.dot(np.dot(t_solver_dm[0][e], dmi[e].conj().T),t_solver_dm[0][e].conj().T))
+
+
+# Test convert_operator
+SK = SumkDFT(hdf_file = 'SrVO3.h5', use_dft_blocks=True)
+BS = SK.block_structure
+from pytriqs.operators.util import h_int_slater, U_matrix, t2g_submatrix, transform_U_matrix
+
+
+U3x3 = t2g_submatrix(U_matrix(2, U_int=2, J_hund=0.2, basis='spheric'))
+
+BS.transformation = [{'up':np.eye(3), 'down': np.eye(3)}]
+H0 = h_int_slater(spin_names=['up','down'], orb_names=range(3), U_matrix=U3x3, off_diag=False)
+H1 = h_int_slater(spin_names=['up','down'], orb_names=range(3), U_matrix=U3x3, off_diag=True)
+assert( H0 == BS.convert_operator(H1) )
+
+# Trafo Matrix switching index 1 & 2
+BS.transformation = [{'up':np.array([[1,0,0],[0,0,1],[0,1,0]]), 'down': np.array([[1,0,0],[0,0,1],[0,1,0]])}]
+H2 = BS.convert_operator(h_int_slater(spin_names=['up','down'], orb_names=[0,2,1], U_matrix=U3x3, off_diag=True))
+assert( H0 == H2 )
+
+BS.transformation = [{'up':np.array([[1,0,0],[0,1/np.sqrt(2),1/np.sqrt(2)],[0,1/np.sqrt(2),-1/np.sqrt(2)]]), 'down': np.array([[1,0,0],[0,1/np.sqrt(2),1/np.sqrt(2)],[0,1/np.sqrt(2),-1/np.sqrt(2)]])}]
+H3 = BS.convert_operator(h_int_slater(spin_names=['up','down'], orb_names=[0,1,2], U_matrix=U3x3, off_diag=True))
+for op in H3:
+    for c_op in op[0]:
+        assert(BS.gf_struct_solver_dict[0][c_op[1][0]][c_op[1][1]] is not None) # This crashes with a key error if the operator structure is not the solver structure
+        
+U_trafod = transform_U_matrix(U3x3, BS.transformation[0]['up'].conjugate()) # The notorious .conjugate()
+H4 = h_int_slater(spin_names=['up','down'], orb_names=range(3), U_matrix=U_trafod, map_operator_structure=BS.sumk_to_solver[0])
+assert( H4  == H3 ) # check that convert_operator does the same as transform_U_matrix

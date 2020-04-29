@@ -769,6 +769,50 @@ class BlockStructure(object):
                     "block " + block + \
                     " has wrong indices (shell {})".format(ish)
 
+    def convert_operator(self, O, ish=0):
+        """ Converts a second-quantization operator from sumk structure
+            to solver structure.
+
+        Parameters
+        ----------
+        O : pytriqs.operators.Operator
+            Operator in sumk structure
+
+        ish : int
+            shell index on which the operator acts
+        """
+
+        from pytriqs.operators import Operator, c, c_dag
+        
+        T = self.transformation[ish]
+        sk2s = self.sumk_to_solver[ish]
+        
+        O_out = Operator(0)
+        
+        for monomial in O:
+            coefficient = monomial[-1]
+            new_monomial = Operator(1)
+            #if coefficient > 1e-10:
+            for single_operator in monomial[0]:
+                new_single_operator = Operator(0)
+                daggered = single_operator[0]
+                
+                blockname = single_operator[1][0]
+                i = single_operator[1][1]
+                for j in range(len(T[blockname])):
+                    if sk2s[(blockname, j)] != (None, None):
+                        if daggered:
+                            new_single_operator +=  (T[blockname][j,i] * c_dag(*sk2s[(blockname, j)]))
+                        else:
+                            new_single_operator +=  (T[blockname][j,i].conjugate() * c(*sk2s[(blockname, j)]))
+
+                new_monomial *= new_single_operator
+
+            O_out += new_monomial * coefficient
+        return O_out
+
+
+
     def convert_gf(self, G, G_struct=None, ish_from=0, ish_to=None, show_warnings=True,
                    G_out=None, space_from='solver', space_to='solver', ish=None, **kwargs):
         """ Convert BlockGf from its structure to this structure.
