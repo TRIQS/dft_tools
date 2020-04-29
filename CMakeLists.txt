@@ -78,23 +78,20 @@ add_compile_options(
 )
 
 # Create an Interface target for compiler warnings
-if(NOT TARGET project_warnings)
-  add_library(project_warnings INTERFACE)
-  target_compile_options(project_warnings
-    INTERFACE
-      -Wall
-      -Wextra
-      -Wpedantic
-      -Wno-sign-compare
-      $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
-      $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
-      $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
-      $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
-      $<$<CXX_COMPILER_ID:AppleClang>:-Wshadow>
-      $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gcc-compat>
-  )
-endif()
-install(TARGETS project_warnings EXPORT app4triqs-targets)
+add_library(app4triqs_warnings INTERFACE)
+target_compile_options(app4triqs_warnings
+  INTERFACE
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Wno-sign-compare
+    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
+    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wshadow>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gcc-compat>
+)
 
 # #############
 # Build Project

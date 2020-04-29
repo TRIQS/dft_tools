@@ -2,7 +2,7 @@ file(GLOB_RECURSE sources *.cpp)
 add_library(app4triqs_c ${sources})
 
 # Link against triqs and enable warnings
-target_link_libraries(app4triqs_c PUBLIC triqs PRIVATE project_warnings)
+target_link_libraries(app4triqs_c PUBLIC triqs PRIVATE $<BUILD_INTERFACE:app4triqs_warnings>)
 
 # Configure target and compilation
 target_compile_options(app4triqs_c PUBLIC -fPIC)
