@@ -1,3 +1,24 @@
+###################################################################################
+#
+# APP4TRIQS: a Toolbox for Research in Interacting Quantum Systems
+#
+# Copyright (C) 2020 Simons Foundation
+#    authors: N. Wentzell
+#
+# APP4TRIQS is free software: you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# APP4TRIQS is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# APP4TRIQS. If not, see <http://www.gnu.org/licenses/>.
+#
+###################################################################################
 
 function(external_dependency)
   cmake_parse_arguments(ARG "EXCLUDE_FROM_ALL;BUILD_ALWAYS" "VERSION;GIT_REPO;GIT_TAG" "" ${ARGN})
