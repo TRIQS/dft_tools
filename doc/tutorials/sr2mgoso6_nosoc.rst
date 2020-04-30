@@ -130,12 +130,13 @@ We now set up the interaction Hamiltonian. Since we want to rotate the interacti
     J = 0.2
     U_mat = U_matrix(l=2,U_int=U,J_hund=J,basis='other', T=SK.T[0].conjugate())
 
-In the last line we use the Wien2k convention to write the U matrix in the cubic harmonics. Next, we want to rotate it, and pick out only the relevant :math:`t_{2g}` orbitals. At this step we need to give the indices of the wanted orbitals in the *sumk* basis::
+In the last line we use the Wien2k convention to write the U matrix in the cubic harmonics. Next, we want to set up a Hamiltonian and rotate it into the *solver* basis::
 
-    U_trans = transform_U_matrix(U_mat, SK.block_structure.transformation[0]['up'].conjugate())
-    indices_to_pick_sumk = [1,3,4]               # these are the relevant indices in the sumk basis
-    U_red = subarray(U_trans,len(U_trans.shape)*[indices_to_pick_sumk])
-    h_int = h_int_slater(['up','down'], indices_to_pick_sumk, U_red, map_operator_structure=SK.block_structure.sumk_to_solver[0], off_diag=False, complex=False)
+    h_sumk = h_int_slater(['up','down'], range(5), U_mat,  off_diag=True)
+    h_int = SK.block_structure.convert_operator(h_sumk)
+    h_int = h_int.real
+
+Note that we needed to set up the interaction matrix for the full set of five *d* orbitals. The :meth:`convert_operator` method then takes care of rotating and picking the relevant orbitals. In the last line above we made the Hamiltonian real, since we know it this case that there are only real numbers in the interaction Hamiltonian. Note that this is not generally the case!
 
 Now we have the interaction Hamiltonian for the solver, which we set up next::
 
@@ -201,7 +202,7 @@ The DMFT loop itself looks very much the same as in :ref:`SrVO3`::
         # Save stuff into the user_data group of hdf5 archive in case of rerun:
         SK.save(['chemical_potential','dc_imp','dc_energ'])
 
-The only difference to the other example is in the initialisation of the real part of the self energy. We cannot just take an element of the *dc_imp* array, since this array is stored in the *sumk* structure. Therefore, we first need to transform this matrix into *solver* space, and then take the appropriate matrix element. After the first iteration (here done with 24e6 MC sweeps), you should get self energies like this:
+The only difference to the other example is in the initialisation of the real part of the self energy. We cannot just take an element of the *dc_imp* array, since this array is stored in the *sumk* structure. Therefore, we first need to transform this matrix into *solver* space, and then take the appropriate matrix element. After the first iteration (here done with 24e6 MC sweeps and using the real version of the CTMQC solver), you should get self energies like this:
 
 .. image:: images_scripts/Sr2MgOsO6_noSOC_Sigmas.png
     :width: 600

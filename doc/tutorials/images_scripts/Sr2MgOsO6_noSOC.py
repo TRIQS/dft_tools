@@ -23,22 +23,18 @@ SK.calculate_diagonalization_matrix(prop_to_be_diagonal='eal',calc_in_solver_blo
 # Now we pick the orbitals:
 # BE CAREFUL: THIS NEEDS TO BE DONE PROPERLY 
 # AND IS DIFFERENT FORM CASE TO CASE!
-indices_to_pick_sumk = [1,3,4]
 SK.block_structure.pick_gf_struct_solver([{'up_1': [0],'up_2': [0],'up_3': [0],'down_1': [0],'down_2': [0],'down_3': [0]}])
 ###########################
 
-# Now we set up the U matrix, first in cubic (Wien2k) convention:
+# Now we set up the U matrix, first in cubic Wien2k convention:
 U = 2.0
 J = 0.2
 U_mat = U_matrix(l=2,U_int=U,J_hund=J,basis='other', T=SK.T[0].conjugate())
 
-# Now we transform the U Matrix:
-U_trans = transform_U_matrix(U_mat, SK.block_structure.transformation[0]['up'].conjugate())
-# pick out the relevant orbitals:
-U_red = subarray(U_trans,len(U_trans.shape)*[indices_to_pick_sumk])
-
-# Finally, set up the Hamiltonian:
-h_int = h_int_slater(['up','down'], indices_to_pick_sumk, U_red, map_operator_structure=SK.block_structure.sumk_to_solver[0], off_diag=False, complex=False)
+# Now we set up the Hamiltonian:
+h_sumk = h_int_slater(['up','down'], range(5), U_mat,  off_diag=True)
+# And now we rotate into solver space:
+h_int = SK.block_structure.convert_operator(h_sumk)
 
 # Solver Init:
 beta = 40.0

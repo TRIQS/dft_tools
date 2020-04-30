@@ -67,8 +67,16 @@ done automatically, meaning that :class:`SumkDFT`'s :meth:`extract_G_loc`, :meth
         S.G_iw << SK.extract_G_loc()[0]
 
 .. warning::
-  Before doing the DMFT self-consistency loop, one must not forget to also transform the interaction Hamiltonian to the diagonal basis!
-  This can be done with the :meth:`transform_U_matrix` method. However, due to different 
-  conventions in this method, one must pass the conjugated version of the transformation matrix::
-  
-  U_trans = transform_U_matrix(U, SK.block_structure.transformation[0]['ud'].conjugate())
+  Before doing the DMFT self-consistency loop, one must not forget to also transform the 
+  interaction Hamiltonian to the diagonal basis!
+  This can be also be done with a method of the :class:`BlockStructure` class, 
+  namely the :meth:`convert_operator` method. Having set up a Hamiltonian in the *sumk* structure, it can easily 
+  be transformed to the *solver* structure (including rotations of basis, picking of orbitals, 
+  making matrices diagonal, etc) by::
+
+    H_solver = SK.block_structure.convert_operator(H_sumk)
+
+  We refer to the tutorials on how to set up the Hamiltonian H_sumk in selected cases.
+  Note that this transformation might generally lead to complex values in the 
+  interaction Hamiltonian. Unless you know better and can make everything real, 
+  you should take care of using the correct version of the TRIQS CTQMC solver.
