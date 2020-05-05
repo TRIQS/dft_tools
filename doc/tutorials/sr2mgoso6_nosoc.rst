@@ -136,7 +136,7 @@ In the last line we use the Wien2k convention to write the U matrix in the cubic
     h_int = SK.block_structure.convert_operator(h_sumk)
     h_int = h_int.real
 
-Note that we needed to set up the interaction matrix for the full set of five *d* orbitals. The :meth:`convert_operator` method then takes care of rotating and picking the relevant orbitals. In the last line above we made the Hamiltonian real, since we know it this case that there are only real numbers in the interaction Hamiltonian. Note that this is not generally the case!
+Note that we needed to set up the interaction Hamiltonian for the full set of five *d* orbitals. The :meth:`convert_operator` method then takes care of rotating and picking the relevant orbitals. In the last line above we made the Hamiltonian real, since we know it this case that there are only real numbers in the interaction Hamiltonian. Note that this is not generally the case!
 
 Now we have the interaction Hamiltonian for the solver, which we set up next::
 
