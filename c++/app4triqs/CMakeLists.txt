@@ -1,5 +1,6 @@
 file(GLOB_RECURSE sources *.cpp)
 add_library(app4triqs_c ${sources})
+add_library(app4triqs::app4triqs_c ALIAS app4triqs_c)
 
 # Link against triqs and enable warnings
 target_link_libraries(app4triqs_c PUBLIC triqs PRIVATE $<BUILD_INTERFACE:app4triqs_warnings>)
