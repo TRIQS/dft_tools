@@ -41,7 +41,7 @@ A plot of this structure looks like this. Note that there are off-diagonal eleme
 The *solver* structure
 ----------------------
 
-The method:`BlockStructure.full_structure()` method, as we used it above to create our BlockStructure object, yields - as the name suggests - a full structure, where *sumk* and *asolver* structure are identical. Now we want to take advantage of the symmetries of the problem to reduce the *solver* block structure to the relevant matrix elements only. In our case the [0,0] matrix element of the Green's function is completely decoupled from the 2x2 matrix of [1:2,1:2] elements. We simplify the *solver* structure by setting the mapping of each orbital to its target block and orbital::
+The method:`BlockStructure.full_structure()` method, as we used it above to create our BlockStructure object, yields - as the name suggests - a full structure, where *sumk* and *solver* structure are identical. Now we want to take advantage of the symmetries of the problem to reduce the *solver* block structure to the relevant matrix elements only. In our case the [0,0] matrix element of the Green's function is completely decoupled from the 2x2 matrix of [1:2,1:2] elements. We simplify the *solver* structure by setting the mapping of each orbital to its target block and orbital::
 
     BS.map_gf_struct_solver([{('up',0):('up_0',0), ('up',1):('up_1',0), ('up',2):('up_1',1)}])
 
