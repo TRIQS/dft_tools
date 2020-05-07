@@ -3,8 +3,8 @@
 # TRIQS documentation build configuration file
 
 import sys
-sys.path.insert(0, "@TRIQS_SPHINXEXT_PATH@/autorun")
-sys.path.insert(0, "@TRIQS_SPHINXEXT_PATH@/numpydoc")
+sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/autorun")
+sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/numpydoc")
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
@@ -13,9 +13,9 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.todo',
               'sphinx.ext.viewcode',
               'sphinx.ext.autosummary',
-              'numpydoc',
-              'plot_directive',
-              'autorun']
+              'matplotlib.sphinxext.plot_directive',
+              'autorun',
+              'numpydoc']
 
 source_suffix = '.rst'
 
@@ -23,11 +23,11 @@ project = 'APP4TRIQS - An example triqs application'
 copyright = '2017-2018 N. Wentzell, O. Parcollet 2018-2019 The Simons Foundation, authors: N. Wentzell, D. Simons, H. Strand, O. Parcollet'
 version = '@PROJECT_VERSION@'
 
-mathjax_path = "@TRIQS_MATHJAX_PATH@/MathJax.js?config=default"
-templates_path = ['@PROJECT_SOURCE_DIR@/doc/_templates']
+mathjax_path = "https://raw.githubusercontent.com/mathjax/MathJax/2.7.8/MathJax.js"
+templates_path = ['@CMAKE_CURRENT_SOURCE_DIR@/_templates']
 
 html_theme = 'triqs'
-html_theme_path = ['@TRIQS_THEMES_PATH@']
+html_theme_path = ['@CMAKE_CURRENT_SOURCE_DIR@/themes']
 html_show_sphinx = False
 html_context = {'header_title': 'app4triqs',
                 'header_subtitle': 'An example application using cpp2py and <a class="triqs" style="font-size: 12px" href="https://triqs.github.io">TRIQS</a>',
@@ -35,7 +35,7 @@ html_context = {'header_title': 'app4triqs',
                                  ['Documentation', 'documentation'],
                                  ['Issues', 'issues'],
                                  ['About app4triqs', 'about']]}
-html_static_path = ['@PROJECT_SOURCE_DIR@/doc/_static']
+html_static_path = ['@CMAKE_CURRENT_SOURCE_DIR@/_static']
 html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = 'APP4TRIQSdoc'
