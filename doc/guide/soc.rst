@@ -19,7 +19,7 @@ The treatment of SOC in the VASP package is fundamentally different to the way W
 Therefore, this guide describes how to do an SOC calculation using the Wien2k DFT package.
 
 First, a Wien2k calculation including SOC has to be performed.
-For details, we refer the reader to the documentation of Wien2k. As a matter of fact, we need the output for the DFT band structure for both spin directions explicitly. That means that one needs to do a spin-polarised DFT calculation with SOC, but, however, with magnetic moment set to zero. In the Wien2k initialisation procedure, one can choose for the option -nom when ``lstart`` is called. This means that the charge densities are initialised without magnetic splitting. The SOC calculation is then performed in a standard way as described in the Wien2k manual.
+For details, we refer the reader to the `documentation of Wien2k <http://susi.theochem.tuwien.ac.at/reg_user/textbooks/>`_ . As a matter of fact, we need the output for the DFT band structure for both spin directions explicitly. That means that one needs to do a spin-polarised DFT calculation with SOC, but, however, with magnetic moment set to zero. In the Wien2k initialisation procedure, one can choose for the option -nom when ``lstart`` is called. This means that the charge densities are initialised without magnetic splitting. The SOC calculation is then performed in a standard way as described in the Wien2k manual.
 
 Performing the projection
 ~~~~~~~~~~~~~~~~~~~~~~~~~
