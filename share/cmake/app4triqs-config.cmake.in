@@ -25,4 +25,7 @@ message(STATUS "Found app4triqs-config.cmake with version @PROJECT_VERSION@, has
 # Was the Project built with Documentation?
 set(APP4TRIQS_WITH_DOCUMENTATION @Build_Documentation@)
 
+# Was the Project built with PythonSupport?
+set(APP4TRIQS_WITH_PYTHON_SUPPORT @PythonSupport@)
+
 endif()
