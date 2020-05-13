@@ -34,6 +34,16 @@ DFT+DMFT
    guide/dftdmft_singleshot
    guide/dftdmft_selfcons
 
+Advanced Topics
+---------------
+
+.. toctree::
+   :maxdepth: 2
+
+   guide/blockstructure
+   guide/BasisRotation
+   guide/soc
+
 Postprocessing
 --------------
 
