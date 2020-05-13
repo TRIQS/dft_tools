@@ -60,6 +60,7 @@ if(PythonSupport OR Build_Documentation)
     GIT_REPO https://github.com/TRIQS/cpp2py
     VERSION 2.0
     GIT_TAG master
+    BUILD_ALWAYS
     EXCLUDE_FROM_ALL
   )
 endif()
