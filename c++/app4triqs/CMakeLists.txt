@@ -6,7 +6,7 @@ add_library(app4triqs::app4triqs_c ALIAS app4triqs_c)
 target_link_libraries(app4triqs_c PUBLIC triqs PRIVATE $<BUILD_INTERFACE:app4triqs_warnings>)
 
 # Configure target and compilation
-target_compile_options(app4triqs_c PUBLIC -fPIC)
+set_property(TARGET app4triqs_c PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(app4triqs_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
 target_include_directories(app4triqs_c SYSTEM INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 target_compile_definitions(app4triqs_c PUBLIC
