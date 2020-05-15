@@ -6,7 +6,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in ${CMAKE_CURRENT_BINARY_DIR
 # -----------------------------------------------------------------------------
 add_custom_target(${PROJECT_NAME}_docs_cpp2rst)
 include(${PROJECT_SOURCE_DIR}/share/cmake/extract_flags.cmake)
-extract_flags(app4triqs_c)
+extract_flags(app4triqs_c BUILD_INTERFACE)
 separate_arguments(app4triqs_c_CXXFLAGS)
 macro(generate_docs header_file)
   add_custom_command(
