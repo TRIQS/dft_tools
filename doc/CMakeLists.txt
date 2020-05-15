@@ -13,7 +13,8 @@ macro(generate_docs header_file)
     TARGET ${PROJECT_NAME}_docs_cpp2rst
     COMMAND rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
     COMMAND
-      c++2rst
+      PYTHONPATH=${CPP2PY_BINARY_DIR}:$ENV{PYTHONPATH}
+      ${CPP2PY_BINARY_DIR}/bin/c++2rst
       ${header_file}
       -N app4triqs
       --output_directory ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
