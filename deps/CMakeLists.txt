@@ -17,7 +17,7 @@ include(external_dependency.cmake)
 #     to locate the package in the system.
 #     Skip this step if Build_Deps option is set.
 #  2. Try to find a directory containing the sources
-#     at ${CMAKE_SOURCE_DIR}/deps/name. If found
+#     at ${PROJECT_SOURCE_DIR}/deps/name. If found
 #     build it as a cmake sub-project.
 #  3. If GIT_REPO is provided, git clone the sources,
 #     and build them as a cmake sub-project.
