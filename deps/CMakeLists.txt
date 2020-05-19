@@ -46,14 +46,6 @@ else()
   endif()
 endif()
 
-# -- GTest --
-external_dependency(GTest
-  GIT_REPO https://github.com/google/googletest
-  GIT_TAG release-1.10.0
-  BUILD_ALWAYS
-  EXCLUDE_FROM_ALL
-)
-
 # -- Cpp2Py --
 if(PythonSupport OR Build_Documentation)
   external_dependency(Cpp2Py
@@ -64,3 +56,11 @@ if(PythonSupport OR Build_Documentation)
     EXCLUDE_FROM_ALL
   )
 endif()
+
+# -- GTest --
+external_dependency(GTest
+  GIT_REPO https://github.com/google/googletest
+  GIT_TAG release-1.10.0
+  BUILD_ALWAYS
+  EXCLUDE_FROM_ALL
+)
