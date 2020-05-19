@@ -3,7 +3,7 @@ FROM flatironinstitute/triqs:unstable-ubuntu-clang
 ARG APPNAME=app4triqs
 
 COPY requirements.txt /src/$APPNAME/requirements.txt
-RUN pip install -r /src/$APPNAME/requirements.txt
+RUN pip3 install -r /src/$APPNAME/requirements.txt
 
 COPY --chown=build . $SRC/$APPNAME
 WORKDIR $BUILD/$APPNAME
