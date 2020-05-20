@@ -8,6 +8,7 @@ DFTTools Version 3.0.0 is a major release that
 * is now aligned with the general [app4triqs](https://github.com/TRIQS/app4triqs) application skeleton
 * brings a major rework of the VASP interface, including thorough documentation, tutorials, a new Hamiltonian mode, the option to select bands instead of an energy window, and many small bugfixes.
 * brings a major update of the block structure functionalities especially for SOC calculations, with detailed documentation and tutorials. Allows more control over the block structure coming from DFT, cutting out certain orbitals or throwing away off-diagonal elements when preparing input for the solver.
+* New option in dmftproj to select the projection window using band indices instead of energie
 
 Restructuring
 -------------
@@ -65,7 +66,7 @@ other changes:
 
 
 Thanks to all commit-contributors (in alphabetical order):
-Markus Aichhorn, Alexander Hampel, Oleg Peil, Hermann Schnait, Malte Schueler, Nils Wentzell, Manuel Zingl
+Markus Aichhorn, Alexander Hampel, Gernot Kraberger, Oleg Peil, Hermann Schnait, Malte Schueler, Nils Wentzell, Manuel Zingl
 
 
 Version 2.2.1
