@@ -68,10 +68,12 @@ C     &    '/workpmc/martins/DMFTprojectors/newDMFTproj'
         INTEGER, DIMENSION(:,:), ALLOCATABLE :: lsort
         INTEGER, DIMENSION(:), ALLOCATABLE :: ifSOflag
         INTEGER, DIMENSION(:), ALLOCATABLE :: timeflag
+        INTEGER :: b_bot, b_top, proj_mode
         LOGICAL :: ifSO, ifSP, ifBAND
         LOGICAL, DIMENSION(:), ALLOCATABLE :: notinclude
         REAL(KIND=8) :: eferm
         REAL(KIND=8) :: e_bot, e_top
+
         REAL(KIND=8), PARAMETER :: PI=3.1415926535898d0
 C New type structure basistrans
         TYPE deftrans

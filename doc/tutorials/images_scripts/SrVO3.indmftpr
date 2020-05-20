@@ -12,4 +12,4 @@ cubic            ! choice of angular harmonics
 complex          ! choice of angular harmonics
 1 1 0 0          ! l included for each sort
 0 0 0 0          ! If split into ireps, gives number of ireps. for a given orbital (otherwise 0)
--0.11 0.14
+-0.11 0.14  0    ! lower energy window limit, upper energy window limit, mode (0,1,2)

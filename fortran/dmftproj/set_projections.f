@@ -24,7 +24,9 @@ c *****************************************************************************/
 C %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 C %%                                                                 %%
 C %% This subroutine sets up the projection matrices in the energy   %%
-C %% window [e1,e2].Two types of projection can be defined :         %%
+C %% window [e1,e2]. If proj_mode is 1 or 2 then e1 and e2 are not   %%
+C %% energies, but directly used as band indices.                    %%
+C %% Two types of projection can be defined :                        %%
 C %%   - The projectors <u_orb|ik,ib,is> for the correlated orbital  %%
 C %%     only. (orb = iatom,is,m)                                    %%
 C %%     (They are stored in the table pr_crorb)                     %%
@@ -60,48 +62,71 @@ C
 C
 C
 C ======================================================================
-C Selection of the bands which lie in the chosen energy window [e1;e2] :
+C Selection of the bands which lie in the chosen energy window [e1;e2]
+C or if proj_mode = [1,2] e1 and e2 are directly used as band indices:       
 C ======================================================================
 C
-        kp(:,:)%included=.FALSE.
+        
+        IF(proj_mode.gt.0) THEN
+C The same number of bands are included at each k-point
+         kp(:,:)%included=.TRUE.
+C Use directly e1 and e2 as band indices. Set to nbmin or
+C nbmax if too small or too large
+         DO is=1,ns
+           DO ik=1,nk
+            IF(e1 > kp(ik,is)%nbmin) THEN
+             kp(ik,is)%nb_bot=INT(e1)
+            ELSE
+             kp(ik,is)%nb_bot=kp(ik,is)%nbmin
+            ENDIF
+            IF(e2 < kp(ik,is)%nbmax) THEN
+             kp(ik,is)%nb_top=INT(e2)
+            ELSE
+             kp(ik,is)%nb_top=kp(ik,is)%nbmax
+            ENDIF
+           ENDDO
+         ENDDO
+        ELSE
+         kp(:,:)%included=.FALSE.
 C the field kp%included = boolean which is .TRUE. when there is at least one band 
 C at this k-point whose energy eignevalue is in the energy window.
-        DO is=1,ns
-          DO ik=1,nk
-            included=.FALSE.
-            DO ib=kp(ik,is)%nbmin,kp(ik,is)%nbmax
-              IF(.NOT.included.AND.kp(ik,is)%eband(ib) > e1.AND.
+         DO is=1,ns
+           DO ik=1,nk
+             included=.FALSE.
+             DO ib=kp(ik,is)%nbmin,kp(ik,is)%nbmax
+               IF(.NOT.included.AND.kp(ik,is)%eband(ib) > e1.AND.
      &          kp(ik,is)%eband(ib).LE.e2) THEN
 C If the energy eigenvalue E of the band ib at the k-point ik is such that e1 < E =< e2, 
 C then all the band with ib1>ib must be "included" in the computation and kp%nb_bot is initialized at the value ib.
-               included=.TRUE.
-               kp(ik,is)%nb_bot=ib
-              ELSEIF(included.AND.kp(ik,is)%eband(ib) > e2) THEN
+                included=.TRUE.
+                kp(ik,is)%nb_bot=ib
+               ELSEIF(included.AND.kp(ik,is)%eband(ib) > e2) THEN
 C If the energy eigenvalue E of the current band ib at the k-point ik is such that E > e2 and all the previous 
 C band are "included", then the field kp%included = .TRUE. and kp%nb_top = ib-1 (the index of the previous band)
-               kp(ik,is)%nb_top=ib-1
-               kp(ik,is)%included=.TRUE.
-               EXIT
+                kp(ik,is)%nb_top=ib-1
+                kp(ik,is)%included=.TRUE.
+                EXIT
 C The loop on the band ib is stopped, since all the bands after ib have an energy > that of ib. 
-              ELSEIF(ib==kp(ik,is)%nbmax.AND.kp(ik,is)%eband(ib)
+               ELSEIF(ib==kp(ik,is)%nbmax.AND.kp(ik,is)%eband(ib)
      &          > e1.AND.kp(ik,is)%eband(ib).LE.e2) THEN
 C If the energy eigenvalue E of the last band ib=kp%nbmax at the k-point ik is such that e1 < E =< e2 and all the 
 C previous bands are "included", then the band ib must be "included" and kp%nb_bot is initialized at the value kp%nbmax.
-               kp(ik,is)%nb_top=ib
-               kp(ik,is)%included=.TRUE.
-              ENDIF
+                kp(ik,is)%nb_top=ib
+                kp(ik,is)%included=.TRUE.
+               ENDIF
 C If the eigenvalues of the bands at the k-point ik are < e1 and included=.FALSE. 
 C of if the eigenvalues of the bands at the k-point ik are in the energy window [e1,e2] and included=.TRUE.,
 C nothing is done...
-            ENDDO    ! End of the ib loop
+             ENDDO    ! End of the ib loop
 C If all the eigenvalues of the bands at the k-point ik are not in the window, 
-C then kp%included remains at the value .FALSE. and the field kp%nb_top and kp%nb_bot are set to 0.
-	    IF (.not.kp(ik,is)%included) THEN
-             kp(ik,is)%nb_bot=0
-             kp(ik,is)%nb_top=0 
-	    ENDIF
-          ENDDO      ! End of the ik loop
-        ENDDO        ! End of the is loop
+C then kp%included remains at the value .FALSE. and the field kp%nb_top and kp%nb_bot are set to 0
+             IF (.not.kp(ik,is)%included) THEN
+              kp(ik,is)%nb_bot=0
+              kp(ik,is)%nb_top=0 
+             ENDIF
+           ENDDO      ! End of the ik loop
+         ENDDO        ! End of the is loop
+        ENDIF
 C ---------------------------------------------------------------------------------------
 C Checking of the input files if spin-polarized inputs and SO is taken into account:
 C There should not be any difference between up and dn limits for each k-point.

@@ -68,9 +68,30 @@ is given by the following 3 to 5 lines:
 
 These lines have to be repeated for each inequivalent atom.
 
-The last line gives the energy window, relative to the Fermi energy,
-that is used for the projective Wannier functions. Note that, in
-accordance with Wien2k, we give energies in Rydberg units!
+The last line gives the lower and upper limit of the energy window,
+relative to the Fermi energy, which is used for the projective Wannier functions.
+Note that, in accordance with Wien2k, we give energies in Rydberg units!
+
+The third number is an optional flag to switch between different modes:
+
+#. 0: The projectors are constructed for the given energy window. The number
+   of bands within the window is usually different at each k-point which
+   will be reflected by the projectors, too. This is the default mode
+   which is also used if no mode flag is provided.
+#. 1: The lowest and highest band indices within the given energy window
+   are calculated. The resulting indices are used at all k-points.
+   Bands which fall within the window only in some parts of the Brillouin zone
+   are fully taken into account. Keep in mind that a different set of k-points
+   or the -band option can change the lower or upper index. This can be avoided
+   by using mode 2.
+#. 2: In this mode the first two values of the line are interpreted as lower
+   and upper band indices to be included in the projective subspace. For example,
+   if the line reads `21 23 2`, bands number 21, 22 and 23 are included at all
+   k-points. For SrVO3 this corresponds to the t2g bands around the Fermi energy.
+   The lowest possible index is 1. Note that the indices need to be provided as integer.
+
+In all modes the used energy range, i.e. band range, is printed to the
+:program:`dmftproj` output.
 
 After setting up the :file:`case.indmftpr` input file, you run:
 
