@@ -8,15 +8,15 @@ set(APP4TRIQS_FOUND TRUE)
 set_property(GLOBAL PROPERTY APP4TRIQS_FOUND TRUE)
 
 # version
-set(APP4TRIQS_VERSION @PROJECT_VERSION@)
-set(APP4TRIQS_GIT_HASH @PROJECT_GIT_HASH@)
+set(APP4TRIQS_VERSION @PROJECT_VERSION@ CACHE STRING "APP4TRIQS version")
+set(APP4TRIQS_GIT_HASH @PROJECT_GIT_HASH@ CACHE STRING "APP4TRIQS git hash")
 
 # Root of the installation
-set(APP4TRIQS_ROOT  @CMAKE_INSTALL_PREFIX@)
+set(APP4TRIQS_ROOT @CMAKE_INSTALL_PREFIX@ CACHE STRING "APP4TRIQS root directory")
 
 ## Find the target dependencies
 #include(CMakeFindDependencyMacro)
-#find_dependency(...)
+#find_dependency(... HINTS @CMAKE_INSTALL_PREFIX@)
 
 # Include the exported targets of this project
 include(@CMAKE_INSTALL_PREFIX@/lib/cmake/app4triqs/app4triqs-targets.cmake)
@@ -24,9 +24,9 @@ include(@CMAKE_INSTALL_PREFIX@/lib/cmake/app4triqs/app4triqs-targets.cmake)
 message(STATUS "Found app4triqs-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@")
 
 # Was the Project built with Documentation?
-set(APP4TRIQS_WITH_DOCUMENTATION @Build_Documentation@)
+set(APP4TRIQS_WITH_DOCUMENTATION @Build_Documentation@ CACHE BOOL "Was app4triqs build with documentation?")
 
 # Was the Project built with PythonSupport?
-set(APP4TRIQS_WITH_PYTHON_SUPPORT @PythonSupport@)
+set(APP4TRIQS_WITH_PYTHON_SUPPORT @PythonSupport@ CACHE BOOL "Was app4triqs build with python support?")
 
 endif()
