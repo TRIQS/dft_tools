@@ -32,7 +32,7 @@ function(external_dependency)
 
   # -- Try to find package in system.
   if(NOT ARG_BUILD_ALWAYS AND NOT Build_Deps STREQUAL "Always")
-    find_package(${ARGV0} ${${ARGV0}_VERSION} QUIET HINTS ${CMAKE_INSTALL_PREFIX})
+    find_package(${ARGV0} ${ARG_VERSION} QUIET HINTS ${CMAKE_INSTALL_PREFIX})
     if(${ARGV0}_FOUND)
       message(STATUS "Found dependency ${ARGV0} in system")
       return()
