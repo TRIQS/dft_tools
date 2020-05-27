@@ -22,10 +22,10 @@
 
 from types import *
 import numpy
-import pytriqs.utility.dichotomy as dichotomy
-from pytriqs.gf import *
-import pytriqs.utility.mpi as mpi
-from pytriqs.utility.comparison_tests import assert_arrays_are_close
+import triqs.utility.dichotomy as dichotomy
+from triqs.gf import *
+import triqs.utility.mpi as mpi
+from triqs.utility.comparison_tests import assert_arrays_are_close
 from h5 import *
 from .symmetry import *
 from .block_structure import BlockStructure
@@ -36,7 +36,7 @@ from scipy.optimize import minimize
 
 
 class SumkDFT(object):
-    """This class provides a general SumK method for combining ab-initio code and pytriqs."""
+    """This class provides a general SumK method for combining ab-initio code and triqs."""
 
     def __init__(self, hdf_file, h_field=0.0, use_dft_blocks=False,
                  dft_data='dft_input', symmcorr_data='dft_symmcorr_input', parproj_data='dft_parproj_input',

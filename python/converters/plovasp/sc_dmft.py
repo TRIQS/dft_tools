@@ -30,7 +30,7 @@ import re
 import time
 import signal
 import sys
-import pytriqs.utility.mpi as mpi
+import triqs.utility.mpi as mpi
 from . import converter
 from shutil import copyfile
 

@@ -23,8 +23,8 @@
 
 from triqs_dft_tools.converters import *
 from h5 import *
-from pytriqs.utility.h5diff import h5diff
-import pytriqs.utility.mpi as mpi
+from triqs.utility.h5diff import h5diff
+import triqs.utility.mpi as mpi
 
 Converter = Wannier90Converter(seedname='LaVO3-Pnma',hdf_filename='w90_convert.out.h5')
 

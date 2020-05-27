@@ -1,6 +1,6 @@
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.converters.wien2k_converter import *
-from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
+from triqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
 import os
 dft_filename = os.getcwd().rpartition('/')[2]

@@ -1,8 +1,8 @@
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.converters import Wien2kConverter
-from pytriqs.gf import *
+from triqs.gf import *
 from h5 import *
-import pytriqs.utility.mpi as mpi
+import triqs.utility.mpi as mpi
 import numpy
 import copy
 

@@ -22,9 +22,9 @@
 
 from h5 import *
 from triqs_dft_tools.sumk_dft_tools import SumkDFTTools
-import pytriqs.utility.mpi as mpi
-from pytriqs.utility.comparison_tests import *
-from pytriqs.utility.h5diff import h5diff 
+import triqs.utility.mpi as mpi
+from triqs.utility.comparison_tests import *
+from triqs.utility.h5diff import h5diff 
 
 SK = SumkDFTTools(hdf_file = 'SrVO3.h5')
 

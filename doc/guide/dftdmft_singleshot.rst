@@ -80,8 +80,8 @@ for :emphasis:`use_dc_formula` are:
 
 At the end of the calculation, we can save the Green function and self energy into a file::
 
-    from pytriqs.archive import HDFArchive
-    import pytriqs.utility.mpi as mpi
+    from h5 import HDFArchive
+    import triqs.utility.mpi as mpi
     if mpi.is_master_node():
         ar = HDFArchive("YourDFTDMFTcalculation.h5",'w')
         ar["G"] = S.G_iw

@@ -1,8 +1,8 @@
 import copy
 import numpy as np
-from pytriqs.gf import GfImFreq, BlockGf
+from triqs.gf import GfImFreq, BlockGf
 from ast import literal_eval
-import pytriqs.utility.mpi as mpi
+import triqs.utility.mpi as mpi
 from warnings import warn
 
 class BlockStructure(object):

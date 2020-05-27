@@ -1,4 +1,4 @@
-from pytriqs.gf import *
+from triqs.gf import *
 from h5 import *
 from triqs_maxent import *
 
@@ -43,7 +43,7 @@ for orb in orbs:
 
 
     # you may be interested in the details of the line analyzer:
-    # from pytriqs.plot.mpl_interface import oplot
+    # from triqs.plot.mpl_interface import oplot
     #plt.figure(2)
     #result.analyzer_results['LineFitAnalyzer'].plot_linefit()
     #plt.savefig('ana'+str(orb[0])+'.pdf',fmt='pdf')

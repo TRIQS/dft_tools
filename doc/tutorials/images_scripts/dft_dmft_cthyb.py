@@ -1,8 +1,8 @@
-import pytriqs.utility.mpi as mpi
-from pytriqs.operators.util import *
+import triqs.utility.mpi as mpi
+from triqs.operators.util import *
 from h5 import HDFArchive
 from triqs_cthyb import *
-from pytriqs.gf import *
+from triqs.gf import *
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.converters.wien2k_converter import *
 

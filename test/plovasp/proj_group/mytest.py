@@ -5,7 +5,7 @@ Module defining a custom TestCase with extra functionality.
 import unittest
 import numpy as np
 import difflib
-from pytriqs.utility.h5diff import h5diff
+from triqs.utility.h5diff import h5diff
 
 class MyTestCase(unittest.TestCase):
     """

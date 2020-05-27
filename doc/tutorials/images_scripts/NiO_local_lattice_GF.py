@@ -1,12 +1,12 @@
 from itertools import *
 import numpy as np
-import pytriqs.utility.mpi as mpi
+import triqs.utility.mpi as mpi
 from h5 import *
-from pytriqs.gf import *
+from triqs.gf import *
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
-from pytriqs.operators.util.hamiltonians import *
-from pytriqs.operators.util.U_matrix import *
+from triqs.operators.util.hamiltonians import *
+from triqs.operators.util.U_matrix import *
 from triqs_cthyb import *
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)

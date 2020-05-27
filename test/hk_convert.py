@@ -22,8 +22,8 @@
 
 
 from h5 import *
-from pytriqs.utility.h5diff import h5diff
-import pytriqs.utility.mpi as mpi
+from triqs.utility.h5diff import h5diff
+import triqs.utility.mpi as mpi
 
 from triqs_dft_tools.converters import *
 

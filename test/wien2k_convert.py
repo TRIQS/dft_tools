@@ -20,9 +20,9 @@
 ################################################################################
 
 from h5 import *
-from pytriqs.utility.comparison_tests import *
-from pytriqs.utility.h5diff import h5diff 
-import pytriqs.utility.mpi as mpi
+from triqs.utility.comparison_tests import *
+from triqs.utility.h5diff import h5diff 
+import triqs.utility.mpi as mpi
 
 from triqs_dft_tools.converters import Wien2kConverter
 

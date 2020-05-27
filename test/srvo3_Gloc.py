@@ -20,12 +20,12 @@
 ################################################################################
 
 from h5 import *
-from pytriqs.gf import *
+from triqs.gf import *
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.converters.wien2k_converter import *
-from pytriqs.operators.util import set_operator_structure
-from pytriqs.utility.comparison_tests import *
-from pytriqs.utility.h5diff import h5diff
+from triqs.operators.util import set_operator_structure
+from triqs.utility.comparison_tests import *
+from triqs.utility.h5diff import h5diff
 
 # Basic input parameters
 beta = 40

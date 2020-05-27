@@ -21,8 +21,8 @@
 import sys
 from types import *
 import numpy
-from pytriqs.gf import *
-import pytriqs.utility.mpi as mpi
+from triqs.gf import *
+import triqs.utility.mpi as mpi
 from .symmetry import *
 from .sumk_dft import SumkDFT
 from scipy.integrate import *

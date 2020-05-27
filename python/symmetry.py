@@ -23,9 +23,9 @@
 import copy
 import numpy
 from types import *
-from pytriqs.gf import *
+from triqs.gf import *
 from h5 import *
-import pytriqs.utility.mpi as mpi
+import triqs.utility.mpi as mpi
 
 
 class Symmetry:

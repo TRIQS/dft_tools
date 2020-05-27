@@ -19,7 +19,7 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
-import pytriqs.utility.mpi as mpi
+import triqs.utility.mpi as mpi
 
 class ConverterTools:
 

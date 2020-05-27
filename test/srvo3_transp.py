@@ -23,8 +23,8 @@ from numpy import *
 from triqs_dft_tools.converters.wien2k_converter import *
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
-from pytriqs.utility.comparison_tests import *
-from pytriqs.utility.h5diff import h5diff 
+from triqs.utility.comparison_tests import *
+from triqs.utility.h5diff import h5diff 
 
 beta = 40
 
