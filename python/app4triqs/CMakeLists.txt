@@ -13,11 +13,11 @@ endforeach()
 foreach(gen ${wrap_generators})
   string(REPLACE "_desc.py" "" module_name ${gen})
   add_cpp2py_module(${module_name})
-  target_link_libraries(${module_name} app4triqs_c)
+  target_link_libraries(${module_name} ${PROJECT_NAME}_c)
 endforeach()
 
 # Install python modules to proper location
-set(PYTHON_LIB_DEST ${TRIQS_PYTHON_LIB_DEST_ROOT}/app4triqs)
+set(PYTHON_LIB_DEST ${TRIQS_PYTHON_LIB_DEST_ROOT}/${PROJECT_NAME})
 get_property(CPP2PY_MODULES_LIST GLOBAL PROPERTY CPP2PY_MODULES_LIST)
 install(TARGETS ${CPP2PY_MODULES_LIST} DESTINATION ${PYTHON_LIB_DEST})
 install(FILES ${python_sources} ${CMAKE_CURRENT_BINARY_DIR}/version.py DESTINATION ${PYTHON_LIB_DEST})

@@ -3,30 +3,30 @@
 # and reestablish the exported CMake Targets
 
 # Multiple inclusion guard
-if(NOT APP4TRIQS_FOUND)
-set(APP4TRIQS_FOUND TRUE)
-set_property(GLOBAL PROPERTY APP4TRIQS_FOUND TRUE)
+if(NOT @PROJECT_NAME@_FOUND)
+set(@PROJECT_NAME@_FOUND TRUE)
+set_property(GLOBAL PROPERTY @PROJECT_NAME@_FOUND TRUE)
 
 # version
-set(APP4TRIQS_VERSION @PROJECT_VERSION@ CACHE STRING "APP4TRIQS version")
-set(APP4TRIQS_GIT_HASH @PROJECT_GIT_HASH@ CACHE STRING "APP4TRIQS git hash")
+set(@PROJECT_NAME@_VERSION @PROJECT_VERSION@ CACHE STRING "@PROJECT_NAME@ version")
+set(@PROJECT_NAME@_GIT_HASH @PROJECT_GIT_HASH@ CACHE STRING "@PROJECT_NAME@ git hash")
 
 # Root of the installation
-set(APP4TRIQS_ROOT @CMAKE_INSTALL_PREFIX@ CACHE STRING "APP4TRIQS root directory")
+set(@PROJECT_NAME@_ROOT @CMAKE_INSTALL_PREFIX@ CACHE STRING "@PROJECT_NAME@ root directory")
 
 ## Find the target dependencies
 #include(CMakeFindDependencyMacro)
 #find_dependency(... HINTS @CMAKE_INSTALL_PREFIX@)
 
 # Include the exported targets of this project
-include(@CMAKE_INSTALL_PREFIX@/lib/cmake/app4triqs/app4triqs-targets.cmake)
+include(@CMAKE_INSTALL_PREFIX@/lib/cmake/@PROJECT_NAME@/@PROJECT_NAME@-targets.cmake)
 
-message(STATUS "Found app4triqs-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@")
+message(STATUS "Found @PROJECT_NAME@-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@")
 
 # Was the Project built with Documentation?
-set(APP4TRIQS_WITH_DOCUMENTATION @Build_Documentation@ CACHE BOOL "Was app4triqs build with documentation?")
+set(@PROJECT_NAME@_WITH_DOCUMENTATION @Build_Documentation@ CACHE BOOL "Was @PROJECT_NAME@ build with documentation?")
 
 # Was the Project built with PythonSupport?
-set(APP4TRIQS_WITH_PYTHON_SUPPORT @PythonSupport@ CACHE BOOL "Was app4triqs build with python support?")
+set(@PROJECT_NAME@_WITH_PYTHON_SUPPORT @PythonSupport@ CACHE BOOL "Was @PROJECT_NAME@ build with python support?")
 
 endif()

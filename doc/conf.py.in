@@ -20,9 +20,10 @@ extensions = ['sphinx.ext.autodoc',
 
 source_suffix = '.rst'
 
-project = 'APP4TRIQS - An example triqs application'
-copyright = '2017-2018 N. Wentzell, O. Parcollet 2018-2019 The Simons Foundation, authors: N. Wentzell, D. Simons, H. Strand, O. Parcollet'
+project = '@PROJECT_NAME@'
 version = '@PROJECT_VERSION@'
+
+copyright = '2017-2018 N. Wentzell, O. Parcollet 2018-2019 The Simons Foundation, authors: N. Wentzell, D. Simons, H. Strand, O. Parcollet'
 
 mathjax_path = "https://raw.githubusercontent.com/mathjax/MathJax/2.7.8/MathJax.js"
 templates_path = ['@CMAKE_CURRENT_SOURCE_DIR@/_templates']
@@ -30,15 +31,15 @@ templates_path = ['@CMAKE_CURRENT_SOURCE_DIR@/_templates']
 html_theme = 'triqs'
 html_theme_path = ['@CMAKE_CURRENT_SOURCE_DIR@/themes']
 html_show_sphinx = False
-html_context = {'header_title': 'app4triqs',
+html_context = {'header_title': '@PROJECT_NAME@',
                 'header_subtitle': 'An example application using cpp2py and <a class="triqs" style="font-size: 12px" href="https://triqs.github.io">TRIQS</a>',
                 'header_links': [['Install', 'install'],
                                  ['Documentation', 'documentation'],
                                  ['Issues', 'issues'],
-                                 ['About app4triqs', 'about']]}
+                                 ['About @PROJECT_NAME@', 'about']]}
 html_static_path = ['@CMAKE_CURRENT_SOURCE_DIR@/_static']
 html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
-htmlhelp_basename = 'APP4TRIQSdoc'
+htmlhelp_basename = '@PROJECT_NAME@doc'
 
 intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('https://triqs.github.io/triqs/latest', None)}
