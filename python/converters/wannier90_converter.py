@@ -142,6 +142,10 @@ class Wannier90Converter(ConverterTools):
             # l, dim, SO flag, irep):
             corr_shells = [{name: int(val) for name, val in zip(
                 corr_shell_entries, R)} for icrsh in range(n_corr_shells)]
+            try:
+                fermi_energy = R.next()
+            except:
+                fermi_energy = 0.
         except StopIteration:  # a more explicit error if the file is corrupted.
             mpi.report(self._name + ": reading input file %s failed!" %
                        self.inp_file)
@@ -443,7 +447,10 @@ class Wannier90Converter(ConverterTools):
                             "Inconsistent indices for R vector n. %s" % ir)
 
                 # fill h_of_r with the matrix elements of the Hamiltonian
-                h_of_r[ir][ii, jj] = complex(float(cline[5]), float(cline[6]))
+                if not numpy.any(rcurr) and ii == jj:
+                    h_of_r[ir][ii, jj] = complex(float(cline[5]) - fermi_energy, float(cline[6]))
+                else:
+                    h_of_r[ir][ii, jj] = complex(float(cline[5]), float(cline[6]))
 
         except ValueError:
             mpi.report("Wrong data or structure in file %s" % hr_filename)
