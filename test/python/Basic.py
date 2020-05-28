@@ -3,8 +3,8 @@
 import unittest
 
 from app4triqs import Toto, chain
-from pytriqs.archive import *
-from pytriqs.utility import mpi
+from triqs.archive import *
+from triqs.utility import mpi
 
 class test_toto(unittest.TestCase):
 
