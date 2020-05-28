@@ -7,7 +7,6 @@ target_link_libraries(${PROJECT_NAME}_c PUBLIC triqs PRIVATE $<BUILD_INTERFACE:$
 
 # Configure target and compilation
 set_property(TARGET ${PROJECT_NAME}_c PROPERTY POSITION_INDEPENDENT_CODE ON)
-target_compile_features(${PROJECT_NAME}_c PUBLIC cxx_std_17) # CAUTION! Does not seem to work with extract_flags.cmake ..
 target_include_directories(${PROJECT_NAME}_c PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/c++>)
 target_include_directories(${PROJECT_NAME}_c SYSTEM INTERFACE $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 target_compile_definitions(${PROJECT_NAME}_c PUBLIC
