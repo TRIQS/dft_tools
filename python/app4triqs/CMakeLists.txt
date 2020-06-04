@@ -13,7 +13,7 @@ endforeach()
 foreach(gen ${wrap_generators})
   string(REPLACE "_desc.py" "" module_name ${gen})
   add_cpp2py_module(${module_name})
-  target_link_libraries(${module_name} ${PROJECT_NAME}_c)
+  target_link_libraries(${module_name} ${PROJECT_NAME}_c triqs_py)
 endforeach()
 
 # Install python modules to proper location
