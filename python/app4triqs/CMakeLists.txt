@@ -11,8 +11,10 @@ endforeach()
 
 # Build any python modules
 foreach(gen ${wrap_generators})
-  string(REPLACE "_desc.py" "" module_name ${gen})
-  add_cpp2py_module(${module_name})
+  string(REPLACE "_desc.py" "" gen ${gen})
+  get_filename_component(module_name ${gen} NAME_WE)
+  get_filename_component(module_dir ${gen} DIRECTORY)
+  add_cpp2py_module(NAME ${module_name} DIRECTORY ${module_dir})
   target_link_libraries(${module_name} ${PROJECT_NAME}_c triqs_py)
 endforeach()
 
