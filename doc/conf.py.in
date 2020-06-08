@@ -3,7 +3,7 @@
 # TRIQS documentation build configuration file
 
 import sys
-sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/autorun")
+sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext")
 sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/numpydoc")
 
 extensions = ['sphinx.ext.autodoc',
@@ -14,8 +14,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.autosummary',
               'sphinx.ext.githubpages',
+              'sphinx_autorun',
               'matplotlib.sphinxext.plot_directive',
-              'autorun',
               'numpydoc']
 
 source_suffix = '.rst'
