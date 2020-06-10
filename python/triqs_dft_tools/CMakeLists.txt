@@ -9,17 +9,17 @@ foreach(file ${python_sources})
   configure_file(${file} ${file} COPYONLY)
 endforeach()
 
-# Build any python modules
+# Install python files to proper location
+set(PYTHON_LIB_DEST ${TRIQS_PYTHON_LIB_DEST_ROOT}/${PROJECT_NAME})
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/version.py DESTINATION ${PYTHON_LIB_DEST})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION ${TRIQS_PYTHON_LIB_DEST_ROOT} FILES_MATCHING PATTERN "*.py" PATTERN "*_desc.py" EXCLUDE)
+
+# Build and install any python modules
 foreach(gen ${wrap_generators})
   string(REPLACE "_desc.py" "" gen ${gen})
   get_filename_component(module_name ${gen} NAME_WE)
   get_filename_component(module_dir ${gen} DIRECTORY)
   add_cpp2py_module(NAME ${module_name} DIRECTORY ${module_dir})
   target_link_libraries(${module_name} ${PROJECT_NAME}_c triqs_py)
+  install(TARGETS ${module_name} DESTINATION ${PYTHON_LIB_DEST}/${module_dir})
 endforeach()
-
-# Install python modules to proper location
-set(PYTHON_LIB_DEST ${TRIQS_PYTHON_LIB_DEST_ROOT}/${PROJECT_NAME})
-get_property(CPP2PY_MODULES_LIST GLOBAL PROPERTY CPP2PY_MODULES_LIST)
-install(TARGETS ${CPP2PY_MODULES_LIST} DESTINATION ${PYTHON_LIB_DEST})
-install(FILES ${python_sources} ${CMAKE_CURRENT_BINARY_DIR}/version.py DESTINATION ${PYTHON_LIB_DEST})
