@@ -65,7 +65,7 @@ Custom CMake options
 
 The compilation of ``app4triqs`` can be configured using CMake-options::
 
-    cmake ../app4triqs.src -DOPTION1=value1 -DOPTION2=value2 ... ../app4triqs.src
+    cmake ../app4triqs.src -DOPTION1=value1 -DOPTION2=value2 ...
 
 +-----------------------------------------------------------------+-----------------------------------------------+
 | Options                                                         | Syntax                                        |
