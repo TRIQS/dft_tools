@@ -40,7 +40,7 @@ for name, s in Sigma_hdf:
     np.savetxt('Sigma_' + name + '.dat', mesh_a_data)
 
 # Read self energy from txt files
-SK = SumkDFTTools(hdf_file =  'SrVO3.h5', use_dft_blocks = True)
+SK = SumkDFTTools(hdf_file =  'SrVO3.ref.h5', use_dft_blocks = True)
 
 # the order in the orig SrVO3 file is not assured, hence order it here
 a_list = sorted([a for a,al in SK.gf_struct_solver[0].items()])

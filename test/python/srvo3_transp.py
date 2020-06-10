@@ -32,7 +32,7 @@ Converter = Wien2kConverter(filename='SrVO3', repacking=True)
 Converter.convert_dft_input()
 Converter.convert_transport_input()
 
-SK = SumkDFTTools(hdf_file='SrVO3.h5', use_dft_blocks=True)
+SK = SumkDFTTools(hdf_file='SrVO3.ref.h5', use_dft_blocks=True)
 
 with HDFArchive('SrVO3_Sigma.h5', 'a') as ar:
     Sigma = ar['dmft_transp_input']['Sigma_w']
