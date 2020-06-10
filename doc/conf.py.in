@@ -3,7 +3,7 @@
 # TRIQS documentation build configuration file
 
 import sys
-sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/autorun")
+sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext")
 sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/numpydoc")
 sys.path.insert(0, "@CMAKE_BINARY_DIR@/python")
 
@@ -15,8 +15,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.autosummary',
               'sphinx.ext.githubpages',
+              'sphinx_autorun',
               'matplotlib.sphinxext.plot_directive',
-              'autorun',
               'nbsphinx',
               'IPython.sphinxext.ipython_console_highlighting',
               'numpydoc']
@@ -46,4 +46,4 @@ html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = '@PROJECT_NAME@doc'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('https://triqs.github.io/triqs/latest', None), 'triqscthyb': ('https://triqs.github.io/cthyb/latest', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3.8', None), 'triqslibs': ('https://triqs.github.io/triqs/latest', None), 'triqscthyb': ('https://triqs.github.io/cthyb/latest', None)}
