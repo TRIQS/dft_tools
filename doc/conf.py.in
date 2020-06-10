@@ -3,34 +3,36 @@
 # TRIQS documentation build configuration file
 
 import sys
-sys.path.insert(0, "@TRIQS_SPHINXEXT_PATH@/numpydoc")
+sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/autorun")
+sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/numpydoc")
 sys.path.insert(0, "@CMAKE_BINARY_DIR@/python")
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
               'sphinx.ext.intersphinx',
-              'matplotlib.sphinxext.plot_directive',
               'sphinx.ext.doctest',
               'sphinx.ext.todo',
               'sphinx.ext.viewcode',
               'sphinx.ext.autosummary',
-              'nbsphinx',
-              'numpydoc',
               'sphinx.ext.githubpages',
-              'IPython.sphinxext.ipython_console_highlighting'
-              ]
+              'matplotlib.sphinxext.plot_directive',
+              'autorun',
+              'nbsphinx',
+              'IPython.sphinxext.ipython_console_highlighting',
+              'numpydoc']
 
 source_suffix = '.rst'
 
-project = 'TRIQS DFTTools'
-copyright = '2011-2019'
-version = '@DFT_TOOLS_VERSION@'
+project = '@PROJECT_NAME@'
+version = '@PROJECT_VERSION@'
 
-mathjax_path = "@TRIQS_MATHJAX_PATH@/MathJax.js?config=default"
-templates_path = ['@CMAKE_SOURCE_DIR@/doc/_templates']
+copyright = '2011-2020'
+
+mathjax_path = "https://raw.githubusercontent.com/mathjax/MathJax/2.7.8/MathJax.js"
+templates_path = ['@CMAKE_CURRENT_SOURCE_DIR@/_templates']
 
 html_theme = 'triqs'
-html_theme_path = ['@TRIQS_THEMES_PATH@']
+html_theme_path = ['@CMAKE_CURRENT_SOURCE_DIR@/themes']
 html_show_sphinx = False
 html_context = {'header_title': 'dft tools',
                 'header_subtitle': 'connecting <a class="triqs" style="font-size: 12px" href="http://triqs.github.io/triqs">TRIQS</a> to DFT packages',
@@ -39,9 +41,9 @@ html_context = {'header_title': 'dft tools',
                                  ['Tutorials', 'tutorials'],
                                  ['Issues', 'issues'],
                                  ['About DFTTools', 'about']]}
-html_static_path = ['@CMAKE_SOURCE_DIR@/doc/_static']
+html_static_path = ['@CMAKE_CURRENT_SOURCE_DIR@/_static']
 html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
-htmlhelp_basename = 'TRIQSDFTToolsdoc'
+htmlhelp_basename = '@PROJECT_NAME@doc'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('http://triqs.github.io/triqs/latest', None), 'triqscthyb': ('https://triqs.github.io/cthyb/latest', None)}
+intersphinx_mapping = {'python': ('http://docs.python.org/2.7', None), 'triqslibs': ('https://triqs.github.io/triqs/latest', None), 'triqscthyb': ('https://triqs.github.io/cthyb/latest', None)}

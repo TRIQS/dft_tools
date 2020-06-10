@@ -1,0 +1,32 @@
+# This file allows other CMake Projects to find us
+# We provide general project information
+# and reestablish the exported CMake Targets
+
+# Multiple inclusion guard
+if(NOT @PROJECT_NAME@_FOUND)
+set(@PROJECT_NAME@_FOUND TRUE)
+set_property(GLOBAL PROPERTY @PROJECT_NAME@_FOUND TRUE)
+
+# version
+set(@PROJECT_NAME@_VERSION @PROJECT_VERSION@ CACHE STRING "@PROJECT_NAME@ version")
+set(@PROJECT_NAME@_GIT_HASH @PROJECT_GIT_HASH@ CACHE STRING "@PROJECT_NAME@ git hash")
+
+# Root of the installation
+set(@PROJECT_NAME@_ROOT @CMAKE_INSTALL_PREFIX@ CACHE STRING "@PROJECT_NAME@ root directory")
+
+## Find the target dependencies
+#include(CMakeFindDependencyMacro)
+#find_dependency(... HINTS @CMAKE_INSTALL_PREFIX@)
+
+# Include the exported targets of this project
+include(@CMAKE_INSTALL_PREFIX@/lib/cmake/@PROJECT_NAME@/@PROJECT_NAME@-targets.cmake)
+
+message(STATUS "Found @PROJECT_NAME@-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@")
+
+# Was the Project built with Documentation?
+set(@PROJECT_NAME@_WITH_DOCUMENTATION @Build_Documentation@ CACHE BOOL "Was @PROJECT_NAME@ build with documentation?")
+
+# Was the Project built with PythonSupport?
+set(@PROJECT_NAME@_WITH_PYTHON_SUPPORT @PythonSupport@ CACHE BOOL "Was @PROJECT_NAME@ build with python support?")
+
+endif()

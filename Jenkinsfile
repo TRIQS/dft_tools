@@ -1,5 +1,6 @@
-def projectName = "dft_tools" /* set to app/repo name */
+def projectName = "triqs_dft_tools" /* set to app/repo name */
 
+def dockerName = projectName.toLowerCase();
 /* which platform to build documentation on */
 def documentationPlatform = "ubuntu-clang"
 /* depend on triqs upstream branch/project */
@@ -37,7 +38,12 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
         mv -f Dockerfile.jenkins Dockerfile
       """
       /* build and tag */
-      def img = docker.build("flatironinstitute/${projectName}:${env.BRANCH_NAME}-${env.STAGE_NAME}", "--build-arg APPNAME=${projectName} --build-arg BUILD_DOC=${platform==documentationPlatform} .")
+      def img = docker.build("flatironinstitute/${dockerName}:${env.BRANCH_NAME}-${env.STAGE_NAME}", "--build-arg APPNAME=${projectName} --build-arg BUILD_DOC=${platform==documentationPlatform} .")
+      catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
+        img.inside() {
+          sh "make -C \$BUILD/${projectName} test CTEST_OUTPUT_ON_FAILURE=1"
+        }
+      }
       if (!keepInstall) {
         sh "docker rmi --no-prune ${img.imageName()}"
       }
@@ -48,7 +54,7 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
 /****************** osx builds (on host) */
 def osxPlatforms = [
   ["gcc", ['CC=gcc-9', 'CXX=g++-9', 'FC=gfortran-9']],
-  ["clang", ['CC=$BREW/opt/llvm/bin/clang', 'CXX=$BREW/opt/llvm/bin/clang++', 'CXXFLAGS=-I$BREW/opt/llvm/include', 'LDFLAGS=-L$BREW/opt/llvm/lib', 'FC=gfortran-9']]
+  ["clang", ['CC=$BREW/opt/llvm/bin/clang', 'CXX=$BREW/opt/llvm/bin/clang++', 'FC=gfortran-9', 'CXXFLAGS=-I$BREW/opt/llvm/include', 'LDFLAGS=-L$BREW/opt/llvm/lib']]
 ]
 for (int i = 0; i < osxPlatforms.size(); i++) {
   def platformEnv = osxPlatforms[i]
@@ -72,15 +78,15 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
         "CMAKE_PREFIX_PATH=$triqsDir/lib/cmake/triqs"]) {
         deleteDir()
         /* note: this is installing into the parent (triqs) venv (install dir), which is thus shared among apps and so not be completely safe */
-        sh "pip install -r $srcDir/requirements.txt"
+        sh "pip3 install -r $srcDir/requirements.txt"
         sh "cmake $srcDir -DCMAKE_INSTALL_PREFIX=$installDir -DTRIQS_ROOT=$triqsDir"
-        sh "make -j3"
-        try {
+        sh "make -j2"
+        catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') { try {
           sh "make test CTEST_OUTPUT_ON_FAILURE=1"
         } catch (exc) {
           archiveArtifacts(artifacts: 'Testing/Temporary/LastTest.log')
           throw exc
-        }
+        } }
         sh "make install"
       } }
     } }
@@ -95,15 +101,20 @@ try {
     stage("publish") { timeout(time: 5, unit: 'MINUTES') {
       def commit = sh(returnStdout: true, script: "git rev-parse HEAD").trim()
       def release = env.BRANCH_NAME == "master" || env.BRANCH_NAME == "unstable" || sh(returnStdout: true, script: "git describe --exact-match HEAD || true").trim()
-      def workDir = pwd()
+      def workDir = pwd(tmp:true)
       lock('triqs_publish') {
       /* Update documention on gh-pages branch */
       dir("$workDir/gh-pages") {
         def subdir = "${projectName}/${env.BRANCH_NAME}"
         git(url: "ssh://git@github.com/TRIQS/TRIQS.github.io.git", branch: "master", credentialsId: "ssh", changelog: false)
         sh "rm -rf ${subdir}"
-        docker.image("flatironinstitute/${projectName}:${env.BRANCH_NAME}-${documentationPlatform}").inside() {
-          sh "cp -rp \$INSTALL/share/doc/triqs_${projectName} ${subdir}"
+        docker.image("flatironinstitute/${dockerName}:${env.BRANCH_NAME}-${documentationPlatform}").inside() {
+          sh """#!/bin/bash -ex
+            base=\$INSTALL/share/doc
+            dir="${projectName}"
+            [[ -d \$base/triqs_\$dir ]] && dir=triqs_\$dir || [[ -d \$base/\$dir ]]
+            cp -rp \$base/\$dir ${subdir}
+          """
         }
         sh "git add -A ${subdir}"
         sh """
@@ -149,7 +160,7 @@ Changes:
 End of build log:
 \${BUILD_LOG,maxLines=60}
     """,
-    to: 'mzingl@flatironinstitute.org, hstrand@flatironinstitute.org, nwentzell@flatironinstitute.org, dsimon@flatironinstitute.org',
+    to: 'nwentzell@flatironinstitute.org',
     recipientProviders: [
       [$class: 'DevelopersRecipientProvider'],
     ],

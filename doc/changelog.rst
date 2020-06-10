@@ -3,6 +3,6 @@
 Changelog
 =========
 
-This document describes the main changes in DFTTools.
+This document describes the main changes in TRIQS_DFT_TOOLS.
 
 .. include:: ChangeLog.md

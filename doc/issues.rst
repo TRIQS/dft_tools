@@ -1,13 +1,14 @@
+.. _issues:
 
 Reporting issues
 ================
 
 Please report all problems and bugs directly at the github issue page
-`<https://github.com/TRIQS/dft_tools/issues>`_.  In order to make it easier
-for us to solve the issue please follow these guidelines:
+`<https://github.com/TRIQS/dft_tools/issues>`_.  In order to make it easier for us
+to solve the issue please follow these guidelines:
 
 #. In all cases specify which version of the application you are using. You can
-   find the version number in the file :file:`README.txt` at the root of the
+   find the version number in the file :file:`CMakeLists.txt` at the root of the
    application sources.
 
 #. If you have a problem during the installation, give us information about
