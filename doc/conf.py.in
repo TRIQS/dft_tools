@@ -42,4 +42,4 @@ html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = '@PROJECT_NAME@doc'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/3.8', None), 'triqslibs': ('https://triqs.github.io/triqs/latest', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3.8', None), 'triqslibs': ('https://triqs.github.io/triqs/latest', None)}
