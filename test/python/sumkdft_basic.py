@@ -24,9 +24,9 @@ from h5 import *
 from triqs_dft_tools.sumk_dft_tools import SumkDFTTools
 import triqs.utility.mpi as mpi
 from triqs.utility.comparison_tests import *
-from triqs.utility.h5diff import h5diff 
+from triqs.utility.h5diff import h5diff
 
-SK = SumkDFTTools(hdf_file = 'SrVO3.h5')
+SK = SumkDFTTools(hdf_file = 'SrVO3.ref.h5')
 
 dm = SK.density_matrix(method = 'using_gf', beta = 40)
 dm_pc = SK.partial_charges(beta=40,with_Sigma=False,with_dc=False)
@@ -36,4 +36,4 @@ with HDFArchive('sumkdft_basic.out.h5','w') as ar:
     ar['dm_pc'] = dm_pc
 
 if mpi.is_master_node():
-    h5diff('sumkdft_basic.out.h5','sumkdft_basic.ref.h5') 
+    h5diff('sumkdft_basic.out.h5','sumkdft_basic.ref.h5')
