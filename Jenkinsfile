@@ -1,4 +1,4 @@
-def projectName = "triqs_dft_tools" /* set to app/repo name */
+def projectName = "dft_tools" /* set to app/repo name */
 
 def dockerName = projectName.toLowerCase();
 /* which platform to build documentation on */
