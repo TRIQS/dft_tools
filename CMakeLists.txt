@@ -100,6 +100,7 @@ add_compile_options(
 
 # Create an Interface target for compiler warnings
 add_library(${PROJECT_NAME}_warnings INTERFACE)
+add_library(${PROJECT_NAME}::${PROJECT_NAME}_warnings ALIAS ${PROJECT_NAME}_warnings)
 target_compile_options(${PROJECT_NAME}_warnings
   INTERFACE
     -Wall
