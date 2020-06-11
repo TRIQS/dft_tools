@@ -84,7 +84,7 @@ In our `Pnma`-LaVO\ :sub:`3` example, for instance, we could use::
 where the ``x=-1,1,0`` option indicates that the V--O bonds in the octahedra are
 rotated by (approximatively) 45 degrees with respect to the axes of the `Pbnm` cell.
 
-The last line of :file:`seedname.inp` is the DFT Fermi energy, which is subtracted from the onsite terms in the :file:`seedname_hr.dat` file. This line is optional and may be left out. 
+The last line of :file:`seedname.inp` is the DFT Fermi energy (in eV), which is subtracted from the onsite terms in the :file:`seedname_hr.dat` file. This is recommended since some functions in DFTTools  implicitly assume a Fermi energy of 0 eV. 
 
 The converter will analyse the matrix elements of the local Hamiltonian
 to find the symmetry matrices `rot_mat` needed for the global-to-local
