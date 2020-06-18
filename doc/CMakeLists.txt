@@ -14,7 +14,8 @@ macro(generate_docs header_file)
     COMMAND rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
     COMMAND
       PYTHONPATH=${CPP2PY_BINARY_DIR}:$ENV{PYTHONPATH}
-      ${CPP2PY_BINARY_DIR}/bin/c++2rst
+      PATH=${CPP2PY_BINARY_DIR}/bin:${CPP2PY_ROOT}/bin:$ENV{PATH}
+      c++2rst
       ${header_file}
       -N ${PROJECT_NAME}
       --output_directory ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
