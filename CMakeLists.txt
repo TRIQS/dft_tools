@@ -93,10 +93,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Global compiler options
 option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
-add_compile_options(
-  $<$<CONFIG:Debug>:-Og>
-  $<$<CONFIG:Debug>:-ggdb3>
-)
+add_compile_options($<$<CONFIG:Debug>:-ggdb3>)
 
 # Create an Interface target for compiler warnings
 add_library(${PROJECT_NAME}_warnings INTERFACE)
