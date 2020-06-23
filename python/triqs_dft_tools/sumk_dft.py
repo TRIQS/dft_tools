@@ -165,6 +165,9 @@ class SumkDFT(object):
             if use_dft_blocks:
                 self.analyse_block_structure()
 
+            self.min_band_energy = None
+            self.max_band_energy = None
+            
 ################
 # hdf5 FUNCTIONS
 ################
@@ -639,6 +642,15 @@ class SumkDFT(object):
                 else:
                     gf << Sigma_imp[icrsh][bname]
 
+        #warning if real frequency self energy is within the bounds of the band energies
+        if isinstance(Sigma_imp[0].mesh, MeshReFreq):
+            if self.min_band_energy is None or self.max_band_energy is None:
+                self.calculate_min_max_band_energies()
+            for gf in Sigma_imp:
+                Sigma_mesh = numpy.array([i for i in gf.mesh.values()])
+                if Sigma_mesh[0] > (self.min_band_energy - self.chemical_potential) or Sigma_mesh[-1] < (self.max_band_energy - self.chemical_potential):
+                    warn('The given Sigma is on a mesh which does not cover the band energy range. The Sigma MeshReFreq runs from %f to %f, while the band energy (minus the chemical potential) runs from %f to %f'%(Sigma_mesh[0], Sigma_mesh[-1], self.min_band_energy, self.max_band_energy))
+                
     def transform_to_sumk_blocks(self, Sigma_imp, Sigma_out=None):
         r""" transform Sigma from solver to sumk space
 
@@ -2144,6 +2156,18 @@ class SumkDFT(object):
 
         return res
 
+    def calculate_min_max_band_energies(self):
+        hop = self.hopping
+        diag_hop = numpy.zeros(hop.shape[:-1])
+        hop_slice = mpi.slice_array(hop)
+        diag_hop_slice = mpi.slice_array(diag_hop)
+        diag_hop_slice[:] = numpy.linalg.eigvalsh(hop_slice)
+        diag_hop = mpi.all_reduce(mpi.world, diag_hop, lambda x, y: x + y)
+        min_band_energy = diag_hop.min().real
+        max_band_energy = diag_hop.max().real
+        self.min_band_energy = min_band_energy
+        self.max_band_energy = max_band_energy
+        return min_band_energy, max_band_energy
 
 ################
 # FIXME LEAVE UNDOCUMENTED
