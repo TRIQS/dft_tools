@@ -94,9 +94,9 @@ directory name):
 
 Now we convert these files into an hdf5 file that can be used for the
 DMFT calculations. For this purpose we
-use the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.Wien2kConverter>`. It is initialized as::
+use the python module :class:`Wien2kConverter <dft.converters.wien2k.Wien2kConverter>`. It is initialized as::
 
-  from triqs_dft_tools.converters.wien2k_converter import *
+  from triqs_dft_tools.converters.wien2k import *
   Converter = Wien2kConverter(filename = case)
 
 The only necessary parameter to this construction is the parameter `filename`.

@@ -1,5 +1,5 @@
 from triqs_dft_tools.sumk_dft import *
-from triqs_dft_tools.converters.wien2k_converter import *
+from triqs_dft_tools.converters.wien2k import *
 from triqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
 import os

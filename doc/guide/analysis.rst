@@ -128,7 +128,7 @@ Momentum resolved spectral function (with real-frequency self energy)
 
 Another quantity of interest is the momentum-resolved spectral function, which can directly be compared to ARPES
 experiments. First we have to execute `lapw1`, `lapw2 -almd` and :program:`dmftproj` with the `-band` 
-option and use the :meth:`convert_bands_input <dft.converters.wien2k_converter.Wien2kConverter.convert_bands_input>`
+option and use the :meth:`convert_bands_input <dft.converters.wien2k.Wien2kConverter.convert_bands_input>`
 routine, which converts the required files (for a more detailed description see :ref:`conversion`). The spectral function is then calculated by typing::
 
   SK.spaghettis(broadening=0.01,plot_shift=0.0,plot_range=None,ishell=None,save_to_file='Akw_')

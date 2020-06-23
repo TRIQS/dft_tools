@@ -5,20 +5,20 @@ Converters
 
 Wien2k Converter
 ----------------
-.. autoclass:: triqs_dft_tools.converters.wien2k_converter.Wien2kConverter
+.. autoclass:: triqs_dft_tools.converters.wien2k.Wien2kConverter
    :members:
    :special-members:
    :show-inheritance:
 
 H(k) Converter
 --------------
-.. autoclass:: triqs_dft_tools.converters.hk_converter.HkConverter
+.. autoclass:: triqs_dft_tools.converters.hk.HkConverter
    :members:
    :special-members:
 
 Wannier90 Converter
 -------------------
-.. autoclass:: triqs_dft_tools.converters.wannier90_converter.Wannier90Converter
+.. autoclass:: triqs_dft_tools.converters.wannier90.Wannier90Converter
    :members:
    :special-members:
 
@@ -53,7 +53,7 @@ PLOVASP reference, the classes / functions are sorted the way the converter uses
 VASP Converter
 -------------------
 .. _refVASPconverter:
-.. autoclass:: triqs_dft_tools.converters.vasp_converter.VaspConverter
+.. autoclass:: triqs_dft_tools.converters.vasp.VaspConverter
    :members:
    :special-members:
 

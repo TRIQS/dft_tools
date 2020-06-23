@@ -51,10 +51,10 @@ Then :program:`dmftproj` is executed in its default mode (i.e. without spin-pola
    dmftproj 
 
 This program produces the necessary files for the conversion to the hdf5 file structure. This is done using
-the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.Wien2kConverter>`.
+the python module :class:`Wien2kConverter <dft.converters.wien2k.Wien2kConverter>`.
 A simple python script that initialises the converter is::
 
-  from triqs_dft_tools.converters.wien2k_converter import *
+  from triqs_dft_tools.converters.wien2k import *
   Converter = Wien2kConverter(filename = "SrVO3")
 
 After initializing the interface module, we can now convert the input

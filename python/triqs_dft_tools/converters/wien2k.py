@@ -251,7 +251,7 @@ class Wien2kConverter(ConverterTools):
             for it in things_to_set:
                 setattr(self, it, locals()[it])
         except StopIteration:  # a more explicit error if the file is corrupted.
-            raise IOError("Wien2k_converter : reading file %s failed!" % self.dft_file)
+            raise IOError("wien2k : reading file %s failed!" % self.dft_file)
 
         R.close()
         # Reading done!
@@ -472,7 +472,7 @@ class Wien2kConverter(ConverterTools):
         except KeyError:
             raise IOError("convert_bands_input : Needed data not found in hdf file. Consider calling convert_dft_input first!")
         except StopIteration:  # a more explicit error if the file is corrupted.
-            raise IOError("Wien2k_converter : reading file %s failed!" % self.band_file)
+            raise IOError("wien2k : reading file %s failed!" % self.band_file)
 
         # Reading done!
 
@@ -496,7 +496,7 @@ class Wien2kConverter(ConverterTools):
         - symmetries from :file:`case.outputs`,
 
         if those Wien2k files are present and stores the data in the hdf5 archive.
-        This function is automatically called by :meth:`convert_dft_input <triqs_dft_tools.converters.wien2k_converter.Wien2kConverter.convert_dft_input>`. 
+        This function is automatically called by :meth:`convert_dft_input <triqs_dft_tools.converters.wien2k.Wien2kConverter.convert_dft_input>`. 
 
         """
 
@@ -779,7 +779,7 @@ class Wien2kConverter(ConverterTools):
                                 next(R)      # imaginary part
 
         except StopIteration:  # a more explicit error if the file is corrupted.
-            raise IOError("Wien2k_converter : reading file %s failed!" %symm_file)
+            raise IOError("wien2k : reading file %s failed!" %symm_file)
 
         R.close()
         # Reading done!

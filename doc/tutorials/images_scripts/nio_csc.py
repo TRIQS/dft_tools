@@ -11,7 +11,7 @@ from triqs.operators.util.U_matrix import *
 from triqs_cthyb import *
 import triqs_cthyb.version as cthyb_version
 import triqs_dft_tools.version as dft_tools_version
-from triqs_dft_tools.converters.vasp_converter import *
+from triqs_dft_tools.converters.vasp import *
 
 
 import warnings

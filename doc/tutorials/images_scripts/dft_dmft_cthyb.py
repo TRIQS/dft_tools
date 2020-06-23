@@ -4,7 +4,7 @@ from h5 import HDFArchive
 from triqs_cthyb import *
 from triqs.gf import *
 from triqs_dft_tools.sumk_dft import *
-from triqs_dft_tools.converters.wien2k_converter import *
+from triqs_dft_tools.converters.wien2k import *
 
 dft_filename='SrVO3'
 beta = 40
@@ -49,7 +49,7 @@ p["fit_min_n"] = 30
 p["fit_max_n"] = 60
 
 # If conversion step was not done, we could do it here. Uncomment the lines it you want to do this.
-#from triqs_dft_tools.converters.wien2k_converter import *
+#from triqs_dft_tools.converters.wien2k import *
 #Converter = Wien2kConverter(filename=dft_filename, repacking=True)
 #Converter.convert_dft_input()
 #mpi.barrier()

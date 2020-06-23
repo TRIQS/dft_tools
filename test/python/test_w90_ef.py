@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import sys
 sys.path.insert(1, '../python/converters/')
-from triqs_dft_tools.converters.wannier90_converter import Wannier90Converter
+from triqs_dft_tools.converters.wannier90 import Wannier90Converter
 from triqs_dft_tools import SumkDFT
 
 class test_w90_conv(unittest.TestCase):

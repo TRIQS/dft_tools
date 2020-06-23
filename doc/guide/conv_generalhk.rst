@@ -87,7 +87,7 @@ matrix of the imaginary part, and then move on to the next :math:`\mathbf{k}`-po
 
 The converter itself is used as::
 
-  from triqs_dft_tools.converters.hk_converter import *
+  from triqs_dft_tools.converters.hk import *
   Converter = HkConverter(filename = hkinputfile)
   Converter.convert_dft_input()
 

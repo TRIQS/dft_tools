@@ -58,9 +58,9 @@ At the end of the run you see the density matrix in Wannier space:
 As you can see, there are a lot of off-diagonal elements now, in particular also off-diagonal in spin space. This is just telling us that spin is not a good quantum number any more in the presence of SOC.
 
 We convert the output to the hdf5 archive, using 
-the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.Wien2kConverter>`. A simple python script doing this is::
+the python module :class:`Wien2kConverter <dft.converters.wien2k.Wien2kConverter>`. A simple python script doing this is::
 
-  from triqs_dft_tools.converters.wien2k_converter import *
+  from triqs_dft_tools.converters.wien2k import *
   Converter = Wien2kConverter(filename = "Sr2MgOsO6_SOC")
   Converter.convert_dft_input()
 

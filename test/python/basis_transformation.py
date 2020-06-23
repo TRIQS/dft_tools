@@ -17,7 +17,7 @@ def call_diagonalize(SK):
     SK.block_structure.transformation = None
     return t_sumk_eal, t_solver_eal, t_sumk_dm, t_solver_dm
 
-SK = SumkDFT(hdf_file = 'SrVO3.h5', use_dft_blocks=True)
+SK = SumkDFT(hdf_file = 'SrVO3.ref.h5', use_dft_blocks=True)
 
 # only eal and dm are allowed
 SK.block_structure.transformation = None
@@ -71,7 +71,7 @@ for dmi in dm:
 
 
 # Test convert_operator
-SK = SumkDFT(hdf_file = 'SrVO3.h5', use_dft_blocks=True)
+SK = SumkDFT(hdf_file = 'SrVO3.ref.h5', use_dft_blocks=True)
 BS = SK.block_structure
 from triqs.operators.util import h_int_slater, U_matrix, t2g_submatrix, transform_U_matrix
 
@@ -93,7 +93,7 @@ H3 = BS.convert_operator(h_int_slater(spin_names=['up','down'], orb_names=[0,1,2
 for op in H3:
     for c_op in op[0]:
         assert(BS.gf_struct_solver_dict[0][c_op[1][0]][c_op[1][1]] is not None) # This crashes with a key error if the operator structure is not the solver structure
-        
+
 U_trafod = transform_U_matrix(U3x3, BS.transformation[0]['up'].conjugate()) # The notorious .conjugate()
 H4 = h_int_slater(spin_names=['up','down'], orb_names=range(3), U_matrix=U_trafod, map_operator_structure=BS.sumk_to_solver[0])
 assert( H4  == H3 ) # check that convert_operator does the same as transform_U_matrix

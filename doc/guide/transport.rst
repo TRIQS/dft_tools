@@ -52,13 +52,13 @@ real-frequency self energy.
   it is crucial to perform the analytic continuation in such a way that the real-frequency self energy
   is accurate around the Fermi energy as low-energy features strongly influence the final results.
 
-Besides the self energy the Wien2k files read by the transport converter (:meth:`convert_transport_input <dft.converters.wien2k_converter.Wien2kConverter.convert_transport_input>`) are:
+Besides the self energy the Wien2k files read by the transport converter (:meth:`convert_transport_input <dft.converters.wien2k.Wien2kConverter.convert_transport_input>`) are:
    * :file:`.struct`: The lattice constants specified in the struct file are used to calculate the unit cell volume.
    * :file:`.outputs`: In this file the k-point symmetries are given.
    * :file:`.oubwin`: Contains the indices of the bands within the projected subspace (written by :program:`dmftproj`) for each k-point.
    * :file:`.pmat`: This file is the output of the Wien2k optics package and contains the velocity (momentum) matrix elements between all bands in the desired energy
      window for each k-point. How to use the optics package is described below.
-   * :file:`.h5`: The hdf5 archive has to be present and should contain the dft_input subgroup. Otherwise :meth:`convert_dft_input <dft.converters.wien2k_converter.Wien2kConverter.convert_dft_input>` needs to be called before :meth:`convert_transport_input <dft.converters.wien2k_converter.Wien2kConverter.convert_transport_input>`.
+   * :file:`.h5`: The hdf5 archive has to be present and should contain the dft_input subgroup. Otherwise :meth:`convert_dft_input <dft.converters.wien2k.Wien2kConverter.convert_dft_input>` needs to be called before :meth:`convert_transport_input <dft.converters.wien2k.Wien2kConverter.convert_transport_input>`.
 
 
 Wien2k optics package
@@ -84,7 +84,7 @@ Using the transport code
 
 First we have to read the Wien2k files and store the relevant information in the hdf5 archive::
 
-    from triqs_dft_tools.converters.wien2k_converter import *
+    from triqs_dft_tools.converters.wien2k import *
     from triqs_dft_tools.sumk_dft_tools import *
 
     Converter = Wien2kConverter(filename='case', repacking=True)
@@ -92,7 +92,7 @@ First we have to read the Wien2k files and store the relevant information in the
 
     SK = SumkDFTTools(hdf_file='case.h5', use_dft_blocks=True)
 
-The converter :meth:`convert_transport_input <dft.converters.wien2k_converter.Wien2kConverter.convert_transport_input>`
+The converter :meth:`convert_transport_input <dft.converters.wien2k.Wien2kConverter.convert_transport_input>`
 reads the required data of the Wien2k output and stores it in the `dft_transp_input` subgroup of your hdf file. 
 Additionally we need to read and set the self energy, the chemical potential and the double counting::
 
