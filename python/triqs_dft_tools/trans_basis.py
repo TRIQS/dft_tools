@@ -48,7 +48,7 @@ class TransBasis:
         self.T = copy.deepcopy(self.SK.T[0])
         self.w = numpy.identity(SK.corr_shells[0]['dim'])
 
-    def calculate_diagonalisation_matrix(self, prop_to_be_diagonal='eal'):
+    def calculate_diagonalisation_matrix(self, prop_to_be_diagonal='eal', calc_in_solver_blocks = False):
         """
         Calculates the diagonalisation matrix w, and stores it as member of the class.
 
@@ -59,6 +59,10 @@ class TransBasis:
 
                               - 'eal' : local hamiltonian (i.e. crystal field)
                               - 'dm' : local density matrix
+
+        calc_in_solver_blocks : bool, optional
+                                Whether the property shall be diagonalized in the
+                                full sumk structure, or just in the solver structure.
 
         Returns
         -------
@@ -76,16 +80,29 @@ class TransBasis:
                 "trans_basis: not a valid quantitiy to be diagonal. Choices are 'eal' or 'dm'.")
             return 0
 
-        if self.SK.SO == 0:
-            self.eig, self.w = numpy.linalg.eigh(prop['up'])
-            # calculate new Transformation matrix
+        if calc_in_solver_blocks:
+            trafo = self.SK.block_structure.transformation
+            self.SK.block_structure.transformation = None
+
+            prop_solver = self.SK.block_structure.convert_matrix(prop, space_from='sumk', space_to='solver')
+            v= {}
+            for name in prop_solver:
+                v[name] = numpy.linalg.eigh(prop_solver[name])[1]
+            self.w = self.SK.block_structure.convert_matrix(v, space_from='solver', space_to='sumk')['ud' if self.SK.SO else 'up']
             self.T = numpy.dot(self.T.transpose().conjugate(),
                                self.w).conjugate().transpose()
+            self.SK.block_structure.transformation = trafo
         else:
-            self.eig, self.w = numpy.linalg.eigh(prop['ud'])
-            # calculate new Transformation matrix
-            self.T = numpy.dot(self.T.transpose().conjugate(),
-                               self.w).conjugate().transpose()
+            if self.SK.SO == 0:
+                self.eig, self.w = numpy.linalg.eigh(prop['up'])
+                # calculate new Transformation matrix
+                self.T = numpy.dot(self.T.transpose().conjugate(),
+                                   self.w).conjugate().transpose()
+            else:
+                self.eig, self.w = numpy.linalg.eigh(prop['ud'])
+                # calculate new Transformation matrix
+                self.T = numpy.dot(self.T.transpose().conjugate(),
+                                   self.w).conjugate().transpose()
 
         # measure for the 'unity' of the transformation:
         wsqr = sum(abs(self.w.diagonal())**2) / self.w.diagonal().size

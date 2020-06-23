@@ -363,7 +363,7 @@ class ProjectorShell:
         assert site_diag, "site_diag = False is not implemented"
         assert spin_diag, "spin_diag = False is not implemented"
 
-        loc_ham = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
+        loc_ham = np.zeros((ns, nion, nlm, nlm), dtype=np.complex128)
 
 #        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=np.complex128)
         kweights = el_struct.kmesh['kweights']
@@ -376,7 +376,7 @@ class ProjectorShell:
                 for io in range(nion):
                     proj_k = self.proj_win[io, isp, ik, ...]
                     loc_ham[isp, io, :, :] += np.dot(proj_k * (eigk - el_struct.efermi),
-                                                 proj_k.conj().T).real * weight
+                                                 proj_k.conj().T) * weight
 
 #        if not symops is None:
 #            occ_mats = symmetrize_matrix_set(occ_mats, symops, ions, perm_map)

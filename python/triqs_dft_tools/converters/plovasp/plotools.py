@@ -189,9 +189,9 @@ def generate_plo(conf_pars, el_struct):
                 print("  Shell %i"%(ish + 1))
                 loc_ham = pshells[pgroup.ishells[ish]].local_hamiltonian(el_struct)
                 for io in range(loc_ham.shape[1]):
-                    print("    Site %i"%(io + 1))
+                    print("    Site %i (real | complex part)"%(io + 1))
                     for row in loc_ham[:, io, :, :].sum(0):
-                        print(''.join(map("{0:14.7f}".format, row)))
+                        print(''.join(map("{0:14.7f}".format, row.real))+' |'+''.join(map("{0:14.7f}".format, row.imag)))
 # END DEBUG output
         if 'dosmesh' in conf_pars.general:
             print()

@@ -5,3 +5,4 @@
  1  0  2  3  0  0       # atom, sort, l, dim, SO, irep
  2  0  2  3  0  0       # atom, sort, l, dim, SO, irep
  3  0  2  3  0  0       # atom, sort, l, dim, SO, irep
+0.0                     # DFT Fermi Energy (optional)
