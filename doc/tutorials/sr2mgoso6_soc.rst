@@ -58,9 +58,9 @@ At the end of the run you see the density matrix in Wannier space:
 As you can see, there are a lot of off-diagonal elements now, in particular also off-diagonal in spin space. This is just telling us that spin is not a good quantum number any more in the presence of SOC.
 
 We convert the output to the hdf5 archive, using 
-the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.Wien2kConverter>`. A simple python script doing this is::
+the python module :class:`Wien2kConverter <dft.converters.wien2k.Wien2kConverter>`. A simple python script doing this is::
 
-  from triqs_dft_tools.converters.wien2k_converter import *
+  from triqs_dft_tools.converters.wien2k import *
   Converter = Wien2kConverter(filename = "Sr2MgOsO6_SOC")
   Converter.convert_dft_input()
 
@@ -119,8 +119,8 @@ The interaction Hamiltonian
 
 We now set up the interaction Hamiltonian. Since we want to rotate the interaction matrix into the local basis, we are using the Slater convention for it. We use *l=2* for *d* orbitals. Also, for SOC calculations, we need to inflate the resulting matrix to size 10x10:: 
 
-    from pytriqs.operators.util import *
-    from pytriqs.operators.util.U_matrix import *
+    from triqs.operators.util import *
+    from triqs.operators.util.U_matrix import *
 
     U = 2.0
     J = 0.2
@@ -139,7 +139,7 @@ Note that we needed to set up the interaction Hamiltonian first for the full set
 Now we have the interaction Hamiltonian for the solver, which we set up next::
 
     from triqs_cthyb import *
-    import pytriqs.utility.mpi as mpi
+    import triqs.utility.mpi as mpi
 
     beta = 40.0
     S = Solver(beta=beta, gf_struct=SK.block_structure.gf_struct_solver_list[0])

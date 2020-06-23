@@ -21,7 +21,7 @@ We can create a simple :class:`BlockStructure <dft.block_structure.BlockStructur
 
 This creates a block structure with one 3x3 block named *up*. Note that we have not created any Green's function yet; this is just the structure of those objects. If you want to create a Green's function with this structure, you can do (we will if with some content also)::
 
-    from pytriqs.gf import *
+    from triqs.gf import *
     GF_sumk = BS.create_gf(space='sumk', beta = 40, n_points = 1000)
     GF_sumk['up'][0,0] << iOmega_n - 2.0
     GF_sumk['up'][1,1] << iOmega_n + 0.5

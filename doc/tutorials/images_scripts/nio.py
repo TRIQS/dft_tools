@@ -1,13 +1,13 @@
 from itertools import *
 import numpy as np
-import pytriqs.utility.mpi as mpi
-from pytriqs.archive import *
-from pytriqs.gf import *
-import sys, pytriqs.version as triqs_version
+import triqs.utility.mpi as mpi
+from h5 import *
+from triqs.gf import *
+import sys, triqs.version as triqs_version
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
-from pytriqs.operators.util.hamiltonians import *
-from pytriqs.operators.util.U_matrix import *
+from triqs.operators.util.hamiltonians import *
+from triqs.operators.util.U_matrix import *
 from triqs_cthyb import *
 import triqs_cthyb.version as cthyb_version
 import triqs_dft_tools.version as dft_tools_version
@@ -30,7 +30,7 @@ for i_sh in range(len(SK.deg_shells)):
     mpi.report('found {0:d} blocks of degenerate orbitals in shell {1:d}'.format(num_block_deg_orbs, i_sh))
     for iblock in range(num_block_deg_orbs):
         mpi.report('block {0:d} consists of orbitals:'.format(iblock))
-        for keys in SK.deg_shells[i_sh][iblock].keys():
+        for keys in list(SK.deg_shells[i_sh][iblock].keys()):
             mpi.report('  '+keys)
 
 # Setup CTQMC Solver

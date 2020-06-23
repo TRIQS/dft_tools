@@ -37,7 +37,7 @@ class::
 Note that all routines available in :class:`SumkDFT <dft.sumk_dft.SumkDFT>` are also available here.
 
 If required, we have to load and initialise the real-frequency self energy. Most conveniently,
-you have your self energy already stored as a real-frequency :class:`BlockGf <pytriqs.gf.BlockGf>` object
+you have your self energy already stored as a real-frequency :class:`BlockGf <triqs.gf.BlockGf>` object
 in a hdf5 file::
 
   with HDFArchive('case.h5', 'r') as ar:
@@ -45,10 +45,10 @@ in a hdf5 file::
 
 You may also have your self energy stored in text files. For this case the :ref:`TRIQS <triqslibs:welcome>` library offers
 the function :meth:`read_gf_from_txt`, which is able to load the data from text files of one Green function block
-into a real-frequency :class:`ReFreqGf <pytriqs.gf.ReFreqGf>` object. Loading each block separately and
-building up a :class:´BlockGf <pytriqs.gf.BlockGf>´ is done with::
+into a real-frequency :class:`ReFreqGf <triqs.gf.ReFreqGf>` object. Loading each block separately and
+building up a :class:´BlockGf <triqs.gf.BlockGf>´ is done with::
 
-  from pytriqs.gf.tools import *
+  from triqs.gf.tools import *
   # get block names
   n_list = [n for n,nl in SK.gf_struct_solver[0].iteritems()]
   # load sigma for each block - in this example sigma is composed of 1x1 blocks
@@ -128,7 +128,7 @@ Momentum resolved spectral function (with real-frequency self energy)
 
 Another quantity of interest is the momentum-resolved spectral function, which can directly be compared to ARPES
 experiments. First we have to execute `lapw1`, `lapw2 -almd` and :program:`dmftproj` with the `-band` 
-option and use the :meth:`convert_bands_input <dft.converters.wien2k_converter.Wien2kConverter.convert_bands_input>`
+option and use the :meth:`convert_bands_input <dft.converters.wien2k.Wien2kConverter.convert_bands_input>`
 routine, which converts the required files (for a more detailed description see :ref:`conversion`). The spectral function is then calculated by typing::
 
   SK.spaghettis(broadening=0.01,plot_shift=0.0,plot_range=None,ishell=None,save_to_file='Akw_')

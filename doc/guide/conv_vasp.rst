@@ -183,7 +183,7 @@ Running the VASP converter
 
 The actual conversion to a h5-file is performed with the orthonormalized projector functions readable by the :ref:`VaspConverter<refVASPconverter>` in the same fashion as with the other `DFTTools` converters::
 
-    from triqs_dft_tools.converters.vasp_converter import *
+    from triqs_dft_tools.converters.vasp import *
     Converter = VaspConverter(filename = 'vasp')
     Converter.convert_dft_input()
 

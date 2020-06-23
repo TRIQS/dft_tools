@@ -1,17 +1,17 @@
 from itertools import *
 import numpy as np
-import pytriqs.utility.mpi as mpi
-from pytriqs.archive import *
-from pytriqs.gf import *
-import sys, pytriqs.version as triqs_version
+import triqs.utility.mpi as mpi
+from h5 import *
+from triqs.gf import *
+import sys, triqs.version as triqs_version
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
-from pytriqs.operators.util.hamiltonians import *
-from pytriqs.operators.util.U_matrix import *
+from triqs.operators.util.hamiltonians import *
+from triqs.operators.util.U_matrix import *
 from triqs_cthyb import *
 import triqs_cthyb.version as cthyb_version
 import triqs_dft_tools.version as dft_tools_version
-from triqs_dft_tools.converters.vasp_converter import *
+from triqs_dft_tools.converters.vasp import *
 
 
 import warnings
@@ -37,7 +37,7 @@ def dmft_cycle():
         mpi.report('found {0:d} blocks of degenerate orbitals in shell {1:d}'.format(num_block_deg_orbs, i_sh))
         for iblock in range(num_block_deg_orbs):
             mpi.report('block {0:d} consists of orbitals:'.format(iblock))
-            for keys in SK.deg_shells[i_sh][iblock].keys():
+            for keys in list(SK.deg_shells[i_sh][iblock].keys()):
                 mpi.report('  '+keys)
     
     # Setup CTQMC Solver
@@ -176,15 +176,15 @@ def dmft_cycle():
     
     
     if mpi.is_master_node():
-        print 'calculating mu...'
+        print('calculating mu...')
     SK.chemical_potential = SK.calc_mu( precision = 0.000001 )
     
     if mpi.is_master_node():
-        print 'calculating GAMMA'
+        print('calculating GAMMA')
     SK.calc_density_correction(dm_type='vasp')
     
     if mpi.is_master_node():
-        print 'calculating energy corrections'
+        print('calculating energy corrections')
     
     correnerg = 0.5 * (S.G_iw * S.Sigma_iw).total_density()
     

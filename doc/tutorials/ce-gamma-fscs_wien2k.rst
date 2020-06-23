@@ -96,7 +96,7 @@ In order to run DFT+DMFT calculations within Hubbard-I we need the corresponding
 with the CT-QMC solver (see :ref:`singleshot`), however there are also some differences. First
 difference is that we import the Hubbard-I solver by::
 
-   from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
+   from triqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
 The Hubbard-I solver is very fast and we do not need to take into account the DFT block structure
 or use any approximation for the *U*-matrix. We load and convert the :program:`dmftproj` output

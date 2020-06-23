@@ -1,11 +1,11 @@
 # Import the modules:
 from triqs_dft_tools.sumk_dft import *
-from pytriqs.gf import *
-from pytriqs.archive import HDFArchive
-from pytriqs.operators.util import *
-from pytriqs.operators.util.U_matrix import *
+from triqs.gf import *
+from h5 import HDFArchive
+from triqs.operators.util import *
+from triqs.operators.util.U_matrix import *
 from triqs_cthyb import *
-import pytriqs.utility.mpi as mpi
+import triqs.utility.mpi as mpi
 
 # Init the SumK class:
 filename = 'Sr2MgOsO6_SOC.h5'

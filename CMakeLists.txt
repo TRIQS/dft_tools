@@ -1,105 +1,164 @@
-# Start configuration
-cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
-project(triqs_dft_tools C CXX Fortran)
+# ##############################################################################
+#
+# triqs_dft_tools - An example application using triqs and cpp2py
+#
+# Copyright (C) ...
+#
+# triqs_dft_tools is free software: you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# triqs_dft_tools is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# triqs_dft_tools (in the file COPYING.txt in this directory). If not, see
+# <http://www.gnu.org/licenses/>.
+#
+# ##############################################################################
+
+cmake_minimum_required(VERSION 3.3.2 FATAL_ERROR)
+cmake_policy(VERSION 3.3.2)
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
+if(POLICY CMP0077)
+  cmake_policy(SET CMP0077 NEW)
+endif()
+
+# ############
+# Define Project
+project(triqs_dft_tools VERSION 3.0.0 LANGUAGES C CXX Fortran)
+get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
+
+# ############
+# Load TRIQS and CPP2PY
+find_package(TRIQS 3.0 REQUIRED)
+
+# Get the git hash & print status
+triqs_get_git_hash_of_source_dir(PROJECT_GIT_HASH)
+message(STATUS "${PROJECT_NAME} version : ${PROJECT_VERSION}")
+message(STATUS "${PROJECT_NAME} Git hash: ${PROJECT_GIT_HASH}")
+
+# Enforce Consistent Versioning
+if(NOT ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR} VERSION_EQUAL ${TRIQS_VERSION_MAJOR}.${TRIQS_VERSION_MINOR})
+  message(FATAL_ERROR "The ${PROJECT_NAME} version ${PROJECT_VERSION} is not compatible with TRIQS version ${TRIQS_VERSION}.")
+endif()
+
+# Default Install directory to TRIQS_ROOT if not given or invalid.
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTALL_PREFIX}))
+  message(STATUS "No install prefix given (or invalid). Defaulting to TRIQS_ROOT")
+  set(CMAKE_INSTALL_PREFIX ${TRIQS_ROOT} CACHE PATH "default install path" FORCE)
+  set(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT FALSE)
+endif()
+if(NOT IS_SUBPROJECT)
+  message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} --------")
+endif()
+set(${PROJECT_NAME}_BINARY_DIR ${PROJECT_BINARY_DIR} CACHE STRING "Binary directory of the ${PROJECT_NAME} Project")
+
+
+# ############
+# Options
+
+# Make additional Find Modules available
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/share/cmake/Modules)
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Type of build" FORCE)
 endif()
-message( STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} --------")
-
-# Use shared libraries
-set(BUILD_SHARED_LIBS ON)
-
-# Load TRIQS and Cpp2Py
-find_package(TRIQS 2.2 REQUIRED)
-find_package(Cpp2Py 1.6 REQUIRED)
-
-if (NOT ${TRIQS_WITH_PYTHON_SUPPORT})
- MESSAGE(FATAL_ERROR "dft_tools require Python support in TRIQS")
+if(NOT IS_SUBPROJECT)
+  message(STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} --------")
 endif()
 
-# Default Install directory to TRIQS_ROOT if not given. Checks an absolute name is given.
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTALL_PREFIX}))
-  message(STATUS " No install prefix given (or invalid). Defaulting to TRIQS_ROOT")
-  set(CMAKE_INSTALL_PREFIX ${TRIQS_ROOT} CACHE PATH "default install path" FORCE)
+# Python Support
+option(PythonSupport "Build with Python support" ON)
+if(PythonSupport AND NOT TRIQS_WITH_PYTHON_SUPPORT)
+  message(FATAL_ERROR "TRIQS was installed without Python support. Cannot build the Python Interface. Disable the build with -DPythonSupport=OFF")
 endif()
-message(STATUS "-------- CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX} -------------")
 
-# Define the dft_tools version numbers and get the git hash
-set(DFT_TOOLS_VERSION_MAJOR 2)
-set(DFT_TOOLS_VERSION_MINOR 2)
-set(DFT_TOOLS_VERSION_PATCH 0)
-set(DFT_TOOLS_VERSION ${DFT_TOOLS_VERSION_MAJOR}.${DFT_TOOLS_VERSION_MINOR}.${DFT_TOOLS_VERSION_PATCH})
-triqs_get_git_hash_of_source_dir(DFT_TOOLS_GIT_HASH)
-message(STATUS "Dft_tools version : ${DFT_TOOLS_VERSION}")
-message(STATUS "Git hash: ${DFT_TOOLS_GIT_HASH}")
+# Documentation
+option(Build_Documentation "Build documentation" OFF)
 
+# Testing
+option(Build_Tests "Build tests" ON)
+if(Build_Tests)
+  enable_testing()
+endif()
+
+# Export the list of compile-commands into compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Global compiler options
+option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
+add_compile_options($<$<CONFIG:Debug>:-ggdb3>)
+
+# Create an Interface target for compiler warnings
+add_library(${PROJECT_NAME}_warnings INTERFACE)
+target_compile_options(${PROJECT_NAME}_warnings
+  INTERFACE
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Wno-sign-compare
+    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
+    $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wshadow>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gcc-compat>
+)
+
+# #############
+# Build Project
+
+# Find / Build dependencies
+add_subdirectory(deps)
+
+# Build and install the library
+add_subdirectory(c++/${PROJECT_NAME})
+
+# add here stuff for the Fortran part in DFTTools
 add_subdirectory(fortran/dmftproj) 
 
-# Add the compiling options (-D... ) for C++
-message(STATUS "TRIQS : Adding compilation flags detected by the library (C++11/14, libc++, etc...) ")
-
-add_subdirectory(c++)
-add_subdirectory(python python/triqs_dft_tools)
-add_subdirectory(shells)
-
-#------------------------
-# tests
-#------------------------
-
-option(TEST_COVERAGE "Analyze the coverage of tests" OFF)
-
-# perform tests with coverage info
-if (${TEST_COVERAGE})
-  # we try to locate the coverage program
-  find_program(PYTHON_COVERAGE python-coverage)
-  find_program(PYTHON_COVERAGE coverage)
-  if(NOT PYTHON_COVERAGE)
-      message(FATAL_ERROR "Program coverage (or python-coverage) not found.\nEither set PYTHON_COVERAGE explicitly or disable TEST_COVERAGE!\nYou need to install the python package coverage, e.g. with\n  pip install coverage\nor with\n  apt install python-coverage")
-  endif()
-
-  message(STATUS "Setting up test coverage")
-  add_custom_target(coverage ${PYTHON_COVERAGE} combine --append .coverage plovasp/.coverage || true COMMAND ${PYTHON_COVERAGE} html COMMAND echo "Open ${CMAKE_BINARY_DIR}/test/htmlcov/index.html in browser!" WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test)
+# Tests
+if(Build_Tests)
+  add_subdirectory(test)
 endif()
 
-enable_testing()
-
-option(Build_Tests "Build the tests of the library " ON)
-if (Build_Tests)
-  message(STATUS "-------- Preparing tests  -------------")
- add_subdirectory(test)
+# Python
+if(PythonSupport)
+  add_subdirectory(python/${PROJECT_NAME})
 endif()
 
-#------------------------
-# Documentation
-#------------------------
-option(Build_Documentation "Build documentation" OFF)
-if(${Build_Documentation})
-  if(NOT ${TRIQS_WITH_DOCUMENTATION})
-    message("Error: TRIQS library has not been compiled with its documentation")
-  endif()
+# Docs
+if(Build_Documentation)
   add_subdirectory(doc)
 endif()
 
-#--------------------------------------------------------
-# Packaging
-#--------------------------------------------------------
+# dfttols vasp interface bash scripts
+add_subdirectory(bin)
+
+# Additional configuration files
+add_subdirectory(share)
+
+# #############
+# Debian Package
+
 option(BUILD_DEBIAN_PACKAGE "Build a deb package" OFF)
-if(BUILD_DEBIAN_PACKAGE)
+if(BUILD_DEBIAN_PACKAGE AND NOT IS_SUBPROJECT)
   if(NOT CMAKE_INSTALL_PREFIX STREQUAL "/usr")
     message(FATAL_ERROR "CMAKE_INSTALL_PREFIX must be /usr for packaging")
   endif()
-  SET(CPACK_GENERATOR "DEB")
-  SET(CPACK_PACKAGE_VERSION ${DFT_TOOLS_VERSION})
-  SET(CPACK_PACKAGE_CONTACT "https://github.com/TRIQS/dft_tools")
-  EXECUTE_PROCESS(COMMAND dpkg --print-architecture OUTPUT_VARIABLE CMAKE_DEBIAN_PACKAGE_ARCHITECTURE OUTPUT_STRIP_TRAILING_WHITESPACE)
-  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "triqs (>= 2.2)")
-  SET(CPACK_DEBIAN_PACKAGE_CONFLICTS "dft_tools")
-  SET(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-  SET(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
-  INCLUDE(CPack)
+  set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+  set(CPACK_GENERATOR "DEB")
+  set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+  set(CPACK_PACKAGE_CONTACT "https://github.com/TRIQS/${PROJECT_NAME}")
+  execute_process(COMMAND dpkg --print-architecture OUTPUT_VARIABLE CMAKE_DEBIAN_PACKAGE_ARCHITECTURE OUTPUT_STRIP_TRAILING_WHITESPACE)
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "triqs (>= 3.0)")
+  set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+  set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
+  include(CPack)
 endif()

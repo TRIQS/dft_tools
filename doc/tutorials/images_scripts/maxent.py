@@ -1,5 +1,5 @@
-from pytriqs.gf import *
-from pytriqs.archive import *
+from triqs.gf import *
+from h5 import *
 from triqs_maxent import *
 
 filename = 'nio'
@@ -12,7 +12,7 @@ if 'iteration_count' in ar['DMFT_results']:
 
 tm = TauMaxEnt(cost_function='bryan', probability='normal')
 
-print(G_latt['up'][0,0])
+print((G_latt['up'][0,0]))
 t2g_orbs = [0,1,3]
 eg_orbs = [2,4]
 op_orbs = [5,6,7]
@@ -22,7 +22,7 @@ orbs = [t2g_orbs, eg_orbs, op_orbs]
 
 for orb in orbs:
 
-    print '\n'+str(orb[0])+'\n'
+    print('\n'+str(orb[0])+'\n')
 
     gf = 0*G_latt['up'][0,0]
     for iO in orb:
@@ -43,7 +43,7 @@ for orb in orbs:
 
 
     # you may be interested in the details of the line analyzer:
-    # from pytriqs.plot.mpl_interface import oplot
+    # from triqs.plot.mpl_interface import oplot
     #plt.figure(2)
     #result.analyzer_results['LineFitAnalyzer'].plot_linefit()
     #plt.savefig('ana'+str(orb[0])+'.pdf',fmt='pdf')

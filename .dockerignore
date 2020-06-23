@@ -1,2 +1,4 @@
+.travis.yml
 Dockerfile
 Jenkinsfile
+.git/objects/pack

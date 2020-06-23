@@ -51,10 +51,10 @@ Then :program:`dmftproj` is executed in its default mode (i.e. without spin-pola
    dmftproj 
 
 This program produces the necessary files for the conversion to the hdf5 file structure. This is done using
-the python module :class:`Wien2kConverter <dft.converters.wien2k_converter.Wien2kConverter>`.
+the python module :class:`Wien2kConverter <dft.converters.wien2k.Wien2kConverter>`.
 A simple python script that initialises the converter is::
 
-  from triqs_dft_tools.converters.wien2k_converter import *
+  from triqs_dft_tools.converters.wien2k import *
   Converter = Wien2kConverter(filename = "SrVO3")
 
 After initializing the interface module, we can now convert the input
@@ -77,11 +77,11 @@ Loading modules
 First, we load the necessary modules::
 
   from triqs_dft_tools.sumk_dft import *
-  from pytriqs.gf import *
-  from pytriqs.archive import HDFArchive
-  from pytriqs.operators.util import *
+  from triqs.gf import *
+  from h5 import HDFArchive
+  from triqs.operators.util import *
   from triqs_cthyb import *
-  import pytriqs.utility.mpi as mpi
+  import triqs.utility.mpi as mpi
 
 The last two lines load the modules for the construction of the
 :ref:`CTHYB solver <triqscthyb:welcome>`.
@@ -271,7 +271,7 @@ and perform only one DMFT iteration. The resulting self energy can be tail fitte
     Sigma_iw_fit << tail_fit(S.Sigma_iw, fit_max_moment = 4, fit_min_n = 40, fit_max_n = 160)[0]
 
 Plot the self energy and adjust the tail fit parameters such that you obtain a
-proper fit. The :meth:`fit_tail function <pytriqs.gf.tools.tail_fit>` is part
+proper fit. The :meth:`fit_tail function <triqs.gf.tools.tail_fit>` is part
 of the :ref:`TRIQS <triqslibs:welcome>` library.
 
 For a self energy which is going to zero for :math:`i\omega \rightarrow 0` our suggestion is

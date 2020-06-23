@@ -1,6 +1,6 @@
 from triqs_dft_tools.sumk_dft import *
-from triqs_dft_tools.converters.wien2k_converter import *
-from pytriqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
+from triqs_dft_tools.converters.wien2k import *
+from triqs.applications.impurity_solvers.hubbard_I.hubbard_solver import Solver
 
 import os
 dft_filename = os.getcwd().rpartition('/')[2]
@@ -111,7 +111,7 @@ for iteration_number in range(1,Loops+1):
         #Save essential SumkDFT data:
         SK.save(['chemical_potential','dc_imp','dc_energ','correnerg'])
         if (mpi.is_master_node()):
-            print 'DC after solver: ',SK.dc_imp[0]
+            print('DC after solver: ',SK.dc_imp[0])
 
         # print out occupancy matrix of Ce 4f
         mpi.report("Orbital densities of impurity Green function:")

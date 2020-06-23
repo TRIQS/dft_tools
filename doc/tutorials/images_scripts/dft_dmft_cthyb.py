@@ -1,10 +1,10 @@
-import pytriqs.utility.mpi as mpi
-from pytriqs.operators.util import *
-from pytriqs.archive import HDFArchive
+import triqs.utility.mpi as mpi
+from triqs.operators.util import *
+from h5 import HDFArchive
 from triqs_cthyb import *
-from pytriqs.gf import *
+from triqs.gf import *
 from triqs_dft_tools.sumk_dft import *
-from triqs_dft_tools.converters.wien2k_converter import *
+from triqs_dft_tools.converters.wien2k import *
 
 dft_filename='SrVO3'
 beta = 40
@@ -49,7 +49,7 @@ p["fit_min_n"] = 30
 p["fit_max_n"] = 60
 
 # If conversion step was not done, we could do it here. Uncomment the lines it you want to do this.
-#from triqs_dft_tools.converters.wien2k_converter import *
+#from triqs_dft_tools.converters.wien2k import *
 #Converter = Wien2kConverter(filename=dft_filename, repacking=True)
 #Converter.convert_dft_input()
 #mpi.barrier()
@@ -76,7 +76,7 @@ spin_names = ["up","down"]
 orb_names = [i for i in range(n_orb)]
 
 # Use GF structure determined by DFT blocks
-gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].iteritems()]
+gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].items()]
 
 # Construct Solver
 S = Solver(beta=beta, gf_struct=gf_struct)
@@ -97,7 +97,7 @@ if previous_present:
   SK.set_dc(dc_imp,dc_energ)
 
 for iteration_number in range(1,loops+1):
-    if mpi.is_master_node(): print "Iteration = ", iteration_number
+    if mpi.is_master_node(): print("Iteration = ", iteration_number)
 
     SK.symm_deg_gf(S.Sigma_iw,orb=0)                        # symmetrise Sigma
     SK.set_Sigma([ S.Sigma_iw ])                            # set Sigma into the SumK class

@@ -32,7 +32,7 @@ Please provide the application version that you used.
 
 You can get this information from copy and pasting the output of
 ```bash
-python -c "from app4triqs.version import *; show_version(); show_git_hash();"
+python -c "from triqs_dft_tools.version import *; show_version(); show_git_hash();"
 ```
 from the command line. Also, please include the OS you are running and its version.
 

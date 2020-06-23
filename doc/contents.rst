@@ -7,6 +7,7 @@ Table of contents
    index
    install
    documentation
+   tutorials
    issues
    changelog
    about

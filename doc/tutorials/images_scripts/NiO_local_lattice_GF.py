@@ -1,12 +1,12 @@
 from itertools import *
 import numpy as np
-import pytriqs.utility.mpi as mpi
-from pytriqs.archive import *
-from pytriqs.gf import *
+import triqs.utility.mpi as mpi
+from h5 import *
+from triqs.gf import *
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
-from pytriqs.operators.util.hamiltonians import *
-from pytriqs.operators.util.U_matrix import *
+from triqs.operators.util.hamiltonians import *
+from triqs.operators.util.U_matrix import *
 from triqs_cthyb import *
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -39,7 +39,7 @@ if mpi.is_master_node():
     if not 'Iterations' in ar['DMFT_results']: ar['DMFT_results'].create_group('Iterations')
     if 'iteration_count' in ar['DMFT_results']: 
         iteration_offset = ar['DMFT_results']['iteration_count']+1
-        print('offset',iteration_offset)
+        print(('offset',iteration_offset))
         Sigma_iw = ar['DMFT_results']['Iterations']['Sigma_it'+str(iteration_offset-1)]
         SK.dc_imp = ar['DMFT_results']['Iterations']['dc_imp'+str(iteration_offset-1)]
         SK.dc_energ = ar['DMFT_results']['Iterations']['dc_energ'+str(iteration_offset-1)]
@@ -54,13 +54,13 @@ SK.chemical_potential = mpi.bcast(SK.chemical_potential)
 
 SK.put_Sigma(Sigma_imp = [Sigma_iw])
 
-ikarray = numpy.array(range(SK.n_k))
+ikarray = numpy.array(list(range(SK.n_k)))
 
 # set up the orbitally resolved local lattice greens function:
 n_orbs = SK.proj_mat_csc.shape[2]
 spn = SK.spin_block_names[SK.SO]
 mesh = Sigma_iw.mesh
-block_structure = [range(n_orbs) for sp in spn]
+block_structure = [list(range(n_orbs)) for sp in spn]
 gf_struct = [(spn[isp], block_structure[isp])
          for isp in range(SK.n_spin_blocks[SK.SO])]
 block_ind_list = [block for block, inner in gf_struct]

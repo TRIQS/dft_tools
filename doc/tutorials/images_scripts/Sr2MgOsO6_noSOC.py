@@ -1,14 +1,14 @@
 # Import the modules:
 from triqs_dft_tools.sumk_dft import *
-from pytriqs.gf import *
-from pytriqs.archive import HDFArchive
-from pytriqs.operators.util import *
-from pytriqs.operators.util.U_matrix import *
+from triqs.gf import *
+from h5 import HDFArchive
+from triqs.operators.util import *
+from triqs.operators.util.U_matrix import *
 from triqs_cthyb import *
-import pytriqs.utility.mpi as mpi
+import triqs.utility.mpi as mpi
 
 # Convert the input
-from triqs_dft_tools.converters.wien2k_converter import *
+from triqs_dft_tools.converters.wien2k import *
 Converter = Wien2kConverter(filename = "Sr2MgOsO6_noSOC")
 Converter.convert_dft_input()
 

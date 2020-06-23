@@ -1,4 +1,4 @@
-from triqs_dft_tools.converters.wien2k_converter import Wien2kConverter
+from triqs_dft_tools.converters.wien2k import Wien2kConverter
 from triqs_dft_tools import SumkDFTTools
 
 filename = 'Sr2RuO4'
