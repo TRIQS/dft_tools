@@ -97,15 +97,20 @@ class SumkDFT(object):
             self.block_structure = BlockStructure()
 
             # Read input from HDF:
-            things_to_read = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
+            req_things_to_read = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                               'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
-                              'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'proj_mat_csc', 'bz_weights', 'hopping',
-                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk','kpts_cart']
-            self.subgroup_present, self.value_read = self.read_input_from_hdf(
-                subgrp=self.dft_data, things_to_read=things_to_read)
-           # if self.proj_or_hk == 'hk':
-           #     self.subgroup_present, self.value_read = self.read_input_from_hdf(
-           #     subgrp=self.dft_data, things_to_read=['proj_mat_csc'])
+                              'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
+                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
+            self.subgroup_present, self.values_not_read = self.read_input_from_hdf(
+                subgrp=self.dft_data, things_to_read=req_things_to_read)
+            # test if all required properties have been found
+            if len(self.values_not_read) > 0 and mpi.is_master_node:
+                raise ValueError('ERROR: One or more necessary SumK input properties have not been found in the given h5 archive:',self.values_not_read)
+
+            # optional properties to load
+            optional_things_to_read = ['proj_mat_csc', 'proj_or_hk', 'kpts_cart']
+            subgroup_present, self.optional_values_not_read = self.read_input_from_hdf(subgrp=self.dft_data, things_to_read=optional_things_to_read)
+
             if self.symm_op:
                 self.symmcorr = Symmetry(hdf_file, subgroup=self.symmcorr_data)
 
@@ -167,7 +172,7 @@ class SumkDFT(object):
 
             self.min_band_energy = None
             self.max_band_energy = None
-            
+
 ################
 # hdf5 FUNCTIONS
 ################
@@ -187,12 +192,12 @@ class SumkDFT(object):
         -------
         subgroup_present : boolean
                            Is the subgrp is present in hdf5 file?
-        value_read : boolean
-                     Did the reading of requested datasets succeed?
+        values_not_read : list of strings
+                           List of things that could not be read
 
         """
 
-        value_read = True
+        values_not_read = []
         # initialise variables on all nodes to ensure mpi broadcast works at
         # the end
         for it in things_to_read:
@@ -208,21 +213,21 @@ class SumkDFT(object):
                         if it in ar[subgrp]:
                             setattr(self, it, ar[subgrp][it])
                         else:
-                            mpi.report("Loading %s failed!" % it)
-                            value_read = False
+                            values_not_read.append(it)
                 else:
                     if (len(things_to_read) != 0):
                         mpi.report(
                             "Loading failed: No %s subgroup in hdf5!" % subgrp)
                     subgroup_present = False
-                    value_read = False
+                    values_not_read = things_to_read
+
         # now do the broadcasting:
         for it in things_to_read:
             setattr(self, it, mpi.bcast(getattr(self, it)))
         subgroup_present = mpi.bcast(subgroup_present)
-        value_read = mpi.bcast(value_read)
+        values_not_read = mpi.bcast(values_not_read)
 
-        return subgroup_present, value_read
+        return subgroup_present, values_not_read
 
     def save(self, things_to_save, subgrp='user_data'):
         r"""
@@ -650,7 +655,7 @@ class SumkDFT(object):
                 Sigma_mesh = numpy.array([i for i in gf.mesh.values()])
                 if Sigma_mesh[0] > (self.min_band_energy - self.chemical_potential) or Sigma_mesh[-1] < (self.max_band_energy - self.chemical_potential):
                     warn('The given Sigma is on a mesh which does not cover the band energy range. The Sigma MeshReFreq runs from %f to %f, while the band energy (minus the chemical potential) runs from %f to %f'%(Sigma_mesh[0], Sigma_mesh[-1], self.min_band_energy, self.max_band_energy))
-                
+
     def transform_to_sumk_blocks(self, Sigma_imp, Sigma_out=None):
         r""" transform Sigma from solver to sumk space
 
