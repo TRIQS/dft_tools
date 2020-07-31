@@ -1,14 +1,78 @@
 Version 3.0.0
--------------
+=============
 
-* Major rework of the VASP interface, including thorough documentation and tutorials
+DFTTools Version 3.0.0 is a major release that
+
+* is compatible only with TRIQS version 3.0.0 or newer
+* introduces compatibility with Python 3 (Python is no longer supported)
+* is now aligned with the general [app4triqs](https://github.com/TRIQS/app4triqs) application skeleton
+* brings a major rework of the VASP interface, including thorough documentation, tutorials, a new Hamiltonian mode, the option to select bands instead of an energy window, and many small bugfixes.
+* brings a major update of the block structure functionalities especially for SOC calculations, with detailed documentation and tutorials. Allows more control over the block structure coming from DFT, cutting out certain orbitals or throwing away off-diagonal elements when preparing input for the solver.
+
+Restructuring
+-------------
+To be aligned with other applications for TRIQS, various files and folders had to be moved to new locations. The c++, fortran and python parts all are now in separate folders. The converter files have been more logically split into their own folders and name spaces. For example the Vasp converter is now located under `python/triqs_dft_tools/converters/vasp.py`. Especially the test folder structure was adapted to fit to the app4triqs skeleton, which separate folders for C++ and python tests.
+
+Dependency Managment
+--------------------
+We are managing the interdependencies of the various library components of triqs now using cmake.
+Per default cmake will pull those dependencies from their corresponding
+GitHub repositories, build them, and install these components together
+with TRIQS, unless they are found in your system.
+This behavior can be altered using the additional cmake options
+
+* `-DBuild_Deps="Always"` - Always build dependencies, do not try to find them
+* `-DBuild_Deps="Never"` - Never build dependencies, but find them instead
+
+during the configuration step. See also the TRIQS documentation for more detailed instructions.
+
+other changes:
+-------------
+* Run port_to_triqs3 script
+* Changed 'orb' parameter to 'ish' for consistency in function summ_deg_gf in file sumk_dft.py
+* small fix to read_inp_from_h5 function of Sumk
+* renamed converters from app_converter.py to app.py
+* look at the mesh of each shell of Sigma_imp, not just the first shell
+* add function to find min and max of band energy, and add warning to set_Sigma if its mesh is smaller than the energy bounds
+* warning for set_Sigma if ReFreqMesh is too small
+* rename all h5 test archives according to test_name.ref.h5
+* synchronize dfttools with app4triqs structure
+* Update triqs python module name
+* fixed a slicing bug for the calculation of the target density in the VASP converter, which selected 1 band less in the correlated window than required.
+* doc on automatic basis rotations
+* Bugfix in calculate_density_matrix for purely imaginary off-diagonals
+* revamping the VASP interface documentation. Rewrote the interface with VASP guide. Removed the unused doc/vasp/* files. Start for SVO VASP tutorial as ipynb
+* changed ref file for block structure test, since the order in dicts is not guaranteed the test failed as the order in py3 changed
+* Fix additional integer division to use floordiv
+* Vasp Converter: efermi is now read from LOCPROJ if DOSCAR does not contain it yet
+* E-Fermi is read from DOSCAR not from LOCPROJ
+* Vasp converter add kpts and kpts_cart to h5
+* many adjustments to Block structure and rotations including option to throw away certain parts of BlockGf
+* Adjust to nda/h5 changes in triqs pytriqs.archive -> h5
+* Do not use deprecated set_from_inverse_fourier
+* Port py files to python3
+* add SOC tutorial
+* add Block structure tutorial
+* adding detailed Vasp tutorial
+* Adjust hdf5 usage to changes in triqs/nda
+* Use python instead of bash for the replace and rename operation
+* Use PROJECT_VERSION over APP4TRIQS_VERSION
+* Add C to Project Languages
+* Vasp converter now supports Hamiltonian mode
+* Move setup files into separate bash scripts and adjust README
+* Update README file with more detailed instructions
+* Correction to previous commit, run c++ tests in proper test directory
+* Add requirements.txt for python package dependencies
+* Add .dockerignore
+* First draft of the triqs application skeleton
+
 
 Thanks to all commit-contributors (in alphabetical order):
-Markus Aichhorn, Alexander Hampel, Oleg Peil, Malte Schueler, Nils Wentzell, Manuel Zingl
+Markus Aichhorn, Alexander Hampel, Oleg Peil, Hermann Schnait, Malte Schueler, Nils Wentzell, Manuel Zingl
 
 
 Version 2.2.1
--------------
+=============
 
 DFTTools Version 2.2.1 makes the application available
 through the Anaconda package manager. We adjust
@@ -20,7 +84,7 @@ We provide a more detailed description of the changes below.
 
 
 Version 2.2.0
--------------
+=============
 
 * Ensure that the chemical potential calculations results in a real number
 * Fix a bug in reading Wien2k optics files in SO/SP cases
@@ -30,13 +94,13 @@ Version 2.2.0
 This is to a large extend a compatibility release against TRIQS version 2.2.0
 
 Thanks to all commit-contributors (in alphabetical order):
-Markus Aichhorn, Dylan Simon, Erik van Loon, Nils Wentzell, Manuel Zingl 
+Markus Aichhorn, Dylan Simon, Erik van Loon, Nils Wentzell, Manuel Zingl
 
 
 Version 2.1.x (changes since 1.4)
----------------------------------
+=================================
 
-* Added Debian Packaging 
+* Added Debian Packaging
 * Compatibility changes for TRIQS 2.1.x
 * Jenkins adjustments
 * Add option to measure python test coverage
@@ -51,4 +115,4 @@ Version 2.1.x (changes since 1.4)
 Thanks to all commit-contributors (in alphabetical order):
 Markus Aichhorn, Gernot J. Kraberger, Olivier Parcollet, Oleg Peil, Hiroshi Shinaoka, Dylan Simon, Hugo U. R. Strand, Nils Wentzell, Manuel Zingl
 
-Thanks to all user for reporting issues and suggesting improvements. 
+Thanks to all user for reporting issues and suggesting improvements.
