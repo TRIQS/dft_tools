@@ -14,7 +14,7 @@ class test_toto(unittest.TestCase):
         b=Toto(2)
         
         c=a+b
-        self.assertEqual(c, a)
+        self.assertEqual(c, b)
 
 
     def test_h5(self):
