@@ -39,16 +39,22 @@ other changes:
 * look at the mesh of each shell of Sigma_imp, not just the first shell
 * add function to find min and max of band energy, and add warning to set_Sigma if its mesh is smaller than the energy bounds
 * warning for set_Sigma if ReFreqMesh is too small
+* fixed a index bug that produced empty projectors for a unit cells with multiple shells in the VASP converter
 * fixed a slicing bug for the calculation of the target density in the VASP converter, which selected 1 band less in the correlated window than required.
+* added printout of complex part of local Hamiltonian in the Vasp converter
 * doc on automatic basis rotations
 * Bugfix in calculate_density_matrix for purely imaginary off-diagonals
 * revamping the VASP interface documentation. Rewrote the interface with VASP guide. Removed the unused in doc/vasp. Start for SVO VASP tutorial as ipynb
 * changed ref file for block structure test, since the order in dicts is not guaranteed the test failed as the order in py3 changed
 * Vasp Converter: efermi is now read from LOCPROJ if DOSCAR does not contain it yet
 * E-Fermi is read from DOSCAR not from LOCPROJ
-* Vasp converter add kpts and kpts_cart to h5
+* Added Tutorial for basis rotations: Sr2MgOsO6 w/o SOC
+* Vasp converter add kpts and kpts_basis to h5
 * many adjustments to Block structure and rotations including option to throw away certain parts of BlockGf
+* implemented multiple ncsf VASP cycles
+* Ignore imaginary part of the density when calculating mu
 * Adjust hdf5 usage to changes in triqs
+* Calculate diagonalization in solver blocks
 * Do not use deprecated set_from_inverse_fourier
 * add SOC tutorial
 * add Block structure tutorial
