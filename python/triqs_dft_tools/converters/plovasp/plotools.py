@@ -310,6 +310,9 @@ def ctrl_output(conf_pars, el_struct, ng):
     head_dict['ngroups'] = ng
     head_dict['nk'] = el_struct.kmesh['nktot']
     head_dict['ns'] = el_struct.nspin
+    head_dict['kvec1'] = list(el_struct.structure['kpt_basis'][:,0])
+    head_dict['kvec2'] = list(el_struct.structure['kpt_basis'][:,1])
+    head_dict['kvec3'] = list(el_struct.structure['kpt_basis'][:,2])
     head_dict['nc_flag'] = 1 if el_struct.nc_flag else 0
 #    head_dict['efermi'] = conf_pars.general['efermi']  # We probably don't need Efermi
 

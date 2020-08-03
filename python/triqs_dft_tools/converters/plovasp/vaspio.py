@@ -337,12 +337,12 @@ class Poscar:
         - ntypes ([int]) : number of ion types
         - nions (int) : a list of number of ions of each type
         - a_brav (numpy.array((3, 3), dtype=float)) : lattice vectors
+        - kpt_basis (numpy.array((3, 3), dtype=float)) : reciprocal lattice vectors
         - q_types ([numpy.array((nions, 3), dtype=float)]) : a list of
           arrays each containing fractional coordinates of ions of a given type
     """
     def __init__(self):
         self.q_cart = None
-        self.b_rec = None
 
     def from_file(self, vasp_dir='./', poscar_filename='POSCAR'):
         """
@@ -409,8 +409,8 @@ class Poscar:
 
 # Check whether coordinates are cartesian or fractional
         cartesian = (sline[0].lower() in 'ck')
-        if cartesian:
-            brec = np.linalg.inv(self.a_brav.T)
+        # determine reciprocal basis in units of 2*pi
+        self.kpt_basis = np.linalg.inv(self.a_brav.T)
 
 # Read atomic positions
         self.q_types = []
@@ -424,7 +424,7 @@ class Poscar:
                 sline = readline_remove_comments()
                 qcoord = list(map(float, sline.split()[:3]))
                 if cartesian:
-                    qcoord = np.dot(brec, qcoord)
+                    qcoord = np.dot(self.kpt_basis, qcoord)
                 q_at_it[iq, :] = qcoord
 
             self.q_types.append(q_at_it)

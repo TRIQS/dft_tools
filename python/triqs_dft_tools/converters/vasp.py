@@ -159,14 +159,23 @@ class VaspConverter(ConverterTools):
         SP = ctrl_head['ns'] - 1
         SO = ctrl_head['nc_flag']
 
+        # load reciprocal basis
+        kpt_basis = numpy.zeros((3,3))
+        kpt_basis[:,0] = ctrl_head['kvec1']
+        kpt_basis[:,1] = ctrl_head['kvec2']
+        kpt_basis[:,2] = ctrl_head['kvec3']
+
         kpts = numpy.zeros((n_k, 3))
         kpts_cart = numpy.zeros((n_k, 3))
         bz_weights = numpy.zeros(n_k)
+        kpt_weights = numpy.zeros(n_k)
         try:
             for ik in range(n_k):
                 kx, ky, kz = next(rf), next(rf), next(rf)
                 kpts[ik, :] = kx, ky, kz
                 bz_weights[ik] = next(rf)
+                # bz_weights soon to be removed, and replaced by kpt_weights
+                kpt_weights[ik] = bz_weights[ik]
             for ik in range(n_k):
                 kx, ky, kz = next(rf), next(rf), next(rf)
                 kpts_cart[ik, :] = kx, ky, kz
@@ -380,16 +389,18 @@ class VaspConverter(ConverterTools):
             if not (self.dft_subgrp in ar): ar.create_group(self.dft_subgrp)
             # The subgroup containing the data. If it does not exist, it is created. If it exists, the data is overwritten!
             things_to_save = ['energy_unit','n_k','k_dep_projection','SP','SO','charge_below','density_required',
-                          'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
-                          'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights','hopping',
-                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk','kpts','kpts_cart']
-            if self.proj_or_hk == 'hk' or True:
+                              'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
+                              'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights',
+                              'hopping','n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk',
+                              'kpts','kpt_weights', 'kpt_basis']
+            if self.proj_or_hk == 'hk' or self.proj_or_hk ==  True:
                 things_to_save.append('proj_mat_csc')
             for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]
 
             # Store Fermi weights to 'dft_misc_input'
             if not (self.misc_subgrp in ar): ar.create_group(self.misc_subgrp)
             ar[self.misc_subgrp]['dft_fermi_weights'] = f_weights
+            ar[self.misc_subgrp]['kpts_cart'] = kpts_cart
             ar[self.misc_subgrp]['band_window'] = band_window
 
         # Symmetries are used, so now convert symmetry information for *correlated* orbitals:
