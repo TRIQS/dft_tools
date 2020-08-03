@@ -102,6 +102,7 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
 }
 
 /****************** wrap-up */
+def error = null
 try {
   parallel platforms
   if (keepInstall) { node("docker") {
@@ -150,12 +151,12 @@ try {
     } }
   } }
 } catch (err) {
+  error = err
+} finally {
   /* send email on build failure (declarative pipeline's post section would work better) */
-  if (env.BRANCH_NAME != "jenkins") emailext(
+  if ((error != null || currentBuild.currentResult != 'SUCCESS') && env.BRANCH_NAME != "jenkins") emailext(
     subject: "\$PROJECT_NAME - Build # \$BUILD_NUMBER - FAILED",
     body: """\$PROJECT_NAME - Build # \$BUILD_NUMBER - FAILED
-
-$err
 
 Check console output at \$BUILD_URL to view full results.
 
@@ -168,11 +169,11 @@ Changes:
 End of build log:
 \${BUILD_LOG,maxLines=60}
     """,
-    to: 'nwentzell@flatironinstitute.org',
+    to: 'nwentzell@flatironinstitute.org, dsimon@flatironinstitute.org',
     recipientProviders: [
       [$class: 'DevelopersRecipientProvider'],
     ],
     replyTo: '$DEFAULT_REPLYTO'
   )
-  throw err
+  if (error != null) throw error
 }
