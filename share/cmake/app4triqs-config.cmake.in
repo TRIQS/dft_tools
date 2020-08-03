@@ -15,8 +15,7 @@ set(@PROJECT_NAME@_GIT_HASH @PROJECT_GIT_HASH@ CACHE STRING "@PROJECT_NAME@ git 
 set(@PROJECT_NAME@_ROOT @CMAKE_INSTALL_PREFIX@ CACHE STRING "@PROJECT_NAME@ root directory")
 
 ## Find the target dependencies
-#include(CMakeFindDependencyMacro)
-#find_dependency(... HINTS @CMAKE_INSTALL_PREFIX@)
+#find_package(... REQUIRED HINTS @CMAKE_INSTALL_PREFIX@)
 
 # Include the exported targets of this project
 include(@CMAKE_INSTALL_PREFIX@/lib/cmake/@PROJECT_NAME@/@PROJECT_NAME@-targets.cmake)
