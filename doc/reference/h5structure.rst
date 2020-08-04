@@ -113,6 +113,7 @@ dft_fermi_weights  numpy.array.float, dim n_k x 1 x max(n_orbitals)             
                    (stored in dft_misc_input)                                              of density matrix correction.
 band_window        list of numpy.array.int , dim(SP+1-SO)x n_k x 2                         Band windows as KS band indices in Vasp for each spin channel, and k-point. Needed for
                    (stored in dft_misc_input)                                              writing out the GAMMA file.
+=================  ======================================================================  =====================================================================================
 
 
 
