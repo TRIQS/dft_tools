@@ -109,7 +109,7 @@ class SumkDFT(object):
 
             # optional properties to load
             # soon bz_weights is depraced and replaced by kpt_weights, kpts_basis and kpts will become required to read soon
-            optional_things_to_read = ['proj_mat_csc', 'proj_or_hk', 'kpts_basis','kpts','kpt_weights', 'kpt_basis']
+            optional_things_to_read = ['proj_mat_csc', 'proj_or_hk', 'kpt_basis','kpts','kpt_weights']
             subgroup_present, self.optional_values_not_read = self.read_input_from_hdf(subgrp=self.dft_data, things_to_read=optional_things_to_read)
 
             if self.symm_op:
