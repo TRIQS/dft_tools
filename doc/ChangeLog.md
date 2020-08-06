@@ -14,7 +14,7 @@ Restructuring
 -------------
 To be aligned with other applications for TRIQS, various files and folders had to be moved to new locations. The c++, fortran and python parts all are now in separate folders. The converter files have been more logically split into their own folders and name spaces. For example the Vasp converter is now located under `python/triqs_dft_tools/converters/vasp.py`. Especially the test folder structure was adapted to fit to the app4triqs skeleton, which separate folders for C++ and python tests.
 
-Dependency Managment
+Dependency Management
 --------------------
 We are managing the interdependencies of the various library components of triqs now using cmake.
 Per default cmake will pull those dependencies from their corresponding
@@ -27,7 +27,7 @@ This behavior can be altered using the additional cmake options
 
 during the configuration step. See also the TRIQS documentation for more detailed instructions.
 
-other changes:
+Other Changes:
 -------------
 * Run port_to_triqs3 script
 * Port py files to python3
