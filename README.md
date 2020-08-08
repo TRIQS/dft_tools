@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/TRIQS/app4triqs.svg?branch=unstable)](https://travis-ci.org/TRIQS/app4triqs)
+[![build](https://github.com/TRIQS/app4triqs/workflows/build/badge.svg)](https://github.com/TRIQS/app4triqs/actions?query=workflow%3Abuild)
 
 # app4triqs - A skeleton for a TRIQS application
 
