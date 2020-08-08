@@ -1,24 +1,18 @@
-###################################################################################
+# Copyright (c) 2019-2020 Simons Foundation
 #
-# TRIQS: a Toolbox for Research in Interacting Quantum Systems
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# Copyright (C) 2019-2020 Simons Foundation
-#    author: N. Wentzell
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# TRIQS is free software: you can redistribute it and/or modify it under the
-# terms of the GNU General Public License as published by the Free Software
-# Foundation, either version 3 of the License, or (at your option) any later
-# version.
-#
-# TRIQS is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
-# details.
-#
-# You should have received a copy of the GNU General Public License along with
-# TRIQS. If not, see <http://www.gnu.org/licenses/>.
-#
-###################################################################################
+# You may obtain a copy of the License at
+#     https://www.gnu.org/licenses/gpl-3.0.txt
+
 
 # Recursively fetch all targets that the interface of a target depends upon
 macro(get_all_interface_targets name target)
@@ -89,7 +83,8 @@ macro(extract_flags)
     endif()
   endforeach()
 
-  # We have to replace generator expressions explicitly
+  # ==== We have to replace generator expressions explicitly ====
+
   if(ARG_BUILD_INTERFACE)
     string(REGEX REPLACE "\\$<BUILD_INTERFACE:([^ ]*)>" "\\1" ${target}_LDFLAGS "${${target}_LDFLAGS}")
     string(REGEX REPLACE "\\$<BUILD_INTERFACE:([^ ]*)>" "\\1" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
@@ -97,6 +92,25 @@ macro(extract_flags)
     string(REGEX REPLACE "\\$<INSTALL_INTERFACE:([^ ]*)>" "\\1" ${target}_LDFLAGS "${${target}_LDFLAGS}")
     string(REGEX REPLACE "\\$<INSTALL_INTERFACE:([^ ]*)>" "\\1" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
   endif()
+
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    string(REGEX REPLACE "\\$<\\$<CXX_COMPILER_ID:GNU>:([^ ]*)>" "\\1" ${target}_LDFLAGS "${${target}_LDFLAGS}")
+    string(REGEX REPLACE "\\$<\\$<CXX_COMPILER_ID:GNU>:([^ ]*)>" "\\1" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    string(REGEX REPLACE "\\$<\\$<CXX_COMPILER_ID:Clang>:([^ ]*)>" "\\1" ${target}_LDFLAGS "${${target}_LDFLAGS}")
+    string(REGEX REPLACE "\\$<\\$<CXX_COMPILER_ID:Clang>:([^ ]*)>" "\\1" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    string(REGEX REPLACE "\\$<\\$<CXX_COMPILER_ID:AppleClang>:([^ ]*)>" "\\1" ${target}_LDFLAGS "${${target}_LDFLAGS}")
+    string(REGEX REPLACE "\\$<\\$<CXX_COMPILER_ID:AppleClang>:([^ ]*)>" "\\1" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
+  endif()
+
+  # Remove all remaining generator expressions
   string(REGEX REPLACE " [^ ]*\\$<[^ ]*:[^>]*>" "" ${target}_LDFLAGS "${${target}_LDFLAGS}")
   string(REGEX REPLACE " [^ ]*\\$<[^ ]*:[^>]*>" "" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
+
+  # Filter out system directories from LDFLAGS and CXXFLAGS
+  string(REGEX REPLACE " -L/usr/lib " " " ${target}_LDFLAGS "${${target}_LDFLAGS}")
+  string(REGEX REPLACE " -I/usr/include " " " ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
+  string(REGEX REPLACE " -isystem/usr/include " " " ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
+
 endmacro()

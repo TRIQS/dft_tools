@@ -15,13 +15,18 @@ set(@PROJECT_NAME@_GIT_HASH @PROJECT_GIT_HASH@ CACHE STRING "@PROJECT_NAME@ git 
 set(@PROJECT_NAME@_ROOT @CMAKE_INSTALL_PREFIX@ CACHE STRING "@PROJECT_NAME@ root directory")
 
 ## Find the target dependencies
-#include(CMakeFindDependencyMacro)
-#find_dependency(... HINTS @CMAKE_INSTALL_PREFIX@)
+#function(find_dep)
+#  get_property(${ARGV0}_FOUND GLOBAL PROPERTY ${ARGV0}_FOUND)
+#  if(NOT ${ARGV0}_FOUND)
+#    find_package(${ARGN} REQUIRED HINTS @CMAKE_INSTALL_PREFIX@)
+#  endif()
+#endfunction()
+#find_dep(depname 1.0)
 
 # Include the exported targets of this project
 include(@CMAKE_INSTALL_PREFIX@/lib/cmake/@PROJECT_NAME@/@PROJECT_NAME@-targets.cmake)
 
-message(STATUS "Found @PROJECT_NAME@-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@")
+message(STATUS "Found @PROJECT_NAME@-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@, root = @CMAKE_INSTALL_PREFIX@")
 
 # Was the Project built with Documentation?
 set(@PROJECT_NAME@_WITH_DOCUMENTATION @Build_Documentation@ CACHE BOOL "Was @PROJECT_NAME@ build with documentation?")

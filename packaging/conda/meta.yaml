@@ -1,0 +1,55 @@
+{% set version = "3.0.0" %}
+
+package:
+  name: triqs_dft_tools
+  version: {{ version }}
+
+source:
+  url: https://github.com/TRIQS/dft_tools/releases/download/{{ version }}/dft_tools-{{ version }}.tar.gz
+  sha256: PUT HERE THE SHA256 OF YOUR RELEASE TARBALL
+
+build:
+  number: 0
+  skip: True  # [win or py<30]
+
+requirements:
+  build:
+    - cmake
+    - make
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ compiler('fortran') }}
+  host:
+    - triqs {{ '.'.join(version.split('.')[:2]) }}
+    - boost-cpp
+    - {{ mpi }}
+    - libblas
+    - liblapack
+    - python
+  run:
+    - {{ pin_compatible("triqs", max_pin="x.x") }}
+    - {{ mpi }}
+    - libblas
+    - liblapack
+    - python
+
+test:
+  commands:
+    - export OMPI_MCA_btl=self,tcp
+    - export OMPI_MCA_plm=isolated
+    - export OMPI_MCA_rmaps_base_oversubscribe=yes
+    - export OMPI_MCA_btl_vader_single_copy_mechanism=none
+    - export mpiexec="mpiexec --allow-run-as-root"
+    - python -c "import triqs_dft_tools"
+
+about:
+  home: https://triqs.github.io/dft_tools
+  license: GPL-3.0-or-later
+  license_family: GPL
+  license_file: LICENSE.txt
+  summary: 'Toolbox for ab initio calculations of correlated materials'
+
+extra:
+  recipe-maintainers:
+    - wentzell
+    - pgunn
