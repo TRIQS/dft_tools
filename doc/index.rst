@@ -7,9 +7,9 @@
 DFTTools
 ========
 
-.. sidebar:: DFTTools 2.2
+.. sidebar:: DFTTools 3.0
 
-   This is the homepage DFTTools Version 2.2
+   This is the homepage DFTTools Version 3.0
    For the changes in DFTTools, Cf :ref:`changelog page <changelog>`
 
 This :ref:`TRIQS-based <triqslibs:welcome>`-based application is aimed
