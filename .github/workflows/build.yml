@@ -77,12 +77,15 @@ jobs:
       env:
         CC: ${{ matrix.cc }}
         CXX: ${{ matrix.cxx }}
+        LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
         source $HOME/install/share/triqsvars.sh
         mkdir build && cmake -B build
         cmake --build build -j2
 
     - name: Test app4triqs
+      env:
+        DYLD_FALLBACK_LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
         source $HOME/install/share/triqsvars.sh
         cd build
