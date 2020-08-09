@@ -45,9 +45,9 @@ separate_build_dir = True
 runtest = 'test'
 
 sanity_check_paths = {
-    'files': ['lib/libapp4triqs_c.a'],
-    'dirs': ['include', 'include/app4triqs', 'lib',
-             'lib/python%(pyshortver)s/site-packages', 'share'],
+    'files': ['lib/libapp4triqs_c.%s' % SHLIB_EXT],
+    'dirs': ['include/app4triqs', 'lib', 'share',
+             'lib/python%(pyshortver)s/site-packages/app4triqs'],
 }
 
 sanity_check_commands = ["python -c 'import app4triqs'"]
