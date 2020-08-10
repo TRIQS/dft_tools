@@ -103,6 +103,7 @@ target_compile_options(${PROJECT_NAME}_warnings
     -Wextra
     -Wpedantic
     -Wno-sign-compare
+    -Wno-deprecated-comma-subscript
     $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
     $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
     $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
