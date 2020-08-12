@@ -24,6 +24,7 @@
 #  Wannier90 to HDF5 converter for the SumkDFT class of dfttools/TRIQS;
 #
 #   written by Gabriele Sclauzero (Materials Theory, ETH Zurich), Dec 2015 -- Jan 2016,
+#   and updated by Maximilian Merkel (Materials Theory, ETH Zurich), Aug 2020,
 #   under the supervision of Claude Ederer (Materials Theory).
 #   Partially based on previous work by K. Dymkovski and the DFT_tools/TRIQS team.
 #
@@ -59,7 +60,8 @@ class Wannier90Converter(ConverterTools):
     """
 
     def __init__(self, seedname, hdf_filename=None, dft_subgrp='dft_input',
-                 symmcorr_subgrp='dft_symmcorr_input', repacking=False):
+                 symmcorr_subgrp='dft_symmcorr_input', repacking=False,
+                 rot_mat_type = 'hloc_diag'):
         """
         Initialise the class.
 
@@ -75,7 +77,9 @@ class Wannier90Converter(ConverterTools):
             Name of subgroup storing correlated-shell symmetry data
         repacking : boolean, optional
             Does the hdf5 archive need to be repacked to save space?
-
+        rot_mat_typ : string, optional
+            Type of rot_mat used
+            Can be 'hloc_diag', 'wannier', 'none'
         """
 
         self._name = "Wannier90Converter"
@@ -94,6 +98,10 @@ class Wannier90Converter(ConverterTools):
         # threshold below which matrix elements from wannier90 should be
         # considered equal
         self._w90zero = 2.e-6
+        self.rot_mat_type = rot_mat_type
+        if self.rot_mat_type not in ('hloc_diag', 'wannier', 'none'):
+            raise ValueError('Parameter rot_mat_type invalid, should be one of'
+                             + '"hloc_diag", "wannier", "none"')
 
         # Checks if h5 file is there and repacks it if wanted:
         if (os.path.exists(self.hdf_file) and repacking):
@@ -496,6 +504,14 @@ class Wannier90Converter(ConverterTools):
             succeeded = False
             return succeeded, rot_mat
 
+        # Method none as physically unsound option for testing
+        # Returns identity matrices as rotation matrices
+        if self.rot_mat_type == 'none':
+            mpi.report('WARNING: using the method "none" leads to physically wrong results. '
+                       + 'Only use for testing if other methods fail.')
+            succeeded = True
+            return succeeded, rot_mat
+
         # TODO: better handling of degenerate eigenvalue case
         eigval_lst = [None] * n_sh
         eigvec_lst = [None] * n_sh
@@ -522,10 +538,15 @@ class Wannier90Converter(ConverterTools):
 
         for ish in range(n_sh):
             try:
-                # build rotation matrices by combining the unitary
-                # transformations that diagonalize H(0)
-                rot_mat[ish] = numpy.dot(eigvec_lst[ish], eigvec_lst[
-                                         sh_map[ish]].conjugate().transpose())
+                # build rotation matrices either...
+                if self.rot_mat_type == 'hloc_diag':
+                    # using the unitary transformations that diagonalize H(0)
+                    rot_mat[ish] = eigvec_lst[ish]
+                elif self.rot_mat_type == 'wannier':
+                    # or by combining those transformations (i.e. for each group,
+                    # the representative site is chosen as the global frame of reference)
+                    rot_mat[ish] = numpy.dot(eigvec_lst[ish],
+                                             eigvec_lst[sh_map[ish]].conjugate().transpose())
             except ValueError:
                 mpi.report(
                     "Global-to-local rotation matrices cannot be constructed!")
