@@ -44,13 +44,13 @@
 ###
 
 
-from types import *
 import numpy
 import math
 from h5 import *
 from .converter_tools import *
 from itertools import product
 import os.path
+import pytriqs.utility.mpi as mpi
 
 
 class Wannier90Converter(ConverterTools):
@@ -293,7 +293,7 @@ class Wannier90Converter(ConverterTools):
                     ham_corr0 = hamr[ir][0:dim_corr_shells, 0:dim_corr_shells]
 
             # checks if ham0 is Hermitian
-            if not numpy.allclose(ham_corr0.transpose().conjugate(), ham_corr0, atol=self._w90zero, rtol=1.e-9):
+            if not numpy.allclose(ham_corr0.transpose().conjugate(), ham_corr0, atol=self._w90zero, rtol=0):
                 raise ValueError("H(R=0) matrix is not Hermitian!")
 
             # find rot_mat symmetries by diagonalising the on-site Hamiltonian
@@ -309,7 +309,7 @@ class Wannier90Converter(ConverterTools):
                     mpi.report(
                         "Rotations cannot be used for spin component n. %d" % isp)
                 for icrsh in range(n_corr_shells):
-                    if not numpy.allclose(rot_mat_[icrsh], rot_mat[icrsh], atol=self._w90zero, rtol=1.e-15):
+                    if not numpy.allclose(rot_mat_[icrsh], rot_mat[icrsh], atol=self._w90zero, rtol=0):
                         mpi.report(
                             "Rotations for spin component n. %d do not match!" % isp)
         # end loop on isp
@@ -476,7 +476,7 @@ class Wannier90Converter(ConverterTools):
 
         Returns
         -------
-        istatus : integer
+        succeeded : integer
             if 0, something failed in the construction of the matrices
         rot_mat : list of numpy.array
             rotation matrix for each of the shell
@@ -486,38 +486,37 @@ class Wannier90Converter(ConverterTools):
         # initialize the rotation matrices to identities
         rot_mat = [numpy.identity(sh_lst[ish]['dim'], dtype=complex)
                    for ish in range(n_sh)]
-        istatus = 0
+        succeeded = True
 
         hs = ham0.shape
         if hs[0] != hs[1] or hs[0] != sum([sh['dim'] for sh in sh_lst]):
             mpi.report(
                 "find_rot_mat: wrong block structure of input Hamiltonian!")
-            istatus = 0
             # this error will lead into troubles later... early return
-            return istatus, rot_mat
+            succeeded = False
+            return succeeded, rot_mat
 
         # TODO: better handling of degenerate eigenvalue case
-        eigval_lst = []
-        eigvec_lst = []
+        eigval_lst = [None] * n_sh
+        eigvec_lst = [None] * n_sh
+        ham0_lst = [None] * n_sh
         iwf = 0
         # loop over shells
         for ish in range(n_sh):
             # nw = number of orbitals in this shell
             nw = sh_lst[ish]["dim"]
-            # diagonalize the sub-block of H(0) corresponding to this shell
-            eigval, eigvec = numpy.linalg.eigh(
-                ham0[iwf:iwf + nw, iwf:iwf + nw])
-            # find the indices sorting the eigenvalues in ascending order
-            eigsrt = eigval[0:nw].argsort()
-            # order eigenvalues and eigenvectors and save in a list
-            eigval_lst.append(eigval[eigsrt])
-            eigvec_lst.append(eigvec[eigsrt])
+            # save the sub-block of H(0) corresponding to this shell
+            ham0_lst[ish] = ham0[iwf:iwf+nw, iwf:iwf+nw]
+            # diagonalize the sub-block for this shell
+            eigval, eigvec = numpy.linalg.eigh(ham0_lst[ish])
+            eigval_lst[ish] = eigval
+            eigvec_lst[ish] = eigvec
             iwf += nw
             # TODO: better handling of degenerate eigenvalue case
             if sh_map[ish] != ish:  # issue warning only when there are equivalent shells
                 for i in range(nw):
                     for j in range(i + 1, nw):
-                        if (abs(eigval[j] - eigval[i]) < self._w90zero):
+                        if abs(eigval[j] - eigval[i]) < self._w90zero:
                             mpi.report("WARNING: degenerate eigenvalue of H(0) detected for shell %d: " % (ish) +
                                        "global-to-local transformation might not work!")
 
@@ -531,19 +530,19 @@ class Wannier90Converter(ConverterTools):
                 mpi.report(
                     "Global-to-local rotation matrices cannot be constructed!")
 
-            istatus = 1
             # check that eigenvalues are the same (within accuracy) for
             # equivalent shells
-            if not numpy.allclose(eigval_lst[ish], eigval_lst[sh_map[ish]], atol=self._w90zero, rtol=1.e-15):
+            if not numpy.allclose(eigval_lst[ish], eigval_lst[sh_map[ish]],
+                    atol=self._w90zero, rtol=0):
                 mpi.report(
                     "ERROR: eigenvalue mismatch between equivalent shells! %d" % ish)
                 eigval_diff = eigval_lst[ish] - eigval_lst[sh_map[ish]]
                 mpi.report("Eigenvalue difference: " + format(eigval_diff))
-                istatus = 0
+                succeeded = False
 
         # TODO: add additional consistency check on rot_mat matrices?
 
-        return istatus, rot_mat
+        return succeeded, rot_mat
 
     def kmesh_build(self, msize=None, mmode=0):
         """
