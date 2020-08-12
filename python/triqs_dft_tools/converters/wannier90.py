@@ -561,7 +561,28 @@ class Wannier90Converter(ConverterTools):
                 mpi.report("Eigenvalue difference: " + format(eigval_diff))
                 succeeded = False
 
-        # TODO: add additional consistency check on rot_mat matrices?
+            # check that rotation matrices are unitary
+            # nw = number of orbitals in this shell
+            nw = sh_lst[ish]["dim"]
+            tmp_mat = numpy.dot(rot_mat[ish],rot_mat[ish].conjugate().transpose())
+            if not numpy.allclose(tmp_mat, numpy.identity(nw),
+                                  atol=self._w90zero, rtol=0):
+                mpi.report("ERROR: rot_mat for shell %d is not unitary!"%(ish))
+                succeeded = False
+
+            # check that rotation matrices map equivalent H(0) blocks as they should
+            # (assuming representative shell as global frame of reference)
+            if self.rot_mat_type == 'hloc_diag':
+                tmp_mat = numpy.dot( rot_mat[ish],
+                        rot_mat[sh_map[ish]].conjugate().transpose() )
+            elif self.rot_mat_type == 'wannier':
+                tmp_mat = rot_mat[ish]
+            tmp_mat = numpy.dot(tmp_mat.conjugate().transpose(),
+                    numpy.dot(ham0_lst[ish],tmp_mat))
+            if not numpy.allclose(tmp_mat, ham0_lst[sh_map[ish]],
+                                  atol=self._w90zero, rtol=0):
+                mpi.report("ERROR: rot_mat does not map H(0) correctly! %d"%(ish))
+                succeeded = False
 
         return succeeded, rot_mat
 
