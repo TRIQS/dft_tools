@@ -51,8 +51,7 @@ from h5 import *
 from .converter_tools import *
 from itertools import product
 import os.path
-import pytriqs.utility.mpi as mpi
-
+import triqs.utility.mpi as mpi
 
 class Wannier90Converter(ConverterTools):
     """
@@ -61,7 +60,7 @@ class Wannier90Converter(ConverterTools):
 
     def __init__(self, seedname, hdf_filename=None, dft_subgrp='dft_input',
                  symmcorr_subgrp='dft_symmcorr_input', repacking=False,
-                 rot_mat_type = 'hloc_diag'):
+                 rot_mat_type='hloc_diag'):
         """
         Initialise the class.
 
