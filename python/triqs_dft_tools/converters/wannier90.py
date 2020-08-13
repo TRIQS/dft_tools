@@ -356,6 +356,8 @@ class Wannier90Converter(ConverterTools):
             iorb += norb
 
         # Finally, save all required data into the HDF archive:
+        # use_rotations is supposed to be an int = 0, 1, no bool
+        use_rotations = int(use_rotations)
         with HDFArchive(self.hdf_file, 'a') as ar:
             if not (self.dft_subgrp in ar):
                 ar.create_group(self.dft_subgrp)
