@@ -26,7 +26,7 @@ from h5 import *
 from triqs.utility.h5diff import h5diff
 import triqs.utility.mpi as mpi
 
-Converter = Wannier90Converter(seedname='LaVO3-Pnma',hdf_filename='w90_convert.out.h5')
+Converter = Wannier90Converter(seedname='LaVO3-Pnma',hdf_filename='w90_convert.out.h5', rot_mat_type='wannier')
 
 Converter.convert_dft_input()
 
