@@ -50,7 +50,7 @@ separate_build_dir = True
 runtest = 'test'
 
 sanity_check_paths = {
-    'files': ['bin/dmftproj', 'lib/libtriqs_dft_tools_c.%s' % SHLIB_EXT],
+    'files': ['bin/dmftproj', 'lib/libtriqs_dft_tools_c.a'],
     'dirs': ['include/triqs_dft_tools', 'bin', 'lib', 'share',
              'lib/python%(pyshortver)s/site-packages/triqs_dft_tools'],
 }
