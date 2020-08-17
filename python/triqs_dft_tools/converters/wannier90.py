@@ -76,7 +76,7 @@ class Wannier90Converter(ConverterTools):
             Name of subgroup storing correlated-shell symmetry data
         repacking : boolean, optional
             Does the hdf5 archive need to be repacked to save space?
-        rot_mat_typ : string, optional
+        rot_mat_type : string, optional
             Type of rot_mat used
             Can be 'hloc_diag', 'wannier', 'none'
         """
