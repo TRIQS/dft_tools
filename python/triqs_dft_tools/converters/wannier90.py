@@ -143,7 +143,7 @@ class Wannier90Converter(ConverterTools):
             corr_shells = [{name: int(val) for name, val in zip(
                 corr_shell_entries, R)} for icrsh in range(n_corr_shells)]
             try:
-                self.fermi_energy = R.next()
+                self.fermi_energy = float(next(R))
             except:
                 self.fermi_energy = 0.
         except StopIteration:  # a more explicit error if the file is corrupted.
@@ -183,6 +183,7 @@ class Wannier90Converter(ConverterTools):
         shells_map = [inequiv_to_corr[corr_to_inequiv[ish]]
                       for ish in range(n_corr_shells)]
         mpi.report("Mapping: " + format(shells_map))
+        mpi.report("Subtracting %f eV from the Fermi level." % self.fermi_energy)
 
         # build the k-point mesh, if its size was given on input (kmesh_mode >= 0),
         # otherwise it is built according to the data in the hr file (see
