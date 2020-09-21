@@ -33,5 +33,8 @@ set(@PROJECT_NAME@_WITH_DOCUMENTATION @Build_Documentation@ CACHE BOOL "Was @PRO
 
 # Was the Project built with PythonSupport?
 set(@PROJECT_NAME@_WITH_PYTHON_SUPPORT @PythonSupport@ CACHE BOOL "Was @PROJECT_NAME@ build with python support?")
+if(@PythonSupport@)
+  set(@PROJECT_NAME@_MODULE_DIR @CMAKE_INSTALL_PREFIX@/@CPP2PY_PYTHON_LIB_DEST_ROOT@ CACHE BOOL "The @PROJECT_NAME@ python module directory")
+endif()
 
 endif()
