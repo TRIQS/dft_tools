@@ -1,0 +1,41 @@
+!Calculates the V t2g Wannier projectors, Wannier charge and Wannier DOS of SrVO3
+
+!Example by Alyn D. N. James
+
+tasks
+ 0
+ 805
+
+ngridk
+ 12 12 12
+
+sppath
+  '../../../species/'
+
+rgkmax
+ 7.0
+
+avec
+   7.260500000       0.000000000       0.000000000
+   0.000000000       7.260500000       0.000000000
+   0.000000000       0.000000000       7.260500000
+
+atoms
+   3                                    : nspecies
+'Sr.in'                                 : spfname
+   1                                    : natoms; atposl, bfcmt below
+    0.50000000    0.50000000    0.50000000    0.00000000  0.00000000  0.00000000
+'V.in'                                  : spfname
+   1                                    : natoms; atposl, bfcmt below
+    0.00000000    0.00000000    0.00000000    0.00000000  0.00000000  0.00000000
+'O.in'                                  : spfname
+   3                                    : natoms; atposl, bfcmt below
+    0.50000000    0.00000000    0.00000000    0.00000000  0.00000000  0.00000000
+    0.00000000    0.50000000    0.00000000    0.00000000  0.00000000  0.00000000
+    0.00000000    0.00000000    0.50000000    0.00000000  0.00000000  0.00000000
+
+wanproj		!projector flag
+ 1		!number of projectors - next 3 lines are repeated for each projector
+ 2 2 3		!species, l, reduced max lm (rlmmax) value
+ 7 8 9 		!the lm quanties which will be projected (vector length eq. rlmmax)
+-0.055 0.07	![-1.5, 1.9] eV t2g correlated energy window

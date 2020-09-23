@@ -20,10 +20,8 @@
 #
 ##########################################################################
 
-from .wien2k import Wien2kConverter
-from .hk import HkConverter
-from .vasp import VaspConverter
-from .wannier90 import Wannier90Converter
+from readElkfiles import readElkfiles
+from elk_converter_tools import ElkConverterTools
 
-__all__ =['Wien2kConverter','HkConverter','Wannier90Converter','VaspConverter','ElkConverter']
+__all__ =['readElkfiles','ElkConverterTools']
 
