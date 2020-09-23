@@ -25,7 +25,7 @@ Installation steps
 
 #. Ensure that your shell contains the TRIQS environment variables by sourcing the ``triqsvars.sh`` file from your TRIQS installation::
 
-     $ source path_to_triqs/share/triqsvarsh.sh
+     $ source path_to_triqs/share/triqs/triqsvars.sh
 
 #. In the build directory call cmake, including any additional custom CMake options, see below::
 
