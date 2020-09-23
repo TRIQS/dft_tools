@@ -60,16 +60,3 @@ Complex example: NiO
 
 
    tutorials/nio_csc
-
-
-Elk interface examples
------------------------
-
-Converter example: SrVO3
-""""""""""""""""""""""""
-
-.. toctree::
-   :maxdepth: 2
-
-   tutorials/svo_elk/srvo3
-   
