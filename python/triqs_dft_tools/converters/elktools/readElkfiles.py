@@ -3,7 +3,7 @@
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
 #
-# Copyright (C) 2019 by A. D. N. James, A. Hampel and M. Aichhorn
+# Copyright (C) 2019 by A. D. N. James, M. Zingl and M. Aichhorn
 #
 # TRIQS is free software: you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software
@@ -150,6 +150,7 @@ class readElkfiles:
         at_entries = ['spatom','atom']
         #Read in the No. of projectors, no. of k-points, spin and spinorb info
         gen_info = {name: int(val) for name, val in zip(gen_info_entries, R)}
+        #mpi.report(gen_info)
         #read in the information of all the projectors
         #initialized variables
         icorr=0
@@ -179,7 +180,6 @@ class readElkfiles:
         for ip in range(gen_info['nproj']):
           #projector index
           proj_idx.append(int(R.next()))
-          #read in projector info
           proj.append({name: int(val) for name, val in zip(proj_entries, R)})
           na=proj[ip]['natom'] # integer which reduces when reading in atom info
           while(na>0):
@@ -188,7 +188,6 @@ class readElkfiles:
             #appends the mapping array to index of inequivalent atom in shells
             inequiv_to_corr.append(icorr)
             for ia in range(neqatom[ip]):
-              print(ia,na,ip,neqatom,ip)
               corr_to_inequiv.append(n_inequiv_shells)
               at.append({name: int(val) for name, val in zip(at_entries, R)})
               shells.append(proj[ip].copy())
@@ -221,8 +220,8 @@ class readElkfiles:
               else:
                 for i in range(n_orb):
                   T[n_shells][i,i] = 1.0
-           #index for the next inequivalent atom (+1 to index is not needed as this is incorporated  
-           #in neqatom[ish] 
+           #index for the next inequivalent atom (+1 to index is not needed as this is incorporated in 
+           #neqatom[ish] 
               n_shells+=1
            #increase the numer of inequivalent atoms
             n_inequiv_shells+=1
@@ -281,7 +280,7 @@ class readElkfiles:
           T[5,1] = 1j/sqrt(2);   T[5,5] = -1j/sqrt(2)
           T[6,0] = 1j/sqrt(2);   T[6,6] = 1j/sqrt(2)
         else: raise ValueError("determine: implemented only for l=0,1,2,3")
-        return np.matrix(T)
+        return numpy.matrix(T)
 
 
     def determine_rep(self,ish,ishin,corr_shells,basis,ind,n_reps,dim_reps,irep):
@@ -410,7 +409,6 @@ class readElkfiles:
           efermi=R.next()
         except StopIteration:  # a more explicit error if the file is corrupted.
             raise "Elk_converter (READ EFERMI.OUT): reading file failed!"
-        #print(efermi)
         eval_file = 'EIGVAL'+filext
         R = self.read_elk_file( eval_file, self.fortran_to_replace)
         try:

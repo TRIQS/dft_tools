@@ -3,7 +3,7 @@
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
 #
-# Copyright (C) 2019 by A. D. N. James, A. Hampel and M. Aichhorn
+# Copyright (C) 2019 by A. D. N. James, M. Zingl and M. Aichhorn
 #
 # TRIQS is free software: you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software
@@ -37,11 +37,12 @@ class ElkConverterTools:
         pass
 
     def rotaxang(self,rot):
-        """
-        this routine determines the axis of rotation (vector) v and the angle of rotation θ. If R corresponds
-        to an improper rotation then only the proper part is used and det is set to −1. The rotation
-        convention follows the ‘right-hand rule’. See Elk's rotaxang routine.
-        """
+      """
+      This routine determines the axis of rotation vector (v) and the angle of rotation (th).
+      If R corresponds to an improper rotation then only the proper part is used and the determinant
+      is set to -1. The rotation convention follows the "right-hand rule". See Elk's rotaxang 
+      routine.
+      """
       eps=1E-8
       v=numpy.zeros([3], numpy.float_)
     # find the determinant
@@ -288,7 +289,6 @@ class ElkConverterTools:
                 if(j!=0):
                   t1=t1*sb**j
                 t2=t1/(spec.factorial(k)*spec.factorial(l+m1-k)*spec.factorial(l-m2-k)*spec.factorial(m2-m1+k))
-                #if(numpy.mod(k,2)!=0):
                 if(k % 2.0 != 0):
                   t2=-t2
                 sm+=t2
