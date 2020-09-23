@@ -34,7 +34,7 @@ The elk executable is run in the directory including the elk.in file.
 A simple python script that initialises the converter is::
 
   from triqs_dft_tools.converters.elk import *
-  Converter = Wien2kConverter(filename = "SrVO3")
+  Converter = elkConverter(filename = "SrVO3")
 
 After initializing the interface module, we can now convert the input
 text files to the hdf5 archive by::
