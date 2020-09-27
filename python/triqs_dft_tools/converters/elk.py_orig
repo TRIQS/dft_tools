@@ -22,10 +22,9 @@
 
 from types import *
 import numpy
-#from pytriqs.archive import *
-from .converter_tools import *
+from pytriqs.archive import *
+from converter_tools import *
 import os.path
-from h5 import *
 from locale import atof
 from triqs_dft_tools.converters.elktools import readElkfiles as read_Elk
 from triqs_dft_tools.converters.elktools import ElkConverterTools as Elk_tools
@@ -69,7 +68,8 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
 
         """
 
-        assert isinstance(filename, str), "ElkConverter: Please provide the DFT files' base name as a string."
+        assert type(
+            filename) == StringType, "ElkConverter: Please provide the DFT files' base name as a string."
         if hdf_filename is None:
             hdf_filename = filename + '.h5'
         self.hdf_file = hdf_filename

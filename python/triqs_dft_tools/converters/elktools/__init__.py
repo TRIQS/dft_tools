@@ -20,8 +20,8 @@
 #
 ##########################################################################
 
-from readElkfiles import readElkfiles
-from elk_converter_tools import ElkConverterTools
+from .readElkfiles import readElkfiles
+from .elk_converter_tools import ElkConverterTools
 
 __all__ =['readElkfiles','ElkConverterTools']
 
