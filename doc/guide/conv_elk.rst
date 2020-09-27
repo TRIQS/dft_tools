@@ -61,7 +61,8 @@ Above are the default inputs. If both of these flags are set to .false.,
 the projectors will be generated in the complex 
 spherical harmonic basis. It is possible to generate the projectors in Elk's irreducible basis by 
 setting cubic to .false., but this is experimental and the TRIQS side of the interface is 
-currently unable to convert the projectors in that basis.
+currently unable to convert the projectors in that basis. The output files will ALWAYS output
+the projectors and so on in the complex spherical harmonic basis.
 
 The rest of the elk.in file can remain unchanged. This task calculates the 
 projectors which written into the file(s) WANPROJ_L**_S**_A****.OUT along with
@@ -74,6 +75,7 @@ input files needed for this part of the TRIQS converter:
 #. PROJ.OUT -  specficies some information about the projectors.
    (like atom equivalency, lm indices and so on) needed for reading into the TRIQS library.
 #. EIGVAL.OUT - contains the energies and latice vector coordinates for each k-point.
+#. EFERMI.OUT - contains the Fermi energy.
 #. KPOINTS.OUT - contains the k-point weights and lattice vectors.
 #. SYMCRYS.OUT - has the crystal symmetries used for symmetries observables.
 #. LATTICE.OUT - has lattice-cartesian basis transformation matrices.
@@ -227,6 +229,7 @@ The files needed for this calculation are:
 
 #. EIGVAL_FS.OUT - same as EIGVAL.OUT but the output is of the Fermi surface calculation.
 #. KPOINT_FS.OUT - same as KPOINT.OUT but the output is of the Fermi surface calculation.   
+#. EFERMI.OUT - contains the Fermi energy.
 #. PROJ_FS.OUT - same as PROJ.OUT but the output is of the Fermi surface calculation.   
 #. WANPROJ_L**_S**_A****_FS.OUT - same as WANPROJ_L**_S**_A****.OUT but the output is of the Fermi surface calculation.   
 #. SYMCRYS.OUT - has the crystal symmetries used for symmetries observables.
