@@ -17,7 +17,7 @@ of full charge self-consistency [#dft_tools2]_, necessary for total energy
 calculations. The package at hand is fully implemented as an application
 based on the TRIQS library [#dft_tools3]_.
 
-**Developers**: M. Aichhorn, L. Pourovskii, P.Seth, V. Vildosola, M. Zingl, O. E. Peil, X. Deng, J. Mravlje, G. Kraberger, C. Martins, M. Ferrero, O. Parcollet
+**Developers**: M. Aichhorn, L. Pourovskii, A. Hampel, P.Seth, V. Vildosola, M. Zingl, O. E. Peil, X. Deng, J. Mravlje, G. Kraberger, A. James, C. Martins, M. Ferrero, O. Parcollet
 
 **Related papers**:
 

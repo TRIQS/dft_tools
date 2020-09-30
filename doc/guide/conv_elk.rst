@@ -4,24 +4,15 @@ Interface with Elk
 =====================
 
 We assume that the user has obtained a self-consistent solution of the
-Kohn-Sham equations. Also, the user needs to be
-familiar with the main in/output files of Elk, and how to run
-the DFT code.
+Kohn-Sham equations with Elk (a full tutorial can be found here :ref:`Elk SVO tutorial <SrVO3_elk>`). Also, the user needs to be familiar with the main in/output files of Elk, and how to run
+the DFT code. Further information about Elk can be found on the :ref:`official Elk website <http://elk.sourceforge.net/>`.
 
 Conversion for the DMFT self-consistency cycle
 ----------------------------------------------
 
-Once the user has obtained the groundstate calculation, 
-they will have to rerun Elk but with some small changes to the inputs in the elk.in file 
-which will be specified below. 
-The Elk part of the interface calculates and outputs the Wannier projectors. 
-The TRIQS Elk converter then reads in these projectors along with the other Elk ascii files
-which would have been generated in the Elk ground state calculation. This information is then
-packed into the HDF5 file.
+Once the user has obtained the groundstate calculation, they will have to rerun Elk but with some small changes to the inputs in the elk.in file which will be explained below. The Elk part of the interface calculates and outputs the Wannier projectors. All downfolding related falgs are set in the elk input file, and Elk determines automatically by symmetry equivalend sites. The TRIQS Elk converter then reads in these projectors along with the other Elk ascii files which would have been generated in the Elk ground state calculation. This information is then packed into the HDF5 file.
 
-In the following, we use SrVO3 as an example to explain the
-flags required in the elk.in input file.
-An example elk.in of SrVO3 is available in the :ref:`SrVO3 tutorial <elk_SVO>`.
+In the following, we use SrVO3 as an example to explain the flags required in the elk.in input file. An example elk.in of SrVO3 is available in the :ref:`SrVO3 tutorial <elk_SVO>`.
 
 .. literalinclude:: ../tutorials/images_scripts/elk.in_SVO
 
@@ -37,10 +28,7 @@ The projectors are generated in Elk using these alterations in the elk.in file::
    7 8 9        !3) cubic harmonic lm indices 
    -0.055 0.07  !4) Correlated energy window in Hartrees (this is [-1.5, 1.9] in eV)
 
-The first flag "task" specifies Elk to do the Wannier projector calculation in the Elk
-input convention. The "wanproj" flag specifies the information needed to generate the 
-desired projectors (the exlaimation marks are comment flags in fortran). Below gives the meaning
-of each line:
+The first flag "task" specifies Elk to do the Wannier projector calculation in the Elk input convention. The "wanproj" flag specifies the information needed to generate the desired projectors (the exlaimation marks are comment flags in fortran). Below gives the meaning of each line:
 
 #. The number of different species to generate the projectors for. If the material has multiple atoms of the same species, then the projectors will be generated for all of these atoms. Information about whether these atoms are symmetrically equivalent is written to the PROJ.OUT file. Generating projectors for multiple species requires lines 2) and 3) to be repeated for each projector species. 
 #. The desired species index (relative to the order of the "atoms" input in elk.in), the l value and the number of wanted lm orbitals for the projectors. 
@@ -48,8 +36,7 @@ of each line:
 #. The correlated energy window (in Hartrees) to generate the projectors within.
 
 It should be noted that the indices in line 3) will change if another lm basis is used. 
-The default is the cubic harmonic basis. 
-The flags in elk.in required to change the harmonic basis are::
+The default is the cubic harmonic basis. The flags in elk.in required to change the spherical harmonic basis are::
 
   cubic
    .true.
@@ -57,38 +44,25 @@ The flags in elk.in required to change the harmonic basis are::
   lmirep
    .true.
 
-Above are the default inputs. If both of these flags are set to .false., 
-the projectors will be generated in the complex 
-spherical harmonic basis. It is possible to generate the projectors in Elk's irreducible basis by 
-setting cubic to .false., but this is experimental and the TRIQS side of the interface is 
-currently unable to convert the projectors in that basis. The output files will ALWAYS output
-the projectors and so on in the complex spherical harmonic basis.
+Above are the default inputs. If both of these flags are set to .false., the projectors will be generated in the complex spherical harmonic basis. It is possible to generate the projectors in Elk's irreducible basis by setting cubic to .false., but this is experimental and the TRIQS side of the interface is 
+currently unable to convert the projectors in that basis.
 
-The rest of the elk.in file can remain unchanged. This task calculates the 
-projectors which written into the file(s) WANPROJ_L**_S**_A****.OUT along with
-the file called PROJ.OUT which specficies some information about the projectors
-(like atom equivalency, lm indices and so on) needed for reading the files into the TRIQS library. 
-The PROJ.OUT file has comments on what the outputs represent. Here's a list of all of the 
-input files needed for this part of the TRIQS converter:
+.. _Elk_files:
+
+The rest of the elk.in file can remain unchanged. This task calculates the projectors which written into the file(s) WANPROJ_L**_S**_A****.OUT along with the file called PROJ.OUT which specficies some information about the projectors (like atom equivalency, lm indices and so on) needed for reading the files into the TRIQS library. The PROJ.OUT file has comments on what the outputs represent. Here's a list of all of the input files needed for this part of the TRIQS converter:
 
 #. WANPROJ_L**_S**_A****.OUT - file containing the projectors and band window indices.
 #. PROJ.OUT -  specficies some information about the projectors.
    (like atom equivalency, lm indices and so on) needed for reading into the TRIQS library.
 #. EIGVAL.OUT - contains the energies and latice vector coordinates for each k-point.
-#. EFERMI.OUT - contains the Fermi energy.
 #. KPOINTS.OUT - contains the k-point weights and lattice vectors.
 #. SYMCRYS.OUT - has the crystal symmetries used for symmetries observables.
 #. LATTICE.OUT - has lattice-cartesian basis transformation matrices.
 #. GEOMETRY.OUT - file with the lattice positions of every atom of each species.
 
-As well this, the wannier charge density matrix (in WANCHARGE.OUT) and the 
-Wannier spectral function (in WANSF_L**_S**_A****_0*.OUT) are also calculated. 
-These files are not used in the interface.
-As a side note, there are two other tasks which also generate the Wannier projectors.
-Task 804 generates the same outputs as 805 except it doesn't calculate the Wannier charge and 
-spectral function. Task 806 outputs the same information as 805, but this can generate
-the projectors (and other k-dependent variables) on a different ngridk mesh. These tasks
-are parallelized with both openmp and mpi.
+Moreover, the wannier charge density matrix (in WANCHARGE.OUT) and the Wannier spectral function (in WANSF_L**_S**_A****_0*.OUT) are calculated. These files are not used in the interface. 
+
+As a side note, there are two other tasks which also generate the Wannier projectors. Task 804 generates the same outputs as 805 except it doesn't calculate the Wannier charge and spectral function. Task 806 outputs the same information as 805, but it generates the projectors (and other k-dependent variables) on a different ngridk mesh. These tasks are parallelized with both openmp and mpi.
 
 The Elk outputs are read into the TRIQS library using the following lines::
 
@@ -96,70 +70,27 @@ The Elk outputs are read into the TRIQS library using the following lines::
   Converter = ElkConverter(filename=filename, repacking=True)
   Converter.convert_dft_input()
 
-The first two lines imports and loads the Elk converter module and the last line executes 
-the convertion into the filename.h5 HDF5 file.
+The first two lines import and load the Elk converter module and the last line executes the conversion into the filename.h5 HDF5 file.
 
-Interface back to Elk for Fully charge self-consistent DFT+DMFT
----------------------------------------------------------------
-
-At the end of the DMFT python script, the density matrix in Bloch space needs to be 
-calculated along with the correlation energy. This is written to DMATDMFT.OUT.
-An example of this (using the Migdal correlation energy formula) is given below::
-
-  #output the density matrix for Elk interface
-  dN, d = SK.calc_density_correction(dmtype='elk')
-  #correlation energy via the Migdal formula
-  correnerg = 0.5 * (S.G_iw * S.Sigma_iw).total_density()
-  #subtract the double counting energy
-  correnerg -= SK.dc_energ[0]
-  #convert to Hartree
-  correnerg = correnerg/SK.energy_unit
-  #save the correction to energy
-  if (mpi.is_master_node()):
-    f=open('DMATDMFT.OUT','a')
-    f.write("%.16f\n"%correnerg)
-    f.close()
-
-To read this into Elk and update the electron density, run task 808. So elk.in is ammended with
-the following::
-
-  task
-   808
-
-This solves the Kohn-Sham equations once with the updated electron density and outputs the new
-set of energy eigenvalues and so on. To start the next fully charge self-consistent DFT+DMFT cycle
-(FCSC), a new set of projectors need to be generated (using task 805) and this continues until 
-convergence. The Elk potential rms value for each FCSC DFT+DMFT cycle is given in DMFT_INFO.OUT.
-This FCSC method should be universal irrespective to what type of ground state calculation 
-performed. However, not all possible type of ground state calculations have been tested.
 
 Data for post-processing - Correlated Spectral functions
 --------------------------------------------------------
 
-In case you want to do post-processing of your data using the module
-:class:`SumkDFTTools <dft.sumk_dft_tools.SumkDFTTools>`, some more files
-have to be converted to the HDF5 archive. This has been laid out in
-:ref:`analysis` for Elk specific functions. Below, we will discuss how to 
-input the information for correlated spectral functions (band structures) 
-and which is then calculated using "spaghettis" in :ref:`analysis`. However,
-bandcharacter plots have not yet been implemented.
+In case you want to do post-processing of your data using the module :class:`SumkDFTTools <dft.sumk_dft_tools.SumkDFTTools>`, some more files have to be converted to the HDF5 archive. This has been laid out in :ref:`analysis` for Elk specific functions. Below, we will discuss how to input the information for correlated spectral functions (band structures) and which is then calculated using "spaghettis" in :ref:`analysis`. However, bandcharacter plots have not yet been implemented.
 
 In Elk, the elk.in requires the altered flag::
 
   task
    820
 
-As well as the wanproj flag (which has be discussed previously) and
-the plot1d flag (refer to the Elk manual). The new output files of 
-this task required for the interface are:
+As well as the wanproj flag (which has be discussed previously) and the plot1d flag (refer to the Elk manual). The new output files of this task required for the interface are:
 
 #. BAND.OUT - the energy eigenvalues along the user specified path.
 #. PROJ_WANBAND.OUT - same as PROJ.OUT but for band structure projectors
 #. WANPROJ_L**_S**_A****_WANBAND.OUT - same as WANPROJ_L**_S**_A****.OUT
     but for band structure projectors.
 
-(The ascii output files which have the new extension of 
-_WANBAND.OUT which are spefic for this post processing calculation.)
+(The ascii output files which have the new extension of _WANBAND.OUT which are spefic for this post processing calculation.)
 
 The band structure information is converted into TRIQS by using::
 
@@ -168,14 +99,12 @@ The band structure information is converted into TRIQS by using::
 Spectral function from Elk inputs
 ---------------------------------
 
-Elk does not calculate the theta projectors for partial DOS calculations. Instead, Elk outputs the 
-band characters into the file BC.OUT when using::
+Elk does not calculate the theta projectors for partial DOS calculations. Instead, Elk outputs the band characters into the file BC.OUT when using::
 
   task 
   803 
 
-in elk.in. 
-The contents of BC.OUT need to be converted into the HDF5 file by using the Elk Converter module::
+in elk.in. The contents of BC.OUT need to be converted into the HDF5 file by using the Elk Converter module::
 
   from triqs_dft_tools.converters.elk import *
   Converter = ElkConverter(filename=filename, repacking=True)
@@ -185,33 +114,18 @@ Once these have been saved to the HDF5 file (called "filename" here), the spectr
 
   SK.elk_dos(broadening=0.0, with_Sigma=True, with_dc=True, pdos=False, nk=None)
 
-This outputs the total spectral function and the partial spectral function if enabled. 
-Most of the user inputs are similar to SK.dos_parproj_basis() module. 
-The "pdos" flag when "True" enables the partial dos of each l value to be calculated.
-It should be noted that these band characters are in Elk's irreducible lm basis and as such, only the partial spectral function of each l value is calculated.
-The "nk" flag enables the calculation of the occupied spectral funciton. 
-Here, nk needs to be the occupation density matrix (calculated from integrating the Green's function 
-on the Matsubara axis) in the Bloch basis. 
-This input needs to be in the same format as the occupation density matrix "deltaN" 
-calculated in the sumk_DFT.calc_density_correction(dmtype='elk') module.
+This outputs the total spectral function and the partial spectral function if enabled. Most of the user inputs are similar to SK.dos_parproj_basis() module. The "pdos" flag when "True" enables the partial dos of each l value to be calculated. It should be noted that these band characters are in Elk's irreducible lm basis and as such, only the partial spectral function of each l value is calculated. The "nk" flag enables the calculation of the occupied spectral funciton. Here, nk needs to be the occupation density matrix (calculated from integrating the Green's function on the Matsubara axis) in the Bloch basis. This input needs to be in the same format as the occupation density matrix "deltaN" calculated in the sumk_DFT.calc_density_correction(dmtype='elk') module.
 
 
 Spectral function Contor Plots (Fermi Surfaces) from Elk inputs
 ---------------------------------------------------------------
 
-Here, we will discuss how to plot the Fermi surface contor or any other 
-non-zero omega spectral function contor plot. This is currently tailored for the Elk inputs. 
-From this point, we will refer to these contors as Fermi surfaces.
-The energy eigenvalues, projectors and so on required for the Fermi surface plot needs 
-to be output from Elk. This is done by using::
+Here, we will discuss how to plot the Fermi surface contour or any other non-zero omega spectral function contour plot. This is currently tailored for the Elk inputs. From this point, we will refer to these contours as Fermi surfaces. The energy eigenvalues, projectors and so on required for the Fermi surface plot needs to be outputed from Elk. This is done by using::
 
   task 
   807 
   
-in Elk, but unlike the previous Elk interface tasks, the k-mesh grid needs to be specified.
-This is done like using the same inputs as the Fermi surface calculations in Elk. 
-In Elk, The user needs to specify the "plot3d" input flag used to generate the k-mesh which the interface variables are evaluated on.
-A simple example is for SrVO3 where plot3d would look something like::
+in Elk, but unlike the previous Elk interface tasks, the k-mesh grid needs to be specified. This is done like using the same inputs as the Fermi surface calculations in Elk. In Elk, The user needs to specify the "plot3d" input flag used to generate the k-mesh which the interface variables are evaluated on. A simple example is for SrVO3 where plot3d would look something like::
   
   plot3d
   0.0 0.0 0.0 !1) origin
@@ -220,24 +134,17 @@ A simple example is for SrVO3 where plot3d would look something like::
   0.0 0.0 1.0 !4) vertex 3
   32 32 32    !5) k-mesh grid size
 
-Lines 1) to 4) specifies the corners (in lattice coordinates) of the k-grid box and 
-line 5) is the grid size in each direction (see the Elk manual). If the user desires to plot a 2D
-plane, then the user should define the plane using lines 2) and 3) [relative to line 1)] and define
-line 4) to be the cross-product of lines 2) and 3).
-The outputs will be in terms of the k-dependent quantities in the irreducible Brilluoin zone (IBZ).
-The files needed for this calculation are:
+Lines 1) to 4) specifies the corners (in lattice coordinates) of the k-grid box and line 5) is the grid size in each direction (see the Elk manual). If the user desires to plot a 2D plane, then the user should define the plane using lines 2) and 3) [relative to line 1)] and define line 4) to be the cross-product of lines 2) and 3). The outputs will be in terms of the k-dependent quantities in the irreducible Brilluoin zone (IBZ). The files needed for this calculation are:
 
 #. EIGVAL_FS.OUT - same as EIGVAL.OUT but the output is of the Fermi surface calculation.
 #. KPOINT_FS.OUT - same as KPOINT.OUT but the output is of the Fermi surface calculation.   
-#. EFERMI.OUT - contains the Fermi energy.
 #. PROJ_FS.OUT - same as PROJ.OUT but the output is of the Fermi surface calculation.   
 #. WANPROJ_L**_S**_A****_FS.OUT - same as WANPROJ_L**_S**_A****.OUT but the output is of the Fermi surface calculation.   
 #. SYMCRYS.OUT - has the crystal symmetries used for symmetries observables.
 #. LATTICE.OUT - has lattice-cartesian basis transformation matrices.
 #. GEOMETRY.OUT - file with the lattice positions of every atom of each species.
 
-(The ascii output files which have the extension of _FS.OUT which are specific for this 
-post processing calculation.)
+(The ascii output files which have the extension of _FS.OUT which are specific for this post processing calculation.)
 
 These outputs are converted to the HDF5 file by::
 
@@ -268,29 +175,12 @@ The output files will have the form of "Akw_FS_up(down).dat" if FS=True or "Akw_
 DFT+DMFT wavefunction dependent quantities
 ------------------------------------------
 
-The wavefunctions and occupations are generated in Elk by diagonalizing the full DFT+DMFT density
-matrix at each k-point during task 808. These are then used to update the electron density which
-is then used to solve the Kohn-Sham equations once to complete a FCSC DFT+DMFT cycle. 
-It is possible to calculate quantities which are solely dependent on the wavefunctions and 
-occupations by using the aforementioned diagonalized set. 
-After generating the DMATDMFT.OUT file, these diagonalized wavefunctions and occupations are 
-calculated amending elk.in with the new task::
+The wavefunctions and occupations are generated in Elk by diagonalizing the full DFT+DMFT density matrix at each k-point during task 808. These are then used to update the electron density which is then used to solve the Kohn-Sham equations once to complete a FCSC DFT+DMFT cycle. It is possible to calculate quantities which are solely dependent on the wavefunctions and occupations by using the aforementioned diagonalized set. After generating the DMATDMFT.OUT file, these diagonalized wavefunctions and occupations are calculated amending elk.in with the new task::
 
   task
    809
 
-This will write the new second variational eigenvectors and occupations in the EVECSV.OUT and 
-OCCSV.OUT binary files respectively. Then the wavefunction dependent quantities implemented within
-Elk can also be calculated using the DFT+DMFT wavefunctions and occupations. Note that this only 
-works for energy independent quantities. Also, the user has to ensure that the second variational 
-eigenvectors will be used in determining the wavefunction dependent quantities. This is done by 
-looking for the variable "tevecsv" in init0.f90 of Elk's source code and making sure that this 
-is set to .true. for the task number the user wishes to use.
+This will write the new second variational eigenvectors and occupations in the EVECSV.OUT and OCCSV.OUT binary files respectively. Then the wavefunction dependent quantities implemented within Elk can also be calculated using the DFT+DMFT wavefunctions and occupations. Note, that this only works for energy independent quantities. Also, the user has to ensure that the second variational eigenvectors will be used in determining the wavefunction dependent quantities. This is done by looking for the variable "tevecsv" in init0.f90 of Elk's source code and making sure that this is set to .true. for the task number the user wishes to use.
 
-
-Data for transport calculations
--------------------------------
-
-This needs to be implemented for this interface.
 
 
