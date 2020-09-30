@@ -5,7 +5,7 @@ foreach(file ${all_h5_ref_files})
 endforeach()
 
 # Copy other files
-FILE(COPY SrVO3.pmat SrVO3.struct SrVO3.outputs SrVO3.oubwin SrVO3.ctqmcout SrVO3.symqmc SrVO3.sympar SrVO3.parproj hk_convert_hamiltonian.hk LaVO3-Pnma_hr.dat LaVO3-Pnma.inp LaVO3-Pnma_ef_hr.dat LaVO3-Pnma_ef.inp LaVO3-Pbnm.inp LaVO3-Pbnm_hr.dat DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+FILE(COPY SrVO3.pmat SrVO3.struct SrVO3.outputs SrVO3.oubwin SrVO3.ctqmcout SrVO3.symqmc SrVO3.sympar SrVO3.parproj hk_convert_hamiltonian.hk LaVO3-Pnma_hr.dat LaVO3-Pnma.inp LaVO3-Pnma_ef_hr.dat LaVO3-Pnma_ef.inp LaVO3-Pbnm.inp LaVO3-Pbnm_hr.dat BAND.OUT BC.OUT EFERMI.OUT EIGVAL.OUT EIGVAL_FS.OUT GEOMETRY.OUT KPOINTS.OUT KPOINTS_FS.OUT LATTICE.OUT PROJ.OUT PROJ_FS.OUT PROJ_WANBAND.OUT SYMCRYS.OUT WANPROJ_L02_S02_A0001.OUT WANPROJ_L02_S02_A0001_FS.OUT WANPROJ_L02_S02_A0001_WANBAND.OUT DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 
 # List of all tests
