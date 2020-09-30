@@ -473,20 +473,17 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         if(SO==1):
           mat=[]
           su2=[]
+          n_symm=1
           [shells,corr_shells,dim_reps,n_orbitals,proj_mat,T,mat]=self.update_so_quatities(n_shells,shells,n_corr_shells,corr_shells,n_inequiv_shells,dim_reps,n_k,n_symm,n_orbitals,proj_mat,T,su2,mat,sym=False)
           #reduce n_spin_blocs
           n_spin_blocs = SP + 1 - SO
 
         #put the energy eigenvalues arrays in TRIQS format
-        hopping = self.sort_dft_eigvalues(n_spin_blocs,SO,n_k,n_orbitals,band_window,en,energy_unit)
+        hopping = self.sort_dft_eigvalues(n_spin_blocs,SO,n_k,n_orbitals,band_window,entmp,energy_unit)
 
         # No partial projectors generate, set to 0:
-        n_parproj = [0]
-        n_parproj = numpy.array(n_parproj)
-
-        # Initialise P, here a double list of matrices:
-        proj_mat_all = numpy.zeros([n_k, n_spin_blocs, n_shells, max(n_parproj), max(
-                [sh['dim'] for sh in shells]), numpy.max(n_orbitals)], numpy.complex_)
+        n_parproj = numpy.array([0])
+        proj_mat_all = numpy.array([0])
 
         mpi.report('Converted the band info')
         # Save it to the HDF:
@@ -606,11 +603,11 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         [bc,maxlm] = read_Elk.read_bc(self)
         #set up SO bc array
         if (self.SO):
-          maxlm=2*maxlm
-          tmp = numpy.zeros([maxlm,1,self.n_atoms,self.nstsv,self.n_k], numpy.float_)
+          tmp = numpy.zeros([2*maxlm,1,self.n_atoms,self.nstsv,self.n_k], numpy.float_)
           #put both spinors into the lm array indices.
-          tmp[0:0.5*maxlm,1,:,:,:]=bc[0:0.5*maxlm,1,:,:,:]
-          tmp[0.5*maxlm:maxlm,1,:,:,:]=bc[0:0.5*maxlm,2,:,:,:]
+          tmp[0:maxlm,0,:,:,:]=bc[0:maxlm,0,:,:,:]
+          tmp[maxlm:2*maxlm,0,:,:,:]=bc[0:maxlm,1,:,:,:]
+          maxlm=2*maxlm
           del bc
           bc = tmp
           del tmp

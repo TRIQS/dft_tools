@@ -1,8 +1,0 @@
-64                  # number of k-points
-1.0                 # electron density
-2                   # number of total atomic shells
-1 1 2 5             # atom, sort, l, dim
-2 2 1 3             # atom, sort, l, dim
-1                   # number of correlated shells
-1 1 2 5 0 0         # atom, sort, l, dim, SO, irep
-1 5                 # number of ireps, dim of irep

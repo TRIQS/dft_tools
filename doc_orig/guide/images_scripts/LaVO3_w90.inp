@@ -1,8 +1,0 @@
- 0  6 4 6               # specification of the k-mesh
-8.0                     # electron density
- 4                      # number of atoms
- 0  0  2  3  0  0       # atom, sort, l, dim, SO, irep
- 1  0  2  3  0  0       # atom, sort, l, dim, SO, irep
- 2  0  2  3  0  0       # atom, sort, l, dim, SO, irep
- 3  0  2  3  0  0       # atom, sort, l, dim, SO, irep
-0.0                     # DFT Fermi Energy (optional)

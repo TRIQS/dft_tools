@@ -403,7 +403,7 @@ class readElkfiles:
 
     def read_eig(self,filext=".OUT"):
         """
-        This function reads the contents of EIGVAL.OUT
+        This function reads the contents of EIGVAL.OUT and EFERMI.OUT
         """
         import string
         #construct file name from atoms info
@@ -443,7 +443,7 @@ class readElkfiles:
 
     def read_kpoints(self,filext=".OUT"):
         """
-        This function reads the contents of KPOINT.OUT
+        This function reads the contents of KPOINTS.OUT
         """
         import string
         kp_file = 'KPOINTS'+filext
@@ -473,64 +473,6 @@ class readElkfiles:
             raise IOError("Elk_converter (KPOINTS.OUT): reading file failed!")
         R.close()
         return(bz_weights,vkl)
-        #This function reads the contents of KPOINT.OUT
-
-    def read_symmetry(self,shells,n_atoms):
-        """
-        This function reads the contents of PROJSYM_L**_S**_A****.OUT
-        This is a DEPRECIATED function
-        """
-        import string
-        n_shells=len(shells)
-        symmat=[]
-        nsym=48 #Maximum number of symmetries a lattice can have
-        sym=[]
-        for isym in range(nsym):
-            symmat.append([numpy.zeros([2*shells[ish]['l']+1, 2*shells[ish]['l']+1], numpy.complex_) for ish in range(n_shells)])
-        for ish in range(n_shells):
-          l = str(shells[ish]['l']).zfill(2)
-          s = str(shells[ish]['sort']).zfill(2)
-          a = str(shells[ish]['spatom']).zfill(4)
-          #construct file name from atoms info
-          projsym_file = 'PROJSYM_L'+l+'_S'+s+'_A'+a+'.OUT'
-          R = self.read_elk_file( projsym_file, self.fortran_to_replace)
-          try:
-            #no. of symmetries
-            perm=[]
-            n_symm=int(next(R))
-            #no. of symmetries for each file/shell
-            sym.append(n_symm)
-            #loop over all symmetries
-            for isym in range(n_symm):
-              iss=int(next(R))
-              #Check symmetry indices
-              if(isym+1!=iss):
-                 raise "Elk_converter : reading symmetries failed!"
-              # list of permutations of the atoms
-              perm.append([int(next(R)) for i in range(n_atoms)])
-              n_orb=2*shells[ish]['l']+1
-              #read in the lm symmetry matrix
-              # real part
-              for i in range(n_orb):
-                for j in range(n_orb):
-                  symmat[isym][ish][i, j] = next(R)
-              # imaginary part
-              for i in range(n_orb):
-                for j in range(n_orb):
-                  symmat[isym][ish][i, j] += 1j * next(R)
-          except StopIteration:  # a more explicit error if the file is corrupted.
-              raise IOError("Elk_converter (",projsym_file,") : reading file failed!")
-          R.close()
-        #output the symmetry matrix in TRIQS format
-        n_symm=numpy.max(sym[:])
-        #reduce symmetry matrix size to max number of symmetries used
-        temp=symmat
-        del symmat
-        symmat=[]
-        for isym in range(n_symm):
-          symmat.append([temp[isym][ish][:,:] for ish in range(n_shells)])
-        #return wanted quantities
-        return(symmat,n_symm,perm)
 
     def readsym(self):
         """
