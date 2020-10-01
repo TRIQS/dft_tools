@@ -26,12 +26,9 @@ import triqs.utility.mpi as mpi
 
 from triqs_dft_tools.converters import ElkConverter
 
-Converter = ElkConverter(filename='SrVO3')
+Converter = ElkConverter(filename='Ba2YIrO6')
 Converter.hdf_file = 'elk_convert.out.h5'
 Converter.convert_dft_input()
-Converter.convert_bands_input()
-Converter.convert_fs_input()
-Converter.dft_band_characters()
 
 if mpi.is_master_node():
     h5diff('elk_convert.out.h5','elk_convert.ref.h5') 
