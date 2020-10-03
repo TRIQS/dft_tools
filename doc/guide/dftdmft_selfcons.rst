@@ -205,9 +205,9 @@ To read this into Elk and update the electron density, run task 808. So elk.in i
   task
    808
 
-This solves the Kohn-Sham equations once with the updated electron density and outputs the new set of energy eigenvalues and Wave functions. To start the next fully charge self-consistent DFT+DMFT cycle (FCSC), a new set of projectors need to be generated (using task 805) and the whole procedure continues until convergence. The Elk potential rms value for each FCSC DFT+DMFT cycle is given in DMFT_INFO.OUT. An extensive example for SrVO:math:`_3` can be found here: :ref:`Elk SVO tutorial <SrVO3_elk>`.
+This solves the Kohn-Sham equations once with the updated electron density and outputs the new set of energy eigenvalues and wavefunctions. To start the next fully charge self-consistent DFT+DMFT cycle (FCSC), a new set of projectors need to be generated (using task 805) and the whole procedure continues until convergence. The Elk potential rms value for each FCSC DFT+DMFT cycle is given in DMFT_INFO.OUT. An extensive example for SrVO:math:`_3` can be found here: :ref:`Elk SVO tutorial <SrVO3_elk>`.
 
-This FCSC method should be universal irrespective to what type of ground state calculation performed. However, not all possible type of ground state calculations have been tested.
+This FCSC method should be universal irrespective to what type of ground state calculation performed. However, not all types of ground state calculations have been tested.
 
 
 Other DFT codes
