@@ -3,6 +3,8 @@
 Interface with Elk
 =====================
 
+This is the first iteration of the Elk-TRIQS interface, so certain inputs may change in later updates.
+
 We assume that the user has obtained a self-consistent solution of the
 Kohn-Sham equations with Elk (a full tutorial can be found here :ref:`Elk SVO tutorial <SrVO3_elk>`). Also, the user needs to be familiar with the main in/output files of Elk, and how to run
 the DFT code. Further information about Elk can be found on the :ref:`official Elk website <http://elk.sourceforge.net/>`.
