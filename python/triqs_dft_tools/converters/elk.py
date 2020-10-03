@@ -264,7 +264,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
             return
         filext='.OUT'
         dft_file='PROJ'+filext
-        mpi.report("Reading input from %s..." % dft_file)
+        mpi.report("Reading %s" % dft_file)
         #Energy conversion - Elk uses Hartrees
         energy_unit = 27.2113850560                        # Elk uses hartrees
         #The projectors change size per k-point
@@ -290,7 +290,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
            del shells[ish]['irep']
            shells[ish]['dim'] = 2*shells[ish]['l']+1     
         #read eigenvalues calculated in the Elk calculation
-        mpi.report("Reading input from %s..." % self.eval_file)
+        mpi.report("Reading %s and EFERMI.OUT" % self.eval_file)
         [en,occ,nstsv]=read_Elk.read_eig(self)
         #read projectors calculated in the Elk calculation
         proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), nstsv], numpy.complex_)
@@ -298,14 +298,16 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         for ish in range(n_corr_shells):
           [n_orbitals,band_window,rep,proj_mat]=read_Elk.read_projector(self,corr_shells,n_spin_blocs,ish,proj_mat,ind,T,basis,filext)
         #read kpoints calculated in the Elk calculation
-        mpi.report("Reading input from %s..." % self.kp_file)
+        mpi.report("Reading %s" % self.kp_file)
         [bz_weights,vkl]=read_Elk.read_kpoints(self)
         #symmetry matrix
-        mpi.report("Reading symmetry files")
+        mpi.report("Reading GEOMETRY.OUT")
         #read in atom posistions, the symmetry operators (in lattice coordinates) and lattice vectors
         [ns, na, atpos]=read_Elk.read_geometry(self)
         #Read symmetry files
+        mpi.report("Reading SYMCRYS.OUT")
         [n_symm,spinmat,symmat,tr] = read_Elk.readsym(self)
+        mpi.report("Reading LATTICE.OUT")
         [amat,amatinv,bmat,bmatinv] = read_Elk.readlat(self)
         #calculating atom permutations
         perm = Elk_tools.gen_perm(self,n_symm,ns,na,n_atoms,symmat,tr,atpos)
@@ -418,6 +420,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         for it in things_to_save_misc:
             ar[self.misc_subgrp][it] = locals()[it]
         del ar
+        mpi.report('Converted the Elk ground state data')
 
 
     def convert_bands_input(self):
@@ -430,7 +433,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
             return
         filext='_WANBAND.OUT'
         dft_file='PROJ'+filext
-        mpi.report("Reading input from %s..." % dft_file)
+        mpi.report("Reading %s" % dft_file)
         #Energy conversion - Elk uses Hartrees
         energy_unit = 27.2113850560                        # Elk uses hartrees
         shells=[]
@@ -452,7 +455,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
            shells[ish]['dim'] = 2*shells[ish]['l']+1
 
         #read in the band eigenvalues
-        mpi.report("Reading input from BAND.OUT")
+        mpi.report("Reading BAND.OUT")
         en=numpy.loadtxt('BAND.OUT')
         nstsv=int(len(en[:,1])/n_k)
         #convert the en array into a workable format
@@ -485,7 +488,6 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         n_parproj = numpy.array([0])
         proj_mat_all = numpy.array([0])
 
-        mpi.report('Converted the band info')
         # Save it to the HDF:
         ar = HDFArchive(self.hdf_file, 'a')
         if not (self.bands_subgrp in ar):
@@ -497,6 +499,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         for it in things_to_save:
             ar[self.bands_subgrp][it] = locals()[it]
         del ar
+        mpi.report('Converted the band data')
 
     def convert_fs_input(self):
         """
@@ -508,7 +511,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
             return
         filext='_FS.OUT'
         dft_file='PROJ'+filext
-        mpi.report("Reading input from %s..." % dft_file)
+        mpi.report("Reading %s" % dft_file)
         #Energy conversion - Elk uses Hartrees
         energy_unit = 27.2113850560                        # Elk uses hartrees
         shells=[]
@@ -530,10 +533,10 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
            shells[ish]['dim'] = 2*shells[ish]['l']+1
 
         #read in the eigenvalues used for the FS calculation
-        mpi.report("Reading input from EIGVAL_FS.OUT")
+        mpi.report("Reading EIGVAL_FS.OUT and EFERMI.OUT")
         [en,occ,nstsv]=read_Elk.read_eig(self,filext=filext)
         #read kpoints calculated in the Elk FS calculation
-        mpi.report("Reading input from KPOINT_FS.OUT")
+        mpi.report("Reading KPOINT_FS.OUT")
         [bz_weights,vkl]=read_Elk.read_kpoints(self,filext=filext)
  
         #read projectors
@@ -544,7 +547,9 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
 
         #Need lattice symmetries to unfold the irreducible BZ
         #Read symmetry files
+        mpi.report("Reading SYMCRYS.OUT")
         [n_symm,spinmat,symlat,tr] = read_Elk.readsym(self)
+        mpi.report("Reading LATTICE.OUT")
         [amat,amatinv,bmat,bmatinv] = read_Elk.readlat(self)
         #Put eigenvalues into array of eigenvalues for the correlated window
         #alter arrays for spin-orbit coupling
@@ -558,7 +563,6 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         #put the energy eigenvalues arrays in TRIQS format
         hopping = self.sort_dft_eigvalues(n_spin_blocs,SO,n_k,n_orbitals,band_window,en,energy_unit)
 
-        mpi.report('Converted the FS info')
         # Save it to the HDF:
         ar = HDFArchive(self.hdf_file, 'a')
         if not (self.fs_subgrp in ar):
@@ -570,6 +574,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         for it in things_to_save:
             ar[self.fs_subgrp][it] = locals()[it]
         del ar
+        mpi.report('Converted the FS data')
 
     def dft_band_characters(self):
         """ 
@@ -579,6 +584,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
  
         if not (mpi.is_master_node()):
             return
+        mpi.report("Reading BC.OUT")
       
         # get needed data from hdf file
         # from general info
@@ -631,4 +637,5 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         for it in things_to_save:
             ar[self.bc_subgrp][it] = locals()[it]
         del ar
+        mpi.report('Converted the band character data')
 

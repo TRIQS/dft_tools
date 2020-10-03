@@ -55,6 +55,7 @@ The rest of the elk.in file can remain unchanged. This task calculates the proje
 #. PROJ.OUT -  specficies some information about the projectors.
    (like atom equivalency, lm indices and so on) needed for reading into the TRIQS library.
 #. EIGVAL.OUT - contains the energies and latice vector coordinates for each k-point.
+#. EFERMI.OUT - contains the Fermi energy.
 #. KPOINTS.OUT - contains the k-point weights and lattice vectors.
 #. SYMCRYS.OUT - has the crystal symmetries used for symmetries observables.
 #. LATTICE.OUT - has lattice-cartesian basis transformation matrices.
@@ -76,7 +77,7 @@ The first two lines import and load the Elk converter module and the last line e
 Data for post-processing - Correlated Spectral functions
 --------------------------------------------------------
 
-In case you want to do post-processing of your data using the module :class:`SumkDFTTools <dft.sumk_dft_tools.SumkDFTTools>`, some more files have to be converted to the HDF5 archive. This has been laid out in :ref:`analysis` for Elk specific functions. Below, we will discuss how to input the information for correlated spectral functions (band structures) and which is then calculated using "spaghettis" in :ref:`analysis`. However, bandcharacter plots have not yet been implemented.
+In case you want to do post-processing of your data using the module :class:`SumkDFTTools <dft.sumk_dft_tools.SumkDFTTools>`, some more files have to be converted to the HDF5 archive. Some of this has been laid out in :ref:`analysis`, but the Elk specific functions are described in the following sections. Below, we will discuss how to input the information for correlated spectral functions (band structures) and which is then calculated using "spaghettis" in :ref:`analysis`. However, band character band structure plots have not yet been implemented.
 
 In Elk, the elk.in requires the altered flag::
 
@@ -114,13 +115,13 @@ Once these have been saved to the HDF5 file (called "filename" here), the spectr
 
   SK.elk_dos(broadening=0.0, with_Sigma=True, with_dc=True, pdos=False, nk=None)
 
-This outputs the total spectral function and the partial spectral function if enabled. Most of the user inputs are similar to SK.dos_parproj_basis() module. The "pdos" flag when "True" enables the partial dos of each l value to be calculated. It should be noted that these band characters are in Elk's irreducible lm basis and as such, only the partial spectral function of each l value is calculated. The "nk" flag enables the calculation of the occupied spectral funciton. Here, nk needs to be the occupation density matrix (calculated from integrating the Green's function on the Matsubara axis) in the Bloch basis. This input needs to be in the same format as the occupation density matrix "deltaN" calculated in the sumk_DFT.calc_density_correction(dmtype='elk') module.
+This outputs the total spectral function and the partial spectral function if enabled. Most of the user inputs are similar to SK.dos_parproj_basis() module. The "pdos" flag when "True" enables the partial dos of each lm value to be calculated. It should be noted that these band characters are in Elk's irreducible lm basis and as such, the user has to check the irreducible representation used in Elk. This information can be found in the file ELMIREP.OUT after running task 10 (the DOS calculating task). The "nk" flag enables the calculation of the occupied spectral funciton. Here, nk needs to be the occupation density matrix (calculated from integrating the Green's function on the Matsubara axis) in the Bloch basis. This input needs to be in the same format as the occupation density matrix "deltaN" calculated in the sumk_DFT.calc_density_correction(dmtype='elk') module.
 
 
 Spectral function Contor Plots (Fermi Surfaces) from Elk inputs
 ---------------------------------------------------------------
 
-Here, we will discuss how to plot the Fermi surface contour or any other non-zero omega spectral function contour plot. This is currently tailored for the Elk inputs. From this point, we will refer to these contours as Fermi surfaces. The energy eigenvalues, projectors and so on required for the Fermi surface plot needs to be outputed from Elk. This is done by using::
+Here, we will discuss how to plot the Fermi surface contor or any other non-zero omega spectral function contour plot. This is currently tailored for the Elk inputs. From this point, we will refer to these contors as Fermi surfaces. The energy eigenvalues, projectors and so on required for the Fermi surface plot needs to be outputed from Elk. This is done by using::
 
   task 
   807 
@@ -134,15 +135,15 @@ in Elk, but unlike the previous Elk interface tasks, the k-mesh grid needs to be
   0.0 0.0 1.0 !4) vertex 3
   32 32 32    !5) k-mesh grid size
 
-Lines 1) to 4) specifies the corners (in lattice coordinates) of the k-grid box and line 5) is the grid size in each direction (see the Elk manual). If the user desires to plot a 2D plane, then the user should define the plane using lines 2) and 3) [relative to line 1)] and define line 4) to be the cross-product of lines 2) and 3). The outputs will be in terms of the k-dependent quantities in the irreducible Brilluoin zone (IBZ). The files needed for this calculation are:
+Lines 1) to 4) specifies the corners (in lattice coordinates) of the k-grid box and line 5) is the grid size in each direction (see the Elk manual). If the user desires to plot a 2D plane, then the user should define the plane using lines 2) and 3) [relative to line 1)] and define line 4) to be the cross-product of lines 2) and 3). The outputs will be in terms of the k-dependent quantities in the irreducible Brilluoin zone (IBZ). The files needed for the interface are:
 
 #. EIGVAL_FS.OUT - same as EIGVAL.OUT but the output is of the Fermi surface calculation.
 #. KPOINT_FS.OUT - same as KPOINT.OUT but the output is of the Fermi surface calculation.   
 #. PROJ_FS.OUT - same as PROJ.OUT but the output is of the Fermi surface calculation.   
 #. WANPROJ_L**_S**_A****_FS.OUT - same as WANPROJ_L**_S**_A****.OUT but the output is of the Fermi surface calculation.   
+#. EFERMI.OUT - contains the Fermi energy.
 #. SYMCRYS.OUT - has the crystal symmetries used for symmetries observables.
 #. LATTICE.OUT - has lattice-cartesian basis transformation matrices.
-#. GEOMETRY.OUT - file with the lattice positions of every atom of each species.
 
 (The ascii output files which have the extension of _FS.OUT which are specific for this post processing calculation.)
 
@@ -169,18 +170,18 @@ To give the user a range of output capabilities, This routine can be used in the
 
 #. If the user is generating the DFT Spectral function plot (i.e. with_Sigma and with_dc both set to False), a mesh needs to be specified. This function will output the spectral functions for the input mesh. If FS is True, this would return the spectral functions at omega=0.0 otherwise, this routine will output the the spectral function for all omega values generated from the input mesh parameters.
 
-The output files will have the form of "Akw_FS_up(down).dat" if FS=True or "Akw_up(down)_omega_%s.dat" otherwise. The latter file will have the omega values within the file (the fourth colomn. The first three coloumns of the output file specifies the cartesian lattice vector (kx, ky, kz) and the last coloumn is the spectral function values.
+The output files will have the form of "Akw_FS_X.dat" (X being either up, down or ud) if FS=True or "Akw_X_omega_Y.dat" (Y being the omega mesh index) otherwise. The latter file will have the omega values within the file (the fourth colomn). The first three coloumns of both output file types specifies the cartesian lattice vector (kx, ky, kz) and the last coloumn is the spectral function values.
 
 
 DFT+DMFT wavefunction dependent quantities
 ------------------------------------------
 
-The wavefunctions and occupations are generated in Elk by diagonalizing the full DFT+DMFT density matrix at each k-point during task 808. These are then used to update the electron density which is then used to solve the Kohn-Sham equations once to complete a FCSC DFT+DMFT cycle. It is possible to calculate quantities which are solely dependent on the wavefunctions and occupations by using the aforementioned diagonalized set. After generating the DMATDMFT.OUT file, these diagonalized wavefunctions and occupations are calculated amending elk.in with the new task::
+The wavefunctions and occupations are generated in Elk by diagonalizing the full DFT+DMFT density matrix at each k-point during task 808. These are used to update the electron density which is then used to solve the Kohn-Sham equations once to complete a FCSC DFT+DMFT cycle. It is possible to calculate quantities which are solely dependent on the wavefunctions and occupations by using the aforementioned diagonalized set. After generating the DMATDMFT.OUT file, these diagonalized wavefunctions and occupations are calculated by amending elk.in with the new task::
 
   task
    809
 
-This will write the new second variational eigenvectors and occupations in the EVECSV.OUT and OCCSV.OUT binary files respectively. Then the wavefunction dependent quantities implemented within Elk can also be calculated using the DFT+DMFT wavefunctions and occupations. Note, that this only works for energy independent quantities. Also, the user has to ensure that the second variational eigenvectors will be used in determining the wavefunction dependent quantities. This is done by looking for the variable "tevecsv" in init0.f90 of Elk's source code and making sure that this is set to .true. for the task number the user wishes to use.
+This will write the new second variational eigenvectors and occupations in the EVECSV.OUT and OCCSV.OUT binary files respectively. Then the wavefunction dependent quantities implemented within Elk can be calculated using these DFT+DMFT wavefunctions and occupations. Note, that this only works for energy independent quantities. Also, the user has to ensure that the second variational eigenvectors will be used in determining the wavefunction dependent quantities. This is done by looking for the variable "tevecsv" in init0.f90 of Elk's source code and making sure that this is set to .true. for the task number the user wishes to use.
 
 
 
