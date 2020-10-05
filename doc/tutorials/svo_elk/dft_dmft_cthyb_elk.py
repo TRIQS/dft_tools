@@ -151,7 +151,7 @@ for iteration_number in range(1,loops+1):
 
 #For FCSC calculations
 #output the density matrix for Elk interface
-dN, d = SK.calc_density_correction(dmtype='elk')
+dN, d = SK.calc_density_correction(dm_type='elk')
 #correlation energy via the Migdal formula
 correnerg = 0.5 * (S.G_iw * S.Sigma_iw).total_density()
 #subtract the double counting energy
