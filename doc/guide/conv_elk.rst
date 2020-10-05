@@ -12,7 +12,7 @@ the DFT code. Further information about Elk can be found on the :ref:`official E
 Conversion for the DMFT self-consistency cycle
 ----------------------------------------------
 
-Once the user has obtained the groundstate calculation, they will have to rerun Elk but with some small changes to the inputs in the elk.in file which will be explained below. The Elk part of the interface calculates and outputs the Wannier projectors. All downfolding related falgs are set in the elk input file, and Elk determines automatically by symmetry equivalend sites. The TRIQS Elk converter then reads in these projectors along with the other Elk ascii files which would have been generated in the Elk ground state calculation. This information is then packed into the HDF5 file.
+Once the user has obtained the groundstate calculation, they will have to rerun Elk but with some small changes to the inputs in the elk.in file which will be explained below. The Elk part of the interface calculates and outputs the Wannier projectors. All downfolding related flags are set in the elk input file, and Elk determines automatically by symmetry equivalent sites. The TRIQS Elk converter then reads in these projectors along with the other Elk ascii files which would have been generated in the Elk ground state calculation. This information is then packed into the HDF5 file.
 
 In the following, we use SrVO3 as an example to explain the flags required in the elk.in input file. An example elk.in of SrVO3 is available in the :ref:`SrVO3 tutorial <elk_SVO>`.
 
@@ -30,12 +30,12 @@ The projectors are generated in Elk using these alterations in the elk.in file::
    7 8 9        !3) cubic harmonic lm indices 
    -0.055 0.07  !4) Correlated energy window in Hartrees (this is [-1.5, 1.9] in eV)
 
-The first flag "task" specifies Elk to do the Wannier projector calculation in the Elk input convention. The "wanproj" flag specifies the information needed to generate the desired projectors (the exlaimation marks are comment flags in fortran). Below gives the meaning of each line:
+The first flag "task" specifies Elk to do the Wannier projector calculation in the Elk input convention. The "wanproj" flag specifies the information needed to generate the desired projectors (the exclamation marks are comment flags in Fortran). Below gives the meaning of each line:
 
 #. The number of different species to generate the projectors for. If the material has multiple atoms of the same species, then the projectors will be generated for all of these atoms. Information about whether these atoms are symmetrically equivalent is written to the PROJ.OUT file. Generating projectors for multiple species requires lines 2) and 3) to be repeated for each projector species. 
 #. The desired species index (relative to the order of the "atoms" input in elk.in), the l value and the number of wanted lm orbitals for the projectors. 
 #. The lm indices (in the cubic harmonics by default) where lm = 1 refers to the s orbital, lm = 2,3,4 refers to the p orbitals, lm = 5,6,7,8,9 refers to the d orbitals and finally lm = 10,11,12,13,14,15,16 refers to the f orbitals. In the example above, this specifies that we want the t2g orbitals which has size 3 [last number in line 2)] and the lm indices are 7, 8 and 9 as specified in line 3). If, on the other hand, the user wishes to use all of the d-orbitals then all 5 orbital indices need to be included along with specifying that all 5 orbitals will be used in line 2).
-#. The correlated energy window (in Hartrees) to generate the projectors within.
+#. The correlated energy window (in Hartree) to generate the projectors within.
 
 It should be noted that the indices in line 3) will change if another lm basis is used. 
 The default is the cubic harmonic basis. The flags in elk.in required to change the spherical harmonic basis are::
@@ -63,9 +63,9 @@ The rest of the elk.in file can remain unchanged. This task calculates the proje
 #. LATTICE.OUT - has lattice-cartesian basis transformation matrices.
 #. GEOMETRY.OUT - file with the lattice positions of every atom of each species.
 
-Moreover, the wannier charge density matrix (in WANCHARGE.OUT) and the Wannier spectral function (in WANSF_L**_S**_A****_0*.OUT) are calculated. These files are not used in the interface. 
+Moreover, the Wannier charge density matrix (in WANCHARGE.OUT) and the Wannier spectral function (in WANSF_L**_S**_A****_0*.OUT) are calculated. These files are not used in the interface. 
 
-As a side note, there are two other tasks which also generate the Wannier projectors. Task 804 generates the same outputs as 805 except it doesn't calculate the Wannier charge and spectral function. Task 806 outputs the same information as 805, but it generates the projectors (and other k-dependent variables) on a different ngridk mesh. These tasks are parallelized with both openmp and mpi.
+As a side note, there are two other tasks which also generate the Wannier projectors. Task 804 generates the same outputs as 805 except it doesn't calculate the Wannier charge and spectral function. Task 806 outputs the same information as 805, but it generates the projectors (and other k-dependent variables) on a different ngridk mesh. These tasks are parallelized with both OpenMP and MPI.
 
 The Elk outputs are read into the TRIQS library using the following lines::
 
@@ -120,10 +120,10 @@ Once these have been saved to the HDF5 file (called "filename" here), the spectr
 This outputs the total spectral function and the partial spectral function if enabled. Most of the user inputs are similar to SK.dos_parproj_basis() module. The "pdos" flag when "True" enables the partial dos of each lm value to be calculated. It should be noted that these band characters are in Elk's irreducible lm basis and as such, the user has to check the irreducible representation used in Elk. This information can be found in the file ELMIREP.OUT after running task 10 (the DOS calculating task). The "nk" flag enables the calculation of the occupied spectral funciton. Here, nk needs to be the occupation density matrix (calculated from integrating the Green's function on the Matsubara axis) in the Bloch basis. This input needs to be in the same format as the occupation density matrix "deltaN" calculated in the sumk_DFT.calc_density_correction(dmtype='elk') module.
 
 
-Spectral function Contor Plots (Fermi Surfaces) from Elk inputs
+Spectral function Contour Plots (Fermi Surfaces) from Elk inputs
 ---------------------------------------------------------------
 
-Here, we will discuss how to plot the Fermi surface contor or any other non-zero omega spectral function contour plot. This is currently tailored for the Elk inputs. From this point, we will refer to these contors as Fermi surfaces. The energy eigenvalues, projectors and so on required for the Fermi surface plot needs to be outputed from Elk. This is done by using::
+Here, we will discuss how to plot the Fermi surface contour or any other non-zero omega spectral function contour plot. This is currently tailored for the Elk inputs. From this point, we will refer to these contours as Fermi surfaces. The energy eigenvalues, projectors and so on required for the Fermi surface plot needs to be outputed from Elk. This is done by using::
 
   task 
   807 
@@ -137,7 +137,7 @@ in Elk, but unlike the previous Elk interface tasks, the k-mesh grid needs to be
   0.0 0.0 1.0 !4) vertex 3
   32 32 32    !5) k-mesh grid size
 
-Lines 1) to 4) specifies the corners (in lattice coordinates) of the k-grid box and line 5) is the grid size in each direction (see the Elk manual). If the user desires to plot a 2D plane, then the user should define the plane using lines 2) and 3) [relative to line 1)] and define line 4) to be the cross-product of lines 2) and 3). The outputs will be in terms of the k-dependent quantities in the irreducible Brilluoin zone (IBZ). The files needed for the interface are:
+Lines 1) to 4) specifies the corners (in lattice coordinates) of the k-grid box and line 5) is the grid size in each direction (see the Elk manual). If the user desires to plot a 2D plane, then the user should define the plane using lines 2) and 3) [relative to line 1)] and define line 4) to be the cross-product of lines 2) and 3). The outputs will be in terms of the k-dependent quantities in the irreducible Brillouin zone (IBZ). The files needed for the interface are:
 
 #. EIGVAL_FS.OUT - same as EIGVAL.OUT but the output is of the Fermi surface calculation.
 #. KPOINT_FS.OUT - same as KPOINT.OUT but the output is of the Fermi surface calculation.   
@@ -164,15 +164,15 @@ The new flags specify the following:
 #. "FS" - determines whether the output will be the Fermi surface and uses the closest omega value to 0.0 in the mesh.  
 #. "plane" - required to specify whether the Elk input parameters were generated on a k-mesh plane.
 #. "sym" - needed if the IBZ will be folded out by using symmetry operations.
-#. "orthvec" - needs to be specfied if using "plane" as this input is the orthonomal vector to the 2D plane required for the folding out process.
+#. "orthvec" - needs to be specified if using "plane" as this input is the orthonormal vector to the 2D plane required for the folding out process.
 
 To give the user a range of output capabilities, This routine can be used in the following ways:
 
 #. If using "with_Sigma", the mesh will be the same as the self-energy. However, by setting FS=False, the user can input a mesh option if they desire the "Fermi surface" plots for each omega value (commensurate with the self-energy mesh) within the input range.
 
-#. If the user is generating the DFT Spectral function plot (i.e. with_Sigma and with_dc both set to False), a mesh needs to be specified. This function will output the spectral functions for the input mesh. If FS is True, this would return the spectral functions at omega=0.0 otherwise, this routine will output the the spectral function for all omega values generated from the input mesh parameters.
+#. If the user is generating the DFT Spectral function plot (i.e. with_Sigma and with_dc both set to False), a mesh needs to be specified. This function will output the spectral functions for the input mesh. If FS is True, this would return the spectral functions at omega=0.0 otherwise, this routine will output the spectral function for all omega values generated from the input mesh parameters.
 
-The output files will have the form of "Akw_FS_X.dat" (X being either up, down or ud) if FS=True or "Akw_X_omega_Y.dat" (Y being the omega mesh index) otherwise. The latter file will have the omega values within the file (the fourth colomn). The first three coloumns of both output file types specifies the cartesian lattice vector (kx, ky, kz) and the last coloumn is the spectral function values.
+The output files will have the form of "Akw_FS_X.dat" (X being either up, down or ud) if FS=True or "Akw_X_omega_Y.dat" (Y being the omega mesh index) otherwise. The latter file will have the omega values within the file (the fourth column). The first three columns of both output file types specifies the cartesian lattice vector (kx, ky, kz) and the last column is the spectral function values.
 
 
 DFT+DMFT wavefunction dependent quantities
