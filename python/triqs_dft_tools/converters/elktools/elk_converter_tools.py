@@ -40,7 +40,7 @@ class ElkConverterTools:
       """
       This routine determines the axis of rotation vector (v) and the angle of rotation (th).
       If R corresponds to an improper rotation then only the proper part is used and the determinant
-      is set to -1. The rotation convention follows the "right-hand rule". See Elk's rotaxang 
+      is set to -1. The rotation convention follows the "right-hand rule". See Elk's rotaxang
       routine.
       """
       eps=1E-8
@@ -99,7 +99,7 @@ class ElkConverterTools:
 
     def axangsu2(self,v,th):
       """
-      Calculate the rotation SU(2) matrix - see Elk's axangsu2 routine. 
+      Calculate the rotation SU(2) matrix - see Elk's axangsu2 routine.
       """
       su2=numpy.zeros([2,2], numpy.complex_)
       t1=numpy.sqrt(numpy.dot(v,v))
@@ -120,7 +120,7 @@ class ElkConverterTools:
 
     def v3frac(self,v,eps):
        """
-       This finds the fractional part of 3-vector v components. This uses the 
+       This finds the fractional part of 3-vector v components. This uses the
        same method as in Elk (version 6.2.8) r3fac subroutine.
        """
        v[0]=v[0]-numpy.floor(v[0])
@@ -160,7 +160,7 @@ class ElkConverterTools:
                 if(t1 < epslat):
                   iea[isym][ja,js]=ia
                   break
-        #put iea into perm format 
+        #put iea into perm format
         for isym in range(nsym):
           perm.append([])
           ja=0
@@ -211,7 +211,7 @@ class ElkConverterTools:
 
     def zyz_euler(self,rot):
         """
-        This calculates the Euler angles of matrix rot in the y-convention. 
+        This calculates the Euler angles of matrix rot in the y-convention.
         See Elk's roteuler routine.
         This will be made redundent when TRIQS uses scipy version 1.4+
         """
@@ -262,12 +262,11 @@ class ElkConverterTools:
 
     def ylmroty(self,beta,l):
         """
-        returns the rotation matrix around the y-axis with angle beta. 
+        returns the rotation matrix around the y-axis with angle beta.
         This uses the same real matrix formual as in Elk - see Elk's manual for ylmroty description
         """
         #import the factorial function - needed for later versions of scipy (needs testing)
-        #from scipy import special as spec
-        from scipy import misc as spec #for older scipy version
+        from scipy import special as spec
         #calculates the rotation matrix in complex spherical harmonics for l
         dy=numpy.identity(2*l+1, numpy.float_)
         #sine and cosine of beta
