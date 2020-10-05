@@ -20,11 +20,11 @@ p = {}
 p["max_time"] = -1
 p["length_cycle"] = 200
 p["n_warmup_cycles"] = 10000
-p["n_cycles"] = 100000
+p["n_cycles"] = 1000000
 p["perform_tail_fit"] = True
 p["fit_max_moment"] = 4
-p["fit_min_n"] = 20
-p["fit_max_n"] = 50
+p["fit_min_n"] = 30
+p["fit_max_n"] = 60
 
 # If conversion step was not done, we could do it here. Uncomment the lines it you want to do this.
 Converter = ElkConverter(filename=dft_filename, repacking=True)
