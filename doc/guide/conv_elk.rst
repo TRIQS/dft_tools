@@ -47,7 +47,7 @@ The default is the cubic harmonic basis. The flags in elk.in required to change 
    .true.
 
 Above are the default inputs. If both of these flags are set to .false., the projectors will be generated in the complex spherical harmonic basis. It is possible to generate the projectors in Elk's irreducible basis by setting cubic to .false., but this is experimental and the TRIQS side of the interface is 
-currently unable to convert the projectors in that basis. Finally, these projectors are written to file in the compex spherical harmonic basis.
+currently unable to convert the projectors in that basis. Finally, these projectors are written to file in the complex spherical harmonic basis.
 
 .. _Elk_files:
 
