@@ -77,7 +77,6 @@ We also have to specify the :ref:`CTHYB solver <triqscthyb:welcome>` related set
 
   p = {}
   # solver
-  p["random_seed"] = 123 * mpi.rank + 567
   p["length_cycle"] = 200
   p["n_warmup_cycles"] = 100000
   p["n_cycles"] = 1000000
@@ -135,7 +134,7 @@ Now we can go to the definition of the self-consistency step. It consists again 
   for iteration_number in range(1,loops+1):
       if mpi.is_master_node(): print "Iteration = ", iteration_number
 
-      SK.symm_deg_gf(S.Sigma_iw,orb=0)                        # symmetrizing Sigma
+      SK.symm_deg_gf(S.Sigma_iw,ish=0)                        # symmetrizing Sigma
       SK.set_Sigma([ S.Sigma_iw ])                            # put Sigma into the SumK class
       chemical_potential = SK.calc_mu( precision = prec_mu )  # find the chemical potential for given density
       S.G_iw << SK.extract_G_loc()[0]                         # calc the local Green function
@@ -210,8 +209,7 @@ To update the electron density and solve the Kohn-Sham equations once, run task 
 #. update the electron density 
 #. -> (1) ... 
 
-The user just needs to specify the maximum number of FCSC cycles.
-
+The user just needs to specify the maximum number of FCSC cycles, as well as the number of OpenMP threads for Elk (`OMP_NUM_THREADS`) and the number of MPI ranks in the bash script.
 
 This is all we need for the one-shot or FCSC DFT+DMFT calculation. All results of this calculation will be stored in a separate subgroup in the hdf5 file, called `dmft_output`. Note that the script performs 15 DMFT cycles, but does not check for convergence. It would be possible to build in convergence criteria.  A simple check for convergence can be also done if you store multiple quantities of each iteration and analyse the convergence manually. In general, it is advisable to start with less good statistics (fewer measurements), and increase the number of measurements close to convergence (e.g. after a few initial iterations). This helps to keep computational costs low during the first iterations.
 

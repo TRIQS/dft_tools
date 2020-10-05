@@ -4,52 +4,29 @@ from h5 import HDFArchive
 from triqs_cthyb import *
 from triqs.gf import *
 from triqs_dft_tools.sumk_dft import *
-from triqs_dft_tools.converters.wien2k import *
+from triqs_dft_tools.converters.elk import *
 
 dft_filename='SrVO3'
 beta = 40
-loops = 15                       # Number of DMFT sc-loops
+loops = 2                      # Number of DMFT sc-loops
 sigma_mix = 1.0                  # Mixing factor of Sigma after solution of the AIM
 use_blocks = True                # use bloc structure from DFT input
 prec_mu = 0.0001
 h_field = 0.0
 
-## KANAMORI DENSITY-DENSITY (for full Kanamori use h_int_kanamori)
-# Define interaction paramters, DC and Hamiltonian
-U = 4.0
-J = 0.65
-dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
-# Construct U matrix for density-density calculations
-Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
-# Construct density-density Hamiltonian
-h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
-
-## SLATER HAMILTONIAN
-## Define interaction paramters, DC and Hamiltonian
-#U = 9.6
-#J = 0.8
-#dc_type = 0                      # DC type: 0 FLL, 1 Held, 2 AMF
-## Construct Slater U matrix
-#U_sph = U_matrix(l=2, U_int=U, J_hund=J)
-#U_cubic = transform_U_matrix(U_sph, spherical_to_cubic(l=2, convention='wien2k'))
-#Umat = t2g_submatrix(U_cubic, convention='wien2k')
-## Construct Slater Hamiltonian
-#h_int = h_int_slater(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U_matrix=Umat)
 
 # Solver parameters
 p = {}
 p["max_time"] = -1
-p["random_seed"] = 123 * mpi.rank + 567
 p["length_cycle"] = 200
-p["n_warmup_cycles"] = 100000
-p["n_cycles"] = 1000000
+p["n_warmup_cycles"] = 10000
+p["n_cycles"] = 100000
 p["perform_tail_fit"] = True
 p["fit_max_moment"] = 4
-p["fit_min_n"] = 30
-p["fit_max_n"] = 60
+p["fit_min_n"] = 20
+p["fit_max_n"] = 50
 
 # If conversion step was not done, we could do it here. Uncomment the lines it you want to do this.
-from triqs_dft_tools.converters.elk_converter import *
 Converter = ElkConverter(filename=dft_filename, repacking=True)
 Converter.convert_dft_input()
 mpi.barrier()
@@ -75,6 +52,28 @@ l = SK.corr_shells[0]['l']
 spin_names = ["up","down"]
 orb_names = [i for i in range(n_orb)]
 
+## KANAMORI DENSITY-DENSITY (for full Kanamori use h_int_kanamori)
+# Define interaction paramters, DC and Hamiltonian
+U = 4.0
+J = 0.65
+dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
+# Construct U matrix for density-density calculations
+Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
+# Construct density-density Hamiltonian
+h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
+
+## SLATER HAMILTONIAN
+## Define interaction paramters, DC and Hamiltonian
+#U = 9.6
+#J = 0.8
+#dc_type = 0                      # DC type: 0 FLL, 1 Held, 2 AMF
+## Construct Slater U matrix
+#U_sph = U_matrix(l=2, U_int=U, J_hund=J)
+#U_cubic = transform_U_matrix(U_sph, spherical_to_cubic(l=2, convention='wien2k'))
+#Umat = t2g_submatrix(U_cubic, convention='wien2k')
+## Construct Slater Hamiltonian
+#h_int = h_int_slater(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U_matrix=Umat)
+
 # Use GF structure determined by DFT blocks
 gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].items()]
 
@@ -99,7 +98,7 @@ if previous_present:
 for iteration_number in range(1,loops+1):
     if mpi.is_master_node(): print("Iteration = ", iteration_number)
 
-    SK.symm_deg_gf(S.Sigma_iw,orb=0)                        # symmetrise Sigma
+    SK.symm_deg_gf(S.Sigma_iw,ish=0)                        # symmetrise Sigma
     SK.set_Sigma([ S.Sigma_iw ])                            # set Sigma into the SumK class
     chemical_potential = SK.calc_mu( precision = prec_mu )  # find the chemical potential for given density
     S.G_iw << SK.extract_G_loc()[0]                         # calc the local Green function

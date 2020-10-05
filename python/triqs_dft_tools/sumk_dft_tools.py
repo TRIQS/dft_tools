@@ -685,7 +685,7 @@ class SumkDFTTools(SumkDFT):
               mpi.report(jw)
             #for many energy contour calculations
             else:
-              if mesh is not None:
+              if mesh:
                 om_mn=mesh[0]
                 om_mx=mesh[1]
                 jw=[i for i in range(len(om_mesh)) if((om_mesh[i]<=om_mx)and(om_mesh[i]>=om_mn))]
@@ -718,12 +718,12 @@ class SumkDFTTools(SumkDFT):
         if mu is None:
             mu = self.chemical_potential
 
-        #orthogonal vector used for plane calculations    
+        #orthogonal vector used for plane calculations
         if orthvec is None:
           #set to [0,0,1] by default
           orthvec = numpy.zeros(3,dtype=numpy.float_)
           orthvec[2] = 1.0
-        elif orthvec.size is not 3:
+        elif orthvec.size != 3:
           assert 0, "The input numpy orthvec is not the required size of 3!"
 
         spn = self.spin_block_names[self.SO]
@@ -854,7 +854,7 @@ class SumkDFTTools(SumkDFT):
             subgrp=self.bands_data, things_to_read=things_to_read)
         if not value_read:
             return value_read
-        if ishell is not None:
+        if ishell:
             things_to_read = ['rot_mat_all', 'rot_mat_all_time_inv']
             value_read = self.read_input_from_hdf(
                 subgrp=self.parproj_data, things_to_read=things_to_read)
@@ -1230,7 +1230,7 @@ class SumkDFTTools(SumkDFT):
             n_om = len(self.omega)
             mpi.report("Using omega mesh provided by Sigma!")
 
-            if energy_window is not None:
+            if energy_window:
                 # Find according window in Sigma mesh
                 ioffset = numpy.sum(
                     self.omega < energy_window[0] - max(Om_mesh))
