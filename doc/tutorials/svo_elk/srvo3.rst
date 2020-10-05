@@ -1,54 +1,39 @@
-.. _SrVO3:
+.. _SrVO3_elk:
 
-This example is almost identical as the Wien2k-TRIQS SrVO3 example. 
-On the example of SrVO3 we will discuss now how to set up a full working calculation,
-including the initialization of the :ref:`CTHYB solver <triqscthyb:welcome>`.
-Some additional parameter are introduced to make the calculation
-more efficient. This is a more advanced example, which is
-also suited for parallel execution. 
+This example is almost identical to the :ref:`Wien2k-TRIQS SrVO3 example <SrVO3>`. On the example of SrVO3 we will discuss now how to set up a full working calculation using Elk, including the initialization of the :ref:`CTHYB solver <triqscthyb:welcome>`. Some additional parameter are introduced to make the calculation more efficient. This is a more advanced example, which is also suited for parallel execution. 
 
-For the convenience of the user, we provide also a full
-python script (:download:`dft_dmft_cthyb_elk.py <images_scripts/dft_dmft_cthyb_elk.py>`).
-The user has to adapt it to their own needs. How to execute your script is described :ref:`here<runpy>`.
+For the convenience of the user, we provide also a full python script (:download:`dft_dmft_cthyb_elk.py <dft_dmft_cthyb_elk.py>`). The user has to adapt it to their own needs. How to execute your script is described :ref:`here<runpy>`.
 
-The conversion will now be discussed in detail for the Elk package.
-For more details we refer to the :ref:`documentation <conversion>`.
+For more details we refer to the :ref:`documentation <conversion>`, now we will discuss the conversion for Elk.
 
-A brief note before discussing the example. This interface should work for any type of ground state 
-Elk calculation using the interface calls described in this example (i.e. the interface is universal). 
-If the user wishes to do magnetism in just the DMFT cycle (non magnetic DFT inputs), 
-they will have to provide and initial split in the self-energy at the start of the 
-DMFT cycle (not shown here).
+A brief note before discussing the example. This interface works for any type of ground state Elk calculation using the interface calls described in this example (i.e. the interface is universal). If the user wishes to perform a spin-polarized calculation in DMFT alone (non magnetic DFT inputs), they have to lift the up / down spin symmetry manually (not shown here).
 
 
 Elk to TRIQS
 ============
 
-First, we do a DFT calculation, using the Elk package. As main input file we have to provide the so-called elk.in :file:`elk.in`. We use the following:
+First, we perform a DFT calculation, using the Elk package. As main input file we have to provide the so-called elk.in :file:`elk.in`. We use the following:
 
-.. literalinclude:: images_scripts/elk.in
+.. literalinclude:: elk.in
 
-This elk.in will generate the ground state (task 0) and the Wannier projectors (task 805). 
-The elk executable is run in the directory including the elk.in file.
+This :download:`elk.in` will generate the ground state (task 0) and the Wannier projectors (task 805) in a small energy window for the :math:`V` :math:`t_{2g}` orbitals. The elk executable is run in the directory including the elk.in file.
 
-A simple python script that initialises the converter is::
+A simple python script that initializes the converter is::
 
   from triqs_dft_tools.converters.elk import *
   Converter = elkConverter(filename = "SrVO3")
 
-After initializing the interface module, we can now convert the input
-text files to the hdf5 archive by::
+After initializing the converter, we can now convert the input text files into an hdf5 archive by::
 
   Converter.convert_dft_input()
 
-This reads all the data, and stores everything that is necessary for the DMFT calculation in the file :file:`SrVO3.h5`.
+This reads all necessary data from the :ref:`Elk output <Elk_files>`, and stores the converted input for the DMFT calculation in the file :file:`SrVO3.h5`.
 
 
 The DMFT calculation
 ====================
 
-The DMFT script itself is, except very few details, independent of the DFT package that was used to calculate the local orbitals.
-As soon as one has converted everything to the hdf5 format, the following procedure is practially the same. 
+The DMFT script itself is, except very few details, independent of the DFT package that was used to calculate the local orbitals. As soon as one has converted everything to the hdf5 format, the following procedure is practically the same. 
 
 Loading modules
 ---------------
@@ -88,9 +73,7 @@ And next, we can initialize the :class:`SumkDFT <dft.sumk_dft.SumkDFT>` class::
 Initializing the solver
 -----------------------
 
-We also have to specify the :ref:`CTHYB solver <triqscthyb:welcome>` related settings.
-We assume that the DMFT script for SrVO3 is executed on 16 cores. A sufficient set
-of parameters for a first guess is::
+We also have to specify the :ref:`CTHYB solver <triqscthyb:welcome>` related settings. We assume that the DMFT script for SrVO3 is executed on 16 cores. A sufficient set of parameters for a first guess is::
 
   p = {}
   # solver
@@ -104,17 +87,9 @@ of parameters for a first guess is::
   p["fit_min_n"] = 30
   p["fit_max_n"] = 60
 
-Here we use a tail fit to deal with numerical noise of higher Matsubara frequencies.
-For other options and more details on the solver parameters, we refer the user to
-the :ref:`CTHYB solver <triqscthyb:welcome>` documentation.
-It is important to note that the solver parameters have to be adjusted for
-each material individually. A guide on how to set the tail fit parameters is given
-:ref:`below <tailfit>`.
+Here we use a tail fit to deal with numerical noise of higher Matsubara frequencies. For other options and more details on the solver parameters, we refer to :ref:`CTHYB solver <triqscthyb:welcome>` documentation. It is important to note that the solver parameters have to be adjusted for each material individually. A guide on how to set the tail fit parameters is given :ref:`below <tailfit>`.
 
-
-The next step is to initialize the
-:class:`solver class <triqs_cthyb.Solver>`.
-It consist of two parts:
+The next step is to initialize the :class:`solver class <triqs_cthyb.Solver>`. It consist of two parts:
 
 #. Calculating the multi-band interaction matrix, and constructing the
    interaction Hamiltonian.
@@ -131,23 +106,19 @@ The first step is done using methods of the :ref:`TRIQS <triqslibs:welcome>` lib
   # Construct U matrix for density-density calculations:
   Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
 
-We assumed here that we want to use an interaction matrix with
-Kanamori definitions of :math:`U` and :math:`J`.
+We assumed here that we want to use an interaction matrix with Kanamori definitions of :math:`U` and :math:`J`.
 
 Next, we construct the Hamiltonian and the solver::
 
   h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
   S = Solver(beta=beta, gf_struct=gf_struct)
 
-As you see, we take only density-density interactions into
-account. Other Hamiltonians with, e.g. with full rotational invariant interactions are:
+For simplicity, we take only density-density interactions into account here. Other Hamiltonians with, e.g. with full rotational invariant interactions are:
 
 * h_int_kanamori
 * h_int_slater
 
-For other choices of the interaction matrices (e.g Slater representation) or
-Hamiltonians, we refer to the reference manual of the :ref:`TRIQS <triqslibs:welcome>`
-library.
+For other choices of the interaction matrices (e.g Slater representation) or Hamiltonians, we refer to the reference manual of the :ref:`TRIQS <triqslibs:welcome>` library.
 
 As a last step, we initialize the subgroup in the hdf5 archive to store the results::
 
@@ -159,9 +130,7 @@ As a last step, we initialize the subgroup in the hdf5 archive to store the resu
 DMFT cycle
 ----------
 
-Now we can go to the definition of the self-consistency step. It consists again
-of the basic steps with
-some additional refinements::
+Now we can go to the definition of the self-consistency step. It consists again of the basic steps with some additional refinements::
 
   for iteration_number in range(1,loops+1):
       if mpi.is_master_node(): print "Iteration = ", iteration_number
@@ -218,8 +187,7 @@ some additional refinements::
 TRIQS to Elk (Fully Charge Self-Consistent DFT+DMFT)
 ====================================================
 
-To output the DMATDMFT.OUT file for a fully charge self-consistent calculation, 
-add the following lines to the end of the DMFT python script::
+To output the DMATDMFT.OUT file for a fully charge self-consistent calculation, add the following lines to the end of the DMFT python script::
 
   #output the density matrix for Elk interface
   dN, d = SK.calc_density_correction()
@@ -235,33 +203,21 @@ add the following lines to the end of the DMFT python script::
     f.write("%.16f\n"%correnerg)
     f.close()
 
-To update the electron density and solve the Kohn-Sham equations once, run task 808 in elk.in.
-Automating this cycle can be done by running the shell script 
-(:download:`elk_fcsc.sh <images_scripts/elk_fcsc.sh>`) 
-and having an "elk_master.in" file which replaces the tasks in elk.in for each new task in the 
-FCSC DFT+DMFT cycle (see :download:`elk_master.in <images_scripts/elk_master.in>`.
-Assuming that the ground state has been calculated,
-this shell script executes the following:
-(1) generate the projectors (task 805) -> (2) execute the DMFT cycle(s) -> (3) update the electron
-density -> (1) ... The user just needs to specify the maximum number of FCSC cycles.
+To update the electron density and solve the Kohn-Sham equations once, run task 808 in elk.in. Automating this cycle can be done by running the shell script (:download:`elk_fcsc.sh <elk_fcsc.sh>`) and having an :download:`elk_master.in` file which replaces the tasks in elk.in for each new task in the FCSC DFT+DMFT cycle (see :download:`elk_master.in <elk_master.in>`.  Assuming that the ground state has been calculated, this shell script executes the following: 
+
+#. generate the projectors (task 805)
+#. execute the DMFT cycle(s)
+#. update the electron density 
+#. -> (1) ... 
+
+The user just needs to specify the maximum number of FCSC cycles.
 
 
-This is all we need for the one-shot or FCSC DFT+DMFT calculation.
-You can see in this code snippet, that all results of this calculation
-will be stored in a separate subgroup in the hdf5 file, called `dmft_output`.
-Note that this script performs 15 DMFT cycles, but does not check for
-convergence. Of course, it would be possible to build in convergence criteria.
-A simple check for convergence can be also done if you store multiple quantities
-of each iteration and analyse the convergence by hand. In general, it is advisable
-to start with a lower statistics (less measurements), but then increase it at a
-point close to converged results (e.g. after a few initial iterations). This helps
-to keep computational costs low during the first iterations.
+This is all we need for the one-shot or FCSC DFT+DMFT calculation. All results of this calculation will be stored in a separate subgroup in the hdf5 file, called `dmft_output`. Note that the script performs 15 DMFT cycles, but does not check for convergence. It would be possible to build in convergence criteria.  A simple check for convergence can be also done if you store multiple quantities of each iteration and analyse the convergence manually. In general, it is advisable to start with less good statistics (fewer measurements), and increase the number of measurements close to convergence (e.g. after a few initial iterations). This helps to keep computational costs low during the first iterations.
 
-Using the Kanamori Hamiltonian and the parameters above (but on 16 cores),
-your self energy after the **first iteration** should look like the
-self energy shown below.
+Using the Kanamori Hamiltonian and the parameters above (but on 16 cores), your self energy after the **first iteration** should look something like:
 
-.. image:: images_scripts/SrVO3_Sigma_iw_it1.png
+.. image:: SrVO3_Sigma_iw_it1.png
     :width: 700
     :align: center
 
@@ -271,8 +227,7 @@ self energy shown below.
 Tail fit parameters
 -------------------
 
-A good way to identify suitable tail fit parameters is by "human inspection".
-Therefore disabled the tail fitting first::
+A good way to identify suitable tail fit parameters is by "human inspection". Therefore disabled the tail fitting first::
 
     p["perform_tail_fit"] = False
 
@@ -281,13 +236,6 @@ and perform only one DMFT iteration. The resulting self energy can be tail fitte
     Sigma_iw_fit = S.Sigma_iw.copy()
     Sigma_iw_fit << tail_fit(S.Sigma_iw, fit_max_moment = 4, fit_min_n = 40, fit_max_n = 160)[0]
 
-Plot the self energy and adjust the tail fit parameters such that you obtain a
-proper fit. The :meth:`fit_tail function <triqs.gf.tools.tail_fit>` is part
-of the :ref:`TRIQS <triqslibs:welcome>` library.
+Plot the self energy and adjust the tail fit parameters such that you obtain a proper fit. The :meth:`fit_tail function <triqs.gf.tools.tail_fit>` is part of the :ref:`TRIQS <triqslibs:welcome>` library.
 
-For a self energy which is going to zero for :math:`i\omega \rightarrow 0` our suggestion is
-to start the tail fit (:emphasis:`fit_min_n`) at a Matsubara frequency considerable above the minimum
-of the self energy and to stop (:emphasis:`fit_max_n`) before the noise fully takes over.
-If it is difficult to find a reasonable fit in this region you should increase
-your statistics (number of measurements). Keep in mind that :emphasis:`fit_min_n`
-and :emphasis:`fit_max_n` also depend on :math:`\beta`.
+For a self energy which is going to zero for :math:`i\omega \rightarrow 0` our suggestion is to start the tail fit (:emphasis:`fit_min_n`) at a Matsubara frequency considerable above the minimum of the self energy and to stop (:emphasis:`fit_max_n`) before the noise fully takes over. If it is difficult to find a reasonable fit in this region you should increase your statistics (number of measurements). Keep in mind that :emphasis:`fit_min_n` and :emphasis:`fit_max_n` also depend on :math:`\beta`.
