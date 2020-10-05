@@ -22,7 +22,6 @@
 
 from types import *
 import numpy
-#from pytriqs.archive import *
 from triqs_dft_tools.converters.converter_tools import *
 import os.path
 from locale import atof
@@ -42,7 +41,7 @@ class readElkfiles:
         self.geom_file='GEOMETRY.OUT'
 
     def read_elk_file(self, filename, to_replace):
-        #this function is almost identical to read_fortran_file, but it removes words after ':' 
+        #this function is almost identical to read_fortran_file, but it removes words after ':'
         """
         Returns a generator that yields all numbers in the Fortran file as float, with possible replacements.
 
@@ -77,7 +76,7 @@ class readElkfiles:
                 yield atof(x)
 
     def read_elk_file2(self, filename, to_replace):
-        #this function is almost identical to read_fortran_file, but it removes words after '(' 
+        #this function is almost identical to read_fortran_file, but it removes words after '('
         """
         Returns a generator that yields all numbers in the Fortran file as float, with possible replacements.
 
@@ -116,7 +115,7 @@ class readElkfiles:
 
     def split_string(self,line):
         """
-        This removes the excess information after ':' of the string read in from the file 
+        This removes the excess information after ':' of the string read in from the file
         """
         temp = line.split(':')
         line = temp[0]
@@ -124,7 +123,7 @@ class readElkfiles:
 
     def split_string2(self,line,str):
         """
-        This removes the excess information after 'str' of the string read in from the file 
+        This removes the excess information after 'str' of the string read in from the file
         """
         temp = line.split(str)
         line = temp[0]
@@ -132,7 +131,7 @@ class readElkfiles:
 
     def split_string3(self,line):
         """
-        This removes the excess information after '(' of the string read in from the file 
+        This removes the excess information after '(' of the string read in from the file
         """
         temp = line.split('(')
         line = temp[0]
@@ -175,7 +174,7 @@ class readElkfiles:
         proj_idx=[]
         at=[]
         idxlm=[]
-        #assign global variables 
+        #assign global variables
         n_k=gen_info['n_k']
         SO=gen_info['SO']
         #loop over projector flags
@@ -204,7 +203,7 @@ class readElkfiles:
               ind.append(idxlm[n_shells][0:nrep])
               #determine basis type and transformation matrix
               basis.append(int(next(R)))
-              #determine whether which basis the projectors where generated in 
+              #determine whether which basis the projectors where generated in
               #spherical harmonics
               T.append(numpy.zeros([n_orb, n_orb], dtype=numpy.complex_))
               #Elk generated unitary basis
@@ -222,8 +221,8 @@ class readElkfiles:
               else:
                 for i in range(n_orb):
                   T[n_shells][i,i] = 1.0
-           #index for the next inequivalent atom (+1 to index is not needed as this is incorporated in 
-           #neqatom[ish] 
+           #index for the next inequivalent atom (+1 to index is not needed as this is incorporated in
+           #neqatom[ish]
               n_shells+=1
            #increase the numer of inequivalent atoms
             n_inequiv_shells+=1
@@ -248,12 +247,12 @@ class readElkfiles:
           raise IOError("Elk_converter : reading PROJ.OUT file failed!")
 
       R.close()
-      #output desired information 
+      #output desired information
       return (gen_info,n_shells,n_inequiv_shells,corr_to_inequiv,inequiv_to_corr,corr_shells,n_reps,dim_reps,ind,basis,T)
 
     def determine_T(self,l):
         """
-        Current version calculates the transformation matrix T to convert the inputs from spherical 
+        Current version calculates the transformation matrix T to convert the inputs from spherical
         harmonics to the cubic basis (as used in TRIQS and Wien2k).
         This routine is currently very similar to spherical_to_cubic in the TRIQS library.
         This routine can be extended to include other unitary rotation matrices
@@ -289,7 +288,7 @@ class readElkfiles:
     def determine_rep(self,ish,ishin,corr_shells,basis,ind,n_reps,dim_reps,irep):
       """
       Determines the irreducible representation used for projection calculation.
-      Only for Cubic harmonics at the moment        
+      Only for Cubic harmonics at the moment
       """
       #if all of the orbitals were used to construct the projectors
       rep=corr_shells[ish]['dim']
@@ -316,7 +315,7 @@ class readElkfiles:
          elif (corr_shells[ish]['l']==3):
             n_reps.append(3)
             dim_reps.append([2, 2, 3])
-      #determine the dim_reps from the lm indices in ind     
+      #determine the dim_reps from the lm indices in ind
             if(rep==3):
               irep.append(3)
             else:
@@ -377,7 +376,7 @@ class readElkfiles:
                band_window[isp][ik, 1] = proj_dim['ist_max']
                #define temporary matrix for reading in the projectors
                mat = numpy.zeros([dim, n_orbitals[ik,isp]], numpy.complex_)
-               # Real part 
+               # Real part
                for j in range(dim):
                   for i in range(n_orbitals[ik,isp]):
                      mat[j, i] = next(R)
@@ -390,7 +389,7 @@ class readElkfiles:
                   mat[:,:]=numpy.matmul(T[ish],mat[:,:])
 
                #put desired projector subset into master array
-               proj_mat[ik,isp,ish,0:dim_rep,0:n_orbitals[ik,isp]]=mat[ind[ish],0:n_orbitals[ik,isp]] 
+               proj_mat[ik,isp,ish,0:dim_rep,0:n_orbitals[ik,isp]]=mat[ind[ish],0:n_orbitals[ik,isp]]
                #delete temporary index
                del mat
           #resize array length of band indices to maximum number used
@@ -456,7 +455,7 @@ class readElkfiles:
           #array for bz weights
           bz_weights = numpy.ones([n_k], numpy.float_) / float(n_k)
           #array for lattice vectors
-          vkl = numpy.ones([n_k,3], numpy.float_) 
+          vkl = numpy.ones([n_k,3], numpy.float_)
           for ik in range(n_k):
           #k-grid info
             k_entries = ['ik', 'vklx','vkly','vklz', 'bz_weights', 'nmat']
@@ -491,7 +490,7 @@ class readElkfiles:
             symmat.append(numpy.zeros([3, 3], numpy.float_))
             spinmat.append(numpy.zeros([3, 3], numpy.float_))
             tr.append(numpy.zeros([3], numpy.float_))
-          #read the number of crystal symmetries 
+          #read the number of crystal symmetries
           x = next(R)
           nsym = int(atof(x[0]))
           #read each symmetry
@@ -501,7 +500,7 @@ class readElkfiles:
             isymm = int(x[3])
             if(isym+1!=isymm):
               raise IOError("Elk_converter : reading symmetries failed!")
-            #next read has no useful infomation 
+            #next read has no useful infomation
             x = next(R)
             #read in the translation vector used for symmetries
             x = next(R)
@@ -510,14 +509,14 @@ class readElkfiles:
             #read in the spatial symmetries
             #string with no useful information
             x = next(R)
-            #read in the spatial symmetry 
+            #read in the spatial symmetry
             for i in range(3):
               x = next(R)
               for j in range(3):
                 symmat[isym][i,j]=int(atof(x[j]))
             #string with no useful information
             x = next(R)
-            #read in the spin symmetries 
+            #read in the spin symmetries
             for i in range(3):
               x = next(R)
               for j in range(3):
@@ -555,7 +554,7 @@ class readElkfiles:
             x = next(R)
             for j in range(3):
               amatinv[i,j] = atof(x[j])
-          #reciprocal lattice matrices  
+          #reciprocal lattice matrices
           #cycling through information which is not needed
           for i in range(5):
             x = next(R)
@@ -624,7 +623,7 @@ class readElkfiles:
 
 #band character dependent calculations
     def read_bc(self):
-        """ 
+        """
         Read in the ELK generated band characters from BC.OUT
         """
 

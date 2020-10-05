@@ -22,7 +22,6 @@
 
 from types import *
 import numpy
-#from pytriqs.archive import *
 from .converter_tools import *
 import os.path
 from h5 import *
@@ -100,8 +99,8 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
 
       density_required=0.0E-7
       charge_below=0.0E-7
-      #calculate the valence charge and charge below lower energy window bound 
-      #Elk does not use the tetrahedron method when calculating these charges       
+      #calculate the valence charge and charge below lower energy window bound
+      #Elk does not use the tetrahedron method when calculating these charges
       for ik in range(n_k):
         for ist in range(nstsv):
           #calculate the charge over all the bands
@@ -110,7 +109,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
           #Convert occ list from elk to two index format for spins
           jst=int((isp)*nstsv*0.5)
           #Take lowest index in band_window for SO system
-          if(SO==0): 
+          if(SO==0):
             nst=band_window[isp][ik, 0]-1
           else:
             band=[band_window[0][ik, 0],band_window[1][ik, 0]]
@@ -129,12 +128,12 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
       """
 
       for ish in range(n_shells):
-           #check that the T matrix is not the Identity (i.e. not using spherical 
+           #check that the T matrix is not the Identity (i.e. not using spherical
            #harmonics).
            if(basis[ish]!=0):
            #put mat into temporary matrix
              temp=mat
-           #index range of lm values used to create the Wannier projectors 
+           #index range of lm values used to create the Wannier projectors
              min_ind=numpy.min(ind[ish][:])
              max_ind=numpy.max(ind[ish][:])+1
            #dimension of lm values used to construct the projectors
@@ -142,20 +141,20 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
            #loop over all symmetries
              for isym in range(n_symm):
            #rotate symmetry matrix into basis defined by T
-               mat[isym][ish]=numpy.matmul(T[ish],mat[isym][ish])         
+               mat[isym][ish]=numpy.matmul(T[ish],mat[isym][ish])
                mat[isym][ish]=numpy.matmul(mat[isym][ish],T[ish].transpose())
            #put desired subset of transformed symmetry matrix into temp matrix for symmetry isym
                for id in range(len(ind[ish])):
                  i=ind[ish][id]
-                 for jd in range(len(ind[ish][:])):       
+                 for jd in range(len(ind[ish][:])):
                    j=ind[ish][jd]
-                   temp[isym][ish][id,jd]=mat[isym][ish][i,j]       
+                   temp[isym][ish][id,jd]=mat[isym][ish][i,j]
            #put temp matrix into mat
              mat=temp
            #reduce size of lm arrays in mat lm dim
              for isym in range(n_symm):
                dim=shells[ish]['dim']
-               mat[isym][ish]=mat[isym][ish][:dim,:dim]   
+               mat[isym][ish]=mat[isym][ish][:dim,:dim]
       return mat
 
     def update_so_quatities(self,n_shells,shells,n_corr_shells,corr_shells,n_inequiv_shells,dim_reps,n_k,n_symm,n_orbitals,proj_mat,T,su2,mat,sym=True):
@@ -170,7 +169,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
           corr_shells[ish]['dim'] = 2*corr_shells[ish]['dim']
         for ish in range(n_inequiv_shells):
           dim_reps[ish]=[2*dim_reps[ish][i] for i in range(len(dim_reps[ish]))]
-        #Make temporary array of original n_orbitals 
+        #Make temporary array of original n_orbitals
         n_orbitals_orig=n_orbitals
         #Make SO n_orbitals array
         #loop over k-points
@@ -191,7 +190,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
             proj_mat_tmp[ik][0][ish][0:size][0:n_orbitals_orig[ik,0]]=proj_mat[ik][0][ish][0:size][0:n_orbitals_orig[ik,0]]
             #put other spinor projectors into extra "dim" elements
             proj_mat_tmp[ik][0][ish][size:2*size][0:n_orbitals_orig[ik,1]]=proj_mat[ik][1][ish][0:size][0:n_orbitals_orig[ik,1]]
-          #update T    
+          #update T
           #extra array elements in each dimension
           size=2*corr_shells[ish]['l']+1
           #extend the arrays
@@ -256,7 +255,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         - symmcorr_subgrp
         - misc_subgrp
 
-        in the hdf5 archive. 
+        in the hdf5 archive.
 
         """
         # Read and write only on the master node
@@ -277,18 +276,18 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         #get info for HDF5 file from gen_info
         n_k=gen_info['n_k']
         SP=gen_info['spinpol']-1
-        #Elk uses spinor wavefunctions. Therefore these two spinor wavefunctions have spin-orbit coupling incorporated in them. Here we read in the spinors 
+        #Elk uses spinor wavefunctions. Therefore these two spinor wavefunctions have spin-orbit coupling incorporated in them. Here we read in the spinors
         n_spin_blocs = SP + 1
         SO=gen_info['SO']
         n_atoms=gen_info['natm']
-        #Elk only calculates Wannier projectors (no theta projectors generated):        
+        #Elk only calculates Wannier projectors (no theta projectors generated):
         n_shells=n_corr_shells
         for ish in range(n_shells):
            shells.append(corr_shells[ish].copy())
            #remove last 2 entries from corr_shlls
            del shells[ish]['SO']
            del shells[ish]['irep']
-           shells[ish]['dim'] = 2*shells[ish]['l']+1     
+           shells[ish]['dim'] = 2*shells[ish]['l']+1
         #read eigenvalues calculated in the Elk calculation
         mpi.report("Reading %s and EFERMI.OUT" % self.eval_file)
         [en,occ,nstsv]=read_Elk.read_eig(self)
@@ -311,7 +310,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         [amat,amatinv,bmat,bmatinv] = read_Elk.readlat(self)
         #calculating atom permutations
         perm = Elk_tools.gen_perm(self,n_symm,ns,na,n_atoms,symmat,tr,atpos)
-        #determine the cartesian lattice symmetries and the spin axis rotations 
+        #determine the cartesian lattice symmetries and the spin axis rotations
         #required for the spinors (for SO for now)
         su2 = []
         symmatc=[]
@@ -353,7 +352,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
           iatom = corr_shells[incrsh]['atom']
           for isym in range(n_symm):
             jatom=perm[isym][corr_shells[icrsh]['atom']-1]
-            #determinant determines if crystal symmetry matrix has inversion symmetry (=-1) 
+            #determinant determines if crystal symmetry matrix has inversion symmetry (=-1)
             det = numpy.linalg.det(symmat[isym][:,:])
             if((jatom==iatom)&(det>0.0)):
               rot_mat[icrsh][:,:]=mat[isym][icrsh][:,:]
@@ -368,7 +367,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         mpi.report("The total charge of the system = %f" %density_required)
         mpi.report("The charge below the correlated window = %f" %charge_below)
         mpi.report("The charge within the correlated window = %f" %(density_required - charge_below))
-          
+
         #Elk interface does not calculate theta projectors, hence orbits are the same as Wannier projectors
         orbits=[]
         #remove the spatom index to avoid errors in the symmetry routines
@@ -411,7 +410,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         for it in things_to_save_sym:
             ar[symm_subgrp][it] = locals()[it]
         del ar
-        #Save misc info        
+        #Save misc info
         things_to_save_misc = ['band_window','vkl','nstsv']
         # Save it to the HDF:
         ar = HDFArchive(self.hdf_file, 'a')
@@ -425,7 +424,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
 
     def convert_bands_input(self):
         """
-        Reads the appropriate files and stores the data for the bands_subgrp in the hdf5 archive. 
+        Reads the appropriate files and stores the data for the bands_subgrp in the hdf5 archive.
 
         """
         # Read and write only on the master node
@@ -442,10 +441,10 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         #get info for HDF5 file from gen_info
         n_k=gen_info['n_k']
         SP=gen_info['spinpol']-1
-        #Elk uses spinor wavefunctions. Therefore these two spinor wavefunctions have spin-orbit coupling incorporated in them. Here we read in the spinors 
+        #Elk uses spinor wavefunctions. Therefore these two spinor wavefunctions have spin-orbit coupling incorporated in them. Here we read in the spinors
         n_spin_blocs = SP + 1
         SO=gen_info['SO']
-        #Elk only calculates Wannier projectors (no theta projectors generated):        
+        #Elk only calculates Wannier projectors (no theta projectors generated):
         n_shells=n_corr_shells
         for ish in range(n_shells):
            shells.append(corr_shells[ish].copy())
@@ -463,7 +462,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         enj=0
         for ist in range(nstsv):
           for ik in range(n_k):
-            entmp[ik,ist]=en[enj,1] 
+            entmp[ik,ist]=en[enj,1]
             enj+=1
         del en
         #read projectors
@@ -503,7 +502,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
 
     def convert_fs_input(self):
         """
-        Reads the appropriate files and stores the data for the FS_subgrp in the hdf5 archive. 
+        Reads the appropriate files and stores the data for the FS_subgrp in the hdf5 archive.
 
         """
         # Read and write only on the master node
@@ -520,10 +519,10 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         #get info for HDF5 file from gen_info
         n_k=gen_info['n_k']
         SP=gen_info['spinpol']-1
-        #Elk uses spinor wavefunctions. Therefore these two spinor wavefunctions have spin-orbit coupling incorporated in them. Here we read in the spinors 
+        #Elk uses spinor wavefunctions. Therefore these two spinor wavefunctions have spin-orbit coupling incorporated in them. Here we read in the spinors
         n_spin_blocs = SP + 1
         SO=gen_info['SO']
-        #Elk only calculates Wannier projectors (no theta projectors generated):        
+        #Elk only calculates Wannier projectors (no theta projectors generated):
         n_shells=n_corr_shells
         for ish in range(n_shells):
            shells.append(corr_shells[ish].copy())
@@ -538,7 +537,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         #read kpoints calculated in the Elk FS calculation
         mpi.report("Reading KPOINT_FS.OUT")
         [bz_weights,vkl]=read_Elk.read_kpoints(self,filext=filext)
- 
+
         #read projectors
         proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), nstsv], numpy.complex_)
         mpi.report("Reading projector(s)")
@@ -577,15 +576,15 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         mpi.report('Converted the FS data')
 
     def dft_band_characters(self):
-        """ 
-        Reads in the band characters generated in Elk to be used for 
-        PDOS and band character band structure plots. 
         """
- 
+        Reads in the band characters generated in Elk to be used for
+        PDOS and band character band structure plots.
+        """
+
         if not (mpi.is_master_node()):
             return
         mpi.report("Reading BC.OUT")
-      
+
         # get needed data from hdf file
         # from general info
         ar = HDFArchive(self.hdf_file, 'a')
@@ -605,7 +604,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
            if not hasattr(self, it):
               setattr(self, it, ar[symm_subgrp][it])
 
-        #read in band characters 
+        #read in band characters
         [bc,maxlm] = read_Elk.read_bc(self)
         #set up SO bc array
         if (self.SO):

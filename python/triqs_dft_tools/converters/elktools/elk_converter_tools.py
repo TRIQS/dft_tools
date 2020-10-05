@@ -22,8 +22,6 @@
 
 from types import *
 import numpy
-#from pytriqs.archive import *
-#from triqs_dft_tools.converters.converter_tools import *
 import os.path
 from locale import atof
 
