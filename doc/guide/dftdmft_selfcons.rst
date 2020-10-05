@@ -187,7 +187,7 @@ Elk
 The Elk CSC implementation is fairly similar to the Wien2k implementation. At the end of the :ref:`DMFT python script <SrVO3_elk>`, the density matrix in Bloch space needs to be calculated along with the correlation energy. This is written to DMATDMFT.OUT. An example of this (using the Migdal correlation energy formula) is given below::
 
   #output the density matrix for Elk interface
-  dN, d = SK.calc_density_correction(dmtype='elk')
+  dN, d = SK.calc_density_correction(dm_type='elk')
   #correlation energy via the Migdal formula
   correnerg = 0.5 * (S.G_iw * S.Sigma_iw).total_density()
   #subtract the double counting energy

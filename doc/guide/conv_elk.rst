@@ -47,7 +47,7 @@ The default is the cubic harmonic basis. The flags in elk.in required to change 
    .true.
 
 Above are the default inputs. If both of these flags are set to .false., the projectors will be generated in the complex spherical harmonic basis. It is possible to generate the projectors in Elk's irreducible basis by setting cubic to .false., but this is experimental and the TRIQS side of the interface is 
-currently unable to convert the projectors in that basis.
+currently unable to convert the projectors in that basis. Finally, these projectors are written to file in the compex spherical harmonic basis.
 
 .. _Elk_files:
 
@@ -65,7 +65,7 @@ The rest of the elk.in file can remain unchanged. This task calculates the proje
 
 Moreover, the Wannier charge density matrix (in WANCHARGE.OUT) and the Wannier spectral function (in WANSF_L**_S**_A****_0*.OUT) are calculated. These files are not used in the interface. 
 
-As a side note, there are two other tasks which also generate the Wannier projectors. Task 804 generates the same outputs as 805 except it doesn't calculate the Wannier charge and spectral function. Task 806 outputs the same information as 805, but it generates the projectors (and other k-dependent variables) on a different ngridk mesh. These tasks are parallelized with both OpenMP and MPI.
+As a side note, there are two other tasks which also generate the Wannier projectors. Task 804 generates the same outputs as 805 except it doesn't calculate the Wannier charge and spectral function. Task 806 outputs the same information as 805, but it generates the projectors (and other k-dependent variables) on a different user defined ngridk mesh. These tasks are parallelized with both OpenMP and MPI.
 
 The Elk outputs are read into the TRIQS library using the following lines::
 
@@ -93,7 +93,7 @@ As well as the wanproj flag (which has be discussed previously) and the plot1d f
 #. WANPROJ_L**_S**_A****_WANBAND.OUT - same as WANPROJ_L**_S**_A****.OUT
     but for band structure projectors.
 
-(The ascii output files which have the new extension of _WANBAND.OUT which are spefic for this post processing calculation.)
+(The ascii output files which have the new extension of _WANBAND.OUT are specific for this post processing calculation.)
 
 The band structure information is converted into TRIQS by using::
 
@@ -113,11 +113,11 @@ in elk.in. The contents of BC.OUT need to be converted into the HDF5 file by usi
   Converter = ElkConverter(filename=filename, repacking=True)
   Converter.dft_band_characters()
 
-Once these have been saved to the HDF5 file (called "filename" here), the spectral function can be called with::
+Once these have been saved to the HDF5 file (called "filename" here), the spectral function can be calculated with::
 
   SK.elk_dos(broadening=0.0, with_Sigma=True, with_dc=True, pdos=False, nk=None)
 
-This outputs the total spectral function and the partial spectral function if enabled. Most of the user inputs are similar to SK.dos_parproj_basis() module. The "pdos" flag when "True" enables the partial dos of each lm value to be calculated. It should be noted that these band characters are in Elk's irreducible lm basis and as such, the user has to check the irreducible representation used in Elk. This information can be found in the file ELMIREP.OUT after running task 10 (the DOS calculating task). The "nk" flag enables the calculation of the occupied spectral funciton. Here, nk needs to be the occupation density matrix (calculated from integrating the Green's function on the Matsubara axis) in the Bloch basis. This input needs to be in the same format as the occupation density matrix "deltaN" calculated in the sumk_DFT.calc_density_correction(dmtype='elk') module.
+This outputs the total spectral function and the partial spectral function if enabled. Most of the user inputs are similar to the "SK.dos_parproj_basis()" module in :ref:`analysis`. The "pdos" flag when "True" enables the partial dos of each lm value to be calculated. It should be noted that these band characters are in Elk's irreducible lm basis and as such, the user has to check the irreducible representation used in Elk. This information can be found in the file ELMIREP.OUT after running task 10 (the DOS calculating task). The "nk" flag enables the calculation of the occupied spectral funciton. Here, nk needs to be the occupation density matrix (calculated from integrating the Green's function on the Matsubara axis) in the Bloch basis. This input needs to be in the same format as the occupation density matrix "deltaN" calculated in the sumk_DFT.calc_density_correction(dmtype='elk') module.
 
 
 Spectral function Contour Plots (Fermi Surfaces) from Elk inputs
@@ -147,7 +147,7 @@ Lines 1) to 4) specifies the corners (in lattice coordinates) of the k-grid box 
 #. SYMCRYS.OUT - has the crystal symmetries used for symmetries observables.
 #. LATTICE.OUT - has lattice-cartesian basis transformation matrices.
 
-(The ascii output files which have the extension of _FS.OUT which are specific for this post processing calculation.)
+(The ascii output files which have the extension of _FS.OUT are specific for this post processing calculation.)
 
 These outputs are converted to the HDF5 file by::
 
@@ -183,7 +183,7 @@ The wavefunctions and occupations are generated in Elk by diagonalizing the full
   task
    809
 
-This will write the new second variational eigenvectors and occupations in the EVECSV.OUT and OCCSV.OUT binary files respectively. Then the wavefunction dependent quantities implemented within Elk can be calculated using these DFT+DMFT wavefunctions and occupations. Note, that this only works for energy independent quantities. Also, the user has to ensure that the second variational eigenvectors will be used in determining the wavefunction dependent quantities. This is done by looking for the variable "tevecsv" in init0.f90 of Elk's source code and making sure that this is set to .true. for the task number the user wishes to use.
+This will write the new second variational eigenvectors and occupations in the EVECSV.OUT and OCCSV.OUT binary files respectively. Then the wavefunction dependent quantities implemented within Elk can be calculated using these DFT+DMFT wavefunctions and occupations. Note that this only works for energy independent quantities. Also, the user has to ensure that the second variational eigenvectors will be used in determining the wavefunction dependent quantities. This is done by looking for the variable "tevecsv" in init0.f90 of Elk's source code and making sure that this is set to .true. for the task number the user wishes to use.
 
 
 
