@@ -200,7 +200,7 @@ The Elk CSC implementation is fairly similar to the Wien2k implementation. At th
     f.write("%.16f\n"%correnerg)
     f.close()
 
-To read this into Elk and update the electron density, run task 808. So elk.in is ammended with the following::
+To read this into Elk and update the electron density, run task 808. So elk.in is amended with the following::
 
   task
    808
