@@ -67,6 +67,12 @@ Installation steps
      $ make install
 
 
+Important note for FCSC DFT+DMFT calculations
+---------------------------------------------
+
+To use dft_tools together with any of the supported DFT codes (Wien2k, Vasp, or Elk) in a full charge self-consistent manner, please make sure to compile both triqs and the designated DFT code with the same compiler / library setup for best compatibility. For example, if Vasp is compiled with the intel compiler suite, it will not be possible to use it together with a GNU compiled triqs and vice versa during a FCSC calculation, as both codes need to run at the same time. Hence, it is highly advisable to not use the intel compilers (linking againt intel mkl libraries is of course fine) to compile any of the interfaced DFT codes.
+
+
 Installation steps for the use with WIEN2K version 14.2 and older
 -----------------------------------------------------------------
 
@@ -140,7 +146,7 @@ The compilation of ``dft_tools`` can be configured using CMake-options::
 +-----------------------------------------------------------------+-----------------------------------------------+
 | Options                                                         | Syntax                                        |
 +=================================================================+===============================================+
-| Specify an installation path other than path_to_triqs           | -DCMAKE_INSTALL_PREFIX=path_to_dft_tools|
+| Specify an installation path other than path_to_triqs           | -DCMAKE_INSTALL_PREFIX=path_to_dft_tools      |
 +-----------------------------------------------------------------+-----------------------------------------------+
 | Build in Debugging Mode                                         | -DCMAKE_BUILD_TYPE=Debug                      |
 +-----------------------------------------------------------------+-----------------------------------------------+
