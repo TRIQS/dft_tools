@@ -186,8 +186,8 @@ class SumkDFTTools(SumkDFT):
                             f.close()
 
         return DOS, DOSproj, DOSproj_orb
-    
-    
+
+
     def dos_wannier_basis_all(self, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True, save_to_file=True):
         """
         Calculates the density of states in the basis of the Wannier functions.
@@ -235,7 +235,7 @@ class SumkDFTTools(SumkDFT):
         #print(spn)
         n_local_orbs = self.proj_mat_csc.shape[2]
         gf_struct_parproj_all = [[(sp, list(range(n_local_orbs))) for sp in spn]]
-    
+
         glist_all = [GfReFreq(indices=inner, window=(om_min, om_max), n_points=n_om)
                      for block, inner in gf_struct_parproj_all[0]]
         G_loc_all = BlockGf(name_list=spn, block_list=glist_all, make_copies=False)
@@ -462,8 +462,8 @@ class SumkDFTTools(SumkDFT):
                             f.close()
 
         return DOS, DOSproj, DOSproj_orb
-    
-# adnj edit - Elk total and partial dos calculations
+
+    # Elk total and partial dos calculations
     # Uses .data of only GfReFreq objects.
     def elk_dos(self, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True, save_to_file=True,pdos=False,nk=None):
         """
@@ -484,7 +484,7 @@ class SumkDFTTools(SumkDFT):
         save_to_file : boolean, optional
                        If True, text files with the calculated data will be created.
         pdos : allows the partial density of states to be calculated
-        nk : diagonal of the occupation function (from the Matsubara Green's function) 
+        nk : diagonal of the occupation function (from the Matsubara Green's function)
              in the band basis (has form nk[spn][n_k][n_orbital])
 
         Returns
@@ -599,8 +599,8 @@ class SumkDFTTools(SumkDFT):
 
         return DOS, pDOS
 
-#adnj - vector manipulation used in Elk for symmetry operations - This is already in elktools, this should
-#put somewhere for general use by the converter and this script.
+    # vector manipulation used in Elk for symmetry operations - This is already in elktools, this should
+    # put somewhere for general use by the converter and this script.
     def v3frac(self,v,eps):
        #This finds the fractional part of 3-vector v components. This uses the
        #same method as in Elk (version 6.2.8) r3fac subroutine.
@@ -618,7 +618,7 @@ class SumkDFTTools(SumkDFT):
        if(v[2] < eps): v[2]=0
        return v
 
-#adnj - Calculate the spectral function at an energy contour omega - i.e. Fermi surface plots
+    #  Calculate the spectral function at an energy contour omega - i.e. Fermi surface plots
     # Uses .data of only GfReFreq objects.
     def fs_plot(self, mu=None, broadening=None, mesh=None, FS=True, plane=True, sym=True, orthvec=None, with_Sigma=True, with_dc=True, save_to_file=True):
         """
@@ -761,8 +761,8 @@ class SumkDFTTools(SumkDFT):
           v = numpy.zeros(3, numpy.float_)
           v_orth = numpy.zeros(3, numpy.float_)
           for isym in range(self.n_symm):
-            #calculate the orthonormal vector after symmetry operation. This is used to 
-            #check if the orthonormal vector after the symmetry operation is parallel 
+            #calculate the orthonormal vector after symmetry operation. This is used to
+            #check if the orthonormal vector after the symmetry operation is parallel
             #or anit-parallel to the original vector.
             if plane:
               vo = numpy.matmul(self.symlat[isym][:,:],orthvec[:].transpose())
@@ -778,7 +778,7 @@ class SumkDFTTools(SumkDFT):
               #shift back in to range [0,1) - Elk specific
               v[:]=self.v3frac(v,epslat)
               #add vector to list if not present and add the equivalent Akw value
-                #convert to cartesian 
+                #convert to cartesian
               v[:] = numpy.matmul(self.bmat,v[:])
                 #alter temporary arrays
               nk += 1
@@ -815,8 +815,6 @@ class SumkDFTTools(SumkDFT):
                   f.write("%s    %s    %s    %s    %s\n" % (vkc[ik,0], vkc[ik,1], vkc[ik,2], om_mesh[iom], Akw[bname][jk, iom]))
                 f.close()
         return nk, vkc, Akw, iknr
-
-#end edit
 
 
 
@@ -1149,12 +1147,12 @@ class SumkDFTTools(SumkDFT):
     # Uses .data of only GfReFreq objects.
     def transport_distribution(self, beta, directions=['xx'], energy_window=None, Om_mesh=[0.0], with_Sigma=False, n_om=None, broadening=0.0):
         r"""
-        Calculates the transport distribution 
+        Calculates the transport distribution
 
         .. math::
            \Gamma_{\alpha\beta}\left(\omega+\Omega/2, \omega-\Omega/2\right) = \frac{1}{V} \sum_k Tr\left(v_{k,\alpha}A_{k}(\omega+\Omega/2)v_{k,\beta}A_{k}\left(\omega-\Omega/2\right)\right)
 
-        in the direction :math:`\alpha\beta`. The velocities :math:`v_{k}` are read from the transport subgroup of the hdf5 archive. 
+        in the direction :math:`\alpha\beta`. The velocities :math:`v_{k}` are read from the transport subgroup of the hdf5 archive.
 
         Parameters
         ----------
@@ -1164,14 +1162,14 @@ class SumkDFTTools(SumkDFT):
         directions : list of double, optional
             :math:`\alpha\beta` e.g.: ['xx','yy','zz','xy','xz','yz'].
         energy_window : list of double, optional
-            Specifies the upper and lower limit of the frequency integration for :math:`\Omega=0.0`. The window is automatically enlarged by the largest :math:`\Omega` value, 
+            Specifies the upper and lower limit of the frequency integration for :math:`\Omega=0.0`. The window is automatically enlarged by the largest :math:`\Omega` value,
             hence the integration is performed in the interval [energy_window[0]-max(Om_mesh), energy_window[1]+max(Om_mesh)].
         Om_mesh : list of double, optional
             :math:`\Omega` frequency mesh of the optical conductivity. For the conductivity and the Seebeck coefficient :math:`\Omega=0.0` has to be
             part of the mesh. In the current version Om_mesh is repined to the mesh provided by the self-energy! The actual mesh is printed on the screen and stored as
             member Om_mesh.
         with_Sigma : boolean, optional
-            Determines whether the calculation is performed with or without self energy. If this parameter is set to False the self energy is set to zero (i.e. the DFT band 
+            Determines whether the calculation is performed with or without self energy. If this parameter is set to False the self energy is set to zero (i.e. the DFT band
             structure :math:`A(k,\omega)` is used). Note: For with_Sigma=False it is necessary to specify the parameters energy_window, n_om and broadening.
         n_om : integer, optional
             Number of equidistant frequency points in the interval [energy_window[0]-max(Om_mesh), energy_window[1]+max(Om_mesh)]. This parameters is only used if
@@ -1336,7 +1334,7 @@ class SumkDFTTools(SumkDFT):
     def transport_coefficient(self, direction, iq, n, beta, method=None):
         r"""
         Calculates the transport coefficient A_n in a given direction for a given :math:`\Omega`. The required members (Gamma_w, directions, Om_mesh) have to be obtained first
-        by calling the function :meth:`transport_distribution <dft.sumk_dft_tools.SumkDFTTools.transport_distribution>`. For n>0 A is set to NaN if :math:`\Omega` is not 0.0. 
+        by calling the function :meth:`transport_distribution <dft.sumk_dft_tools.SumkDFTTools.transport_distribution>`. For n>0 A is set to NaN if :math:`\Omega` is not 0.0.
 
         Parameters
         ----------
@@ -1399,10 +1397,10 @@ class SumkDFTTools(SumkDFT):
 
     def conductivity_and_seebeck(self, beta, method=None):
         r"""
-        Calculates the Seebeck coefficient and the optical conductivity by calling 
-        :meth:`transport_coefficient <dft.sumk_dft_tools.SumkDFTTools.transport_coefficient>`. 
-        The required members (Gamma_w, directions, Om_mesh) have to be obtained first by calling the function 
-        :meth:`transport_distribution <dft.sumk_dft_tools.SumkDFTTools.transport_distribution>`. 
+        Calculates the Seebeck coefficient and the optical conductivity by calling
+        :meth:`transport_coefficient <dft.sumk_dft_tools.SumkDFTTools.transport_coefficient>`.
+        The required members (Gamma_w, directions, Om_mesh) have to be obtained first by calling the function
+        :meth:`transport_distribution <dft.sumk_dft_tools.SumkDFTTools.transport_distribution>`.
 
         Parameters
         ----------
@@ -1417,7 +1415,7 @@ class SumkDFTTools(SumkDFT):
         seebeck : dictionary of double
             Seebeck coefficient in each direction. If zero is not present in Om_mesh the Seebeck coefficient is set to NaN.
 
-        kappa : dictionary of double. 
+        kappa : dictionary of double.
             thermal conductivity in each direction. If zero is not present in Om_mesh the thermal conductivity is set to NaN
         """
 
