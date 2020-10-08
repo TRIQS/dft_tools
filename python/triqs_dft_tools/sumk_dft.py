@@ -1975,7 +1975,6 @@ class SumkDFT(object):
 
         return self.chemical_potential
 
-    #def calc_density_correction(self, filename=None, dm_type='wien2k'):
     def calc_density_correction(self, filename=None, dm_type='wien2k',spinave=False):
         r"""
         Calculates the charge density correction and stores it into a file.
@@ -2009,7 +2008,7 @@ class SumkDFT(object):
                 filename = 'GAMMA'
             elif dm_type == 'elk':
                 filename = 'DMATDMFT.OUT'
-    
+
 
         assert isinstance(filename, str), ("calc_density_correction: "
                                               "filename has to be a string!")
