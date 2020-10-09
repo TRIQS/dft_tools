@@ -215,7 +215,7 @@ This is all we need for the one-shot or FCSC DFT+DMFT calculation. All results o
 
 Using the Kanamori Hamiltonian and the parameters above (but on 16 cores), your self energy after the **first iteration** should look something like:
 
-.. image:: SrVO3_Sigma_iw_it1.png
+.. image:: ../images_scripts/SrVO3_Sigma_iw_it1.png
     :width: 700
     :align: center
 
