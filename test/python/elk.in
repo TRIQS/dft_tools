@@ -1,0 +1,53 @@
+! This example generates the spin-polarised Wannier projector outputs for Ba2YIrO6 
+! Wannier Ir-d states
+
+! Example by Alyn D. N. James
+
+tasks
+ 0
+ 805
+
+spinorb
+ .true.
+
+ngridk
+ 8 8 8
+
+rgkmax
+ 7.0
+
+!Path to Elk's species directory
+sppath
+  '../../../../../species/'
+
+avec
+   7.888832000       7.888832000       0.000000000    
+   7.888832000      -7.888832000       0.000000000    
+   7.888832000       0.000000000       7.888832000    
+
+atoms
+   4                                    : nspecies
+'O.in'                                  : spfname
+   6                                    : natoms; atposl, bfcmt below
+    0.26449000    0.26449000    0.47102000    0.00000000  0.00000000  0.00000000
+    0.73551000    0.73551000    0.52898000    0.00000000  0.00000000  0.00000000
+    0.73551000    0.73551000    0.00000000    0.00000000  0.00000000  0.00000000
+    0.26449000    0.26449000    0.00000000    0.00000000  0.00000000  0.00000000
+    0.73551000    0.26449000    0.00000000    0.00000000  0.00000000  0.00000000
+    0.26449000    0.73551000    0.00000000    0.00000000  0.00000000  0.00000000
+'Ba.in'                                 : spfname
+   2                                    : natoms; atposl, bfcmt below
+    0.75000000    0.25000000    0.50000000    0.00000000  0.00000000  0.00000000
+    0.25000000    0.75000000    0.50000000    0.00000000  0.00000000  0.00000000
+'Ir.in'                                 : spfname
+   1                                    : natoms; atposl, bfcmt below
+    0.50000000    0.50000000    0.00000000    0.00000000  0.00000000  0.00000000
+'Y.in'                                  : spfname
+   1                                    : natoms; atposl, bfcmt below
+    0.00000000    0.00000000    0.00000000    0.00000000  0.00000000  0.00000000
+
+wanproj         !projector flag
+ 1              !number of projectors
+ 3 2 5          !species, l, lm submatrix size
+ 5 6 7 8 9      !the lm quanties which will be projected (vector length eq. rlmmax)
+-0.045 0.1617   ![-1.22, 4] eV correlated energy window including the t2g+eg+Op.

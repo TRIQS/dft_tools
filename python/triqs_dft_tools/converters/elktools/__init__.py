@@ -3,7 +3,7 @@
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
 #
-# Copyright (C) 2011 by M. Aichhorn, L. Pourovskii, V. Vildosola
+# Copyright (C) 2019 by A. D. N. James, A. Hampel and M. Aichhorn
 #
 # TRIQS is free software: you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software
@@ -20,11 +20,8 @@
 #
 ##########################################################################
 
-from .wien2k import Wien2kConverter
-from .hk import HkConverter
-from .vasp import VaspConverter
-from .wannier90 import Wannier90Converter
-from .elk import ElkConverter
+from .readElkfiles import readElkfiles
+from .elk_converter_tools import ElkConverterTools
 
-__all__ =['Wien2kConverter','HkConverter','Wannier90Converter','VaspConverter','ElkConverter']
+__all__ =['readElkfiles','ElkConverterTools']
 

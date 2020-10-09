@@ -58,6 +58,24 @@ VASP Converter
    :special-members:
 
 
+Elk Converter
+-------------------
+.. _refElkconverter:
+.. autoclass:: triqs_dft_tools.converters.elk.ElkConverter
+   :members:
+   :special-members:
+
+Elk Tools
+-------------------
+.. _refElkTools:
+.. autoclass:: triqs_dft_tools.converters.elktools.ElkConverterTools
+   :members:
+   :special-members:
+
+.. autoclass:: triqs_dft_tools.converters.elktools.readElkfiles
+   :members:
+   :special-members:
+
 Converter Tools
 ---------------
 .. autoclass:: triqs_dft_tools.converters.converter_tools.ConverterTools

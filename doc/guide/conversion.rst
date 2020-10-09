@@ -7,8 +7,8 @@ The first step for a DMFT calculation is to provide the necessary
 input based on a DFT calculation. We will not review how to do the DFT
 calculation here in this documentation, but refer the user to the
 documentation and tutorials that come with the actual DFT
-package. At the moment, there are two full charge self consistent interfaces, for the
-Wien2k and the VASP DFT packages, resp. In addition, there is an interface to Wannier90, as well
+package. At the moment, there are three full charge self consistent interfaces, for the
+Wien2k, VASP and Elk DFT packages, resp. In addition, there is an interface to Wannier90, as well
 as a light-weight general-purpose interface. In the following, we will describe the usage of these
 conversion tools.
 
@@ -17,6 +17,7 @@ conversion tools.
 
    conv_wien2k
    conv_vasp
+   conv_elk
    conv_W90
    conv_generalhk
 

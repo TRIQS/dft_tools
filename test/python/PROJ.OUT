@@ -1,0 +1,8 @@
+   1      29       2       1      10 : nproj, nkpt, nspinor, spinorb, natmtot
+   1 : Proj index
+   3   1   2   5 : Species index, natoms, l, lm submatrix size
+     1 : Subset no. of equivalent atoms
+   1   9 : atom, spatom
+   1   2   3   4   5 : lm indices
+     1 : Cubic Harmonics
+

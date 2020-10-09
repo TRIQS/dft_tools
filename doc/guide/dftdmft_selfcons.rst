@@ -180,6 +180,36 @@ To understand the difference please make sure to read `ISTART flag VASP wiki
 `NELMIN` ensure that VASP does not terminate after the default number of
 iterations of 60.
 
+
+Elk
+---------
+
+The Elk CSC implementation is fairly similar to the Wien2k implementation. At the end of the :ref:`DMFT python script <SrVO3_elk>`, the density matrix in Bloch space needs to be calculated along with the correlation energy. This is written to DMATDMFT.OUT. An example of this (using the Migdal correlation energy formula) is given below::
+
+  #output the density matrix for Elk interface
+  dN, d = SK.calc_density_correction(dm_type='elk')
+  #correlation energy via the Migdal formula
+  correnerg = 0.5 * (S.G_iw * S.Sigma_iw).total_density()
+  #subtract the double counting energy
+  correnerg -= SK.dc_energ[0]
+  #convert to Hartree
+  correnerg = correnerg/SK.energy_unit
+  #save the correction to energy
+  if (mpi.is_master_node()):
+    f=open('DMATDMFT.OUT','a')
+    f.write("%.16f\n"%correnerg)
+    f.close()
+
+To read this into Elk and update the electron density, run task 808. So elk.in is amended with the following::
+
+  task
+   808
+
+This solves the Kohn-Sham equations once with the updated electron density and outputs the new set of energy eigenvalues and wavefunctions. To start the next fully charge self-consistent DFT+DMFT cycle (FCSC), a new set of projectors need to be generated (using task 805) and the whole procedure continues until convergence. The Elk potential rms value for each FCSC DFT+DMFT cycle is given in DMFT_INFO.OUT. An extensive example for SrVO:math:`_3` can be found here: :ref:`Elk SVO tutorial <SrVO3_elk>`.
+
+This FCSC method should be universal irrespective to what type of ground state calculation performed. However, not all types of ground state calculations have been tested.
+
+
 Other DFT codes
 ---------------
 

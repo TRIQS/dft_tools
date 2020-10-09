@@ -1,5 +1,4 @@
-
-##########################################################################
+################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
 #
@@ -18,13 +17,18 @@
 # You should have received a copy of the GNU General Public License along with
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
-##########################################################################
+################################################################################
 
-from .wien2k import Wien2kConverter
-from .hk import HkConverter
-from .vasp import VaspConverter
-from .wannier90 import Wannier90Converter
-from .elk import ElkConverter
+from h5 import *
+from triqs.utility.comparison_tests import *
+from triqs.utility.h5diff import h5diff 
+import triqs.utility.mpi as mpi
 
-__all__ =['Wien2kConverter','HkConverter','Wannier90Converter','VaspConverter','ElkConverter']
+from triqs_dft_tools.converters import ElkConverter
 
+Converter = ElkConverter(filename='Ba2YIrO6')
+Converter.hdf_file = 'elk_convert.out.h5'
+Converter.convert_dft_input()
+
+if mpi.is_master_node():
+    h5diff('elk_convert.out.h5','elk_convert.ref.h5') 

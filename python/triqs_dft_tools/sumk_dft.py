@@ -42,7 +42,7 @@ class SumkDFT(object):
     def __init__(self, hdf_file, h_field=0.0, use_dft_blocks=False,
                  dft_data='dft_input', symmcorr_data='dft_symmcorr_input', parproj_data='dft_parproj_input',
                  symmpar_data='dft_symmpar_input', bands_data='dft_bands_input', transp_data='dft_transp_input',
-                 misc_data='dft_misc_input'):
+                 misc_data='dft_misc_input',bc_data='dft_bandchar_input',fs_data='dft_fs_input'):
         r"""
         Initialises the class from data previously stored into an hdf5 archive.
 
@@ -92,6 +92,8 @@ class SumkDFT(object):
             self.bands_data = bands_data
             self.transp_data = transp_data
             self.misc_data = misc_data
+            self.bc_data = bc_data
+            self.fs_data = fs_data
             self.h_field = h_field
 
             self.block_structure = BlockStructure()
@@ -1973,7 +1975,7 @@ class SumkDFT(object):
 
         return self.chemical_potential
 
-    def calc_density_correction(self, filename=None, dm_type='wien2k'):
+    def calc_density_correction(self, filename=None, dm_type='wien2k',spinave=False):
         r"""
         Calculates the charge density correction and stores it into a file.
 
@@ -1997,13 +1999,16 @@ class SumkDFT(object):
                          the corresponing total charge `dens`.
 
         """
-        assert dm_type in ('vasp', 'wien2k'), "'dm_type' must be either 'vasp' or 'wienk'"
-
+        assert dm_type in ('vasp', 'wien2k','elk'), "'dm_type' must be either 'vasp', 'wienk' or 'elk'"
+        #default file names
         if filename is None:
             if dm_type == 'wien2k':
                 filename = 'dens_mat.dat'
             elif dm_type == 'vasp':
                 filename = 'GAMMA'
+            elif dm_type == 'elk':
+                filename = 'DMATDMFT.OUT'
+
 
         assert isinstance(filename, str), ("calc_density_correction: "
                                               "filename has to be a string!")
@@ -2152,6 +2157,50 @@ class SumkDFT(object):
                                 valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
                                 f.write(" %.14f  %.14f"%(valre, valim))
                             f.write("\n")
+
+        elif dm_type == 'elk':
+        # output each k-point density matrix for Elk
+            if mpi.is_master_node():
+        # read in misc data from .h5 file
+                things_to_read = ['band_window','vkl','nstsv']
+                self.subgroup_present, self.value_read = self.read_input_from_hdf(
+                             subgrp=self.misc_data, things_to_read=things_to_read)
+        # open file
+                with open(filename, 'w') as f:
+        # determine the number of spin blocks
+                    n_spin_blocks = self.SP + 1 - self.SO
+                    nbmax = numpy.max(self.n_orbitals)
+        # output beta and mu in Hartrees
+                    beta = G_latt_iw.mesh.beta * self.energy_unit
+                    mu = self.chemical_potential/self.energy_unit
+        # ouput n_k, nspin and max orbitals - a check
+                    f.write(" %d  %d  %d  %.14f %.14f ! nkpt, nspin, nstmax, beta, mu\n"%(self.n_k, n_spin_blocks, nbmax, beta, mu))
+                    for ik in range(self.n_k):
+                      for ispn in range(n_spin_blocks):
+                        #Determine the SO density matrix band indices from the spinor band indices
+                        if(self.SO==1):
+                          band0=[self.band_window[0][ik, 0],self.band_window[1][ik, 0]]
+                          band1=[self.band_window[0][ik, 1],self.band_window[1][ik, 1]]
+                          ib1=int(min(band0))
+                          ib2=int(max(band1))
+                        else:
+                        #Determine the density matrix band indices from the spinor band indices
+                          ib1 = self.band_window[ispn][ik, 0]
+                          ib2 = self.band_window[ispn][ik, 1]
+                        f.write(" %d  %d  %d  %d ! ik, ispn, minist, maxist\n"%(ik + 1, ispn + 1, ib1, ib2))
+                        for inu in range(self.n_orbitals[ik, ispn]):
+                            for imu in range(self.n_orbitals[ik, ispn]):
+                                #output non-magnetic or spin-averaged density matrix
+                                if((self.SP==0) or (spinave)):
+                                  valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
+                                  valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
+                                else:
+                                  valre = deltaN[spn[ispn]][ik][inu, imu].real
+                                  valim = deltaN[spn[ispn]][ik][inu, imu].imag
+                                f.write(" %.14f  %.14f"%(valre, valim))
+                            f.write("\n")
+
+
         else:
             raise NotImplementedError("Unknown density matrix type: '%s'"%(dm_type))
 
