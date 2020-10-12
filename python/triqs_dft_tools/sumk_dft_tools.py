@@ -231,8 +231,6 @@ class SumkDFTTools(SumkDFT):
         spn = self.spin_block_names[self.SO]
         gf_struct_parproj = [[(sp, list(range(self.shells[ish]['dim']))) for sp in spn]
                              for ish in range(self.n_shells)]
-        #print(self.proj_mat_csc.shape[2])
-        #print(spn)
         n_local_orbs = self.proj_mat_csc.shape[2]
         gf_struct_parproj_all = [[(sp, list(range(n_local_orbs))) for sp in spn]]
 
@@ -693,10 +691,8 @@ class SumkDFTTools(SumkDFT):
             om_max = om_mesh[-1]
             n_om = len(om_mesh)
             mesh = (om_min, om_max, n_om)
-            print(mesh)
             if broadening is None:
                broadening=0.0
-            print(broadening)
         elif mesh is None:
         #default is to set "mesh" to be just for the Fermi surface - omega=0.0
             om_min = 0.000
@@ -707,7 +703,6 @@ class SumkDFTTools(SumkDFT):
             if broadening is None:
                broadening=0.01
             FS=True
-            print(with_Sigma,with_dc)
             jw=[i for i in range(len(om_mesh)) if((om_mesh[i]<=om_max)and(om_mesh[i]>=om_min))]
         else:
         #a range of frequencies can be used if desired
