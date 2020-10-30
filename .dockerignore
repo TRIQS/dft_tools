@@ -2,3 +2,4 @@
 Dockerfile
 Jenkinsfile
 .git/objects/pack
+build*
