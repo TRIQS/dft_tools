@@ -10,6 +10,7 @@ jobs:
   build:
 
     strategy:
+      fail-fast: false
       matrix:
         include:
           - {os: ubuntu-20.04, cc: gcc-10, cxx: g++-10}
