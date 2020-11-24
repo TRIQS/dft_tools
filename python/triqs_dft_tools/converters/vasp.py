@@ -280,7 +280,7 @@ class VaspConverter(ConverterTools):
 #                raise NotImplementedError("Noncollinear calculations are not implemented")
 #            else:
             hopping = numpy.zeros([n_k, n_spin_blocs, nb_max, nb_max], numpy.complex_)
-            f_weights = numpy.zeros([n_k, n_spin_blocs, nb_max], numpy.complex_)
+            f_weights = numpy.zeros([n_k, n_spin_blocs, nb_max], numpy.float_)
             band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(n_spin_blocs)]
             n_orbitals = numpy.zeros([n_k, n_spin_blocs], numpy.int)
 
