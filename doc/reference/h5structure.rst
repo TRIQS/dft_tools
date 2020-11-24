@@ -100,18 +100,18 @@ For the Vasp converter:
 =================  ======================================================================  =====================================================================================
 Name               Type                                                                    Meaning
 =================  ======================================================================  =====================================================================================
-kpt_basis          numpy.array.float, dim 3x3                                              Basis for the k-point mesh, reciprocal lattice vectors.
-kpts               numpy.array.float, dim n_k x 3                                          k-points given in reciprocal coordinates.
-kpt_weights        numpy.array.float, dim n_k                                              Weights of the k-points for the k summation.
+kpt_basis          numpy.array.float, dim [3, 3]                                           Basis for the k-point mesh, reciprocal lattice vectors.
+kpts               numpy.array.float, dim [n_k, 3]                                         k-points given in reciprocal coordinates.
+kpt_weights        numpy.array.float, dim [n_k]                                            Weights of the k-points for the k summation.
 proj_or_hk         string                                                                  Switch determining whether the Vasp converter is running in projection mode `proj`, or
                                                                                            in Hamiltonian mode `hk`. In Hamiltonian mode, the hopping matrix is written in
                                                                                            orbital basis, whereas in projection mode hopping is written in band basis.
 proj_mat_csc       numpy.array.complex,                                                    Projection matrices from Bloch bands to Wannier orbitals for Hamiltonian based `hk`
                    dim                                                                     approach. No site index is given, since hk is written in orbital basis. The last to
-                   [n_k,SP+1-SO, n_corr_shells x max(corr_shell['dim']), max(n_orbitals)]  indices are a square matrix rotating from orbital to band space.
-dft_fermi_weights  numpy.array.float, dim n_k x 1 x max(n_orbitals)                        DFT fermi weights (occupations) of KS eigenstates for each k-point for calculation
+                   [n_k, SP+1-SO, n_corr_shells, max(corr_shell['dim']), max(n_orbitals)]  indices are a square matrix rotating from orbital to band space.
+dft_fermi_weights  numpy.array.float, dim [n_k, SP+1-SO, max(n_orbitals)]                  DFT fermi weights (occupations) of KS eigenstates for each k-point for calculation
                    (stored in dft_misc_input)                                              of density matrix correction.
-band_window        list of numpy.array.int , dim(SP+1-SO)x n_k x 2                         Band windows as KS band indices in Vasp for each spin channel, and k-point. Needed for
+band_window        list of numpy.array.int , dim [n_k, 2]                                  Band windows as KS band indices in Vasp for each spin channel, and k-point. Needed for
                    (stored in dft_misc_input)                                              writing out the GAMMA file.
 =================  ======================================================================  =====================================================================================
 
