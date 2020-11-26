@@ -120,11 +120,11 @@ def dmft_cycle():
     SK.chemical_potential = mpi.bcast(SK.chemical_potential)
     
     # Calc the first G0
-    SK.symm_deg_gf(S.Sigma_iw,orb=0)
+    SK.symm_deg_gf(S.Sigma_iw, ish=0)
     SK.put_Sigma(Sigma_imp = [S.Sigma_iw])
     SK.calc_mu(precision=0.01)
     S.G_iw << SK.extract_G_loc()[0]
-    SK.symm_deg_gf(S.G_iw, orb=0)
+    SK.symm_deg_gf(S.G_iw, ish=0)
     
     #Init the DC term and the self-energy if no previous iteration was found
     if iteration_offset == 0:
@@ -153,7 +153,7 @@ def dmft_cycle():
         dm = S.G_iw.density()
         SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0, use_dc_formula=DC_type,use_dc_value=DC_value)
         # Get new G
-        SK.symm_deg_gf(S.Sigma_iw,orb=0)
+        SK.symm_deg_gf(S.Sigma_iw, ish=0)
         SK.put_Sigma(Sigma_imp=[S.Sigma_iw])
         SK.calc_mu(precision=0.01)
         S.G_iw << SK.extract_G_loc()[0]
