@@ -37,7 +37,7 @@ that for one-shot calculations. Only at the very end we have to calculate the mo
 and store it in a format such that Wien2k can read it. Therefore, after the DMFT loop that we saw in the
 previous section, we symmetrise the self energy, and recalculate the impurity Green function::
 
-  SK.symm_deg_gf(S.Sigma,orb=0)
+  SK.symm_deg_gf(S.Sigma,ish=0)
   S.G_iw << inverse(S.G0_iw) - S.Sigma_iw
   S.G_iw.invert()
 
