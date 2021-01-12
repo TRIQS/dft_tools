@@ -36,12 +36,11 @@ SK=SumkDFT(hdf_file='SrVO3.ref.h5',use_dft_blocks=True)
 num_orbitals = SK.corr_shells[0]['dim']
 l = SK.corr_shells[0]['l']
 spin_names = ['down','up']
-orb_names = ['%s'%i for i in range(num_orbitals)]
 orb_hybridized = False
 
-gf_struct = set_operator_structure(spin_names,orb_names,orb_hybridized)
-glist = [ GfImFreq(indices=inner,beta=beta) for block,inner in gf_struct]
-Sigma_iw = BlockGf(name_list = [block for block,inner in gf_struct], block_list = glist, make_copies = False)
+gf_struct = set_operator_structure(spin_names,num_orbitals,orb_hybridized)
+glist = [ GfImFreq(target_shape=(bl_size,bl_size),beta=beta) for bl, bl_size in gf_struct]
+Sigma_iw = BlockGf(name_list = [bl for bl, bl_size in gf_struct], block_list = glist, make_copies = False)
 
 SK.set_Sigma([Sigma_iw])
 Gloc = SK.extract_G_loc()

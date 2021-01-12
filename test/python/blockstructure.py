@@ -3,7 +3,7 @@ from triqs.utility.h5diff import h5diff, compare, failures
 from triqs.gf import *
 from triqs.utility.comparison_tests import assert_block_gfs_are_close
 from scipy.linalg import expm
-from triqs_dft_tools.block_structure import BlockStructure
+from triqs_dft_tools.block_structure import BlockStructure, gf_struct_flatten
 import numpy as np
 
 
@@ -176,7 +176,9 @@ cmp(m2,
 full = BlockStructure.full_structure(
     [{'up_0': [0, 1], 'up_1': [0], 'down_1': [0], 'down_0': [0, 1]}], None)
 
-G_sumk = BlockGf(mesh=G1.mesh, gf_struct=original_bs.gf_struct_sumk[0])
+print(original_bs.gf_struct_sumk[0])
+print(gf_struct_flatten(original_bs.gf_struct_sumk[0]))
+G_sumk = BlockGf(mesh=G1.mesh, gf_struct=gf_struct_flatten(original_bs.gf_struct_sumk[0]))
 for i in range(3):
     G_sumk['up'][i, i] << SemiCircular(1 if i < 2 else 2)
     G_sumk['down'][i, i] << SemiCircular(4 if i < 2 else 3)
