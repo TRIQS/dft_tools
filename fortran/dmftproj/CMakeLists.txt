@@ -6,7 +6,7 @@ set(SOURCES modules.f dmftproj.f readcomline.f set_ang_trans.f setsym.f
 
 # The main target and what to link with...
 add_executable(dmftproj ${SOURCES})
-target_link_libraries(dmftproj triqs::blas_lapack)
+target_link_libraries(dmftproj nda::blas_lapack)
 
 # where to install
 install (TARGETS dmftproj DESTINATION bin)
