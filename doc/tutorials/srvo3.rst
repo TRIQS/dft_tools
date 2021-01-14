@@ -185,7 +185,7 @@ of the basic steps discussed in the :ref:`previous section <singleshot>`, with
 some additional refinements::
 
   for iteration_number in range(1,loops+1):
-      if mpi.is_master_node(): print "Iteration = ", iteration_number
+      if mpi.is_master_node(): print("Iteration = ", iteration_number)
 
       SK.symm_deg_gf(S.Sigma_iw,ish=0)                        # symmetrizing Sigma
       SK.set_Sigma([ S.Sigma_iw ])                            # put Sigma into the SumK class
