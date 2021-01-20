@@ -49,9 +49,23 @@ The default is the cubic harmonic basis. The flags in elk.in required to change 
 Above are the default inputs. If both of these flags are set to .false., the projectors will be generated in the complex spherical harmonic basis. It is possible to generate the projectors in Elk's irreducible basis by setting cubic to .false., but this is experimental and the TRIQS side of the interface is 
 currently unable to convert the projectors in that basis. Finally, these projectors are written to file in the complex spherical harmonic basis.
 
+Also, the input flag called "wanind", when set to .true. in elk.in, enables the user to input the lower and upper band indices (respectively) in line 4) of "wanproj" instead of the correlated energy window energies. An example of the inputs in the elk.in file::
+
+  wanind
+   .true.
+
+  wanproj
+   1      !No. of projector species
+   2 2 3  !species, l, lm submatrix size
+   7 8 9  !lm indices
+   21 25  !correlated energy window band indices.
+
+Note that for magnetic systems (spin uncoupled calculations), only the indices of the majority spin bands are used as inputs. The code calculates the indices for the minority spin automatically.
+
+
 .. _Elk_files:
 
-The rest of the elk.in file can remain unchanged. This 805 task calculates the projectors which are written into the WANPROJ_L**_S**_A****.OUT file(s). Along with this, the other written file (PROJ.OUT) specficies some information about the projectors (like atom equivalency, lm indices and so on) needed for reading the files into the TRIQS library. The PROJ.OUT file contains comments about its outputs. Here's a list of all of the input files needed for this part of the TRIQS converter:
+The rest of the elk.in file can remain unchanged. This 805 task calculates the projectors which are written into the WANPROJ_L**_S**_A****.OUT file(s). Note that the projectors will be written in the complex spherical harmonic basis. Along with this, the other written file (PROJ.OUT) specficies some information about the projectors (like atom equivalency, lm indices and so on) needed for reading the files into the TRIQS library. The PROJ.OUT file contains comments about its outputs. Here's a list of all of the input files needed for this part of the TRIQS converter:
 
 #. WANPROJ_L**_S**_A****.OUT - file containing the projectors and band window indices.
 #. PROJ.OUT -  specficies some information about the projectors.
