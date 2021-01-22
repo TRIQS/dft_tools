@@ -110,10 +110,12 @@ target_compile_options(${PROJECT_NAME}_warnings
     $<$<CXX_COMPILER_ID:Clang>:-Wno-unknown-warning-option>
     $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-c++20-extensions>
     $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-comma-subscript>
     $<$<CXX_COMPILER_ID:AppleClang>:-Wno-unknown-warning-option>
     $<$<CXX_COMPILER_ID:AppleClang>:-Wshadow>
     $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gcc-compat>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wno-c++20-extensions>
 )
 
 # #############
