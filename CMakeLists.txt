@@ -19,8 +19,8 @@
 #
 # ##############################################################################
 
-cmake_minimum_required(VERSION 3.3.2 FATAL_ERROR)
-cmake_policy(VERSION 3.3.2)
+cmake_minimum_required(VERSION 3.9.6 FATAL_ERROR)
+cmake_policy(VERSION 3.9.6)
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
@@ -94,6 +94,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Global compiler options
 option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
 add_compile_options($<$<CONFIG:Debug>:-ggdb3>)
+cmake_policy(SET CMP0069 NEW)
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported)
+if(NOT ipo_supported)
+  message(STATUS "Linktime optimizations could not be enabled!")
+else()
+  message(STATUS "Linktime optimizations enabled!")
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+  if(CMAKE_SYSTEM_NAME EQUAL "Linux")
+    add_link_options($<$<CXX_COMPILER_ID:Clang>:-fuse-ld=gold>)
+  endif()
+endif()
 
 # Create an Interface target for compiler warnings
 add_library(${PROJECT_NAME}_warnings INTERFACE)
