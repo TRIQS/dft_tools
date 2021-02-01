@@ -12,7 +12,7 @@
 #
 # You may obtain a copy of the License at
 #     https://www.gnu.org/licenses/gpl-3.0.txt
-
+# Author: Nils Wentzell
 
 # Recursively fetch all targets that the interface of a target depends upon
 macro(get_all_interface_targets name target)
@@ -58,6 +58,13 @@ macro(extract_flags)
     set(${target}_LDFLAGS "${${target}_LDFLAGS} ${opt}")
     set(${target}_CXXFLAGS "${${target}_CXXFLAGS} ${opt}")
   endforeach()
+
+  get_property_recursive(cxx_features TARGET ${target} PROPERTY INTERFACE_COMPILE_FEATURES)
+  if(cxx_std_20 IN_LIST cxx_features)
+    set(${target}_CXXFLAGS "${${target}_CXXFLAGS} -std=c++20")
+  elseif(cxx_std_17 IN_LIST cxx_features)
+    set(${target}_CXXFLAGS "${${target}_CXXFLAGS} -std=c++17")
+  endif()
 
   get_property_recursive(defs TARGET ${target} PROPERTY INTERFACE_COMPILE_DEFINITIONS)
   foreach(def ${defs})
