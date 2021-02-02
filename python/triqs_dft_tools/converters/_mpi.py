@@ -13,6 +13,6 @@ def is_master_node():
 def report(message):
     if is_mpi_loaded():
         import triqs.utility.mpi as mpi
-        return mpi.report(message)
+        mpi.report(message)
     else:
         print(message)
