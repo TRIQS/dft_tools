@@ -19,7 +19,7 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
-import triqs.utility.mpi as mpi
+from . import _mpi as mpi
 
 class ConverterTools:
 

@@ -23,7 +23,7 @@
 from types import *
 import numpy
 from h5 import *
-import triqs.utility.mpi as mpi
+from . import _mpi as mpi
 from math import sqrt
 from .converter_tools import *
 
