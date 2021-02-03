@@ -19,8 +19,8 @@
 #
 # ##############################################################################
 
-cmake_minimum_required(VERSION 3.3.2 FATAL_ERROR)
-cmake_policy(VERSION 3.3.2)
+cmake_minimum_required(VERSION 3.9.6 FATAL_ERROR)
+cmake_policy(VERSION 3.9.6)
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
@@ -58,12 +58,11 @@ if(NOT IS_SUBPROJECT)
 endif()
 set(${PROJECT_NAME}_BINARY_DIR ${PROJECT_BINARY_DIR} CACHE STRING "Binary directory of the ${PROJECT_NAME} Project")
 
-
-# ############
-# Options
-
 # Make additional Find Modules available
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/share/cmake/Modules)
+
+# ############
+# CMake Options
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -88,12 +87,31 @@ if(Build_Tests)
   enable_testing()
 endif()
 
+# Build static libraries by default
+option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
+
+# ############
+# Global Compilation Settings
+
 # Export the list of compile-commands into compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Global compiler options
-option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
+# Disable compiler extensions
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Provide additional debugging information for Debug builds
 add_compile_options($<$<CONFIG:Debug>:-ggdb3>)
+
+# Enable Linktime optimizations when available
+cmake_policy(SET CMP0069 NEW)
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported)
+if(NOT ipo_supported)
+  message(STATUS "Linktime optimizations could not be enabled!")
+else()
+  message(STATUS "Linktime optimizations enabled!")
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 # Create an Interface target for compiler warnings
 add_library(${PROJECT_NAME}_warnings INTERFACE)
@@ -110,10 +128,12 @@ target_compile_options(${PROJECT_NAME}_warnings
     $<$<CXX_COMPILER_ID:Clang>:-Wno-unknown-warning-option>
     $<$<CXX_COMPILER_ID:Clang>:-Wshadow>
     $<$<CXX_COMPILER_ID:Clang>:-Wno-gcc-compat>
+    $<$<CXX_COMPILER_ID:Clang>:-Wno-c++20-extensions>
     $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-comma-subscript>
     $<$<CXX_COMPILER_ID:AppleClang>:-Wno-unknown-warning-option>
     $<$<CXX_COMPILER_ID:AppleClang>:-Wshadow>
     $<$<CXX_COMPILER_ID:AppleClang>:-Wno-gcc-compat>
+    $<$<CXX_COMPILER_ID:AppleClang>:-Wno-c++20-extensions>
 )
 
 # #############
