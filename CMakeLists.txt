@@ -111,9 +111,6 @@ if(NOT ipo_supported)
 else()
   message(STATUS "Linktime optimizations enabled!")
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-  if(CMAKE_SYSTEM_NAME EQUAL "Linux")
-    add_link_options($<$<CXX_COMPILER_ID:Clang>:-fuse-ld=gold>)
-  endif()
 endif()
 
 # Create an Interface target for compiler warnings
