@@ -59,7 +59,7 @@ jobs:
     - name: Install homebrew dependencies
       if: matrix.os == 'macos-10.15'
       run: |
-        brew install gcc@10 llvm boost fftw hdf5 open-mpi openblas
+        brew install gcc@10 gfortran llvm boost fftw hdf5 open-mpi openblas
         pip3 install mako numpy scipy mpi4py
         pip3 install -r requirements.txt
 
