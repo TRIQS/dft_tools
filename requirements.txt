@@ -1,2 +1,3 @@
 # Required python packages for this application (these should also be added to Dockerfile for Jenkins)
+numpy
 mako
