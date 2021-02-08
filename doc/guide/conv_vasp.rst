@@ -387,16 +387,33 @@ Remarks on the VASP version
 ===============================
 
 In the current version of the interface the Fermi energy is extracted from the
-`LOCPROJ` file. The file should contain the Fermi energy in the header. One can
-either copy the Fermi energy manually there after a successful VASP run, or
-modify the VASP source code slightly, by replacing the following line in
+DOSCAR. However, if one pursues to do charge self-consistent calculations one 
+needs to write the Fermi energy to the projectors (`LOCPROJ` file), as the DOSCAR 
+is only updated after a full SCF/NSCF run. The file should contain the Fermi energy 
+in the header. One can either copy the Fermi energy manually there after a successful
+VASP run, or modify the VASP source code slightly, by replacing the following line in
 `locproj.F` (around line 695):
 ::
-  WRITE(99,'(4I6,"  # of spin, # of k-points, # of bands, # of proj" )') NS,NK,NB,NF
+  <   WRITE(99,'(4I6,"  # of spin, # of k-points, # of bands, # of proj" )') NS,NK,NB,NF
+  ---
+  >   WRITE(99,'(4I6,F12.7,"  # of spin, # of k-points, # of bands, # of proj, Efermi" )') W%WDES%NCDIJ,NK,NB,NF,EFERMI
 
-with:
+Now one needs to pass additionally the variable `EFERMI` to the function, by changing (at arount line 560): 
 ::
-  WRITE(99,'(4I6,F12.7,"  # of spin, # of k-points, # of bands, # of proj, Efermi" )') W%WDES%NCDIJ,NK,NB,NF,EFERMI
+  <   SUBROUTINE LPRJ_WRITE(IU6,IU0,W)
+  ---
+  >   SUBROUTINE LPRJ_WRITE(IU6,IU0,W,EFERMI)
+      REAL(q) :: EFERMI
+
+Next, we need to pass this option when calling from `electron.F` and `main.F` 
+(just search for LPRJ_WRITE in the files) and change all occurences as follows: 
+::
+  <   CALL LPRJ_WRITE(IO%IU6, IO%IU0, W)
+  ---
+  >   CALL LPRJ_WRITE(IO%IU6, IO%IU0, W, EFERMI)
+
+Now Vasp should print in the header of the `LOCPROJ` file additionally the Fermi energy.
+
 
 Another critical point for CSC calculations is the function call of
 `LPRJ_LDApU` in VASP. This function is not needed, and was left there for debug
