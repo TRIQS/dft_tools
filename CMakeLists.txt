@@ -80,6 +80,9 @@ endif()
 
 # Documentation
 option(Build_Documentation "Build documentation" OFF)
+if(Build_Documentation AND NOT PythonSupport)
+  message(FATAL_ERROR "Build_Documentation=ON requires PythonSupport to be enabled")
+endif()
 
 # Testing
 option(Build_Tests "Build tests" ON)
