@@ -144,11 +144,10 @@ It consist of two parts:
 The first step is done using methods of the :ref:`TRIQS <triqslibs:welcome>` library::
 
   n_orb = SK.corr_shells[0]['dim']
-  l = SK.corr_shells[0]['l']
   spin_names = ["up","down"]
   orb_names = [i for i in range(n_orb)]
   # Use GF structure determined by DFT blocks:
-  gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].iteritems()]
+  gf_struct = SK.gf_struct_solver_list[0]
   # Construct U matrix for density-density calculations:
   Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
 
