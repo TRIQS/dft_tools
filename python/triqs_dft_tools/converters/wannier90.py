@@ -25,7 +25,7 @@
 #
 #   written by Gabriele Sclauzero (Materials Theory, ETH Zurich), Dec 2015 -- Jan 2016,
 #   updated by Maximilian Merkel (Materials Theory, ETH Zurich), Aug 2020 -- Jan 2021,
-#   and by Sophie Beck (Materials Theory, ETH Zurich), Sep 2020 -- Jan 2021,
+#   and by Sophie Beck (Materials Theory, ETH Zurich), Sep 2020 -- Apr 2021,
 #   under the supervision of Claude Ederer (Materials Theory).
 #   Partially based on previous work by K. Dymkovski and the DFT_tools/TRIQS team.
 #
@@ -39,8 +39,6 @@
 #   rot_mat_time_inv also if symm_op = 0?)
 # - the calculation of rot_mat in find_rot_mat() relies on the eigenvalues of H(0);
 #   this might fail in presence of degenerate eigenvalues (now just prints warning)
-# - the FFT is always done in serial mode (because all converters run serially);
-#   this can become very slow with a large number of R-vectors/k-points
 # - make the code more MPI safe (error handling): if we run with more than one process
 #   and an error occurs on the masternode, the calculation does not abort
 ###
@@ -61,7 +59,7 @@ class Wannier90Converter(ConverterTools):
 
     def __init__(self, seedname, hdf_filename=None, dft_subgrp='dft_input',
                  symmcorr_subgrp='dft_symmcorr_input', misc_subgrp='dft_misc_input',
-                 repacking=False, rot_mat_type='hloc_diag', bloch_basis=False):
+                 repacking=False, rot_mat_type='hloc_diag', bloch_basis=False, add_lambda=None):
         """
         Initialise the class.
 
@@ -84,6 +82,8 @@ class Wannier90Converter(ConverterTools):
             Can be 'hloc_diag', 'wannier', 'none'
         bloch_basis : boolean, optional
             Should the Hamiltonian be written in Bloch rather than Wannier basis?
+        add_lambda : list of floats, optional
+            add local spin-orbit term
         """
 
         self._name = "Wannier90Converter"
@@ -105,6 +105,7 @@ class Wannier90Converter(ConverterTools):
         self._w90zero = 2.e-6
         self.rot_mat_type = rot_mat_type
         self.bloch_basis = bloch_basis
+        self.add_lambda = add_lambda
         if self.rot_mat_type not in ('hloc_diag', 'wannier', 'none'):
             raise ValueError('Parameter rot_mat_type invalid, should be one of'
                              + '"hloc_diag", "wannier", "none"')
@@ -124,9 +125,6 @@ class Wannier90Converter(ConverterTools):
 
         """
 
-        # Read and write only on the master node
-        if not (mpi.is_master_node()):
-            return
         mpi.report("\nReading input from %s..." % self.inp_file)
 
         # R is a generator : each R.Next() will return the next number in the
@@ -184,12 +182,18 @@ class Wannier90Converter(ConverterTools):
         if any([corr_shell['SO']==1 for corr_shell in corr_shells]):
             SO = 1
             SP = 1
-            print('Spin-orbit interaction turned on')
+            mpi.report('Spin-orbit interaction turned on')
         else:
             SO = 0
             SP = 0
         # Only one block supported - either non-spin-polarized or spin-orbit coupled
         assert SP == SO, 'Spin-polarized calculations not implemented'
+        if self.add_lambda:
+            assert [sh['dim'] for sh in corr_shells] == [3 for sh in corr_shells], 'Add_lambda only implemented for t2g shell'
+            assert SO == SP == 0, 'Add_lambda not implemented for SO = SP = 1'
+            assert self.bloch_basis == False, 'Add_lambda not implemented for bloch_basis = True'
+            # now setting SO and SP to 1
+            SO = SP = 1
 
         charge_below = 0                # total charge below energy window NOT used for now
         energy_unit = 1.0               # should be understood as eV units
@@ -202,6 +206,7 @@ class Wannier90Converter(ConverterTools):
             for shell_list in [shells, corr_shells]:
                 for entry in shell_list:
                     entry['dim'] *= 2
+                    if 'SO' in entry.keys() and self.add_lambda: entry['SO'] = 1
 
         dim_corr_shells = sum([sh['dim'] for sh in corr_shells])
         mpi.report('Total number of WFs expected in the correlated shells: {0:d}'.format(dim_corr_shells))
@@ -257,11 +262,33 @@ class Wannier90Converter(ConverterTools):
             # now grab the data from the H(R) file
             mpi.report(
                 "\nThe Hamiltonian in MLWF basis is extracted from %s files..." % file_seed)
-            (nr, rvec, rdeg, nw, hamr, u_mat, udis_mat,
-             band_mat, k_mesh_from_umat) = self.read_wannier90data(file_seed, kmesh_mode)
-            # number of R vectors, their indices, their degeneracy, number of
-            # WFs, H(R)
-            mpi.report("\n... done: %d R vectors, %d WFs found" % (nr, nw))
+            nr = rvec = rdeg = nw = hamr = u_mat = udis_mat = band_mat = k_mesh_from_umat = None
+            if (mpi.is_master_node()):
+                (nr, rvec, rdeg, nw, hamr, u_mat, udis_mat,
+                 band_mat, k_mesh_from_umat) = self.read_wannier90data(file_seed, kmesh_mode)
+            mpi.barrier()
+            nr = mpi.bcast(nr)
+            rvec = mpi.bcast(rvec)
+            rdeg = mpi.bcast(rdeg)
+            nw = mpi.bcast(nw)
+            hamr = mpi.bcast(hamr)
+            u_mat = mpi.bcast(u_mat)
+            udis_mat = mpi.bcast(udis_mat)
+            band_mat = mpi.bcast(band_mat)
+            k_mesh_from_umat = mpi.bcast(k_mesh_from_umat)
+            # number of R vectors, their indices, their degeneracy, number of WFs, H(R),
+            # U matrices, U(dis) matrices, band energies, k_mesh of U matrices
+            mpi.report('\n... done: {} R vectors, {} WFs found'.format(nr, nw))
+
+            if self.add_lambda:
+                mpi.report('Adding local spin-orbit term to Hamiltonian (assuming dxz, dyz, dxy as orbital order)')
+                # upscaling quantities
+                nw *= 2
+                hamr = [numpy.kron(numpy.eye(2), hamr[ir]) for ir in range(nr)]
+                hamr[nr//2] += self.lambda_matrix_w90_t2g()
+                with numpy.printoptions(linewidth=100, formatter={'complexfloat': '{:+.3f}'.format}):
+                    mpi.report('Local Hamiltonian including spin-orbit coupling:')
+                    mpi.report(hamr[nr//2])
 
             if isp == 0:
                 # set or check some quantities that must be the same for both
@@ -311,7 +338,7 @@ class Wannier90Converter(ConverterTools):
                 # of WFs
                 # get second dimension of udis_mat which corresponds to number of bands in window
                 # n_bands_max corresponds to numpy.max(n_orbitals)
-                n_bands_max = udis_mat.shape[1]
+                n_bands_max = udis_mat.shape[1] if not self.add_lambda else 2*udis_mat.shape[1]
                 n_orbitals = numpy.full([self.n_k, n_spin_blocs], n_bands_max)
             else:
                 # consistency check between the _up and _down file contents
@@ -364,19 +391,27 @@ class Wannier90Converter(ConverterTools):
         if self.bloch_basis:
             if os.path.isfile(self.w90_seed + '.nscf.out'):
                 fermi_weight_file = self.w90_seed + '.nscf.out'
-                print('Reading DFT band occupations from Quantum Espresso output {}'.format(fermi_weight_file))
+                mpi.report('Reading DFT band occupations from Quantum Espresso output {}'.format(fermi_weight_file))
             elif os.path.isfile('LOCPROJ'):
+                assert os.path.isfile('OUTCAR')
                 fermi_weight_file = 'LOCPROJ'
-                print('Reading DFT band occupations from Vasp output {}'.format(fermi_weight_file))
+                mpi.report('Reading DFT band occupations from Vasp output {}'.format(fermi_weight_file))
             else:
                 raise IOError('seedname.nscf.out or LOCPROJ required in bloch_basis mode')
 
-            f_weights, band_window, self.fermi_energy = self.convert_misc_input(fermi_weight_file,
-                                                                                self.w90_seed + '.nnkp', n_spin_blocs)
+            f_weights = band_window = self.fermi_energy = kpt_basis = None
+            if (mpi.is_master_node()):
+                f_weights, band_window, self.fermi_energy, kpt_basis = self.convert_misc_input(fermi_weight_file,
+                                                                                    self.w90_seed + '.nnkp', n_spin_blocs)
+            mpi.barrier()
+            f_weights = mpi.bcast(f_weights)
+            band_window = mpi.bcast(band_window)
+            self.fermi_energy = mpi.bcast(self.fermi_energy)
+            kpt_basis = mpi.bcast(kpt_basis)
             # Get density from k-point weighted average and sum over all spins and bands
             density_required = numpy.sum(f_weights.T * kpt_weights) * (2 - SP)
-            print('Overwriting required density with DFT result {:.5f}'.format(density_required))
-            print('and using the DFT Fermi energy {:.5f} eV\n'.format(self.fermi_energy))
+            mpi.report('Overwriting required density with DFT result {:.5f}'.format(density_required))
+            mpi.report('and using the DFT Fermi energy {:.5f} eV\n'.format(self.fermi_energy))
 
         if not self.bloch_basis:
             mpi.report("The k-point grid has dimensions: %d, %d, %d" % tuple(nki))
@@ -403,7 +438,7 @@ class Wannier90Converter(ConverterTools):
             u_temp = numpy.transpose(u_total.conj(),(0,2,1))
             for icrsh in range(n_corr_shells):
                 dim = corr_shells[icrsh]['dim']
-                proj_mat[:, isp, icrsh, 0:dim, :] = u_temp[:,iorb:iorb+dim,:]
+                proj_mat[:, isp, icrsh, 0:dim, :] = u_temp[:,iorb:iorb+dim,:] if not self.add_lambda else numpy.kron(numpy.eye(2), u_temp[:,iorb:iorb+dim,:])
                 iorb += dim
 
         # Then, compute the hoppings in reciprocal space
@@ -424,11 +459,11 @@ class Wannier90Converter(ConverterTools):
                     proj_mat_flattened = proj_mat[ik, isp].reshape(self.nwfs, numpy.max(n_orbitals))
                     downfolded_ham = proj_mat_flattened.dot(hamk[ik].dot(proj_mat_flattened.conj().T))
 
-                    if not numpy.allclose(downfolded_ham, wannier_ham[ik], atol=self._w90zero, rtol=0):
+                    if not numpy.allclose(downfolded_ham, wannier_ham[ik], atol=1e-4, rtol=0):
                         mpi.report('WARNING: mismatch between downfolded Hamiltonian and '
                                    + f'Fourier transformed H(R). First occurred at kpt {ik}:')
 
-                        with numpy.printoptions(formatter={'complexfloat': '{:+.3f}'.format}):
+                        with numpy.printoptions(formatter={'complexfloat': '{:+.4f}'.format}):
                             mpi.report('Downfolded Hamiltonian, P H_eig P')
                             mpi.report(downfolded_ham)
                             mpi.report('\nWannier Hamiltonian, Fourier(H(r))')
@@ -450,24 +485,29 @@ class Wannier90Converter(ConverterTools):
         # Finally, save all required data into the HDF archive:
         # use_rotations is supposed to be an int = 0, 1, no bool
         use_rotations = int(use_rotations)
-        with HDFArchive(self.hdf_file, 'a') as ar:
-            if not (self.dft_subgrp in ar):
-                ar.create_group(self.dft_subgrp)
-            # The subgroup containing the data. If it does not exist, it is
-            # created. If it exists, the data is overwritten!
-            things_to_save = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
-                          'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
-                          'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
-                          'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr', 'kpt_weights', 'kpts']
-            for it in things_to_save:
-                ar[self.dft_subgrp][it] = locals()[it]
+        if mpi.is_master_node():
+            with HDFArchive(self.hdf_file, 'a') as ar:
+                if not (self.dft_subgrp in ar):
+                    ar.create_group(self.dft_subgrp)
+                # The subgroup containing the data. If it does not exist, it is
+                # created. If it exists, the data is overwritten!
+                things_to_save = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
+                              'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
+                              'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
+                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr', 'kpt_weights', 'kpts']
+                if self.bloch_basis: numpy.append(things_to_save, 'kpt_basis')
+                for it in things_to_save:
+                    ar[self.dft_subgrp][it] = locals()[it]
 
-            if self.bloch_basis:
                 # Store Fermi weights to 'dft_misc_input'
                 if not (self.misc_subgrp in ar):
                     ar.create_group(self.misc_subgrp)
-                ar[self.misc_subgrp]['dft_fermi_weights'] = f_weights
-                ar[self.misc_subgrp]['band_window'] = band_window+1 # Change to 1-based index
+                ar[self.misc_subgrp]['dft_fermi_energy'] = self.fermi_energy
+                if self.bloch_basis:
+                    ar[self.misc_subgrp]['dft_fermi_weights'] = f_weights
+                    ar[self.misc_subgrp]['band_window'] = band_window+1 # Change to 1-based index
+                    ar[self.misc_subgrp]['kpts_cart'] = numpy.dot(kpts, kpt_basis.T)
+        mpi.barrier()
 
     def read_wannier90data(self, wannier_seed="wannier", kmesh_mode=0):
         """
@@ -501,10 +541,6 @@ class Wannier90Converter(ConverterTools):
             The k mesh read from the seedname_u.mat file to ensure consistency
             If not self.bloch_basis unused and therefore None
         """
-
-        # Read only from the master node
-        if not (mpi.is_master_node()):
-            return
 
         hr_filename = wannier_seed + '_hr.dat'
         try:
@@ -675,7 +711,10 @@ class Wannier90Converter(ConverterTools):
             udis_mat = numpy.zeros([n_k, num_ks_bands, num_wf], dtype=complex)
             for ik in range(n_k):
                 udis_mat[ik, inside_window[ik]] = udis_data[ik, :, :n_inside_per_k[ik]].T
-                assert numpy.allclose(udis_data[ik, :, n_inside_per_k[ik]:], 0)
+                if not numpy.allclose(udis_data[ik, :, n_inside_per_k[ik]:], 0):
+                    raise ValueError('This error could come from rounding of the band window in the seedname.wout. '
+                                     + 'Never use default outer window but something wider and '
+                                     + 'check that your outer window is not close to any band energy.')
         else:
             # no disentanglement; fill udis_mat with identity
             udis_mat = numpy.array([numpy.identity(num_wf,dtype=complex)] * n_k)
@@ -861,11 +900,18 @@ class Wannier90Converter(ConverterTools):
 
         h_of_k = [numpy.zeros((self.nwfs, self.nwfs), dtype=complex)
                   for ik in range(self.n_k)]
+        h_of_k_array = numpy.array(h_of_k, dtype=complex)
         ridx = numpy.array(list(range(self.nrpt)))
-        for ik, ir in product(list(range(self.n_k)), ridx):
-            rdotk = numpy.dot(self.kpts[ik], self.rvec[ir])
-            factor = numpy.exp(2j * numpy.pi * rdotk) / self.rdeg[ir]
-            h_of_k[ik][:, :] += factor * h_of_r[ir][:, :]
+
+        for ir in mpi.slice_array(ridx):
+            for ik in list(range(self.n_k)):
+                rdotk = numpy.dot(self.kpts[ik], self.rvec[ir])
+                factor = numpy.exp(2j * numpy.pi * rdotk) / self.rdeg[ir]
+                h_of_k_array[ik, :, :] += factor * h_of_r[ir][:, :]
+        h_of_k_array = mpi.all_reduce(mpi.world, h_of_k_array, lambda x, y: x + y)
+        mpi.barrier()
+
+        h_of_k = list(h_of_k_array[:])
 
         return h_of_k
 
@@ -890,30 +936,34 @@ class Wannier90Converter(ConverterTools):
             band indices of correlated subspace
         fermi_energy : float
             the DFT Kohn-Sham Fermi energy
+        kpt_basis: numpy.array[3, 3]
+            the basis vectors in reciprocal space
         """
-
-        # Read only from the master node
-        if not (mpi.is_master_node()):
-            return
 
         assert n_spin_blocs == 1, 'spin-polarized not implemented'
         assert 'nscf.out' in out_filename or out_filename == 'LOCPROJ'
 
         occupations = []
+        reading_kpt_basis = False
+        lines_read_kpt_basis = 0
+        kpt_basis = numpy.zeros((3, 3))
+
         if 'nscf.out' in out_filename:
             occupations = []
             with open(out_filename,'r') as out_file:
                 out_data = out_file.readlines()
-            # Reads number of Kohn-Sham states and total number of electrons
+            # Reads number of Kohn-Sham states and Fermi energy
             for line in out_data:
-                if 'number of electrons' in line:
-                    n_total_electrons = float(line.split()[-1])
-
                 if 'number of Kohn-Sham states' in line:
                     n_ks = int(line.split()[-1])
-
-                if 'Fermi energy' in line:
+                elif 'Fermi energy' in line:
                     fermi_energy = float(line.split()[-2])
+                elif 'reciprocal axes' in line:
+                    reading_kpt_basis = True
+                    continue
+                elif reading_kpt_basis and lines_read_kpt_basis < 3:
+                    kpt_basis[lines_read_kpt_basis, :] = line.split()[3:6]
+                    lines_read_kpt_basis +=1
 
                 # get occupations
             for ct, line in enumerate(out_data):
@@ -942,6 +992,17 @@ class Wannier90Converter(ConverterTools):
 
                 occupations = numpy.loadtxt((line for line in file if 'orbital' in line), usecols=5)
             occupations = occupations.reshape((self.n_k, n_ks))
+
+            # Read reciprocal vectors from OUTCAR
+            with open('OUTCAR', 'r') as file:
+                for line in file:
+                    if 'reciprocal lattice vectors' in line:
+                        reading_kpt_basis = True
+                    elif reading_kpt_basis:
+                        kpt_basis[lines_read_kpt_basis, :] = line.split()[3:6]
+                        lines_read_kpt_basis += 1
+                        if lines_read_kpt_basis == 3:
+                            break
 
         # assume that all bands contribute, then remove from exclude_bands; python indexing
         corr_bands = list(range(n_ks))
@@ -977,4 +1038,31 @@ class Wannier90Converter(ConverterTools):
         f_weights = included_occupations.reshape(included_occupations.shape[0], 1,
                                                  included_occupations.shape[1])
 
-        return f_weights, band_window, fermi_energy
+        return f_weights, band_window, fermi_energy, kpt_basis
+
+    def lambda_matrix_w90_t2g(self):
+        """
+        Adds local spin-orbit interaction term to the t2g subspace. Orbital order is assumed to be
+        xz_up, yz_up, xy_up, xz_dn, yz_dn, xy_dn as given by Wannier90 per default.
+        Parameters are defined as self.add_lambda = [lambda_x, lambda_y, lambda_z], representative of
+        the orbital coupling terms perpendicular to [x, y, z] i.e. [d_yz, d_xz, d_xy], respectively.
+
+        Returns
+        -------
+        lambda_matrix : numpy.array[6, 6]
+            local spin-orbit term to be added to H(0)
+
+        """
+
+        lambda_x, lambda_y, lambda_z = self.add_lambda
+
+        lambda_matrix = numpy.zeros((6,6), dtype=complex)
+        lambda_matrix[0,1] = -1j*lambda_z/2.0
+        lambda_matrix[0,5] =  1j*lambda_x/2.0
+        lambda_matrix[1,5] =    -lambda_y/2.0
+        lambda_matrix[2,3] = -1j*lambda_x/2.0
+        lambda_matrix[2,4] =     lambda_y/2.0
+        lambda_matrix[3,4] =  1j*lambda_z/2.0
+        lambda_matrix += numpy.transpose(numpy.conjugate(lambda_matrix))
+
+        return lambda_matrix
