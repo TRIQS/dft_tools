@@ -1997,7 +1997,7 @@ class SumkDFT(object):
                    DFT code to write the density correction for. Options:
                    'vasp', 'wien2k', 'elk'
         kpts_to_write : iterable of int
-                   Selects k points that are written to file. If None (default),
+                   Indices of k points that are written to file. If None (default),
                    all k points are written. Only implemented for dm_type 'vasp'
 
         Returns
