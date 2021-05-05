@@ -1977,7 +1977,7 @@ class SumkDFT(object):
 
         return self.chemical_potential
 
-    def calc_density_correction(self, filename=None, dm_type='wien2k',spinave=False):
+    def calc_density_correction(self, filename=None, dm_type='wien2k', spinave=False, kpts_to_write=None):
         r"""
         Calculates the charge density correction and stores it into a file.
 
@@ -1993,6 +1993,12 @@ class SumkDFT(object):
         ----------
         filename : string
                    Name of the file to store the charge density correction.
+        dm_type : string
+                   DFT code to write the density correction for. Options:
+                   'vasp', 'wien2k', 'elk'
+        kpts_to_write : iterable of int
+                   Selects k points that are written to file. If None (default),
+                   all k points are written. Only implemented for dm_type 'vasp'
 
         Returns
         -------
@@ -2014,6 +2020,9 @@ class SumkDFT(object):
 
         assert isinstance(filename, str), ("calc_density_correction: "
                                               "filename has to be a string!")
+
+        assert kpts_to_write is None or dm_type == 'vasp', ('Selecting k-points only'
+                                                            +'implemented for vasp')
 
         ntoi = self.spin_names_to_ind[self.SO]
         spn = self.spin_block_names[self.SO]
@@ -2043,7 +2052,7 @@ class SumkDFT(object):
             deltaN[sp] = [numpy.zeros([self.n_orbitals[ik, ntoi[sp]], self.n_orbitals[
                                       ik, ntoi[sp]]], numpy.complex_) for ik in range(self.n_k)]
 
-        ikarray = numpy.array(list(range(self.n_k)))
+        ikarray = numpy.arange(self.n_k)
         for ik in mpi.slice_array(ikarray):
             G_latt_iw = self.lattice_gf(
                 ik=ik, mu=self.chemical_potential, iw_or_w="iw")
@@ -2144,15 +2153,20 @@ class SumkDFT(object):
                             fout.write("\n")
                         fout.close()
         elif dm_type == 'vasp':
+            if kpts_to_write is None:
+                kpts_to_write = numpy.arange(self.n_k)
+            else:
+                assert numpy.min(kpts_to_write) >= 0 and numpy.max(kpts_to_write) < self.n_k
+
             assert self.SP == 0, "Spin-polarized density matrix is not implemented"
 
             if mpi.is_master_node():
                 with open(filename, 'w') as f:
-                    f.write(" %i  -1  ! Number of k-points, default number of bands\n"%(self.n_k))
-                    for ik in range(self.n_k):
+                    f.write(" %i  -1  ! Number of k-points, default number of bands\n"%len(kpts_to_write))
+                    for index, ik in enumerate(kpts_to_write):
                         ib1 = band_window[0][ik, 0]
                         ib2 = band_window[0][ik, 1]
-                        f.write(" %i  %i  %i\n"%(ik + 1, ib1, ib2))
+                        f.write(" %i  %i  %i\n"%(index + 1, ib1, ib2))
                         for inu in range(self.n_orbitals[ik, 0]):
                             for imu in range(self.n_orbitals[ik, 0]):
                                 valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
