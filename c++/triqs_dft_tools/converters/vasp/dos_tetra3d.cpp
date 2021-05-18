@@ -18,7 +18,7 @@
 * TRIQS. If not, see <http://www.gnu.org/licenses/>.
 *
 *******************************************************************************/
-#include <triqs/arrays.hpp>
+#include <nda/nda.hpp>
 #include <iostream>
 #include <complex>
 
@@ -28,8 +28,8 @@
 //#define __TETRA_DEBUG
 #define __TETRA_ARRAY_VIEW
 
-using triqs::arrays::array;
-using triqs::arrays::array_view;
+using nda::array;
+using nda::array_view;
 
 /***************************************************
 
@@ -79,12 +79,12 @@ array<double, 2> dos_tetra_weights_3d(array<double, 1> eigk, double en, array<lo
   int ntet; /// Number of tetrahedra
 // Auxiliary variables and loop indices
 
-  if (first_dim(itt) != NUM_TET_CORNERS + 1)
+  if (itt.shape()[0] != NUM_TET_CORNERS + 1)
   {
       TRIQS_RUNTIME_ERROR << "  The first dimension of 'itt' must be equal to 5";
   }
 
-  ntet = second_dim(itt);
+  ntet = itt.shape()[1];
 
   array<double, 2> cti(NUM_TET_CORNERS, ntet); // Corner weights to be returned
 

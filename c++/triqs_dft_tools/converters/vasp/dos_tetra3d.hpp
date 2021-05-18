@@ -20,16 +20,16 @@
 *******************************************************************************/
 #pragma once
 
-#include <triqs/arrays.hpp>
+#include <nda/nda.hpp>
 
 
 /// DOS of a band by analytical tetrahedron method
 ///
 ///   Returns corner weights for all tetrahedra for a given band and real energy.
-triqs::arrays::array<double, 2>
-dos_tetra_weights_3d(triqs::arrays::array_view<double, 1> eigk, /// Band energies for each k-point
+nda::array<double, 2>
+dos_tetra_weights_3d(nda::array_view<double, 1> eigk, /// Band energies for each k-point
                      double en, /// Energy at which DOS weights are to be calculated
-                     triqs::arrays::array_view<long, 2> itt /// Tetrahedra defined by k-point indices
+                     nda::array_view<long, 2> itt /// Tetrahedra defined by k-point indices
 );
 //array<double, 2> 
 //dos_tetra_weights_3d(array<double, 1> eigk, /// Band energies for each k-point

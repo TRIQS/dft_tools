@@ -13,7 +13,7 @@ module.add_include("triqs_dft_tools/converters/vasp/dos_tetra3d.hpp")
 # Add here anything to add in the C++ code at the start, e.g. namespace using
 module.add_preamble("""
 #include <triqs/cpp2py_converters/arrays.hpp>
-using namespace triqs::arrays;
+using namespace nda;
 """)
 
 module.add_function ("array<double,2> dos_tetra_weights_3d (array_view<double,1> eigk, double en, array_view<long,2> itt)", doc = """DOS of a band by analytical tetrahedron method\n\n   Returns corner weights for all tetrahedra for a given band and real energy.""")
