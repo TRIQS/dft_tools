@@ -81,7 +81,7 @@ array<double, 2> dos_tetra_weights_3d(array<double, 1> eigk, double en, array<lo
 
   if (itt.shape()[0] != NUM_TET_CORNERS + 1)
   {
-      TRIQS_RUNTIME_ERROR << "  The first dimension of 'itt' must be equal to 5";
+      NDA_RUNTIME_ERROR << "  The first dimension of 'itt' must be equal to 5";
   }
 
   ntet = itt.shape()[1];
