@@ -1860,7 +1860,7 @@ class SumkDFT(object):
                     v = numpy.eye(*ss.target_shape)
                     C = False
                 if C:
-                    gf_to_symm[key].from_L_G_R(v, ss.transpose(), v.conjugate().transpose())
+                    gf_to_symm[key].from_L_G_R(v, ss.transpose().copy(), v.conjugate().transpose())
                 else:
                     gf_to_symm[key].from_L_G_R(v, ss, v.conjugate().transpose())
 
