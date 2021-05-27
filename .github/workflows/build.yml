@@ -84,8 +84,8 @@ jobs:
         LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
         source $HOME/install/share/triqs/triqsvars.sh
-        mkdir build && cmake -B build
-        cmake --build build -j2
+        mkdir build && cd build && cmake ..
+        make -j2 || make -j1 VERBOSE=1
 
     - name: Test app4triqs
       env:
