@@ -80,6 +80,9 @@ endif()
 
 # Documentation
 option(Build_Documentation "Build documentation" OFF)
+if(Build_Documentation AND NOT PythonSupport)
+  message(FATAL_ERROR "Build_Documentation=ON requires PythonSupport to be enabled")
+endif()
 
 # Testing
 option(Build_Tests "Build tests" ON)
@@ -101,17 +104,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Provide additional debugging information for Debug builds
 add_compile_options($<$<CONFIG:Debug>:-ggdb3>)
-
-# Enable Linktime optimizations when available
-cmake_policy(SET CMP0069 NEW)
-include(CheckIPOSupported)
-check_ipo_supported(RESULT ipo_supported)
-if(NOT ipo_supported)
-  message(STATUS "Linktime optimizations could not be enabled!")
-else()
-  message(STATUS "Linktime optimizations enabled!")
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
 
 # Create an Interface target for compiler warnings
 add_library(${PROJECT_NAME}_warnings INTERFACE)
