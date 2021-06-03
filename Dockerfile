@@ -11,6 +11,6 @@ RUN chown build .
 USER build
 ARG BUILD_DOC=0
 ARG BUILD_ID
-RUN cmake $SRC/$APPNAME -DTRIQS_ROOT=${INSTALL} -DBuild_Documentation=${BUILD_DOC} -DBuild_Deps=Always && make -j2 || make -j1 VERBOSE=1
+RUN cmake $SRC/$APPNAME -DTRIQS_ROOT=${INSTALL} -DBuild_Documentation=${BUILD_DOC} -DBuild_Deps=Always && make -j4 || make -j1 VERBOSE=1
 USER root
 RUN make install
