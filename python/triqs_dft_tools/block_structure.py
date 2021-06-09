@@ -997,7 +997,7 @@ class BlockStructure(object):
                     maxdiff = G_back[name] - G[name]
 
                 if space_to == 'solver' and self == G_struct: # do comparison in solver (ignore diff. in ignored orbitals)
-                    tmp = self.create_matrix(space='sumk')
+                    tmp = self.create_matrix(space='sumk', ish=ish_from)
                     tmp[name] = maxdiff
                     maxdiff = G_struct._convert_gf_or_matrix(tmp, self, ish_from=ish_from,
                                                     ish_to=ish_to,
