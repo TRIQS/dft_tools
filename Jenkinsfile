@@ -81,14 +81,15 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
 
       def hdf5 = "${env.BREW}/opt/hdf5@1.10"
       dir(buildDir) { withEnv(platformEnv[1].collect { it.replace('\$BREW', env.BREW) } + [
-	  "PATH=$venv/bin:${env.BREW}/bin:/usr/bin:/bin:/usr/sbin",
-	  "HDF5_ROOT=$hdf5",
+          "PATH=$venv/bin:${env.BREW}/bin:/usr/bin:/bin:/usr/sbin",
+          "HDF5_ROOT=$hdf5",
           "C_INCLUDE_PATH=$hdf5/include:${env.BREW}/include",
-	  "CPLUS_INCLUDE_PATH=$venv/include:$hdf5/include:${env.BREW}/include",
-	  "LIBRARY_PATH=$venv/lib:$hdf5/lib:${env.BREW}/lib",
+          "CPLUS_INCLUDE_PATH=$venv/include:$hdf5/include:${env.BREW}/include",
+          "LIBRARY_PATH=$venv/lib:$hdf5/lib:${env.BREW}/lib",
           "LD_LIBRARY_PATH=$hdf5/lib",
           "PYTHONPATH=$installDir/lib/python3.9/site-packages",
-	  "CMAKE_PREFIX_PATH=$venv/lib/cmake/triqs"]) {
+          "CMAKE_PREFIX_PATH=$venv/lib/cmake/triqs",
+          "OMP_NUM_THREADS=2"]) {
         deleteDir()
         /* note: this is installing into the parent (triqs) venv (install dir), which is thus shared among apps and so not be completely safe */
         sh "pip3 install -U -r $srcDir/requirements.txt"
