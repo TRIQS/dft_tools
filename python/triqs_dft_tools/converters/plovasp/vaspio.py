@@ -504,7 +504,7 @@ class Kpoints:
             self.kpts[ik, :] = list(map(float, sline[:3]))
             self.kwghts[ik] = float(sline[3])
 
-        self.kwghts /= self.nktot
+        self.kwghts /= np.sum(self.kwghts)
 
 # Attempt to read tetrahedra
 #   Skip comment line ("Tetrahedra")
