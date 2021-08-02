@@ -15,6 +15,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinx.ext.githubpages',
               'sphinx_autorun',
+              'nbsphinx',
               'matplotlib.sphinxext.plot_directive',
               'numpydoc']
 
@@ -28,18 +29,75 @@ copyright = '2017-2018 N. Wentzell, O. Parcollet 2018-2019 The Simons Foundation
 mathjax_path = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=default"
 templates_path = ['@CMAKE_CURRENT_SOURCE_DIR@/_templates']
 
-html_theme = 'triqs'
-html_theme_path = ['@CMAKE_CURRENT_SOURCE_DIR@/themes']
+# this requires the sphinx_rtd_theme to be installed via pip
+html_theme = 'sphinx_rtd_theme'
+
+# options for the the rtd theme
+html_theme_options = {
+    'logo_only': False,
+    'display_version': True,
+    'prev_next_buttons_location': 'bottom',
+    'style_external_links': False,
+    'vcs_pageview_mode': '',
+    # 'style_nav_header_background': '#7E588A',
+    # Toc options
+    'collapse_navigation': False,
+    'sticky_navigation': True,
+    'navigation_depth': 4,
+    'includehidden': True,
+    'titles_only': False
+}
+
 html_show_sphinx = False
-html_context = {'header_title': '@PROJECT_NAME@',
-                'header_subtitle': 'An example application using cpp2py and <a class="triqs" style="font-size: 12px" href="https://triqs.github.io">TRIQS</a>',
-                'header_links': [['Install', 'install'],
-                                 ['Documentation', 'documentation'],
-                                 ['Issues', 'issues'],
-                                 ['About @PROJECT_NAME@', 'about']]}
+
+html_context = {'header_title': '@PROJECT_NAME@'}
+
 html_static_path = ['@CMAKE_CURRENT_SOURCE_DIR@/_static']
 html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = '@PROJECT_NAME@doc'
 
 intersphinx_mapping = {'python': ('https://docs.python.org/3.8', None), 'triqslibs': ('https://triqs.github.io/triqs/latest', None)}
+
+# open links in new tab instead of same window
+from sphinx.writers.html import HTMLTranslator
+from docutils import nodes
+from docutils.nodes import Element
+
+class PatchedHTMLTranslator(HTMLTranslator):
+
+    def visit_reference(self, node: Element) -> None:
+        atts = {'class': 'reference'}
+        if node.get('internal') or 'refuri' not in node:
+            atts['class'] += ' internal'
+        else:
+            atts['class'] += ' external'
+            # ---------------------------------------------------------
+            # Customize behavior (open in new tab, secure linking site)
+            atts['target'] = '_blank'
+            atts['rel'] = 'noopener noreferrer'
+            # ---------------------------------------------------------
+        if 'refuri' in node:
+            atts['href'] = node['refuri'] or '#'
+            if self.settings.cloak_email_addresses and atts['href'].startswith('mailto:'):
+                atts['href'] = self.cloak_mailto(atts['href'])
+                self.in_mailto = True
+        else:
+            assert 'refid' in node, \
+                   'References must have "refuri" or "refid" attribute.'
+            atts['href'] = '#' + node['refid']
+        if not isinstance(node.parent, nodes.TextElement):
+            assert len(node) == 1 and isinstance(node[0], nodes.image)
+            atts['class'] += ' image-reference'
+        if 'reftitle' in node:
+            atts['title'] = node['reftitle']
+        if 'target' in node:
+            atts['target'] = node['target']
+        self.body.append(self.starttag(node, 'a', '', **atts))
+ 
+        if node.get('secnumber'):
+            self.body.append(('%s' + self.secnumber_suffix) %
+                             '.'.join(map(str, node['secnumber'])))
+
+def setup(app):
+    app.set_translator('html', PatchedHTMLTranslator)
