@@ -2,11 +2,18 @@ System  = NiO
 
 ISMEAR = -5
 
-# the energy window to optimize projector channels
-EMIN = -3
-EMAX = 7
+# converge wave functions
+EDIFF = 1.E-7
+PREC = accurate 
 
-NBANDS = 16
+# optimize performance
+NCORE = 4
+NBANDS = 24
+
+# the energy window to optimize projector channels (absolute)
+EMIN = -3
+EMAX = 10
+
 LMAXMIX = 6
 
 # switch off all symmetries
@@ -14,5 +21,5 @@ ISYM = -1
 
 # project to Ni d and O p states
 LORBIT = 14
-LOCPROJ = 1 : d : Pr 1
-LOCPROJ = 2 : p : Pr 1
+LOCPROJ = 1 : d : Pr 
+LOCPROJ = 2 : p : Pr
