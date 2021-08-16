@@ -37,7 +37,7 @@ if mpi.is_master_node():
     ar = HDFArchive(filename+'.h5','a')
     if not 'DMFT_results' in ar: ar.create_group('DMFT_results')
     if not 'Iterations' in ar['DMFT_results']: ar['DMFT_results'].create_group('Iterations')
-    if 'iteration_count' in ar['DMFT_results']: 
+    if 'iteration_count' in ar['DMFT_results']:
         iteration_offset = ar['DMFT_results']['iteration_count']+1
         print(('offset',iteration_offset))
         Sigma_iw = ar['DMFT_results']['Iterations']['Sigma_it'+str(iteration_offset-1)]

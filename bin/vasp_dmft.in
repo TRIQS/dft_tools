@@ -122,5 +122,5 @@ rm -f vasp.lock
 stdbuf -o 0 $MPIRUN_CMD -np $NPROC "$VASP_DIR" &
 
 
-$MPIRUN_CMD -np $NPROC python -m triqs_dft_tools.converters.plovasp.sc_dmft $(jobs -p) $NITER $NDFTITER $DMFT_SCRIPT 'plo.cfg' $VASP_VERSION || kill %1
+$MPIRUN_CMD -np $NPROC @TRIQS_PYTHON_EXECUTABLE@ -m triqs_dft_tools.converters.plovasp.sc_dmft $(jobs -p) $NITER $NDFTITER $DMFT_SCRIPT 'plo.cfg' $VASP_VERSION || kill %1
 

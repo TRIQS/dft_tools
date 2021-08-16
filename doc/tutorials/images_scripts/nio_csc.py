@@ -6,6 +6,7 @@ from triqs.gf import *
 import sys, triqs.version as triqs_version
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
+from triqs_dft_tools.block_structure import gf_struct_flatten
 from triqs.operators.util.hamiltonians import *
 from triqs.operators.util.U_matrix import *
 from triqs_cthyb import *
@@ -103,10 +104,10 @@ def dmft_cycle():
         ar['DMFT_input']['code_versions']["triqs_version"] = triqs_version.version
         ar['DMFT_input']['code_versions']["triqs_git"] = triqs_version.git_hash
         ar['DMFT_input']['code_versions']["cthyb_version"] = cthyb_version.version
-        ar['DMFT_input']['code_versions']["cthyb_git"] = cthyb_version.cthyb_hash
+        ar['DMFT_input']['code_versions']["cthyb_git"] = cthyb_version.triqs_cthyb_hash
         ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.version
-        ar['DMFT_input']['code_versions']["dft_tools_git"] = dft_tools_version.dft_tools_hash
-        if 'iteration_count' in ar['DMFT_results']: 
+        ar['DMFT_input']['code_versions']["dft_tools_git"] = dft_tools_version.triqs_dft_tools_hash
+        if 'iteration_count' in ar['DMFT_results']:
             iteration_offset = ar['DMFT_results']['iteration_count']+1
             S.Sigma_iw = ar['DMFT_results']['Iterations']['Sigma_it'+str(iteration_offset-1)]
             SK.dc_imp = ar['DMFT_results']['Iterations']['dc_imp'+str(iteration_offset-1)]

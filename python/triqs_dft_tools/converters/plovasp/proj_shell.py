@@ -420,7 +420,7 @@ class ProjectorShell:
                         w_k[ik, ib, isp, io, :] = proj_k * proj_k.conj()
 
 #        eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
-        itt = el_struct.kmesh['itet'].T
+        itt = el_struct.kmesh['itet'].T.copy()
 # k-indices are starting from 0 in Python
         itt[1:, :] -= 1
         for isp in range(ns):

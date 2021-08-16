@@ -6,6 +6,7 @@ from triqs.gf import *
 import sys, triqs.version as triqs_version
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
+from triqs_dft_tools.block_structure import gf_struct_flatten
 from triqs.operators.util.hamiltonians import *
 from triqs.operators.util.U_matrix import *
 from triqs_cthyb import *
@@ -40,7 +41,7 @@ spin_names = ['up','down']
 orb_names = [i for i in range(0,n_orb)]
 
 #gf_struct = set_operator_structure(spin_names, orb_names, orb_hyb)
-gf_struct = SK.gf_struct_solver[0]
+gf_struct = gf_struct_flatten(SK.gf_struct_solver[0])
 mpi.report('Sumk to Solver: %s'%SK.sumk_to_solver)
 mpi.report('GF struct sumk: %s'%SK.gf_struct_sumk)
 mpi.report('GF struct solver: %s'%SK.gf_struct_solver)
@@ -70,7 +71,7 @@ p["max_time"] = -1
 p["random_name"] = ""
 p["random_seed"] = 123 * mpi.rank + 567
 p["length_cycle"] = 100
-p["n_warmup_cycles"] = 20000
+p["n_warmup_cycles"] = 8000
 p["n_cycles"] = 200000
 p["fit_max_moment"] = 4
 p["fit_min_n"] = 30
@@ -96,10 +97,10 @@ ns')
     ar['DMFT_input']['code_versions']["triqs_version"] = triqs_version.version
     ar['DMFT_input']['code_versions']["triqs_git"] = triqs_version.git_hash
     ar['DMFT_input']['code_versions']["cthyb_version"] = cthyb_version.version
-    ar['DMFT_input']['code_versions']["cthyb_git"] = cthyb_version.cthyb_hash
+    ar['DMFT_input']['code_versions']["cthyb_git"] = cthyb_version.triqs_cthyb_hash
     ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.version
-    ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.dft_tools_hash
-    if 'iteration_count' in ar['DMFT_results']: 
+    ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.triqs_dft_tools_hash
+    if 'iteration_count' in ar['DMFT_results']:
         iteration_offset = ar['DMFT_results']['iteration_count']+1
         S.Sigma_iw = ar['DMFT_results']['Iterations']['Sigma_it'+str(iteration_offset-1)]
         SK.dc_imp = ar['DMFT_results']['Iterations']['dc_imp'+str(iteration_offset-1)]

@@ -1,4 +1,4 @@
 #!/bin/bash
 
-python -m triqs_dft_tools.converters.plovasp.converter $@
+@TRIQS_PYTHON_EXECUTABLE@ -m triqs_dft_tools.converters.plovasp.converter $@
 
