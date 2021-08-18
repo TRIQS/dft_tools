@@ -1,5 +1,9 @@
-Version 3.0.0
-=============
+(changelog)=
+
+# Changelog
+
+## Version 3.0.0
+
 
 app4triqs version 3.0.0 is a compatibility
 release for TRIQS version 3.0.0 that
@@ -8,8 +12,7 @@ release for TRIQS version 3.0.0 that
 * fixes several application issues
 
 
-Version 2.2.0
-=============
+## Version 2.2.0
 
 app4triqs Version 2.2.0 provides a project
 skeleton for TRIQS applications based on

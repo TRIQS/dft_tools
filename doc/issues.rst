@@ -1,7 +1,7 @@
 .. _issues:
 
 Reporting issues
-================
+****************
 
 Please report all problems and bugs directly at the github issue page
 `<https://github.com/TRIQS/app4triqs/issues>`_.  In order to make it easier for us

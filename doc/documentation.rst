@@ -1,7 +1,7 @@
 .. _documentation:
 
 Documentation
-=============
+*************
 
 
 .. math::
@@ -9,20 +9,9 @@ Documentation
    (a + b)^2  &=  (a + b)(a + b) \\
               &=  a^2 + 2ab + b^2
 
-Table of Contents
------------------
-
-.. toctree::
-   :maxdepth: 5
-
-   index
-   install
-   issues
-   changelog
-   about
 
 C++ reference manual
---------------------
+====================
 
 .. toctree::
    :maxdepth: 5
@@ -30,7 +19,7 @@ C++ reference manual
    cpp2rst_generated/contents
 
 Python reference manual
------------------------
+=======================
 
 .. automodule:: app4triqs 
    :members:

@@ -1,12 +1,18 @@
 .. _welcome:
 
 app4triqs
-=========
+*********
 
-.. sidebar:: app4triqs 2.2.0
+.. sidebar:: app4triqs 3.0.0
 
-   This is the homepage of app4triqs v2.2.0.
+   This is the homepage of app4triqs v3.0.0.
    For changes see the :ref:`changelog page <changelog>`.
+      
+      .. image:: _static/logo_github.png
+         :width: 75%
+         :align: center
+         :target: https://github.com/triqs/app4triqs
+
 
 An example application using cpp2py and :ref:`TRIQS <triqslibs:welcome>`.
 
@@ -15,5 +21,13 @@ and the comments in the sources and headers.
 
 Learn how to use app4triqs in the :ref:`documentation`.
 
+    
 .. toctree::
    :maxdepth: 2
+   :hidden:
+
+   install
+   documentation
+   issues
+   ChangeLog.md
+   about
