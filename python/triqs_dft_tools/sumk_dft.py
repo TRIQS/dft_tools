@@ -516,7 +516,7 @@ class SumkDFT(object):
             mu = self.chemical_potential
         ntoi = self.spin_names_to_ind[self.SO]
         spn = self.spin_block_names[self.SO]
-        if self.Sigma_inp is None:
+        if self.Sigma_imp is None:
             with_Sigma = False
         if broadening is None:
             if mesh is None:
