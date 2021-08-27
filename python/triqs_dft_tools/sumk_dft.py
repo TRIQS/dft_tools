@@ -42,7 +42,7 @@ from scipy.optimize import minimize
 class SumkDFT(object):
     """This class provides a general SumK method for combining ab-initio code and triqs."""
 
-    def __init__(self, hdf_file, h_field=0.0, use_dft_blocks=False,
+    def __init__(self, hdf_file, h_field=0.0, mesh=None, beta=40, n_iw=1025, use_dft_blocks=False,
                  dft_data='dft_input', symmcorr_data='dft_symmcorr_input', parproj_data='dft_parproj_input',
                  symmpar_data='dft_symmpar_input', bands_data='dft_bands_input', transp_data='dft_transp_input',
                  misc_data='dft_misc_input',bc_data='dft_bandchar_input',fs_data='dft_fs_input'):
@@ -98,6 +98,14 @@ class SumkDFT(object):
             self.bc_data = bc_data
             self.fs_data = fs_data
             self.h_field = h_field
+
+            if mesh is None:
+                self.mesh = MeshImFreq(beta=beta, S='Fermion',n_max=n_iw)
+            elif isinstance(mesh, MeshImFreq) or isinstance(mesh, MeshReFreq):
+                self.mesh = mesh
+            else:
+                raise ValueError('mesh must be a triqs mesh of type MeshImFreq or MeshReFreq')
+                
 
             self.block_structure = BlockStructure()
 
@@ -467,7 +475,7 @@ class SumkDFT(object):
 
         return gf_rotated
 
-    def lattice_gf(self, ik, mu=None, iw_or_w="iw", beta=40, broadening=None, mesh=None, with_Sigma=True, with_dc=True):
+    def lattice_gf(self, ik, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True):
         r"""
         Calculates the lattice Green function for a given k-point from the DFT Hamiltonian and the self energy.
 
@@ -508,9 +516,7 @@ class SumkDFT(object):
             mu = self.chemical_potential
         ntoi = self.spin_names_to_ind[self.SO]
         spn = self.spin_block_names[self.SO]
-        if (iw_or_w != "iw") and (iw_or_w != "w"):
-            raise ValueError("lattice_gf: Implemented only for Re/Im frequency functions.")
-        if not hasattr(self, "Sigma_imp_" + iw_or_w):
+        if self.Sigma_inp is None:
             with_Sigma = False
         if broadening is None:
             if mesh is None:
@@ -518,45 +524,32 @@ class SumkDFT(object):
             else:  # broadening = 2 * \Delta omega, where \Delta omega is the spacing of omega points
                 broadening = 2.0 * ((mesh[1] - mesh[0]) / (mesh[2] - 1))
 
-        # Are we including Sigma?
-        if with_Sigma:
-            Sigma_imp = getattr(self, "Sigma_imp_" + iw_or_w)
-            sigma_minus_dc = [s.copy() for s in Sigma_imp]
-            if with_dc:
-                sigma_minus_dc = self.add_dc(iw_or_w)
-            if iw_or_w == "iw":
-                # override beta if Sigma_iw is present
-                beta = Sigma_imp[0].mesh.beta
-                mesh = Sigma_imp[0].mesh
-            elif iw_or_w == "w":
-                mesh = Sigma_imp[0].mesh
-                if broadening>0 and mpi.is_master_node():
-                    warn('lattice_gf called with Sigma and broadening > 0 (broadening = {}). You might want to explicitly set the broadening to 0.'.format(broadening))
-        else:
-            if iw_or_w == "iw":
-                if beta is None:
-                    raise ValueError("lattice_gf: Give the beta for the lattice GfReFreq.")
-                # Default number of Matsubara frequencies
-                mesh = MeshImFreq(beta=beta, S='Fermion', n_max=1025)
-            elif iw_or_w == "w":
-                if mesh is None:
-                    raise ValueError("lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq.")
-                mesh = MeshReFreq(mesh[0], mesh[1], mesh[2])
-
         # Check if G_latt is present
         set_up_G_latt = False                       # Assume not
-        if not hasattr(self, "G_latt_" + iw_or_w):
+        if not hasattr(self, "G_latt" ):
             # Need to create G_latt_(i)w
             set_up_G_latt = True
         else:                                       # Check that existing GF is consistent
-            G_latt = getattr(self, "G_latt_" + iw_or_w)
+            G_latt = self.G_latt
             GFsize = [gf.target_shape[0] for bname, gf in G_latt]
             unchangedsize = all([self.n_orbitals[ik, ntoi[spn[isp]]] == GFsize[
                                 isp] for isp in range(self.n_spin_blocks[self.SO])])
-            if not unchangedsize:
+            if (not mesh is None) or (not unchangedsize):
                 set_up_G_latt = True
-            if (iw_or_w == "iw") and (self.G_latt_iw.mesh.beta != beta):
-                set_up_G_latt = True  # additional check for ImFreq
+
+        # Are we including Sigma?
+        if with_Sigma:
+            Sigma_imp = self.Sigma_imp
+            sigma_minus_dc = [s.copy() for s in Sigma_imp]
+            if with_dc:
+                sigma_minus_dc = self.add_dc()
+            if isinstance(self.mesh, MeshReFreq) and broadening > 0 and mpi.is_master_node():
+                warn('lattice_gf called with Sigma and broadening > 0 (broadening = {}). You might want to explicitly set the broadening to 0.'.format(broadening))
+        elif not mesh is None:
+            mesh = MeshReFreq(mesh[0], mesh[1], mesh[2])
+
+        if mesh is None:
+            mesh = self.mesh
 
         # Set up G_latt
         if set_up_G_latt:
@@ -565,19 +558,19 @@ class SumkDFT(object):
             gf_struct = [(spn[isp], block_structure[isp])
                          for isp in range(self.n_spin_blocks[self.SO])]
             block_ind_list = [block for block, inner in gf_struct]
-            if iw_or_w == "iw":
+            if isinstance(mesh, MeshImFreq):
                 glist = lambda: [GfImFreq(indices=inner, mesh=mesh)
                                  for block, inner in gf_struct]
-            elif iw_or_w == "w":
+            else:
                 glist = lambda: [GfReFreq(indices=inner, mesh=mesh)
                                  for block, inner in gf_struct]
             G_latt = BlockGf(name_list=block_ind_list,
                              block_list=glist(), make_copies=False)
             G_latt.zero()
 
-        if iw_or_w == "iw":
+        if isinstance(mesh, MeshImFreq):
             G_latt << iOmega_n
-        elif iw_or_w == "w":
+        else:
             G_latt << Omega + 1j * broadening
 
         idmat = [numpy.identity(
@@ -599,7 +592,7 @@ class SumkDFT(object):
                                       sigma_minus_dc[icrsh][bname], gf)
 
         G_latt.invert()
-        setattr(self, "G_latt_" + iw_or_w, G_latt)
+        self.G_latt = G_latt
 
         return G_latt
 
@@ -629,19 +622,19 @@ class SumkDFT(object):
         assert len(Sigma_imp) == self.n_corr_shells,\
             "put_Sigma: give exactly one Sigma for each corr. shell!"
 
-        if all((isinstance(gf, Gf) and isinstance(gf.mesh, MeshImFreq)) for bname, gf in Sigma_imp[0]):
+        if isinstance(self.mesh, MeshImFreq) and all(isinstance(gf, Gf) and gf.mesh == self.mesh for bname, gf in Sigma_imp[0]):
             # Imaginary frequency Sigma:
-            self.Sigma_imp_iw = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, space='sumk')
+            self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, space='sumk')
                                  for icrsh in range(self.n_corr_shells)]
-            SK_Sigma_imp = self.Sigma_imp_iw
-        elif all(isinstance(gf, Gf) and isinstance(gf.mesh, MeshReFreq) for bname, gf in Sigma_imp[0]):
+            SK_Sigma_imp = self.Sigma_imp
+        elif isinstance(self.mesh, MeshReFreq) and all(isinstance(gf, Gf) and gf.mesh == self.mesh for bname, gf in Sigma_imp[0]):
             # Real frequency Sigma:
-            self.Sigma_imp_w = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, gf_function=GfReFreq, space='sumk')
+            self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, gf_function=GfReFreq, space='sumk')
                                 for icrsh in range(self.n_corr_shells)]
-            SK_Sigma_imp = self.Sigma_imp_w
+            SK_Sigma_imp = self.Sigma_imp
 
         else:
-            raise ValueError("put_Sigma: This type of Sigma is not handled, give either BlockGf of GfReFreq or GfImFreq.")
+            raise ValueError("put_Sigma: Sigma_imp must have the same mesh as SumKDFT.mesh.")
 
         # rotation from local to global coordinate system:
         for icrsh in range(self.n_corr_shells):
@@ -654,13 +647,12 @@ class SumkDFT(object):
                     gf << Sigma_imp[icrsh][bname]
 
         #warning if real frequency self energy is within the bounds of the band energies
-        if isinstance(Sigma_imp[0].mesh, MeshReFreq):
+        if isinstance(self.mesh, MeshReFreq):
             if self.min_band_energy is None or self.max_band_energy is None:
                 self.calculate_min_max_band_energies()
-            for gf in Sigma_imp:
-                Sigma_mesh = numpy.array([i for i in gf.mesh.values()])
-                if Sigma_mesh[0] > (self.min_band_energy - self.chemical_potential) or Sigma_mesh[-1] < (self.max_band_energy - self.chemical_potential):
-                    warn('The given Sigma is on a mesh which does not cover the band energy range. The Sigma MeshReFreq runs from %f to %f, while the band energy (minus the chemical potential) runs from %f to %f'%(Sigma_mesh[0], Sigma_mesh[-1], self.min_band_energy, self.max_band_energy))
+            mesh = numpy.array([i for i in self.mesh.values()])
+            if mesh[0] > (self.min_band_energy - self.chemical_potential) or mesh[-1] < (self.max_band_energy - self.chemical_potential):
+                warn('The given Sigma is on a mesh which does not cover the band energy range. The Sigma MeshReFreq runs from %f to %f, while the band energy (minus the chemical potential) runs from %f to %f'%(Sigma_mesh[0], Sigma_mesh[-1], self.min_band_energy, self.max_band_energy))
 
     def transform_to_sumk_blocks(self, Sigma_imp, Sigma_out=None):
         r""" transform Sigma from solver to sumk space
@@ -703,7 +695,7 @@ class SumkDFT(object):
                 G_out=Sigma_out[icrsh])
         return Sigma_out
 
-    def extract_G_loc(self, mu=None, iw_or_w='iw', with_Sigma=True, with_dc=True, broadening=None,
+    def extract_G_loc(self, mu=None, with_Sigma=True, with_dc=True, broadening=None,
                       transform_to_solver_blocks=True, show_warnings=True):
         r"""
         Extracts the local downfolded Green function by the Brillouin-zone integration of the lattice Green's function.
@@ -739,14 +731,14 @@ class SumkDFT(object):
         if mu is None:
             mu = self.chemical_potential
 
-        if iw_or_w == "iw":
-            G_loc = [self.Sigma_imp_iw[icrsh].copy() for icrsh in range(
+        if isinstance(self.mesh, MeshImFreq):
+            G_loc = [self.Sigma_imp[icrsh].copy() for icrsh in range(
                 self.n_corr_shells)]   # this list will be returned
             beta = G_loc[0].mesh.beta
             G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfImFreq(target_shape=(block_dim, block_dim), mesh=G_loc[0].mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
                                      make_copies=False) for ish in range(self.n_inequiv_shells)]
-        elif iw_or_w == "w":
-            G_loc = [self.Sigma_imp_w[icrsh].copy() for icrsh in range(
+        else:
+            G_loc = [self.Sigma_imp[icrsh].copy() for icrsh in range(
                 self.n_corr_shells)]   # this list will be returned
             mesh = G_loc[0].mesh
             G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfReFreq(target_shape=(block_dim, block_dim), mesh=mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
@@ -757,13 +749,12 @@ class SumkDFT(object):
 
         ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
-            if iw_or_w == 'iw':
+            if isinstance(self.mesh, MeshImFreq):
                 G_latt = self.lattice_gf(
-                    ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, beta=beta)
-            elif iw_or_w == 'w':
-                mesh_parameters = (G_loc[0].mesh.omega_min,G_loc[0].mesh.omega_max,len(G_loc[0].mesh))
+                    ik=ik, mu=mu, with_Sigma=with_Sigma, with_dc=with_dc)
+            else:
                 G_latt = self.lattice_gf(
-                    ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening, mesh=mesh_parameters)
+                    ik=ik, mu=mu, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening)
             G_latt *= self.bz_weights[ik]
 
             for icrsh in range(self.n_corr_shells):
@@ -1446,7 +1437,7 @@ class SumkDFT(object):
         return trans
 
 
-    def density_matrix(self, method='using_gf', beta=40.0):
+    def density_matrix(self, method='using_gf'):
         """Calculate density matrices in one of two ways.
 
         Parameters
@@ -1477,8 +1468,7 @@ class SumkDFT(object):
 
             if method == "using_gf":
 
-                G_latt_iw = self.lattice_gf(
-                    ik=ik, mu=self.chemical_potential, iw_or_w="iw", beta=beta)
+                G_latt_iw = self.lattice_gf(ik=ik, mu=self.chemical_potential)
                 G_latt_iw *= self.bz_weights[ik]
                 dm = G_latt_iw.density()
                 MMat = [dm[sp] for sp in self.spin_block_names[self.SO]]
@@ -1777,7 +1767,7 @@ class SumkDFT(object):
                     self.dc_imp[icrsh][sp] = numpy.dot(T.conjugate().transpose(),
                             numpy.dot(self.dc_imp[icrsh][sp], T))
 
-    def add_dc(self, iw_or_w="iw"):
+    def add_dc(self):
         r"""
         Subtracts the double counting term from the impurity self energy.
 
@@ -1796,8 +1786,7 @@ class SumkDFT(object):
         """
 
         # Be careful: Sigma_imp is already in the global coordinate system!!
-        sigma_minus_dc = [s.copy()
-                          for s in getattr(self, "Sigma_imp_" + iw_or_w)]
+        sigma_minus_dc = [s.copy() for s in self.Sigma_imp]
         for icrsh in range(self.n_corr_shells):
             for bname, gf in sigma_minus_dc[icrsh]:
                 # Transform dc_imp to global coordinate system
@@ -1869,7 +1858,7 @@ class SumkDFT(object):
                 else:
                     gf_to_symm[key].from_L_G_R(v, ss, v.conjugate().transpose())
 
-    def total_density(self, mu=None, iw_or_w="iw", with_Sigma=True, with_dc=True, broadening=None):
+    def total_density(self, mu=None, with_Sigma=True, with_dc=True, broadening=None):
         r"""
         Calculates the total charge within the energy window for a given chemical potential.
         The chemical potential is either given by parameter `mu` or, if it is not specified,
@@ -1922,7 +1911,7 @@ class SumkDFT(object):
         ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
             G_latt = self.lattice_gf(
-                ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening)
+                ik=ik, mu=mu, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening)
             dens += self.bz_weights[ik] * G_latt.total_density()
         # collect data from mpi:
         dens = mpi.all_reduce(mpi.world, dens, lambda x, y: x + y)

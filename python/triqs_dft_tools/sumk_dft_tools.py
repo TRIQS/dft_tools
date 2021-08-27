@@ -41,17 +41,17 @@ class SumkDFTTools(SumkDFT):
     Extends the SumkDFT class with some tools for analysing the data.
     """
 
-    def __init__(self, hdf_file, h_field=0.0, use_dft_blocks=False, dft_data='dft_input', symmcorr_data='dft_symmcorr_input',
+    def __init__(self, hdf_file, h_field=0.0, mesh=None, bets=40, n_iw=1025, use_dft_blocks=False, dft_data='dft_input', symmcorr_data='dft_symmcorr_input',
                  parproj_data='dft_parproj_input', symmpar_data='dft_symmpar_input', bands_data='dft_bands_input',
                  transp_data='dft_transp_input', misc_data='dft_misc_input'):
         """
         Initialisation of the class. Parameters are exactly as for SumKDFT.
         """
 
-        SumkDFT.__init__(self, hdf_file=hdf_file, h_field=h_field, use_dft_blocks=use_dft_blocks,
-                         dft_data=dft_data, symmcorr_data=symmcorr_data, parproj_data=parproj_data,
-                         symmpar_data=symmpar_data, bands_data=bands_data, transp_data=transp_data,
-                         misc_data=misc_data)
+        SumkDFT.__init__(self, hdf_file=hdf_file, h_field=h_field, mesh=mesh, beta=beta, n_iw=n_iw,
+                        use_dft_blocks=use_dft_blocks, dft_data=dft_data, symmcorr_data=symmcorr_data,
+                        parproj_data=parproj_data, symmpar_data=symmpar_data, bands_data=bands_data,
+                        transp_data=transp_data, misc_data=misc_data)
 
     # Uses .data of only GfReFreq objects.
     def dos_wannier_basis(self, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True, save_to_file=True):
@@ -82,10 +82,9 @@ class SumkDFTTools(SumkDFT):
         DOSproj_orb : Dict of numpy arrays
                       DOS projected to atoms and resolved into orbital contributions.
         """
-        if (mesh is None) and (not with_Sigma):
-            raise ValueError("lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq.")
-        if mesh is None:
-            om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
+        if mesh is None or with_Sigma:
+            assert isinstance(self.mesh, MeshReFreq), "mesh must be given if self.mesh is a MeshImFreq"
+            om_mesh = [x.real for x in self.mesh]
             om_min = om_mesh[0]
             om_max = om_mesh[-1]
             n_om = len(om_mesh)
@@ -119,7 +118,7 @@ class SumkDFTTools(SumkDFT):
         for ik in mpi.slice_array(ikarray):
 
             G_latt_w = self.lattice_gf(
-                ik=ik, mu=mu, iw_or_w="w", broadening=broadening, mesh=mesh, with_Sigma=with_Sigma, with_dc=with_dc)
+                ik=ik, mu=mu, broadening=broadening, mesh=mesh, with_Sigma=with_Sigma, with_dc=with_dc)
             G_latt_w *= self.bz_weights[ik]
 
             # Non-projected DOS
@@ -218,10 +217,9 @@ class SumkDFTTools(SumkDFT):
         DOSproj_orb : Dict of numpy arrays
                       DOS projected to atoms and resolved into orbital contributions.
         """
-        if (mesh is None) and (not with_Sigma):
-            raise ValueError("lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq.")
-        if mesh is None:
-            om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
+        if mesh is None or with_Sigma:
+            assert isinstance(self.mesh, MeshReFreq), "mesh must be given if self.mesh is a MeshImFreq"
+            om_mesh = [x.real for x in self.mesh]
             om_min = om_mesh[0]
             om_max = om_mesh[-1]
             n_om = len(om_mesh)
@@ -255,7 +253,7 @@ class SumkDFTTools(SumkDFT):
         for ik in mpi.slice_array(ikarray):
 
             G_latt_w = self.lattice_gf(
-                ik=ik, mu=mu, iw_or_w="w", broadening=broadening, mesh=mesh, with_Sigma=with_Sigma, with_dc=with_dc)
+                ik=ik, mu=mu, broadening=broadening, mesh=mesh, with_Sigma=with_Sigma, with_dc=with_dc)
             G_latt_w *= self.bz_weights[ik]
 
             # Non-projected DOS
@@ -350,10 +348,9 @@ class SumkDFTTools(SumkDFT):
         if self.symm_op:
             self.symmpar = Symmetry(self.hdf_file, subgroup=self.symmpar_data)
 
-        if (mesh is None) and (not with_Sigma):
-            raise ValueError("lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq.")
-        if mesh is None:
-            om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
+        if mesh is None or with_Sigma:
+            assert isinstance(self.mesh, MeshReFreq), "mesh must be given if self.mesh is a MeshImFreq"
+            om_mesh = [x.real for x in self.mesh]
             om_min = om_mesh[0]
             om_max = om_mesh[-1]
             n_om = len(om_mesh)
@@ -389,7 +386,7 @@ class SumkDFTTools(SumkDFT):
         for ik in mpi.slice_array(ikarray):
 
             G_latt_w = self.lattice_gf(
-                ik=ik, mu=mu, iw_or_w="w", broadening=broadening, mesh=mesh, with_Sigma=with_Sigma, with_dc=with_dc)
+                ik=ik, mu=mu, broadening=broadening, mesh=mesh, with_Sigma=with_Sigma, with_dc=with_dc)
             G_latt_w *= self.bz_weights[ik]
 
             # Non-projected DOS
@@ -502,10 +499,9 @@ class SumkDFTTools(SumkDFT):
           if not value_read:
             return value_read
 
-        if (mesh is None) and (not with_Sigma):
-            raise ValueError("lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq.")
-        if mesh is None:
-            om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
+        if mesh is None or with_Sigma:
+            assert isinstance(self.mesh, MeshReFreq), "mesh must be given if self.mesh is a MeshImFreq"
+            om_mesh = [x.real for x in self.mesh]
             om_min = om_mesh[0]
             om_max = om_mesh[-1]
             n_om = len(om_mesh)
@@ -532,7 +528,7 @@ class SumkDFTTools(SumkDFT):
         for ik in mpi.slice_array(ikarray):
 
             G_latt_w = self.lattice_gf(
-                ik=ik, mu=mu, iw_or_w="w", broadening=broadening, mesh=mesh, with_Sigma=with_Sigma, with_dc=with_dc)
+                ik=ik, mu=mu, broadening=broadening, mesh=mesh, with_Sigma=with_Sigma, with_dc=with_dc)
             G_latt_w *= self.bz_weights[ik]
             if(nk!=None):
               for iom in range(n_om):
@@ -667,8 +663,9 @@ class SumkDFTTools(SumkDFT):
         if not value_read:
           return value_read
 
-        if with_Sigma is True:
-            om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
+        if with_Sigma is True or mesh is None:
+            assert isinstance(self.mesh, MeshReFreq), "SumkDFT.mesh must be real if with_Sigma is True or mesh is not given"
+            om_mesh = [x.real for x in self.mesh]
             #for Fermi Surface calculations
             if FS:
               jw=[i for i in range(len(om_mesh)) if om_mesh[i] == 0.0]
@@ -690,17 +687,6 @@ class SumkDFTTools(SumkDFT):
             mesh = (om_min, om_max, n_om)
             if broadening is None:
                broadening=0.0
-        elif mesh is None:
-        #default is to set "mesh" to be just for the Fermi surface - omega=0.0
-            om_min = 0.000
-            om_max = 0.001
-            n_om = 3
-            mesh = (om_min, om_max, n_om)
-            om_mesh = numpy.linspace(om_min, om_max, n_om)
-            if broadening is None:
-               broadening=0.01
-            FS=True
-            jw=[i for i in range(len(om_mesh)) if((om_mesh[i]<=om_max)and(om_mesh[i]>=om_min))]
         else:
         #a range of frequencies can be used if desired
             om_min, om_max, n_om = mesh
@@ -732,7 +718,7 @@ class SumkDFTTools(SumkDFT):
             vkc[ik,:] = numpy.matmul(self.bmat,self.vkl[ik,:])
 
             G_latt_w = self.lattice_gf(
-                ik=ik, mu=mu, iw_or_w="w", broadening=broadening, mesh=mesh, with_Sigma=with_Sigma, with_dc=with_dc)
+                ik=ik, mu=mu, broadening=broadening, mesh=mesh, with_Sigma=with_Sigma, with_dc=with_dc)
 
             for iom in range(n_om):
               for bname, gf in G_latt_w:
@@ -854,7 +840,8 @@ class SumkDFTTools(SumkDFT):
         if mu is None:
             mu = self.chemical_potential
         spn = self.spin_block_names[self.SO]
-        mesh = numpy.array([x.real for x in self.Sigma_imp_w[0].mesh])
+        mesh = [x.real for x in self.mesh]
+        n_om = len(mesh)
 
         if plot_range is None:
             om_minplot = mesh[0] - 0.001
@@ -881,8 +868,7 @@ class SumkDFTTools(SumkDFT):
         ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
 
-            G_latt_w = self.lattice_gf(
-                ik=ik, mu=mu, iw_or_w="w", broadening=broadening)
+            G_latt_w = self.lattice_gf(ik=ik, mu=mu, broadening=broadening)
 
             if ishell is None:
                 # Non-projected A(k,w)
@@ -953,7 +939,7 @@ class SumkDFTTools(SumkDFT):
 
         return Akw
 
-    def partial_charges(self, beta=40, mu=None, with_Sigma=True, with_dc=True):
+    def partial_charges(self, mu=None, with_Sigma=True, with_dc=True):
         """
         Calculates the orbitally-resolved density matrix for all the orbitals considered in the input, consistent with
         the definition of Wien2k. Hence, (possibly non-orthonormal) projectors have to be provided in the partial projectors subgroup of
@@ -995,23 +981,16 @@ class SumkDFTTools(SumkDFT):
         # Set up G_loc
         gf_struct_parproj = [[(sp, self.shells[ish]['dim']) for sp in spn]
                              for ish in range(self.n_shells)]
-        if with_Sigma:
-            G_loc = [BlockGf(name_block_generator=[(block, GfImFreq(target_shape=(block_dim, block_dim), mesh=self.Sigma_imp_iw[0].mesh))
-                                                   for block, block_dim in gf_struct_parproj[ish]], make_copies=False)
-                     for ish in range(self.n_shells)]
-            beta = self.Sigma_imp_iw[0].mesh.beta
-        else:
-            G_loc = [BlockGf(name_block_generator=[(block, GfImFreq(target_shape=(block_dim, block_dim), beta=beta))
-                                                   for block, block_dim in gf_struct_parproj[ish]], make_copies=False)
-                     for ish in range(self.n_shells)]
+        G_loc = [BlockGf(name_block_generator=[(block, GfImFreq(target_shape=(block_dim, block_dim), mesh=self.mesh))
+                                                for block, block_dim in gf_struct_parproj[ish]], make_copies=False)
+                    for ish in range(self.n_shells)]
         for ish in range(self.n_shells):
             G_loc[ish].zero()
 
         ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
 
-            G_latt_iw = self.lattice_gf(
-                ik=ik, mu=mu, iw_or_w="iw", beta=beta, with_Sigma=with_Sigma, with_dc=with_dc)
+            G_latt_iw = self.lattice_gf(ik=ik, mu=mu, with_Sigma=with_Sigma, with_dc=with_dc)
             G_latt_iw *= self.bz_weights[ik]
             for ish in range(self.n_shells):
                 tmp = G_loc[ish].copy()
@@ -1207,7 +1186,7 @@ class SumkDFTTools(SumkDFT):
         # Define mesh for Green's function and in the specified energy window
         if (with_Sigma == True):
             self.omega = numpy.array([round(x.real, 12)
-                                      for x in self.Sigma_imp_w[0].mesh])
+                                      for x in self.mesh])
             mesh = None
             mu = self.chemical_potential
             n_om = len(self.omega)
@@ -1225,13 +1204,13 @@ class SumkDFTTools(SumkDFT):
                 # In the future there should be an option in gf to manipulate the mesh (e.g. truncate) directly.
                 # For now we stick with this:
                 for icrsh in range(self.n_corr_shells):
-                    Sigma_save = self.Sigma_imp_w[icrsh].copy()
+                    Sigma_save = self.Sigma_imp[icrsh].copy()
                     spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
                     glist = lambda: [GfReFreq(target_shape=(block_dim, block_dim), window=(self.omega[
                                               0], self.omega[-1]), n_points=n_om) for block, block_dim in self.gf_struct_sumk[icrsh]]
                     self.Sigma_imp_w[icrsh] = BlockGf(
                         name_list=spn, block_list=glist(), make_copies=False)
-                    for i, g in self.Sigma_imp_w[icrsh]:
+                    for i, g in self.Sigma_imp[icrsh]:
                         for iL in g.indices[0]:
                             for iR in g.indices[0]:
                                 for iom in range(n_om):
@@ -1267,8 +1246,7 @@ class SumkDFTTools(SumkDFT):
         ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
             # Calculate G_w  for ik and initialize A_kw
-            G_w = self.lattice_gf(ik, mu, iw_or_w="w", beta=beta,
-                                  broadening=broadening, mesh=mesh, with_Sigma=with_Sigma)
+            G_w = self.lattice_gf(ik, mu, broadening=broadening, mesh=mesh, with_Sigma=with_Sigma)
             A_kw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_)
                     for isp in range(n_inequiv_spin_blocks)]
 
