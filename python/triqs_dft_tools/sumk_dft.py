@@ -516,7 +516,7 @@ class SumkDFT(object):
             mu = self.chemical_potential
         ntoi = self.spin_names_to_ind[self.SO]
         spn = self.spin_block_names[self.SO]
-        if self.Sigma_imp is None:
+        if not hasattr(self, "Sigma_imp"):
             with_Sigma = False
         if broadening is None:
             if mesh is None:
@@ -652,7 +652,7 @@ class SumkDFT(object):
                 self.calculate_min_max_band_energies()
             mesh = numpy.array([i for i in self.mesh.values()])
             if mesh[0] > (self.min_band_energy - self.chemical_potential) or mesh[-1] < (self.max_band_energy - self.chemical_potential):
-                warn('The given Sigma is on a mesh which does not cover the band energy range. The Sigma MeshReFreq runs from %f to %f, while the band energy (minus the chemical potential) runs from %f to %f'%(Sigma_mesh[0], Sigma_mesh[-1], self.min_band_energy, self.max_band_energy))
+                warn('The given Sigma is on a mesh which does not cover the band energy range. The Sigma MeshReFreq runs from %f to %f, while the band energy (minus the chemical potential) runs from %f to %f'%(mesh[0], mesh[-1], self.min_band_energy, self.max_band_energy))
 
     def transform_to_sumk_blocks(self, Sigma_imp, Sigma_out=None):
         r""" transform Sigma from solver to sumk space

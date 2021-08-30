@@ -28,8 +28,8 @@ from triqs.utility.h5diff import h5diff
 
 SK = SumkDFTTools(hdf_file = 'SrVO3.ref.h5')
 
-dm = SK.density_matrix(method = 'using_gf', beta = 40)
-dm_pc = SK.partial_charges(beta=40,with_Sigma=False,with_dc=False)
+dm = SK.density_matrix(method = 'using_gf')
+dm_pc = SK.partial_charges(with_Sigma=False, with_dc=False)
 
 with HDFArchive('sumkdft_basic.out.h5','w') as ar:
     ar['dm'] = dm
