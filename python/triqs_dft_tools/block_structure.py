@@ -416,8 +416,12 @@ class BlockStructure(object):
             new_gf_struct[ish][block]=list of indices in that block.
         """
 
+        assert len(self.gf_struct_solver) == len(new_gf_struct),\
+            "new_gf_struct has the wrong length"
+
+
         for ish in range(len(self.gf_struct_solver)):
-            gf_struct = new_gf_struct[ish]
+            gf_struct = new_gf_struct[ish].copy()
 
             # create new solver_to_sumk
             so2su = {}
@@ -507,7 +511,7 @@ class BlockStructure(object):
         """
         eff_trans_sumk = self.effective_transformation_sumk
 
-        assert len(eff_trans_sumk) == len(new_gf_struct),\
+        assert len(self.gf_struct_solver) == len(new_gf_struct),\
             "new_gf_struct has the wrong length"
 
         new_gf_struct_transformed = copy.deepcopy(new_gf_struct)
