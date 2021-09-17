@@ -27,7 +27,7 @@ endif()
 
 # ############
 # Define Project
-project(app4triqs VERSION 3.0.0 LANGUAGES C CXX)
+project(app4triqs VERSION 3.1.0 LANGUAGES C CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # ############
