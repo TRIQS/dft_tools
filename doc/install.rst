@@ -2,6 +2,8 @@
 
 .. _install:
 
+Installation
+************
 
 Packaged Versions of DFTTools
 =============================

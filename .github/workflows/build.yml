@@ -39,6 +39,7 @@ jobs:
         libclang-12-dev
         libc++-12-dev
         libc++abi-12-dev
+        libomp-12-dev
         libfftw3-dev
         libgfortran5
         libgmp-dev

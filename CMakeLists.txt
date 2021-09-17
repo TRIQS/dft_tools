@@ -19,11 +19,8 @@
 #
 # ##############################################################################
 
-cmake_minimum_required(VERSION 3.9.6 FATAL_ERROR)
-cmake_policy(VERSION 3.9.6)
-if(POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
+cmake_minimum_required(VERSION 3.12.4 FATAL_ERROR)
+cmake_policy(VERSION 3.12.4)
 if(POLICY CMP0077)
   cmake_policy(SET CMP0077 NEW)
 endif()

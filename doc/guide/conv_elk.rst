@@ -3,20 +3,20 @@
 Interface with Elk
 =====================
 
-This is the first iteration of the Elk-TRIQS interface, so certain inputs may change in later updates. The Elk part of the interface is not currently in the main distribution, but it can be found :ref:`here <https://github.com/AlynJ/Elk_interface-TRIQS>`.
+This is the first iteration of the Elk-TRIQS interface, so certain inputs may change in later updates. The Elk part of the interface is not currently in the main distribution, but it can be found `here <https://github.com/AlynJ/Elk_interface-TRIQS>`_.
 
 We assume that the user has obtained a self-consistent solution of the
 Kohn-Sham equations with Elk (a full tutorial can be found here :ref:`Elk SVO tutorial <SrVO3_elk>`). Also, the user needs to be familiar with the main in/output files of Elk, and how to run
-the DFT code. Further information about Elk can be found on the :ref:`official Elk website <http://elk.sourceforge.net/>`.
+the DFT code. Further information about Elk can be found on the `official Elk website <http://elk.sourceforge.net/>`_.
 
 Conversion for the DMFT self-consistency cycle
 ----------------------------------------------
 
 Once the user has obtained the groundstate calculation, they will have to rerun Elk but with some small changes to the inputs in the elk.in file which will be explained below. The Elk part of the interface calculates and outputs the Wannier projectors. All downfolding related flags are set in the elk input file, and Elk determines automatically by symmetry equivalent sites. The TRIQS Elk converter then reads in these projectors along with the other Elk ascii files which would have been generated in the Elk ground state calculation. This information is then packed into the HDF5 file.
 
-In the following, we use SrVO3 as an example to explain the flags required in the elk.in input file. An example elk.in of SrVO3 is available in the :ref:`SrVO3 tutorial <elk_SVO>`.
+In the following, we use SrVO3 as an example to explain the flags required in the elk.in input file. An example elk.in of SrVO3 is available in the :ref:`SrVO3 tutorial <SrVO3_elk>`:
 
-.. literalinclude:: ../tutorials/images_scripts/elk.in_SVO
+.. literalinclude:: ../tutorials/svo_elk/elk.in
 
 
 The projectors are generated in Elk using these alterations in the elk.in file::
@@ -135,7 +135,7 @@ This outputs the total spectral function and the partial spectral function if en
 
 
 Spectral function Contour Plots (Fermi Surfaces) from Elk inputs
----------------------------------------------------------------
+-----------------------------------------------------------------
 
 Here, we will discuss how to plot the Fermi surface contour or any other non-zero omega spectral function contour plot. This is currently tailored for the Elk inputs. From this point, we will refer to these contours as Fermi surfaces. The energy eigenvalues, projectors and so on required for the Fermi surface plot needs to be outputed from Elk. This is done by using::
 

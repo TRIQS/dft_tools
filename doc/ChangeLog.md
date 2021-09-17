@@ -1,5 +1,9 @@
-Version 3.0.0
-=============
+(changelog)=
+
+# Changelog
+
+## Version 3.0.0
+
 
 DFTTools Version 3.0.0 is a major release that
 
@@ -10,12 +14,12 @@ DFTTools Version 3.0.0 is a major release that
 * brings a major update of the block structure functionalities especially for SOC calculations, with detailed documentation and tutorials. Allows more control over the block structure coming from DFT, cutting out certain orbitals or throwing away off-diagonal elements when preparing input for the solver.
 * New option in dmftproj to select the projection window using band indices instead of energie
 
-Restructuring
--------------
+### Restructuring
+
 To be aligned with other applications for TRIQS, various files and folders had to be moved to new locations. The c++, fortran and python parts all are now in separate folders. The converter files have been more logically split into their own folders and name spaces. For example the Vasp converter is now located under `python/triqs_dft_tools/converters/vasp.py`. Especially the test folder structure was adapted to fit to the app4triqs skeleton, which separate folders for C++ and python tests.
 
-Dependency Management
---------------------
+### Dependency Management
+
 We are managing the interdependencies of the various library components of triqs now using cmake.
 Per default cmake will pull those dependencies from their corresponding
 GitHub repositories, build them, and install these components together
@@ -27,8 +31,8 @@ This behavior can be altered using the additional cmake options
 
 during the configuration step. See also the TRIQS documentation for more detailed instructions.
 
-Other Changes:
--------------
+### Other Changes:
+
 * Run port_to_triqs3 script
 * Port py files to python3
 * Update triqs python module name
@@ -69,8 +73,7 @@ Thanks to all commit-contributors (in alphabetical order):
 Markus Aichhorn, Alexander Hampel, Gernot Kraberger, Oleg Peil, Hermann Schnait, Malte Schueler, Nils Wentzell, Manuel Zingl
 
 
-Version 2.2.1
-=============
+## Version 2.2.1
 
 DFTTools Version 2.2.1 makes the application available
 through the Anaconda package manager. We adjust
@@ -81,8 +84,7 @@ We provide a more detailed description of the changes below.
 * Add a LICENSE and AUTHORS file to the repository
 
 
-Version 2.2.0
-=============
+## Version 2.2.0
 
 * Ensure that the chemical potential calculations results in a real number
 * Fix a bug in reading Wien2k optics files in SO/SP cases
@@ -95,8 +97,7 @@ Thanks to all commit-contributors (in alphabetical order):
 Markus Aichhorn, Dylan Simon, Erik van Loon, Nils Wentzell, Manuel Zingl
 
 
-Version 2.1.x (changes since 1.4)
-=================================
+## Version 2.1.x (changes since 1.4)
 
 * Added Debian Packaging
 * Compatibility changes for TRIQS 2.1.x

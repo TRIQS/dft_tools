@@ -1,3 +1,8 @@
+.. _about:
+
+About
+******
+
 License
 =======
 
