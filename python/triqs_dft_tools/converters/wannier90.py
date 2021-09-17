@@ -41,6 +41,8 @@
 #   this might fail in presence of degenerate eigenvalues (now just prints warning)
 # - make the code more MPI safe (error handling): if we run with more than one process
 #   and an error occurs on the masternode, the calculation does not abort
+# - in case of disentanglement, the outer window being close to Kohn-Sham energies
+#   can cause a problem in creating the udis_mat in read_wannier90data
 ###
 
 

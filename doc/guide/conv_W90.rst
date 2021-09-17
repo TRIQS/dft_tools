@@ -1,30 +1,36 @@
 .. _convW90:
 
-Wannier90 Converter
-===================
+Interface with Wannier90
+========================
 
-Using this converter it is possible to convert the output of
-`wannier90 <http://wannier.org>`_
-Maximally Localized Wannier Functions (MLWF) and create a HDF5 archive
-suitable for one-shot DMFT calculations with the
-:class:`SumkDFT <dft.sumk_dft.SumkDFT>` class.
+This interface allows to convert the output of `wannier90 <http://wannier.org>`_
+Maximally Localized Wannier Functions (MLWF) and create a HDF5 archive suitable for DMFT calculations with the
+:class:`SumkDFT <dft.sumk_dft.SumkDFT>` class. The tasks are parallelized with MPI.
 
-The user must supply two files in order to run the Wannier90 Converter:
+The converter can be run in two different modes, which are specified with the keyword ``bloch_basis`` in the call::
+
+    from triqs_dft_tools.converters import Wannier90Converter
+    Converter = Wannier90Converter(seedname='seedname', bloch_basis=False, rot_mat_type='hloc_diag', add_lambda=None)
+
+Here and in the following, the keyword ``seedname`` should always be intended
+as a placeholder for the actual prefix chosen by the user when creating the
+input for :program:`wannier90`.
+
+Orbital mode
+---------------
+
+In the default mode (``bloch_basis = False``), the Converter writes the Hamiltonian in orbital basis, in which case
+the projector functions are trivial identity matrices. The user must supply two files:
 
 #. The file :file:`seedname_hr.dat`, which contains the DFT Hamiltonian
-   in the MLWF basis calculated through :program:`wannier90` with ``hr_plot = true``
+   in the MLWF basis calculated through :program:`wannier90` with ``write_hr = true``
    (please refer to the :program:`wannier90` documentation).
 #. A file named :file:`seedname.inp`, which contains the required
    information about the :math:`\mathbf{k}`-point mesh, the electron density,
    the correlated shell structure, ... (see below).
 
-Here and in the following, the keyword ``seedname`` should always be intended
-as a placeholder for the actual prefix chosen by the user when creating the
-input for :program:`wannier90`.
 Once these two files are available, one can use the converter as follows::
 
-    from triqs_dft_tools.converters import Wannier90Converter
-    Converter = Wannier90Converter(seedname='seedname')
     Converter.convert_dft_input()
 
 The converter input :file:`seedname.inp` is a simple text file with
@@ -84,15 +90,57 @@ In our `Pnma`-LaVO\ :sub:`3` example, for instance, we could use::
 where the ``x=-1,1,0`` option indicates that the V--O bonds in the octahedra are
 rotated by (approximatively) 45 degrees with respect to the axes of the `Pbnm` cell.
 
-The last line of :file:`seedname.inp` is the DFT Fermi energy (in eV), which is subtracted from the onsite terms in the :file:`seedname_hr.dat` file. This is recommended since some functions in DFTTools  implicitly assume a Fermi energy of 0 eV. 
+The last line of :file:`seedname.inp` is the DFT Fermi energy (in eV), which is subtracted from the onsite
+terms in the :file:`seedname_hr.dat` file. This is recommended since some functions in DFTTools implicitly
+assume a Fermi energy of 0 eV. 
+
+In the orbital mode the Converter supports the addition of a local spin-orbit term, if the Wannier Hamiltonian
+describes a t\ :sub:`2g` manifold. Currently, the correct interaction term is only implemented if the default
+orbital order of :program:`wannier90` is maintained, i.e. it is assumed to be
+:math:`d_{xz,\uparrow}, d_{yz,\uparrow}, d_{xy,\uparrow}, d_{xz,\downarrow}, d_{yz,\downarrow}, d_{xy,\downarrow}`.
+The coupling strength can be specified as ``add_lambda = [lambda_x, lambda_y, lambda_z]``,
+representative of the orbital coupling terms perpendicular to :math:`[x, y, z]` i.e. :math:`[d_{yz}, d_{xz}, d_{xy}]`,
+respectively. Note that it is required to have ``SO=0`` and ``SP=1``.
+
+Band mode
+----------------
+
+If ``bloch_basis = True``, the Converter writes the Hamiltonian in the Kohn-Sham basis that was used to construct
+the Wannier functions. The projector functions are then given by the transformation from Kohn-Sham to orbital basis.
+Note that to do so :program:`wannier90` must be run with ``write_u_matrices = true``. Additionally to the files
+described above, the Converter will require the following files:
+
+#. :file:`seedname_u.mat` (and :file:`seedname_u_dis.mat` if disentanglement was used to construct the Wannier functions.) is read to construct the projector functions.
+#. :file:`seedname.eig` is read to get the Kohn-Sham band eigenvalues
+#. :file:`seedname.nnkp` is read to obtain the band indices of the orbitals selected for the Wannier Hamiltonian
+#. :file:`seedname.wout` is read to get the outer energy window to ensure the correct mapping of the disentanglement
+
+Note that in case of disentanglement the user must set the outer energy window (``dis_win_min`` and ``dis_win_max``) explicitly in :program:`wannier90` with an energy
+separation of at least :math:`10^{-4}` to the band energies. This means in particular that one should not use the default energy window to avoid subtle bugs.
+
+Additionally, to keep the dimension of the lattice Green's function reasonable, it is recommendable to use the exclude_bands tag for bands completely outside of the energy window.
+
+The Converter currently works with Quantum Espresso and VASP. Additional files are required for each case to obtain
+the Fermi weights:
+
+#. :file:`seedname.nscf.out` for Quantum Espresso (the NSCF run must contain the flag ``verbosity = 'high'``)
+#. :file:`OUTCAR` and :file:`LOCPROJ` for VASP
+
+Note that in the band mode the user input of the :math:`k`-mesh and the Fermi energy in :file:`seedname.inp` are ignored, since both quantities
+are automatically read from the :program:`wannier90` and DFT output. However, the :math:`k`-mesh parameter still has to be specified to comply with the file format.
+
+Rotation matrix
+------------------
 
 The converter will analyse the matrix elements of the local Hamiltonian
 to find the symmetry matrices `rot_mat` needed for the global-to-local
 transformation of the basis set for correlated orbitals
 (see section :ref:`hdfstructure`).
-The matrices are obtained by finding the unitary transformations that diagonalize
+If ``rot_mat_type='hloc_diag'``, the matrices are obtained by finding the unitary transformations that diagonalize
 :math:`\langle w_i | H_I(\mathbf{R}=0,0,0) | w_j \rangle`, where :math:`I` runs
 over the correlated shells and `i,j` belong to the same shell (more details elsewhere...).
+If ``rot_mat_type='wannier'``, the matrix for the first correlated shell per impurity will be identity, defining the reference frame,
+while the rotation matrices of all other equivalent shells contain the correct mapping into this reference frame.
 If two correlated shells are defined as equivalent in :file:`seedname.inp`,
 then the corresponding eigenvalues have to match within a threshold of 10\ :sup:`-5`,
 otherwise the converter will produce an error/warning.
@@ -100,20 +148,17 @@ If this happens, please carefully check your data in :file:`seedname_hr.dat`.
 This method might fail in non-trivial cases (i.e., more than one correlated
 shell is present) when there are some degenerate eigenvalues:
 so far tests have not shown any issue, but one must be careful in those cases
-(the converter will print a warning message).
+(the converter will print a warning message and turns off the use of rotation matrices,
+which leads to an incorrect mapping between equivalent correlated shells).
+
+Current limitations
+----------------------------------------------
 
 The current implementation of the Wannier90 Converter has some limitations:
 
 * Since :program:`wannier90` does not make use of symmetries (symmetry-reduction
   of the :math:`\mathbf{k}`-point grid is not possible), the converter always
   sets ``symm_op=0`` (see the :ref:`hdfstructure` section).
-* No charge self-consistency possible at the moment.
-* Calculations with spin-orbit (``SO=1``) are not supported.
 * The spin-polarized case (``SP=1``) is not yet tested.
-* The post-processing routines in the module
-  :class:`SumkDFTTools <dft.sumk_dft_tools.SumkDFTTools>`
-  were not tested with this converter.
 * ``proj_mat_all`` are not used, so there are no projectors onto the
   uncorrelated orbitals for now.
-
-
