@@ -543,12 +543,12 @@ class SumkDFT(object):
             sigma_minus_dc = [s.copy() for s in Sigma_imp]
             if with_dc:
                 sigma_minus_dc = self.add_dc()
-            if isinstance(self.mesh, MeshReFreq) and broadening > 0 and mpi.is_master_node():
+            mesh = Sigma_imp[0].mesh
+            if isinstance(mesh, MeshReFreq) and broadening > 0 and mpi.is_master_node():
                 warn('lattice_gf called with Sigma and broadening > 0 (broadening = {}). You might want to explicitly set the broadening to 0.'.format(broadening))
         elif not mesh is None:
             mesh = MeshReFreq(mesh[0], mesh[1], mesh[2])
-
-        if mesh is None:
+        else:
             mesh = self.mesh
 
         # Set up G_latt
