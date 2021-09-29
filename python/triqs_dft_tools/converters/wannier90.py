@@ -41,6 +41,8 @@
 #   this might fail in presence of degenerate eigenvalues (now just prints warning)
 # - make the code more MPI safe (error handling): if we run with more than one process
 #   and an error occurs on the masternode, the calculation does not abort
+# - in case of disentanglement, the outer window being close to Kohn-Sham energies
+#   can cause a problem in creating the udis_mat in read_wannier90data
 ###
 
 
@@ -456,8 +458,16 @@ class Wannier90Converter(ConverterTools):
                 # corresponds to W90 result
                 wannier_ham = self.fourier_ham(hamr_full[isp])
                 for ik in range(self.n_k):
-                    proj_mat_flattened = proj_mat[ik, isp].reshape(self.nwfs, numpy.max(n_orbitals))
+                    proj_mat_flattened = numpy.zeros((numpy.max(n_orbitals), numpy.max(n_orbitals)), dtype=complex)
+                    iorb = 0
+                    for icrsh in range(n_corr_shells):
+                        dim = corr_shells[icrsh]['dim']
+                        proj_mat_flattened[iorb:iorb+dim,:] = proj_mat[ik, isp][icrsh,0:dim,:].reshape(dim, numpy.max(n_orbitals))
+                        iorb += dim
                     downfolded_ham = proj_mat_flattened.dot(hamk[ik].dot(proj_mat_flattened.conj().T))
+                    if dim_corr_shells < numpy.max(n_orbitals):
+                        downfolded_ham = downfolded_ham[:dim_corr_shells,:dim_corr_shells]
+                        wannier_ham[ik] = wannier_ham[ik][:dim_corr_shells,:dim_corr_shells]
 
                     if not numpy.allclose(downfolded_ham, wannier_ham[ik], atol=1e-4, rtol=0):
                         mpi.report('WARNING: mismatch between downfolded Hamiltonian and '
