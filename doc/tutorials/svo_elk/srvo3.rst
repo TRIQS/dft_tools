@@ -1,6 +1,6 @@
 .. _SrVO3_elk:
 
-This example is almost identical to the :ref:`Wien2k-TRIQS SrVO3 example <SrVO3>`. On the example of SrVO3 we will discuss now how to set up a full working calculation using Elk, including the initialization of the :ref:`CTHYB solver <triqscthyb:welcome>`. Some additional parameter are introduced to make the calculation more efficient. This is a more advanced example, which is also suited for parallel execution. 
+This example is almost identical to the :ref:`Wien2k-TRIQS SrVO3 example <SrVO3>`. On the example of SrVO3 we will discuss now how to set up a full working calculation using Elk, including the initialization of the :ref:`CTHYB solver <https://triqs.github.io/cthyb/latest>`_. Some additional parameter are introduced to make the calculation more efficient. This is a more advanced example, which is also suited for parallel execution. 
 
 For the convenience of the user, we provide also a full python script (:download:`dft_dmft_cthyb_elk.py <dft_dmft_cthyb_elk.py>`). The user has to adapt it to their own needs. How to execute your script is described :ref:`here<runpy>`.
 
@@ -48,7 +48,7 @@ First, we load the necessary modules::
   import triqs.utility.mpi as mpi
 
 The last two lines load the modules for the construction of the
-:ref:`CTHYB solver <triqscthyb:welcome>`.
+:ref:`CTHYB solver <https://triqs.github.io/cthyb/latest/>`_.
 
 Initializing SumkDFT
 --------------------
@@ -73,7 +73,7 @@ And next, we can initialize the :class:`SumkDFT <dft.sumk_dft.SumkDFT>` class::
 Initializing the solver
 -----------------------
 
-We also have to specify the :ref:`CTHYB solver <triqscthyb:welcome>` related settings. We assume that the DMFT script for SrVO3 is executed on 16 cores. A sufficient set of parameters for a first guess is::
+We also have to specify the :ref:`CTHYB solver <https://triqs.github.io/cthyb/latest>`_ related settings. We assume that the DMFT script for SrVO3 is executed on 16 cores. A sufficient set of parameters for a first guess is::
 
   p = {}
   # solver
@@ -86,7 +86,7 @@ We also have to specify the :ref:`CTHYB solver <triqscthyb:welcome>` related set
   p["fit_min_n"] = 30
   p["fit_max_n"] = 60
 
-Here we use a tail fit to deal with numerical noise of higher Matsubara frequencies. For other options and more details on the solver parameters, we refer to :ref:`CTHYB solver <triqscthyb:welcome>` documentation. It is important to note that the solver parameters have to be adjusted for each material individually. A guide on how to set the tail fit parameters is given :ref:`below <tailfit>`.
+Here we use a tail fit to deal with numerical noise of higher Matsubara frequencies. For other options and more details on the solver parameters, we refer to the :ref:`CTHYB solver <https://triqs.github.io/cthyb/latest/reference/constr_parameters.html>`_ documentation. It is important to note that the solver parameters have to be adjusted for each material individually. A guide on how to set the tail fit parameters is given :ref:`below <tailfit>`.
 
 The next step is to initialize the :class:`solver class <triqs_cthyb.Solver>`. It consist of two parts:
 
