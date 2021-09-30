@@ -10,7 +10,7 @@ Packaged Versions of DFTTools
 Ubuntu Debian packages
 ----------------------
 
-We provide a Debian package for the Ubuntu LTS Versions 16.04 (xenial) and 18.04 (bionic), which can be installed by following the steps outlined :ref:`here <triqslibs:triqs_debian>`, and the subsequent command::
+We provide a Debian package for the Ubuntu LTS Versions 18.04 (bionic) and 20.04 (focal), which can be installed by following the steps outlined :ref:`here <triqslibs:ubuntu_debian>`, and the subsequent command::
 
         sudo apt-get install -y triqs_dft_tools
 
@@ -37,9 +37,9 @@ Compiling DFTTools from source
 Prerequisites
 -------------
 
-#. The :ref:`TRIQS <triqslibs:welcome>` library, see :ref:`TRIQS installation instruction <triqslibs:installation>`.
+#. The :ref:`TRIQS <triqslibs:welcome>` library, see :ref:`TRIQS installation instruction <triqslibs:triqs_install>`.
    In the following, we assume that TRIQS is installed in the directory ``path_to_triqs``.
-#. Likely, you will also need at least one impurity solver, e.g. the :ref:`CTHYB solver <triqscthyb:welcome>`.
+#. Likely, you will also need at least one impurity solver, e.g. the `CTHYB solver <https://triqs.github.io/cthyb/latest/>`_.
 
 Installation steps
 ------------------
