@@ -57,6 +57,11 @@ class SumkDFT(object):
                   The value of magnetic field to add to the DFT Hamiltonian.
                   The contribution -h_field*sigma is added to diagonal elements of the Hamiltonian.
                   It cannot be used with the spin-orbit coupling on; namely h_field is set to 0 if self.SO=True.
+        mesh: MeshImFreq or MeshImFreq, optional. Frequency mesh of Sigma.
+        beta : real, optional
+               Inverse temperature. Used to construct imaginary frequency if mesh is not given. 
+        n_iw : integer, optional
+               Number of Matsubara frequencies. Used to construct imaginary frequency if mesh is not given. 
         use_dft_blocks : boolean, optional
                          If True, the local Green's function matrix for each spin is divided into smaller blocks
                           with the block structure determined from the DFT density matrix of the corresponding correlated shell.
@@ -486,13 +491,6 @@ class SumkDFT(object):
         mu : real, optional
              Chemical potential for which the Green's function is to be calculated.
              If not provided, self.chemical_potential is used for mu.
-        iw_or_w : string, optional
-
-                  - `iw_or_w` = 'iw' for a imaginary-frequency self-energy
-                  - `iw_or_w` = 'w' for a real-frequency self-energy
-
-        beta : real, optional
-               Inverse temperature.
         broadening : real, optional
                      Imaginary shift for the axis along which the real-axis GF is calculated.
                      If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
@@ -543,6 +541,8 @@ class SumkDFT(object):
             sigma_minus_dc = [s.copy() for s in Sigma_imp]
             if with_dc:
                 sigma_minus_dc = self.add_dc()
+            if not mesh is None:
+                warn('lattice_gf called with Sigma and given mesh. Mesh will be taken from Sigma.')
             mesh = Sigma_imp[0].mesh
             if isinstance(mesh, MeshReFreq) and broadening > 0 and mpi.is_master_node():
                 warn('lattice_gf called with Sigma and broadening > 0 (broadening = {}). You might want to explicitly set the broadening to 0.'.format(broadening))

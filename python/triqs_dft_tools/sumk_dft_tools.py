@@ -950,8 +950,6 @@ class SumkDFTTools(SumkDFT):
 
         with_Sigma : boolean, optional
                      If True, the self energy is used for the calculation. If false, partial charges are calculated without self-energy correction.
-        beta : double, optional
-               In case the self-energy correction is not used, the inverse temperature where the calculation should be done has to be given here.
         mu : double, optional
              Chemical potential, overrides the one stored in the hdf5 archive.
         with_dc : boolean, optional
