@@ -494,9 +494,8 @@ class SumkDFT(object):
         broadening : real, optional
                      Imaginary shift for the axis along which the real-axis GF is calculated.
                      If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
-        mesh : list, optional
-               Data defining mesh on which the real-axis GF will be calculated, given in the form
-               (om_min,om_max,n_points), where om_min is the minimum omega, om_max is the maximum omega and n_points is the number of points.
+        mesh : MeshReFreq or MeshImFreq, optional
+                    Mesh to be used if with_Sigma=False. If with Sigma=False and mesh is none then self.mesh is used.
         with_Sigma : boolean, optional
                      If True the GF will be calculated with the self-energy stored in self.Sigmaimp_(w/iw), for real/Matsubara GF, respectively.
                      In this case the mesh is taken from the self.Sigma_imp object.
@@ -547,7 +546,7 @@ class SumkDFT(object):
             if isinstance(mesh, MeshReFreq) and broadening > 0 and mpi.is_master_node():
                 warn('lattice_gf called with Sigma and broadening > 0 (broadening = {}). You might want to explicitly set the broadening to 0.'.format(broadening))
         elif not mesh is None:
-            mesh = MeshReFreq(mesh[0], mesh[1], mesh[2])
+            assert isinstance(mesh, MreshReFreq) or isinstance(mesh, MeshImFreq),  "mesh must be a triqs MeshReFreq or MeshImFreq"
         else:
             mesh = self.mesh
 
