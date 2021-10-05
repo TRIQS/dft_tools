@@ -730,7 +730,15 @@ class SumkDFT(object):
         if mu is None:
             mu = self.chemical_potential
 
-        if isinstance(self.mesh, MeshImFreq):
+        if with_Sigma:
+            mesh = self.Sigma_imp[0].mesh
+            if mesh != self.mesh:
+                warn('self.mesh and self.Sigma_imp[0].mesh are differen! Using mesh from Sigma')
+
+        else:
+            mesh = self.mesh
+
+        if isinstance(mesh, MeshImFreq):
             G_loc = [self.Sigma_imp[icrsh].copy() for icrsh in range(
                 self.n_corr_shells)]   # this list will be returned
             beta = G_loc[0].mesh.beta
