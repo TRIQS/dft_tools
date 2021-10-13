@@ -850,15 +850,15 @@ class SumkDFTTools(SumkDFT):
         if mu is None:
             mu = self.chemical_potential
         spn = self.spin_block_names[self.SO]
-        mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
-        n_om = len(mesh)
+        mesh = numpy.array([x.real for x in self.Sigma_imp_w[0].mesh])
 
         if plot_range is None:
             om_minplot = mesh[0] - 0.001
-            om_maxplot = mesh[n_om - 1] + 0.001
+            om_maxplot = mesh[-1] + 0.001
         else:
             om_minplot = plot_range[0]
             om_maxplot = plot_range[1]
+        n_om = len(mesh[(mesh > om_minplot)&(mesh < om_maxplot)])
 
         if ishell is None:
             Akw = {sp: numpy.zeros([self.n_k, n_om], numpy.float_)
@@ -882,14 +882,11 @@ class SumkDFTTools(SumkDFT):
 
             if ishell is None:
                 # Non-projected A(k,w)
-                for iom in range(n_om):
-                    if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
-                        for bname, gf in G_latt_w:
-                            Akw[bname][ik, iom] += gf.data[iom, :,
-                                                           :].imag.trace() / (-1.0 * numpy.pi)
-                        # shift Akw for plotting stacked k-resolved eps(k)
-                        # curves
-                        Akw[bname][ik, iom] += ik * plot_shift
+                for bname, gf in G_latt_w:
+                    Akw[bname][ik] = -gf.data[numpy.where((mesh > om_minplot)&(mesh < om_maxplot))].imag.trace(axis1=1, axis2=2)/numpy.pi
+                    # shift Akw for plotting stacked k-resolved eps(k)
+                    # curves
+                    Akw[bname][ik] += ik * plot_shift
 
             else:  # ishell not None
                 # Projected A(k,w):
@@ -907,13 +904,9 @@ class SumkDFTTools(SumkDFT):
                         G_loc[bname] << self.rotloc(
                             ishell, gf, direction='toLocal', shells='all')
 
-                for iom in range(n_om):
-                    if (mesh[iom] > om_minplot) and (mesh[iom] < om_maxplot):
-                        for ish in range(self.shells[ishell]['dim']):
-                            for sp in spn:
-                                Akw[sp][ish, ik, iom] = G_loc[sp].data[
-                                    iom, ish, ish].imag / (-1.0 * numpy.pi)
-
+                for ish in range(self.shells[ishell]['dim']):
+                    for sp in spn:
+                        Akw[sp][ish, ik] = -gf.data[numpy.where((mesh > om_minplot)&(mesh < om_maxplot))].imag.trace(axis1=1, axis2=2)/numpy.pi
         # Collect data from mpi
         for sp in spn:
             Akw[sp] = mpi.all_reduce(mpi.world, Akw[sp], lambda x, y: x + y)
