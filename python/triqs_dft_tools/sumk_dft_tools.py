@@ -153,9 +153,7 @@ class SumkDFTTools(SumkDFT):
         # G_loc can now also be used to look at orbitally-resolved quantities
         for ish in range(self.n_inequiv_shells):
             for bname, gf in G_loc[self.inequiv_to_corr[ish]]:  # loop over spins
-                for iom in range(n_om):
-                    DOSproj[ish][bname][iom] -= gf.data[iom,
-                                                        :, :].imag.trace() / numpy.pi
+                DOSproj[ish][bname] = -gf.data.imag.trace(axis1=1, axis2=2) / numpy.pi
                 DOSproj_orb[ish][bname][
                     :, :, :] += (1.0j*(gf-gf.conjugate().transpose())/2.0/numpy.pi).data[:,:,:]
 
@@ -279,8 +277,7 @@ class SumkDFTTools(SumkDFT):
 
         # G_loc can now also be used to look at orbitally-resolved quantities
         for bname, gf in G_loc_all:  # loop over spins
-            for iom in range(n_om):
-                DOSproj[bname][iom] -= gf.data[iom,:,:].imag.trace() / numpy.pi
+            DOSproj[bname] = -gf.data.imag.trace(axis1=1, axis2=2) / numpy.pi
             DOSproj_orb[bname][:,:,:] += (1.0j*(gf-gf.conjugate().transpose())/2.0/numpy.pi).data[:,:,:]
         # Write to files
         if save_to_file and mpi.is_master_node():
@@ -392,10 +389,8 @@ class SumkDFTTools(SumkDFT):
             G_latt_w *= self.bz_weights[ik]
 
             # Non-projected DOS
-            for iom in range(n_om):
-                for bname, gf in G_latt_w:
-                    DOS[bname][iom] -= gf.data[iom, :, :].imag.trace() / \
-                        numpy.pi
+            for bname, gf in G_latt_w:
+                DOS[bname] -= gf.data.imag.trace(axis1=1, axis2=2) / numpy.pi
 
             # Projected DOS:
             for ish in range(self.n_shells):
@@ -427,9 +422,7 @@ class SumkDFTTools(SumkDFT):
         # G_loc can now also be used to look at orbitally-resolved quantities
         for ish in range(self.n_shells):
             for bname, gf in G_loc[ish]:
-                for iom in range(n_om):
-                    DOSproj[ish][bname][iom] -= gf.data[iom,
-                                                        :, :].imag.trace() / numpy.pi
+                DOSproj[ish][bname] = -gf.data.imag.trace(axis1=1, axis2=2) / numpy.pi
                 DOSproj_orb[ish][bname][
                     :, :, :] += (1.0j*(gf-gf.conjugate().transpose())/2.0/numpy.pi).data[:,:,:]
 
