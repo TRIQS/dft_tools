@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-
 import glob, sys, os
-import itertools
 from numpy import array
 
 def write_indmftpr():
@@ -16,13 +14,14 @@ def write_indmftpr():
     dirname = os.getcwd().rpartition('/')[2]
     if os.path.isfile(dirname + ".indmftpr"):
        found = input("Previous {}.indmftpr detected! Continue? (y/n)\n".format(dirname))
-       if found == "n":
-           sys.exit(0)
+       if found == "n": sys.exit(0)
     with open(dirname + ".indmftpr", "w") as out:
         print("Preparing dmftproj input file : {}\n".format(dirname + ".indmftpr"))
+        if not os.path.isfile(dirname + ".struct"): print("Could not identify a case.struct file!"); sys.exit(-1);
         struct = open(glob.glob("*.struct")[0], "r").readlines()
         species = [line.split()[0] for line in struct if "NPT" in line]
         num_atoms = len(species)
+        print("number of atoms = {} ({})\n".format(str(num_atoms), " ".join(species)))
         out.write(str(num_atoms)+"\n")
         mult = [line.split("=")[1].split()[0] for line in struct if "MULT" in line ]
         out.write(" ".join(mult)+"\n")
@@ -38,19 +37,23 @@ def write_indmftpr():
             corr=input("Do you want to treat ATOM {} ({}) as correlated (y/n)?\n".format(atom+1, species[atom]))
             if corr == "y":
                 proj=input("Specify the correlated orbital? (d,f)\n")
-                non_corr=input("projectors for non-correlated orbitals?\n")
-                projectors=array([0, 0, 0, 0])
-                projectors += array(corr_orbitals[proj])
-                if len(non_corr) > 0:
-                    for p in non_corr:
-                        projectors += array(orbitals[p])
-                out.write(" ".join(list(map(str, projectors)))+"\n")
+                while True:
+                    non_corr=input("projectors for non-correlated orbitals? (type h for help)\n")
+                    if non_corr == "h":
+                        print("indicate orbital projectors using (s, p, d, or f). For multiple, combine them (sp, pd, spd, etc.)")
+                    else:
+                        projectors=array([0, 0, 0, 0])
+                        projectors += array(corr_orbitals[proj])
+                        if len(non_corr) > 0:
+                            for p in non_corr: projectors += array(orbitals[p])
+                        out.write(" ".join(list(map(str, projectors)))+"\n")
+                        break
                 if proj == "d":
                     irrep=input("Split this orbital into it's irreps? (t2g/eg/n)\n")
                     if irrep == "t2g":
                         out.write("0 0 2 0\n")
                         out.write("01\n")
-                    elif irrep == "t2g":
+                    elif irrep == "eg":
                         out.write("0 0 2 0\n")
                         out.write("10\n")
                     else:
@@ -78,7 +81,6 @@ def write_indmftpr():
                 break
             else:
                 print("The energy window ({}) does not contain the Fermi energy!".format(window))
-
     print("initialize {} file ok!".format(dirname + ".indmftpr"))
 
 
