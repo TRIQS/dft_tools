@@ -34,6 +34,7 @@ def write_indmftpr():
                     break
                 else:
                     print("Did not recognize that input. Try again.")
+
             corr=input("Do you want to treat ATOM {} ({}) as correlated (y/n)?\n".format(atom+1, species[atom]))
             if corr == "y":
                 proj=input("Specify the correlated orbital? (d,f)\n")
@@ -41,6 +42,8 @@ def write_indmftpr():
                     non_corr=input("projectors for non-correlated orbitals? (type h for help)\n")
                     if non_corr == "h":
                         print("indicate orbital projectors using (s, p, d, or f). For multiple, combine them (sp, pd, spd, etc.)")
+                    elif len(non_corr) > 0 and proj in non_corr:
+                        print("Error: User can not choose orbital {} as both correlated and uncorrelated!".format(proj))
                     else:
                         projectors=array([0, 0, 0, 0])
                         projectors += array(corr_orbitals[proj])
@@ -50,19 +53,27 @@ def write_indmftpr():
                         break
                 if proj == "d":
                     irrep=input("Split this orbital into it's irreps? (t2g/eg/n)\n")
+                    to_write=""
                     if irrep == "t2g":
-                        out.write("0 0 2 0\n")
-                        out.write("01\n")
+                        to_write += "0 0 2 0\n01\n"
                     elif irrep == "eg":
-                        out.write("0 0 2 0\n")
-                        out.write("10\n")
+                        to_write += "0 0 2 0\n10\n"
                     else:
-                        out.write("0 0 0 0\n")
+                        to_write += "0 0 0 0\n"
+
                 soc=input("Do you want to include soc? (y/n)\n")
                 if soc == "y":
-                    out.write("1\n")
+                    if irrep == "t2g" or irrep == "eg":
+                        print("Warning: For SOC, dmftproj will use the entire d-shell. Using entire d-shell!")
+                        out.write("0 0 0 0\n")
+                        out.write("1\n")
+                    else:
+                        out.write(to_write)
+                        out.write("1\n")
                 else:
+                    out.write(to_write)
                     out.write("0\n")
+
             else: # still identify the projectors
                 while True:
                     proj=input("Specify the projectors that you would like to include? (type h for help)\n")
@@ -75,9 +86,14 @@ def write_indmftpr():
                         out.write("0 0 0 0\n")
                         break
         while True:
-            window=input("Specify the projection window around eF (in Ry)\n")
+            window=input("Specify the projection window around eF (default unit is Ry, specify eV with -X.XX X.XX eV)\n")
             if float(window.split()[0]) < 0 and float(window.split()[1]) > 0:
-                out.write(window)
+                try:
+                    eV2Ry=1.0/13.60566
+                    if window.split()[2] == "ev" or window.split()[2] == "eV" or window.split()[2] == "Ev":
+                        out.write("{0:0.2f} {1:0.2f}".format(float(window.split()[0])*eV2Ry, float(window.split()[1])*eV2Ry))
+                except:
+                    out.write(window)
                 break
             else:
                 print("The energy window ({}) does not contain the Fermi energy!".format(window))
