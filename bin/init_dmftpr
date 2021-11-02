@@ -28,10 +28,24 @@ def write_indmftpr():
         out.write("3\n") 
         for atom in range(num_atoms):
             while True: # input choice of spherical harmonics for atom
-                sph_harm=input("What flavor of spherical harmonics do you want to use for ATOM {} ({})? (cubic/complex)\n".format(atom+1, species[atom]))
-                if sph_harm in ["cubic", "complex"]:
+                sph_harm=input("What flavor of spherical harmonics do you want to use for ATOM {} ({})? (cubic/complex/fromfile)\n".format(atom+1, species[atom]))
+                if sph_harm in ["cubic", "complex", "fromfile"]:
                     out.write(sph_harm+"\n")
+                    if sph_harm == "fromfile":
+                        filename=input("name of file defining the basis?\n")
+                        if len(filename) < 25: # name of file must be less than 25 characters
+                            out.write(filename)
+                        else:
+                            print("{} is too long!".format(filename))
+                            rename=input("Rename the file to: \n")
+                            if os.path.isfile(filename):
+                                os.rename(filename, rename)
+                                out.write(rename+"\n")
+                            else:
+                                print("{} could not be found in the current directory!".format(filename))
+                                sys.exit(1)
                     break
+
                 else:
                     print("Did not recognize that input. Try again.")
 
