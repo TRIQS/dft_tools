@@ -65,15 +65,13 @@ def write_indmftpr():
                             for p in non_corr: projectors += array(orbitals[p])
                         out.write(" ".join(list(map(str, projectors)))+"\n")
                         break
+                to_write = "0 0 0 0\n"
                 if proj == "d":
                     irrep=input("Split this orbital into it's irreps? (t2g/eg/n)\n")
-                    to_write=""
                     if irrep == "t2g":
-                        to_write += "0 0 2 0\n01\n"
+                        to_write = "0 0 2 0\n01\n"
                     elif irrep == "eg":
-                        to_write += "0 0 2 0\n10\n"
-                    else:
-                        to_write += "0 0 0 0\n"
+                        to_write = "0 0 2 0\n10\n"
 
                 soc=input("Do you want to include soc? (y/n)\n")
                 if soc == "y":
