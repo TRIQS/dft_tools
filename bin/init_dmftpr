@@ -75,7 +75,7 @@ def write_indmftpr():
 
                 soc=input("Do you want to include soc? (y/n)\n")
                 if soc == "y":
-                    if irrep == "t2g" or irrep == "eg":
+                    if proj=="d" and ( irrep == "t2g" or irrep == "eg" ):
                         print("Warning: For SOC, dmftproj will use the entire d-shell. Using entire d-shell!")
                         out.write("0 0 0 0\n")
                         out.write("1\n")
