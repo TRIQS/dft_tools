@@ -2007,7 +2007,7 @@ class SumkDFT(object):
                          the corresponing total charge `dens`.
 
         """
-        assert dm_type in ('vasp', 'wien2k','elk'), "'dm_type' must be either 'vasp', 'wienk' or 'elk'"
+        assert dm_type in ('vasp', 'wien2k','elk', 'qe'), "'dm_type' must be either 'vasp', 'wienk', 'elk' or 'qe'"
         #default file names
         if filename is None:
             if dm_type == 'wien2k':
@@ -2016,6 +2016,8 @@ class SumkDFT(object):
                 filename = 'GAMMA'
             elif dm_type == 'elk':
                 filename = 'DMATDMFT.OUT'
+            elif dm_type == 'qe':
+                filename = self.hdf_file
 
 
         assert isinstance(filename, str), ("calc_density_correction: "
@@ -2030,7 +2032,7 @@ class SumkDFT(object):
         band_en_correction = 0.0
 
 # Fetch Fermi weights and energy window band indices
-        if dm_type == 'vasp':
+        if dm_type in ['vasp','qe']:
             fermi_weights = 0
             band_window = 0
             if mpi.is_master_node():
@@ -2069,7 +2071,7 @@ class SumkDFT(object):
                 deltaN[bname][ik] = G_latt_iw[bname].density()
 
                 dens[bname] += self.bz_weights[ik] * G_latt_iw[bname].total_density()
-                if dm_type == 'vasp':
+                if dm_type in ['vasp','qe']:
 # In 'vasp'-mode subtract the DFT density matrix
                     nb = self.n_orbitals[ik, ntoi[bname]]
                     diag_inds = numpy.diag_indices(nb)
@@ -2215,6 +2217,29 @@ class SumkDFT(object):
                                   valim = deltaN[spn[ispn]][ik][inu, imu].imag
                                 f.write(" %.14f  %.14f"%(valre, valim))
                             f.write("\n")
+        
+        elif dm_type == 'qe':
+            assert self.SP == 0, "Spin-polarized density matrix is not implemented"
+
+            subgrp = 'dft_update'
+            delta_N = numpy.zeros([self.n_k, max(self.n_orbitals[:,0]), max(self.n_orbitals[:,0])], dtype=complex)
+            mpi.report(" %i  -1  ! Number of k-points, default number of bands\n"%(self.n_k))
+            for ik in range(self.n_k):
+                ib1 = band_window[0][ik, 0]
+                ib2 = band_window[0][ik, 1]
+                for inu in range(self.n_orbitals[ik, 0]):
+                    for imu in range(self.n_orbitals[ik, 0]):
+                        valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
+                        valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
+                        # write into delta_N
+                        delta_N[ik, inu, imu] = valre + 1j*valim
+            if mpi.is_master_node():
+                with HDFArchive(self.hdf_file, 'a') as ar:
+                    if not subgrp in ar:
+                        ar.create_group(subgrp)
+                    things_to_save = ['delta_N']
+                    for it in things_to_save:
+                        ar[subgrp][it] = locals()[it]
 
 
         else:
@@ -2222,7 +2247,7 @@ class SumkDFT(object):
 
         res = deltaN, dens
 
-        if dm_type == 'vasp':
+        if dm_type in ['vasp', 'qe']:
             res += (band_en_correction,)
 
         return res
