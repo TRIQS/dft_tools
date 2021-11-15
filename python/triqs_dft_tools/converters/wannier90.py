@@ -61,7 +61,8 @@ class Wannier90Converter(ConverterTools):
 
     def __init__(self, seedname, hdf_filename=None, dft_subgrp='dft_input',
                  symmcorr_subgrp='dft_symmcorr_input', misc_subgrp='dft_misc_input',
-                 repacking=False, rot_mat_type='hloc_diag', bloch_basis=False, add_lambda=None):
+                 repacking=False, rot_mat_type='hloc_diag', bloch_basis=False, add_lambda=None,
+                 w90zero=2.e-6):
         """
         Initialise the class.
 
@@ -86,6 +87,8 @@ class Wannier90Converter(ConverterTools):
             Should the Hamiltonian be written in Bloch rather than Wannier basis?
         add_lambda : list of floats, optional
             add local spin-orbit term
+        w90zero : float, optional
+            threshold on symmetry checks of Hamiltonian and rot_mat
         """
 
         self._name = "Wannier90Converter"
@@ -104,7 +107,7 @@ class Wannier90Converter(ConverterTools):
         self.fortran_to_replace = {'D': 'E'}
         # threshold below which matrix elements from wannier90 should be
         # considered equal
-        self._w90zero = 2.e-6
+        self._w90zero = w90zero
         self.rot_mat_type = rot_mat_type
         self.bloch_basis = bloch_basis
         self.add_lambda = add_lambda
@@ -821,10 +824,10 @@ class Wannier90Converter(ConverterTools):
             # equivalent shells
             if not numpy.allclose(eigval_lst[ish], eigval_lst[sh_map[ish]],
                     atol=self._w90zero, rtol=0):
-                mpi.report(
-                    "ERROR: eigenvalue mismatch between equivalent shells! %d" % ish)
+                mpi.report(f'ERROR: eigenvalue mismatch between equivalent shells! {ish:d}')
                 eigval_diff = eigval_lst[ish] - eigval_lst[sh_map[ish]]
-                mpi.report("Eigenvalue difference: " + format(eigval_diff))
+                mpi.report(f'Eigenvalue difference {eigval_diff}, but threshold set to {self._w90zero:.1e}.')
+                mpi.report('Consider lowering threshold if you are certain the mapping is correct.')
                 succeeded = False
 
             # check that rotation matrices are unitary
@@ -833,7 +836,7 @@ class Wannier90Converter(ConverterTools):
             tmp_mat = numpy.dot(rot_mat[ish],rot_mat[ish].conjugate().transpose())
             if not numpy.allclose(tmp_mat, numpy.identity(nw),
                                   atol=self._w90zero, rtol=0):
-                mpi.report("ERROR: rot_mat for shell %d is not unitary!"%(ish))
+                mpi.report(f'ERROR: rot_mat for shell {ish:d} is not unitary!')
                 succeeded = False
 
             # check that rotation matrices map equivalent H(0) blocks as they should
@@ -847,8 +850,11 @@ class Wannier90Converter(ConverterTools):
                     numpy.dot(ham0_lst[ish],tmp_mat))
             if not numpy.allclose(tmp_mat, ham0_lst[sh_map[ish]],
                                   atol=self._w90zero, rtol=0):
-                mpi.report("ERROR: rot_mat does not map H(0) correctly! %d"%(ish))
+                mpi.report(f'ERROR: rot_mat does not map H(0) correctly! {ish:d}')
                 succeeded = False
+
+        # abort in case the rot_mat was not found correctly to avoid the user to ignore ERRORS
+        if not succeeded: mpi.MPI.COMM_WORLD.Abort(1)
 
         return succeeded, rot_mat
 
