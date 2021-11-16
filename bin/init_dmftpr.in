@@ -3,6 +3,14 @@ import glob, sys, os
 from numpy import array
 
 def write_indmftpr():
+    """
+    Usage: init_dmftpr
+    
+    **case.struct file is required for this script.**
+
+    An interactive script to generate the input file (case.indmftpr) for
+    the dmftproj program.
+    """
     orbitals = {"s" : [1, 0, 0, 0],
                 "p" : [0, 1, 0, 0],
                 "d" : [0, 0, 1, 0], 
