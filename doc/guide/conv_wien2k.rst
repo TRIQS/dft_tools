@@ -93,6 +93,8 @@ The third number is an optional flag to switch between different modes:
 In all modes the used energy range, i.e. band range, is printed to the
 :program:`dmftproj` output.
 
+We also provide a simple python script `init_dmftpr` that creates the input file 
+interactively with user input in the shell, when executed in the wien2k run dir. 
 After setting up the :file:`case.indmftpr` input file, you run:
 
   `dmftproj`
