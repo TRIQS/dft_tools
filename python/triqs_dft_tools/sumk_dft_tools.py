@@ -822,8 +822,9 @@ class SumkDFTTools(SumkDFT):
               Data as it is also written to the files.
         """
 
-        assert hasattr(
-            self, "Sigma_imp_w"), "spaghettis: Set Sigma_imp_w first."
+        # check if ReFreqMesh is given
+        assert isinstance(self.mesh, MeshReFreq)
+
         things_to_read = ['n_k', 'n_orbitals', 'proj_mat',
                           'hopping', 'n_parproj', 'proj_mat_all']
         value_read = self.read_input_from_hdf(
@@ -840,7 +841,7 @@ class SumkDFTTools(SumkDFT):
         if mu is None:
             mu = self.chemical_potential
         spn = self.spin_block_names[self.SO]
-        mesh = [x.real for x in self.mesh]
+        mesh = numpy.array([x.value for x in self.mesh])
         n_om = len(mesh)
 
         if plot_range is None:
@@ -858,7 +859,7 @@ class SumkDFTTools(SumkDFT):
             Akw = {sp: numpy.zeros(
                 [self.shells[ishell]['dim'], self.n_k, n_om], numpy.float_) for sp in spn}
 
-        if not ishell is None:
+        if ishell is not None:
             gf_struct_parproj = [
                 (sp, self.shells[ishell]['dim']) for sp in spn]
             G_loc = BlockGf(name_block_generator=[(block, GfReFreq(target_shape=(block_dim, block_dim), mesh=self.Sigma_imp_w[0].mesh))

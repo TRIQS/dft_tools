@@ -59,9 +59,9 @@ class SumkDFT(object):
                   It cannot be used with the spin-orbit coupling on; namely h_field is set to 0 if self.SO=True.
         mesh: MeshImFreq or MeshImFreq, optional. Frequency mesh of Sigma.
         beta : real, optional
-               Inverse temperature. Used to construct imaginary frequency if mesh is not given. 
+               Inverse temperature. Used to construct imaginary frequency if mesh is not given.
         n_iw : integer, optional
-               Number of Matsubara frequencies. Used to construct imaginary frequency if mesh is not given. 
+               Number of Matsubara frequencies. Used to construct imaginary frequency if mesh is not given.
         use_dft_blocks : boolean, optional
                          If True, the local Green's function matrix for each spin is divided into smaller blocks
                           with the block structure determined from the DFT density matrix of the corresponding correlated shell.
@@ -110,7 +110,7 @@ class SumkDFT(object):
                 self.mesh = mesh
             else:
                 raise ValueError('mesh must be a triqs mesh of type MeshImFreq or MeshReFreq')
-                
+
 
             self.block_structure = BlockStructure()
 
@@ -621,12 +621,12 @@ class SumkDFT(object):
         assert len(Sigma_imp) == self.n_corr_shells,\
             "put_Sigma: give exactly one Sigma for each corr. shell!"
 
-        if isinstance(self.mesh, MeshImFreq) and all(isinstance(gf, Gf) and gf.mesh == self.mesh for bname, gf in Sigma_imp[0]):
+        if isinstance(self.mesh, MeshImFreq) and all(isinstance(gf.mesh, MeshImFreq) and isinstance(gf, Gf) and gf.mesh == self.mesh for bname, gf in Sigma_imp[0]):
             # Imaginary frequency Sigma:
             self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, space='sumk')
                                  for icrsh in range(self.n_corr_shells)]
             SK_Sigma_imp = self.Sigma_imp
-        elif isinstance(self.mesh, MeshReFreq) and all(isinstance(gf, Gf) and gf.mesh == self.mesh for bname, gf in Sigma_imp[0]):
+        elif isinstance(self.mesh, MeshReFreq) and all(isinstance(gf, Gf) and isinstance(gf.mesh, MeshReFreq) and gf.mesh == self.mesh for bname, gf in Sigma_imp[0]):
             # Real frequency Sigma:
             self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, gf_function=GfReFreq, space='sumk')
                                 for icrsh in range(self.n_corr_shells)]
