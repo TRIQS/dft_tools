@@ -486,6 +486,19 @@ class Wannier90Converter(ConverterTools):
             else:
                 # make Fourier transform H(R) -> H(k) : it can be done one spin at a time
                 hamk = self.fourier_ham(hamr_full[isp])
+
+                # Sanity check if imaginary diagonal elements are zero, otherwise instabilties in lattice Gf!
+                diag_iterator = range(0,dim_corr_shells)
+                for ik in range(self.n_k):
+                    if not numpy.allclose(hamk[ik][diag_iterator, diag_iterator].imag, 0, atol=1e-10):
+                        mpi.report('ERROR: Wannier Hamiltonian has complex diagonal entries. '
+                                   + f'First occurred at kpt {ik}:')
+                        with numpy.printoptions(formatter={'float': '{:+.10f}'.format}):
+                            mpi.report('\nWannier Hamiltonian diagonal, Fourier(H(r)), imaginary')
+                            mpi.report(hamk[ik][diag_iterator, diag_iterator].imag)
+                        mpi.MPI.COMM_WORLD.Abort(1)
+                    # set imaginary part to zero
+                    hamk[ik][diag_iterator, diag_iterator] = hamk[ik][diag_iterator, diag_iterator].real + 0*1j
             # finally write hamk into hoppings
             for ik in range(self.n_k):
                 hopping[ik, isp] = hamk[ik] - numpy.identity(numpy.max(n_orbitals)) * self.fermi_energy
