@@ -142,7 +142,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
              for isym in range(n_symm):
            #rotate symmetry matrix into basis defined by T
                mat[isym][ish]=numpy.matmul(T[ish],mat[isym][ish])
-               mat[isym][ish]=numpy.matmul(mat[isym][ish],T[ish].transpose())
+               mat[isym][ish]=numpy.matmul(mat[isym][ish],T[ish].conjugate().transpose())
            #put desired subset of transformed symmetry matrix into temp matrix for symmetry isym
                for id in range(len(ind[ish])):
                  i=ind[ish][id]
@@ -348,15 +348,19 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         use_rotations = 1
         rot_mat = [numpy.identity(corr_shells[icrsh]['dim'], numpy.complex_) for icrsh in range(n_corr_shells)]
         for icrsh in range(n_corr_shells):
-          incrsh = corr_to_inequiv[icrsh]
-          iatom = corr_shells[incrsh]['atom']
+          #incrsh = corr_to_inequiv[icrsh]
+          #iatom = corr_shells[incrsh]['atom']
+          #want to rotate atom to first inequivalent atom in list
+          iatom = 1
           for isym in range(n_symm):
             jatom=perm[isym][corr_shells[icrsh]['atom']-1]
             #determinant determines if crystal symmetry matrix has inversion symmetry (=-1)
             det = numpy.linalg.det(symmat[isym][:,:])
             if((jatom==iatom)&(det>0.0)):
-              rot_mat[icrsh][:,:]=mat[isym][icrsh][:,:]
-            #used first desired symmetry in crystal symmetry list
+              #local rotation which rotates equivalent atom into its local coordinate system
+              #(inverse of the symmetry operator applied to the projectors in Elk)
+              rot_mat[icrsh][:,:]=mat[isym][icrsh][:,:].conjugate().transpose()
+              #used first desired symmetry in crystal symmetry list
               break
         # Elk does not currently use time inversion symmetry
         rot_mat_time_inv = [0 for i in range(n_corr_shells)]

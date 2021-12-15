@@ -92,8 +92,9 @@ class ElkConverterTools:
             v[2]=numpy.sqrt(abs(rotp[2,2]+1.0)/2.0)
             v[0]=(rotp[0,2]+rotp[2,0])/(4.0*v[2])
             v[1]=(rotp[1,2]+rotp[2,1])/(4.0*v[2])
-      # return theta and v
-      return v,th
+      # return -theta and v. -theta is returned as TRIQS does not rotate
+      # the observable (such as the density matrix) which is done in Elk
+      return v,-th
 
     def axangsu2(self,v,th):
       """
@@ -198,9 +199,10 @@ class ElkConverterTools:
             #ang=r.as_euler('zyz')
             ang=self.zyz_euler(rot)
             #Elk uses inverse rotations, i.e. the function is being rotated, not the spherical harmonics
-            angi[0]=-ang[2]
-            angi[1]=-ang[1]
-            angi[2]=-ang[0]
+            #TRIQS rotates the spherical harmonics instead
+            angi[0]=ang[0]
+            angi[1]=ang[1]
+            angi[2]=ang[2]
             #calculate the symmetry in the complex spherical harmonic basis.
             d = self.ylmrot(p,angi,l)
             symmat[isym][ish][:,:] = d[:,:]
