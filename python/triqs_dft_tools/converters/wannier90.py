@@ -289,8 +289,10 @@ class Wannier90Converter(ConverterTools):
                 mpi.report('Adding local spin-orbit term to Hamiltonian (assuming dxz, dyz, dxy as orbital order)')
                 # upscaling quantities
                 nw *= 2
+                # scale Hamiltonian by 2 to account for spin DOF
                 hamr = [numpy.kron(numpy.eye(2), hamr[ir]) for ir in range(nr)]
-                hamr[nr//2] += self.lambda_matrix_w90_t2g()
+                # scale lambda matrix by number of correlated shells to account for shells
+                hamr[nr//2] += numpy.kron(numpy.eye(n_corr_shells), self.lambda_matrix_w90_t2g())
                 with numpy.printoptions(linewidth=100, formatter={'complexfloat': '{:+.3f}'.format}):
                     mpi.report('Local Hamiltonian including spin-orbit coupling:')
                     mpi.report(hamr[nr//2])
@@ -441,9 +443,12 @@ class Wannier90Converter(ConverterTools):
             u_total = numpy.einsum('abc,acd->abd',udismat_full[isp],umat_full[isp])
             # transpose and write into proj_mat
             u_temp = numpy.transpose(u_total.conj(),(0,2,1))
+            # scale unitary U by 2 to account for spin DOF
+            if self.add_lambda: u_temp = numpy.kron(numpy.eye(2), u_temp)
             for icrsh in range(n_corr_shells):
                 dim = corr_shells[icrsh]['dim']
-                proj_mat[:, isp, icrsh, 0:dim, :] = u_temp[:,iorb:iorb+dim,:] if not self.add_lambda else numpy.kron(numpy.eye(2), u_temp[:,iorb:iorb+dim,:])
+                print(isp, icrsh, dim, iorb, iorb+dim)
+                proj_mat[:, isp, icrsh, 0:dim, :] = u_temp[:,iorb:iorb+dim,:]
                 iorb += dim
 
         # Then, compute the hoppings in reciprocal space
