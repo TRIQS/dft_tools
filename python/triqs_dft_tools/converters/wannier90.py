@@ -43,6 +43,7 @@
 #   and an error occurs on the masternode, the calculation does not abort
 # - in case of disentanglement, the outer window being close to Kohn-Sham energies
 #   can cause a problem in creating the udis_mat in read_wannier90data
+# - add_lambda does not work for multiple impurities
 ###
 
 
@@ -194,9 +195,10 @@ class Wannier90Converter(ConverterTools):
         # Only one block supported - either non-spin-polarized or spin-orbit coupled
         assert SP == SO, 'Spin-polarized calculations not implemented'
         if self.add_lambda:
-            assert [sh['dim'] for sh in corr_shells] == [3 for sh in corr_shells], 'Add_lambda only implemented for t2g shell'
-            assert SO == SP == 0, 'Add_lambda not implemented for SO = SP = 1'
-            assert self.bloch_basis == False, 'Add_lambda not implemented for bloch_basis = True'
+            assert n_shells == 1, 'add_lambda not implemented for more than one t2g shell'
+            assert [sh['dim'] for sh in corr_shells] == [3 for sh in corr_shells], 'add_lambda only implemented for t2g shell'
+            assert SO == SP == 0, 'add_lambda not implemented for SO = SP = 1'
+            assert self.bloch_basis == False, 'add_lambda not implemented for bloch_basis = True'
             # now setting SO and SP to 1
             SO = SP = 1
 
@@ -292,6 +294,7 @@ class Wannier90Converter(ConverterTools):
                 # scale Hamiltonian by 2 to account for spin DOF
                 hamr = [numpy.kron(numpy.eye(2), hamr[ir]) for ir in range(nr)]
                 # scale lambda matrix by number of correlated shells to account for shells
+                # FIXME: does not give the correct order for multiple impurities!
                 hamr[nr//2] += numpy.kron(numpy.eye(n_corr_shells), self.lambda_matrix_w90_t2g())
                 with numpy.printoptions(linewidth=100, formatter={'complexfloat': '{:+.3f}'.format}):
                     mpi.report('Local Hamiltonian including spin-orbit coupling:')
@@ -447,7 +450,6 @@ class Wannier90Converter(ConverterTools):
             if self.add_lambda: u_temp = numpy.kron(numpy.eye(2), u_temp)
             for icrsh in range(n_corr_shells):
                 dim = corr_shells[icrsh]['dim']
-                print(isp, icrsh, dim, iorb, iorb+dim)
                 proj_mat[:, isp, icrsh, 0:dim, :] = u_temp[:,iorb:iorb+dim,:]
                 iorb += dim
 
