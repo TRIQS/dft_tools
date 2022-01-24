@@ -61,7 +61,7 @@ jobs:
         python3-nbsphinx
 
     - name: Install homebrew dependencies
-      if: matrix.os == 'macos-12'
+      if: matrix.os == 'macos-11'
       run: |
         brew install gcc@11 llvm boost fftw hdf5 open-mpi openblas
         pip3 install mako numpy scipy mpi4py
