@@ -49,7 +49,7 @@ for orb in range(SK.n_corr_shells):
         assert_arrays_are_close(t_solver_eal[orb][block],np.identity(3), precision=1e-6)
         assert_arrays_are_close(t_solver_dm[orb][block],np.identity(3), precision=1e-6)
 
-SK = SumkDFT(hdf_file = 'w90_convert_wannier.ref.h5', use_dft_blocks=True)
+SK = SumkDFT(hdf_file = 'w90_convert/LaVO3-Pnma_wannier.ref.h5', use_dft_blocks=True)
 
 t_sumk_eal, t_solver_eal, t_sumk_dm, t_solver_dm = call_diagonalize(SK)
 
