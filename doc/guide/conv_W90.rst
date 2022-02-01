@@ -34,7 +34,7 @@ Once these two files are available, one can use the converter as follows::
     Converter.convert_dft_input()
 
 The converter input :file:`seedname.inp` is a simple text file with
-the following format (do not use the text/comments in your input file):
+the following format:
 
 .. literalinclude:: images_scripts/LaVO3_w90.inp
 
@@ -92,7 +92,7 @@ rotated by (approximatively) 45 degrees with respect to the axes of the `Pbnm` c
 
 The last line of :file:`seedname.inp` is the DFT Fermi energy (in eV), which is subtracted from the onsite
 terms in the :file:`seedname_hr.dat` file. This is recommended since some functions in DFTTools implicitly
-assume a Fermi energy of 0 eV. 
+assume a Fermi energy of 0 eV.
 
 In the orbital mode the Converter supports the addition of a local spin-orbit term, if the Wannier Hamiltonian
 describes a t\ :sub:`2g` manifold. Currently, the correct interaction term is only implemented if the default
@@ -101,6 +101,11 @@ orbital order of :program:`wannier90` is maintained, i.e. it is assumed to be
 The coupling strength can be specified as ``add_lambda = [lambda_x, lambda_y, lambda_z]``,
 representative of the orbital coupling terms perpendicular to :math:`[x, y, z]` i.e. :math:`[d_{yz}, d_{xz}, d_{xy}]`,
 respectively. Note that it is required to have ``SO=0`` and ``SP=1``.
+
+For spin-orbit coupled systems (from DFT or with the add_lambda parameter),
+the orbitals are resorted internally by the converter to the triqs order so, e.g.,
+the order from above would become
+:math:`d_{xz,\uparrow}, d_{xz,\downarrow}, d_{yz,\uparrow}, d_{yz,\downarrow}, d_{xy,\uparrow}, d_{xy,\downarrow}`.
 
 Band mode
 ----------------
@@ -151,6 +156,9 @@ so far tests have not shown any issue, but one must be careful in those cases
 (the converter will print a warning message and turns off the use of rotation matrices,
 which leads to an incorrect mapping between equivalent correlated shells).
 
+Note that in the case of spin-orbit coupling, these rotation matrices in general
+mix spin and orbital components.
+
 Current limitations
 ----------------------------------------------
 
@@ -159,6 +167,6 @@ The current implementation of the Wannier90 Converter has some limitations:
 * Since :program:`wannier90` does not make use of symmetries (symmetry-reduction
   of the :math:`\mathbf{k}`-point grid is not possible), the converter always
   sets ``symm_op=0`` (see the :ref:`hdfstructure` section).
-* The spin-polarized case (``SP=1``) is not yet tested.
+* The spin-polarized case (``SP=1``) is neither completely implemented nor tested.
 * ``proj_mat_all`` are not used, so there are no projectors onto the
   uncorrelated orbitals for now.
