@@ -88,7 +88,7 @@ class TestProjectorGroupCompl(mytest.MyTestCase):
                 overlap_L = np.dot(p_mat.conjugate().transpose(),p_mat)
                 overlap_N = np.dot(p_mat,p_mat.conjugate().transpose())
 
-                assert np.all(np.abs(np.eye(overlap_N.shape[0]) - overlap_N) < 1e-13)
-                assert np.all(np.abs(np.eye(overlap_L.shape[0]) - overlap_L) < 1e-13)
+                assert np.all(np.abs(np.eye(overlap_N.shape[0]) - overlap_N) < 1e-9)
+                assert np.all(np.abs(np.eye(overlap_L.shape[0]) - overlap_L) < 1e-9)
 
 

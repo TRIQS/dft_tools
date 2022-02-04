@@ -165,7 +165,7 @@ class Plocar:
             line = line.split("#")[0]
             sline = line.split()
             print(sline)
-            self.ncdij, nk, self.nband, nproj = list(map(int, sline[0:4]))
+            self.ncdij, nk, self.nband, nproj = list(map(int, sline))
             
             # VASP.6.
             self.nspin = self.ncdij if self.ncdij < 4 else 1
