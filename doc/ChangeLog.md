@@ -2,8 +2,20 @@
 
 # Changelog
 
-## Version 3.0.0
+## Version 3.1.0
 
+app4triqs version 3.1.0 is a compatibility
+release for TRIQS version 3.1.0 that
+* moves to cmake 3.12.4 and c++20
+* improves ghactions and jenkins configuration
+* switches documentation to read-the-docs theme
+* uses googletest main branch
+* fixes several skeleton issues
+
+We thank all contributors: Alexander Hampel, Dylan Simon, Nils Wentzell
+
+
+## Version 3.0.0
 
 app4triqs version 3.0.0 is a compatibility
 release for TRIQS version 3.0.0 that
