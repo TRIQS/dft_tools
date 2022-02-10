@@ -19,7 +19,7 @@ namespace app4triqs {
   void h5_write(h5::group grp, std::string subgroup_name, toto const &m) {
     grp = subgroup_name.empty() ? grp : grp.create_group(subgroup_name);
     h5_write(grp, "i", m.i);
-    h5_write_attribute(grp, "TRIQS_HDF5_data_scheme", toto::hdf5_format());
+    h5_write_attribute(grp, "Format", toto::hdf5_format());
   }
 
   void h5_read(h5::group grp, std::string subgroup_name, toto &m) {

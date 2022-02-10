@@ -3,7 +3,7 @@
 import unittest
 
 from app4triqs import Toto, chain
-from triqs.archive import *
+from h5 import *
 from triqs.utility import mpi
 
 class test_toto(unittest.TestCase):
