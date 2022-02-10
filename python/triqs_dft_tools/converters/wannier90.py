@@ -1051,8 +1051,8 @@ def find_rot_mat(n_corr_shells, corr_shells, shells_map, wannier_hr0,
             if shells_map.count(iineq) > 1:
                 icrsh = shells_map.index(iineq)
                 dim = corr_shells[icrsh]['dim']
-                if any(abs(eigval_lst[icrsh][j] - eigval_lst[icrsh][i])
-                       for i in range(dim) for j in range(i+1, dim)) < w90_zero:
+                if any(abs(eigval_lst[icrsh][j] - eigval_lst[icrsh][i]) < w90_zero
+                       for i in range(dim) for j in range(i+1, dim)):
                     mpi.report('WARNING: degenerate eigenvalue of H(0) detected for shell {}: '.format(icrsh) +
                                'global-to-local transformation might not work!')
 
