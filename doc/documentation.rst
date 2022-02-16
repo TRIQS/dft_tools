@@ -21,10 +21,9 @@ C++ reference manual
 Python reference manual
 =======================
 
-.. automodule:: app4triqs 
-   :members:
+.. autosummary::
+   :toctree: _autosummary
+   :template: autosummary_module_template.rst
+   :recursive:
 
-.. autoclass:: app4triqs.app4triqs_module.Toto
-   :members:
-
-.. autofunction:: app4triqs.app4triqs_module.chain
+    app4triqs_module

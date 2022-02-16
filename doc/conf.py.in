@@ -6,6 +6,9 @@ import sys
 sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext")
 sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/numpydoc")
 
+# exclude these folders from scanning by sphinx
+exclude_patterns = ['_templates']
+
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
               'sphinx.ext.intersphinx',
@@ -38,6 +41,10 @@ myst_enable_extensions = [
 pygments_style = 'sphinx'
 
 source_suffix = '.rst'
+
+# Turn on sphinx.ext.autosummary
+autosummary_generate = True
+autosummary_imported_members=False
 
 project = '@PROJECT_NAME@'
 version = '@PROJECT_VERSION@'
