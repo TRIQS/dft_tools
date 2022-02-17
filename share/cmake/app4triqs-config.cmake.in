@@ -1,0 +1,40 @@
+# This file allows other CMake Projects to find us
+# We provide general project information
+# and reestablish the exported CMake Targets
+
+# Multiple inclusion guard
+if(NOT @PROJECT_NAME@_FOUND)
+set(@PROJECT_NAME@_FOUND TRUE)
+set_property(GLOBAL PROPERTY @PROJECT_NAME@_FOUND TRUE)
+
+# version
+set(@PROJECT_NAME@_VERSION @PROJECT_VERSION@ CACHE STRING "@PROJECT_NAME@ version")
+set(@PROJECT_NAME@_GIT_HASH @PROJECT_GIT_HASH@ CACHE STRING "@PROJECT_NAME@ git hash")
+
+# Root of the installation
+set(@PROJECT_NAME@_ROOT @CMAKE_INSTALL_PREFIX@ CACHE STRING "@PROJECT_NAME@ root directory")
+
+## Find the target dependencies
+#function(find_dep)
+#  get_property(${ARGV0}_FOUND GLOBAL PROPERTY ${ARGV0}_FOUND)
+#  if(NOT ${ARGV0}_FOUND)
+#    find_package(${ARGN} REQUIRED HINTS @CMAKE_INSTALL_PREFIX@)
+#  endif()
+#endfunction()
+#find_dep(depname 1.0)
+
+# Include the exported targets of this project
+include(@CMAKE_INSTALL_PREFIX@/lib/cmake/@PROJECT_NAME@/@PROJECT_NAME@-targets.cmake)
+
+message(STATUS "Found @PROJECT_NAME@-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@, root = @CMAKE_INSTALL_PREFIX@")
+
+# Was the Project built with Documentation?
+set(@PROJECT_NAME@_WITH_DOCUMENTATION @Build_Documentation@ CACHE BOOL "Was @PROJECT_NAME@ build with documentation?")
+
+# Was the Project built with PythonSupport?
+set(@PROJECT_NAME@_WITH_PYTHON_SUPPORT @PythonSupport@ CACHE BOOL "Was @PROJECT_NAME@ build with python support?")
+if(@PythonSupport@)
+  set(@PROJECT_NAME@_MODULE_DIR @CMAKE_INSTALL_PREFIX@/@CPP2PY_PYTHON_LIB_DEST_ROOT@ CACHE BOOL "The @PROJECT_NAME@ python module directory")
+endif()
+
+endif()
