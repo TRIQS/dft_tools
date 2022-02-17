@@ -1,7 +1,0 @@
-cd ../
-rm -rf dft_tools.build
-mkdir dft_tools.build && cd dft_tools.build
-cmake ../dft_tools.src
-source ../triqs.build/triqsvars.sh
-make
-sudo make install
