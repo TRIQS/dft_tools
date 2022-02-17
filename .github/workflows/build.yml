@@ -1,0 +1,140 @@
+name: build
+
+on:
+  push:
+    branches: [ unstable, '[0-9]+.[0-9]+.x' ]
+  pull_request:
+    branches: [ unstable, '[0-9]+.[0-9]+.x' ]
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  CMAKE_C_COMPILER_LAUNCHER: ccache
+  CMAKE_CXX_COMPILER_LAUNCHER: ccache
+  CCACHE_COMPILERCHECK: content
+  CCACHE_BASEDIR: ${{ github.workspace }}
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
+  CCACHE_MAXSIZE: 500M
+  CCACHE_SLOPPINESS: pch_defines,time_macros,include_file_mtime,include_file_ctime
+  CCACHE_COMPRESS: "1"
+  CCACHE_COMPRESSLEVEL: "1"
+
+jobs:
+  build:
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12}
+          - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15}
+          - {os: macos-12, cc: gcc-12, cxx: g++-12}
+          - {os: macos-12, cc: clang, cxx: clang++}
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/cache/restore@v4
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
+        restore-keys:
+          ccache-${{ matrix.os }}-${{ matrix.cc }}-
+
+    - name: Install ubuntu dependencies
+      if: matrix.os == 'ubuntu-22.04'
+      run: >
+        sudo apt-get update &&
+        sudo apt-get install lsb-release wget software-properties-common &&
+        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
+        sudo apt-get install
+        ccache
+        clang-15
+        g++-12
+        gfortran
+        hdf5-tools
+        libblas-dev
+        libboost-dev
+        libclang-15-dev
+        libc++-15-dev
+        libc++abi-15-dev
+        libomp-15-dev
+        libfftw3-dev
+        libgfortran5
+        libgmp-dev
+        libhdf5-dev
+        liblapack-dev
+        libopenmpi-dev
+        openmpi-bin
+        openmpi-common
+        openmpi-doc
+        python3-clang-15
+        python3-dev
+        python3-mako
+        python3-matplotlib
+        python3-mpi4py
+        python3-numpy
+        python3-pip
+        python3-scipy
+        python3-sphinx
+        python3-nbsphinx
+
+    - name: Install homebrew dependencies
+      if: matrix.os == 'macos-12'
+      run: |
+        brew install ccache gcc@12 llvm boost fftw hdf5 open-mpi openblas
+        mkdir $HOME/.venv
+        python3 -m venv $HOME/.venv/my_python
+        source $HOME/.venv/my_python/bin/activate
+        pip install mako numpy scipy mpi4py
+        pip install -r requirements.txt
+        echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
+        echo "PATH=$PATH" >> $GITHUB_ENV
+
+    - name: add clang cxxflags
+      if: ${{ contains(matrix.cxx, 'clang') }}
+      run: |
+        echo "PATH=/usr/local/opt/llvm/bin:$PATH" >> $GITHUB_ENV
+        echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
+
+    - name: Build & Install TRIQS
+      env:
+        CC: ${{ matrix.cc }}
+        CXX: ${{ matrix.cxx }}
+      run: |
+        git clone https://github.com/TRIQS/triqs --branch unstable
+        mkdir triqs/build && cd triqs/build
+        cmake .. -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$HOME/install
+        make -j1 install VERBOSE=1
+        cd ../
+
+    - name: Build app4triqs
+      env:
+        CC: ${{ matrix.cc }}
+        CXX: ${{ matrix.cxx }}
+        LIBRARY_PATH: /usr/local/opt/llvm/lib
+      run: |
+        source $HOME/install/share/triqs/triqsvars.sh
+        mkdir build && cd build && cmake ..
+        make -j2 || make -j1 VERBOSE=1
+
+    - name: Test app4triqs
+      env:
+        DYLD_FALLBACK_LIBRARY_PATH: /usr/local/opt/llvm/lib
+        OPENBLAS_NUM_THREADS: "1"
+      run: |
+        source $HOME/install/share/triqs/triqsvars.sh
+        cd build
+        ctest -j2 --output-on-failure
+
+    - name: ccache statistics
+      if: always()
+      run: ccache -sv
+
+    - uses: actions/cache/save@v4
+      if: always()
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}

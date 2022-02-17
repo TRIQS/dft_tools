@@ -1,0 +1,11 @@
+# Required python packages for this application (these should also be added to Dockerfile for Jenkins)
+mako
+numpy
+scipy
+# For documentation builds we additionaly require
+#sphinx
+#numpydoc
+#nbsphinx
+#sphinx_rtd_theme
+#myst_parser
+#linkify-it-py
