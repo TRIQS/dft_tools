@@ -851,11 +851,11 @@ class SumkDFT(object):
                          If include_shells is not provided all correlated shells will be analysed.
         dm : list of dict, optional
              List of density matrices from which block stuctures are to be analysed.
-             Each density matrix is a dict {block names: 2d numpy arrays}.
+             Each density matrix is a dict {block names: 2d numpy arrays} for each correlated shell.
              If not provided, dm will be calculated from the DFT Hamiltonian by a simple-point BZ integration.
         hloc : list of dict, optional
                List of local Hamiltonian matrices from which block stuctures are to be analysed
-               Each Hamiltonian is a dict {block names: 2d numpy arrays}.
+               Each Hamiltonian is a dict {block names: 2d numpy arrays} for each inequivalent shell.
                If not provided, it will be calculated using eff_atomic_levels.
         """
 
@@ -871,8 +871,6 @@ class SumkDFT(object):
                     for ish in range(self.n_inequiv_shells)]
         if hloc is None:
             hloc = self.eff_atomic_levels()
-        H_loc = [hloc[self.corr_to_inequiv[ish]]
-                 for ish in range(self.n_corr_shells)]
 
         if include_shells is None:
             include_shells = list(range(self.n_inequiv_shells))
@@ -882,7 +880,7 @@ class SumkDFT(object):
                 n_orb = self.corr_shells[self.inequiv_to_corr[ish]]['dim']
                 # gives an index list of entries larger that threshold
                 dmbool = (abs(dens_mat[ish][sp]) > threshold)
-                hlocbool = (abs(H_loc[ish][sp]) > threshold)
+                hlocbool = (abs(hloc[ish][sp]) > threshold)
 
                 # Determine off-diagonal entries in upper triangular part of
                 # density matrix
