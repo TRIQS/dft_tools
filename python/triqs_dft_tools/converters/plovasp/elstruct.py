@@ -82,7 +82,6 @@ class ElectronicStructure:
 # Note that the number of spin-components of projectors might be different from those
 # of bands in case of non-collinear calculations
         self.nspin = vasp_data.plocar.nspin
-        #self.nc_flag = vasp_data.plocar.ncdij == 2
         self.nband = vasp_data.plocar.nband
 
 # Check that the number of k-points is the same in all files

@@ -242,7 +242,6 @@ class ProjectorShell:
             self.proj_arr = np.zeros((nion, ns, nk, nlm, nb), dtype=np.complex128)
             for io, ion in enumerate(self.ion_list):
                 qcoord = structure['qcoords'][ion]
-                print(nlm)
                 for m in range(nlm):                    
 # Here we search for the index of the projector with the given isite/l/m indices
                     for ip, par in enumerate(proj_params):
@@ -344,7 +343,7 @@ class ProjectorShell:
                         i1 = io * nlm
                         i2 = (io + 1) * nlm
                         proj_k[i1:i2, :] = self.proj_win[io, isp, ik, ...]
-                    # DARIO TODO
+                    # TODO
                     occ_mats[isp, 0, :, :] += np.dot(proj_k * occ[ib1:ib2],
                                                  proj_k.conj().T).real * weight
                     overlaps[isp, 0, :, :] += np.dot(proj_k,proj_k.conj().T).real * weight

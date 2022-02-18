@@ -164,7 +164,6 @@ class Plocar:
             line = f.readline()
             line = line.split("#")[0]
             sline = line.split()
-            print(sline)
             self.ncdij, nk, self.nband, nproj = list(map(int, sline[0:4]))
             
             # VASP.6.
