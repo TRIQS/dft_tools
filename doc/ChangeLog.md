@@ -2,8 +2,13 @@
 
 # Changelog
 
-## Version 3.0.0
+## Version 3.1.0
 
+DFTTools Version 3.1.0 is a major release that
+release for TRIQS version 3.1.0.
+
+
+## Version 3.0.0
 
 DFTTools Version 3.0.0 is a major release that
 

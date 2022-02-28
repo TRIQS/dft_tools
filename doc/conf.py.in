@@ -7,6 +7,9 @@ sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext")
 sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/numpydoc")
 sys.path.insert(0, "@CMAKE_BINARY_DIR@/python")
 
+# exclude these folders from scanning by sphinx
+exclude_patterns = ['_templates']
+
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
               'sphinx.ext.intersphinx',
@@ -42,6 +45,10 @@ pygments_style = 'sphinx'
 
 source_suffix = '.rst'
 
+# Turn on sphinx.ext.autosummary
+autosummary_generate = True
+autosummary_imported_members=False
+
 project = 'TRIQS DFTTools'
 version = '@PROJECT_VERSION@'
 
@@ -69,7 +76,7 @@ html_theme_options = {
     # Toc options
     'collapse_navigation': False,
     'sticky_navigation': True,
-    'navigation_depth': 4,
+    'navigation_depth': 5,
     'includehidden': True,
     'titles_only': False
 }
