@@ -1006,7 +1006,7 @@ class Wannier90Converter(ConverterTools):
                 if line.strip() == 'End of band structure calculation':
                     break
 
-            assert 'k = ' in out_data[ct + 2], 'Cannot read occupations. Set verbosity = "high" in {}'.format(out_filename)
+            assert 'k =' in out_data[ct + 2], 'Cannot read occupations. Set verbosity = "high" in {}'.format(out_filename)
             out_data = out_data[ct+2:]
 
             # block size of eigenvalues + occupations per k-point
