@@ -729,8 +729,8 @@ class SumkDFT(object):
         G_loc : list of BlockGf (Green's function) objects
             List of the local Green's functions for all (inequivalent) correlated shells,
             rotated into the corresponding local frames.
-            If ``transform_to_solver_blocks`` is True, it will be one per correlated shell, else one per
-            inequivalent correlated shell.
+            If ``transform_to_solver_blocks`` is True, it will be one per inequivalent correlated shell, else one per
+            correlated shell.
         """
 
         if mu is None:
