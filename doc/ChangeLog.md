@@ -4,8 +4,48 @@
 
 ## Version 3.1.0
 
-DFTTools Version 3.1.0 is a major release that
-release for TRIQS version 3.1.0.
+DFTTools Version 3.1.0 is a release that
+* is compatible with TRIQS 3.1.x
+* includes a major update for the Wannier90 converter (see below for details)
+* updates sumk_dft to allow for charge self-consistent DFT+DMFT calculations with Quantum Espresso (dm_type = 'qe')
+* adds a indmftpr helper script to prepare the case.indmftpr file for the dmftproj program
+* uses the latest [app4triqs/3.1.x](https://github.com/TRIQS/app4triqs) skeleton
+
+### Wannier90 Converter
+* allow for charge self-consistent DFT+DMFT calculations
+* spin-orbit coupling implemented
+* option to add a local spin-orbit term to t2g local Hamiltonian (for now just for a single impurity. Fixed in next version)
+* additional choices and added checks for different bases (rot_mat): hloc_diag, wannier (already implemented previously), none
+* code restructured, more tests
+* MPI speedup of the Fourier transform
+* added new test in w90_convert.py for rot_mat_type='hloc_diag'
+* update documentation of W90 Converter
+* bugfix: This fix makes the function find_rot_mat() safer to use in case there are errors in finding the correct mapping. The converter will now abort if the agreement in mapping is below a user-definable threshold.
+
+### Documentation
+* change to read the docs sphinx theme
+* clean up various doc files
+* use autosummary to build reference documentation
+* update Vasp tutorials
+* update Wannier90 documentation to reflect new features
+
+### Cmake
+* require triqs3.1+ in debian package dependencies
+* bump required TRIQS Version to 3.1
+
+### Other changes
+* bugfix for analyse_block_structure in sumk_dft
+* bugfix in blockstructure module for the case of #corr_shells != #ineq_shells
+* fix float comparison tolerances and few minor things in tests
+* Vasp Converter: fixed normalization of kwghts to allow symmetries 
+* bugfix in Elk converter when creating the symmetry matrices of low symmetry systems with multiple equivalent atoms
+* vectorize various loops in dfttools
+* fix various from_L_G_R calls that require now data layed out in C-order
+* use nda over TRIQS_RUNTIME_ERROR in dos_tetra3d
+* changed fermi weights from np array complex to float in accordance with h5 structure
+* expose parameter max_loops in sum_k.calc_mu dichotomy
+
+Thanks to all commit-contributors (in alphabetical order): Sophie Beck, Alexander Hampel, Alyn James, Jonathan Karp, Harry LaBollita, Max Merkel, H. L. Nourse, Hermann Schnait, Nils Wentzell,  @70akaline
 
 
 ## Version 3.0.0
