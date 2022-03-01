@@ -23,6 +23,9 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ################################################################################
+"""
+Vasp converter
+"""
 
 from types import *
 import numpy

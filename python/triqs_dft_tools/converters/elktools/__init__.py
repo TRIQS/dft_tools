@@ -19,6 +19,9 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
+"""
+elk converter tools for file I/O
+"""
 
 from .readElkfiles import readElkfiles
 from .elk_converter_tools import ElkConverterTools

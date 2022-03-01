@@ -20,6 +20,9 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
+"""
+General SumK class and helper functions for combining ab-initio code and triqs
+"""
 
 from types import *
 import numpy
@@ -2215,7 +2218,7 @@ class SumkDFT(object):
                                   valim = deltaN[spn[ispn]][ik][inu, imu].imag
                                 f.write(" %.14f  %.14f"%(valre, valim))
                             f.write("\n")
-        
+
         elif dm_type == 'qe':
             assert self.SP == 0, "Spin-polarized density matrix is not implemented"
 

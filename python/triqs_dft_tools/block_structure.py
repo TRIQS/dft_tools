@@ -21,7 +21,9 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
-
+"""
+Block structure class and helper functions
+"""
 
 import copy
 import numpy as np
@@ -37,6 +39,11 @@ class BlockStructure(object):
 
     This class contains information about the structure of the solver
     and sumk Green functions and the mapping between them.
+
+    Do not write the individual elements of this class to a HDF file,
+    as they belong together and changing one without the other can
+    result in unexpected results. Always write the BlockStructure
+    object as a whole.
 
     Parameters
     ----------

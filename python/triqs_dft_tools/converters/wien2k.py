@@ -19,6 +19,9 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
+"""
+Wien2k converter
+"""
 
 from types import *
 import numpy
@@ -99,7 +102,7 @@ class Wien2kConverter(ConverterTools):
         - symmcorr_subgrp
         - misc_subgrp
 
-        in the hdf5 archive. 
+        in the hdf5 archive.
 
         """
 
@@ -277,12 +280,12 @@ class Wien2kConverter(ConverterTools):
 
     def convert_parproj_input(self):
         """
-        Reads the appropriate files and stores the data for the 
+        Reads the appropriate files and stores the data for the
 
         - parproj_subgrp
         - symmpar_subgrp
 
-        in the hdf5 archive. 
+        in the hdf5 archive.
 
         """
 
@@ -382,7 +385,7 @@ class Wien2kConverter(ConverterTools):
 
     def convert_bands_input(self):
         """
-        Reads the appropriate files and stores the data for the bands_subgrp in the hdf5 archive. 
+        Reads the appropriate files and stores the data for the bands_subgrp in the hdf5 archive.
 
         """
 
@@ -496,7 +499,7 @@ class Wien2kConverter(ConverterTools):
         - symmetries from :file:`case.outputs`,
 
         if those Wien2k files are present and stores the data in the hdf5 archive.
-        This function is automatically called by :meth:`convert_dft_input <triqs_dft_tools.converters.wien2k.Wien2kConverter.convert_dft_input>`. 
+        This function is automatically called by :meth:`convert_dft_input <triqs_dft_tools.converters.wien2k.Wien2kConverter.convert_dft_input>`.
 
         """
 
@@ -619,7 +622,7 @@ class Wien2kConverter(ConverterTools):
                 ar[self.misc_subgrp][it] = locals()[it]
 
     def convert_transport_input(self):
-        """ 
+        """
         Reads the necessary information for transport calculations on:
 
         - the optical band window and the velocity matrix elements from :file:`case.pmat`
@@ -712,10 +715,10 @@ class Wien2kConverter(ConverterTools):
         Parameters
         ----------
         orbits : list of dicts
-                 This is either shells or corr_shells depending on whether the symmetry 
+                 This is either shells or corr_shells depending on whether the symmetry
                  information is for correlated shells or partial projectors.
         symm_file : string
-                    Name of the file containing symmetry data. 
+                    Name of the file containing symmetry data.
                     This is case.symqmc for correlated shells and case.sympar for partial projectors.
         symm_subgrp : string, optional
                       Name of subgroup storing symmetry data.

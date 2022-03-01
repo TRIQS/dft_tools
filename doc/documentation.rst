@@ -9,7 +9,7 @@ Basic notions
 -------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    basicnotions/first
    basicnotions/dft_dmft
@@ -23,6 +23,7 @@ Construction of local orbitals from DFT
    :maxdepth: 2
 
    guide/conversion
+   h5structure
 
 
 DFT+DMFT
@@ -38,7 +39,7 @@ Advanced Topics
 ---------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    guide/blockstructure
    guide/BasisRotation
@@ -48,7 +49,7 @@ Postprocessing
 --------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    guide/analysis
    guide/transport
@@ -59,16 +60,18 @@ Reference manual
 
 This is the reference manual for the python routines.
 
-.. toctree::
-   :maxdepth: 2
+.. autosummary::
+   :recursive:
+   :toctree: _python_api
+   :template: autosummary_module_template.rst
 
-   reference/h5structure
-   reference/converters
-   reference/sumk_dft
-   reference/sumk_dft_tools
-   reference/symmetry
-   reference/transbasis
-   reference/block_structure
+   block_structure
+   converters
+   sumk_dft
+   sumk_dft_tools
+   symmetry
+   trans_basis
+
 
 
 FAQs

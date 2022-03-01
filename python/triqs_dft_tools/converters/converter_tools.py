@@ -19,6 +19,10 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
+"""
+Converter helper module
+"""
+
 import triqs.utility.mpi as mpi
 
 class ConverterTools:
@@ -59,7 +63,7 @@ class ConverterTools:
 
         Note
         ----
-        Should only be used before the first invokation of HDFArchive in the program, 
+        Should only be used before the first invokation of HDFArchive in the program,
         otherwise the hdf5 linking will be broken.
 
         """
@@ -92,7 +96,7 @@ class ConverterTools:
                            Number of inequivalent shells.
         corr_to_inequiv : list
                           Mapping between correlated shell index and inequivalent shell index.
-                          corr_to_inequiv(i_corr_shells) = i_inequiv_shells 
+                          corr_to_inequiv(i_corr_shells) = i_inequiv_shells
         inequiv_to_corr : list
                           Mapping between inequivalent shell index and correlated shell index.
                           inequiv_to_corr(i_inequiv_shells) = i_corr_shells

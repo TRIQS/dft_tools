@@ -95,6 +95,6 @@ where :file:`hkinputfile` is the name of the input file described
 above. This produces the hdf file that you need for a DMFT calculation.
 
 For more options of this converter, have a look at the
-:ref:`refconverters` section of the reference manual.
+:py:mod:`Converters <triqs_dft_tools.converters>` section of the reference manual.
 
 

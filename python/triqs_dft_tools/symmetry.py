@@ -19,6 +19,9 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
+"""
+module for the symmetry operations in k sums
+"""
 
 import copy
 import numpy
@@ -85,12 +88,12 @@ class Symmetry:
 
     def symmetrize(self, obj):
         """
-        Symmetrizes a given object. 
+        Symmetrizes a given object.
 
         Parameters
         ----------
         obj : list
-              object to symmetrize. It has to be given as list, where its length is determined by the number 
+              object to symmetrize. It has to be given as list, where its length is determined by the number
               of equivalent members of the object. Two types of objects are supported:
 
               - BlockGf : list of Green's functions,

@@ -18,6 +18,10 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
+"""
+Extension to the SumkDFT class with some analyiss tools
+"""
+
 import sys
 from types import *
 import numpy

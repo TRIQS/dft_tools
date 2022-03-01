@@ -128,7 +128,7 @@ example, the :program:`Wien2k` naming convention is that all files have the
 same name, but different extensions, :file:`case.*`. The constructor opens
 an hdf5 archive, named :file:`case.h5`, where all relevant data will be
 stored. For other parameters of the constructor please visit the
-:ref:`refconverters` section of the reference manual.
+:py:mod:`Converters <triqs_dft_tools.converters>` section of the reference manual.
 
 After initializing the interface module, we can now convert the input
 text files to the hdf5 archive by::
@@ -181,7 +181,7 @@ and convert the input for :class:`SumkDFTTools <dft.sumk_dft_tools.SumkDFTTools>
 
 After having converted this input, you can further proceed with the
 :ref:`analysis`. For more options on the converter module, please have
-a look at the :ref:`refconverters` section of the reference manual.
+a look at the :py:mod:`Converters <triqs_dft_tools.converters>` section of the reference manual.
 
 Data for transport calculations
 -------------------------------

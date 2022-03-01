@@ -1,9 +1,9 @@
 .. _hdfstructure:
 
-hdf5 structure
-==============
+standardized hdf5 structure
+===========================
 
-All the data is stored using the hdf5 standard, as described also in the
+All the DFT input data is stored using the hdf5 standard, as described also in the
 documentation of the TRIQS package itself. In order to do a DMFT calculation,
 using input from DFT applications, a converter is needed on order to provide
 the necessary data in the hdf5 format.

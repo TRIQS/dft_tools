@@ -39,7 +39,7 @@ Note that in presence of SOC, it is not possible to project only onto the :math:
 Treatment of SOC in Elk
 -------------------------
 
-First, a Elk calculation including SOC has to be performed. For details, we refer the reader to the SOC Elk examples in Elk's example directory and `Elk manual <https//elk.sourceforge.net/elk.pdf>`_ for further information about the input flags. Then the projectors can be generated using the ``wanproj`` input flag in the same format as in :ref:`conv_elk`. Like in Wien2k, you cannot project only onto the :math:`t_{2g}` subshell because it is not an irreducible representation in SOC calculations. 
+First, a Elk calculation including SOC has to be performed. For details, we refer the reader to the SOC Elk examples in Elk's example directory and `Elk manual <https//elk.sourceforge.net/elk.pdf>`_ for further information about the input flags. Then the projectors can be generated using the ``wanproj`` input flag in the same format as in :ref:`convElk`. Like in Wien2k, you cannot project only onto the :math:`t_{2g}` subshell because it is not an irreducible representation in SOC calculations. 
 
 After generating the projectors
 -------------------------------

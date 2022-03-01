@@ -19,6 +19,9 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
+"""
+module containing all available converters for DFTTools
+"""
 
 from .wien2k import Wien2kConverter
 from .hk import HkConverter

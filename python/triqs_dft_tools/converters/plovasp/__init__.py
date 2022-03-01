@@ -22,5 +22,8 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ################################################################################
+"""
+plovasp module for I/O operations in the Vasp converter
+"""
 
 __all__ = []

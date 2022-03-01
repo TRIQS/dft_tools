@@ -1,5 +1,3 @@
-.. module:: triqs_dft_tools
-
 .. _tutorials:
 
 Tutorials

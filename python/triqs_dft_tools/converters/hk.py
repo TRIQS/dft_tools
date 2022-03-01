@@ -19,6 +19,9 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
+"""
+General H(k) converter
+"""
 
 from types import *
 import numpy
@@ -69,14 +72,14 @@ class HkConverter(ConverterTools):
 
     def convert_dft_input(self, first_real_part_matrix=True, only_upper_triangle=False, weights_in_file=False):
         """
-        Reads the appropriate files and stores the data for the dft_subgrp in the hdf5 archive. 
+        Reads the appropriate files and stores the data for the dft_subgrp in the hdf5 archive.
 
         Parameters
         ----------
         first_real_part_matrix : boolean, optional
                                  Should all the real components for given k be read in first, followed by the imaginary parts?
         only_upper_triangle : boolean, optional
-                              Should only the upper triangular part of H(k) be read in? 
+                              Should only the upper triangular part of H(k) be read in?
         weights_in_file : boolean, optional
                           Are the k-point weights to be read in?
 
