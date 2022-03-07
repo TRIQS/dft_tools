@@ -1801,8 +1801,12 @@ class SumkDFT(object):
         for icrsh in range(self.n_corr_shells):
             for bname, gf in sigma_minus_dc[icrsh]:
                 # Transform dc_imp to global coordinate system
-                dccont = numpy.dot(self.rot_mat[icrsh], numpy.dot(self.dc_imp[icrsh][
-                                   bname], self.rot_mat[icrsh].conjugate().transpose()))
+                if self.use_rotations:
+                    dccont = numpy.dot(self.rot_mat[icrsh], numpy.dot(self.dc_imp[icrsh][
+                                    bname], self.rot_mat[icrsh].conjugate().transpose()))
+                else:
+                    dccont = self.dc_imp[icrsh][bname]
+                    
                 sigma_minus_dc[icrsh][bname] -= dccont
 
         return sigma_minus_dc
