@@ -1119,7 +1119,7 @@ class SumkDFT(object):
 
         # transform G to the new structure
         full_structure = BlockStructure.full_structure(
-            [{sp:list(range(self.corr_shells[self.inequiv_to_corr[ish]]['dim']))
+            [{sp:self.corr_shells[self.inequiv_to_corr[ish]]['dim']
                 for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]}
                 for ish in range(self.n_inequiv_shells)],self.corr_to_inequiv)
         G_transformed = [
