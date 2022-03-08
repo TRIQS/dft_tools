@@ -138,10 +138,10 @@ class SumkDFT(object):
             # GF structure used for the local things in the k sums
             # Most general form allowing for all hybridisation, i.e. largest
             # blocks possible
-            self.gf_struct_sumk = [[(sp, list(range(self.corr_shells[icrsh]['dim']))) for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]]
+            self.gf_struct_sumk = [[(sp, self.corr_shells[icrsh]['dim']) for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]]
                                    for icrsh in range(self.n_corr_shells)]
             # First set a standard gf_struct solver:
-            self.gf_struct_solver = [dict([(sp, list(range(self.corr_shells[self.inequiv_to_corr[ish]]['dim'])))
+            self.gf_struct_solver = [dict([(sp, self.corr_shells[self.inequiv_to_corr[ish]]['dim'])
                                            for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]])
                                      for ish in range(self.n_inequiv_shells)]
             # Set standard (identity) maps from gf_struct_sumk <->
@@ -151,9 +151,9 @@ class SumkDFT(object):
             self.solver_to_sumk_block = [{}
                                          for ish in range(self.n_inequiv_shells)]
             for ish in range(self.n_inequiv_shells):
-                for block, inner_list in self.gf_struct_sumk[self.inequiv_to_corr[ish]]:
+                for block, inner_dim in self.gf_struct_sumk[self.inequiv_to_corr[ish]]:
                     self.solver_to_sumk_block[ish][block] = block
-                    for inner in inner_list:
+                    for inner in range(inner_dim):
                         self.sumk_to_solver[ish][
                             (block, inner)] = (block, inner)
                         self.solver_to_sumk[ish][
@@ -743,13 +743,13 @@ class SumkDFT(object):
             G_loc = [self.Sigma_imp_iw[icrsh].copy() for icrsh in range(
                 self.n_corr_shells)]   # this list will be returned
             beta = G_loc[0].mesh.beta
-            G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfImFreq(indices=inner, mesh=G_loc[0].mesh)) for block, inner in self.gf_struct_solver[ish].items()],
+            G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfImFreq(target_shape=(block_dim, block_dim), mesh=G_loc[0].mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
                                      make_copies=False) for ish in range(self.n_inequiv_shells)]
         elif iw_or_w == "w":
             G_loc = [self.Sigma_imp_w[icrsh].copy() for icrsh in range(
                 self.n_corr_shells)]   # this list will be returned
             mesh = G_loc[0].mesh
-            G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfReFreq(indices=inner, mesh=mesh)) for block, inner in self.gf_struct_solver[ish].items()],
+            G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfReFreq(target_shape=(block_dim, block_dim), mesh=mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
                                      make_copies=False) for ish in range(self.n_inequiv_shells)]
 
         for icrsh in range(self.n_corr_shells):
@@ -911,7 +911,7 @@ class SumkDFT(object):
                 for i in range(num_blocs):
                     blocs[i].sort()
                     self.gf_struct_solver[ish].update(
-                        [('%s_%s' % (sp, i), list(range(len(blocs[i]))))])
+                        [('%s_%s' % (sp, i), len(blocs[i]))])
 
                 # Construct sumk_to_solver taking (sumk_block, sumk_index) --> (solver_block, solver_inner)
                 # and solver_to_sumk taking (solver_block, solver_inner) -->
@@ -930,12 +930,12 @@ class SumkDFT(object):
 
             # Now calculate degeneracies of orbitals
             dm = {}
-            for block, inner in self.gf_struct_solver[ish].items():
+            for block, block_dim in self.gf_struct_solver[ish].items():
                 # get dm for the blocks:
                 dm[block] = numpy.zeros(
-                    [len(inner), len(inner)], numpy.complex_)
-                for ind1 in inner:
-                    for ind2 in inner:
+                    [block_dim, block_dim], numpy.complex_)
+                for ind1 in range(block_dim):
+                    for ind2 in range(block_dim):
                         block_sumk, ind1_sumk = self.solver_to_sumk[
                             ish][(block, ind1)]
                         block_sumk, ind2_sumk = self.solver_to_sumk[
@@ -1100,7 +1100,7 @@ class SumkDFT(object):
                 for i in range(num_blocs):
                     blocs[i].sort()
                     self.gf_struct_solver[ish].update(
-                        [('%s_%s' % (sp, i), list(range(len(blocs[i]))))])
+                        [('%s_%s' % (sp, i), len(blocs[i]))])
 
                 # Construct sumk_to_solver taking (sumk_block, sumk_index) --> (solver_block, solver_inner)
                 # and solver_to_sumk taking (solver_block, solver_inner) -->
@@ -1420,7 +1420,7 @@ class SumkDFT(object):
                 "calculate_diagonalization_matrix: Choices for prop_to_be_diagonal are 'eal' or 'dm'.")
             return 0
 
-        trans = [{block: numpy.eye(len(indices)) for block, indices in gfs} for gfs in self.gf_struct_sumk]
+        trans = [{block: numpy.eye(block_dim) for block, block_dim in gfs} for gfs in self.gf_struct_sumk]
 
         for ish in shells:
             trafo = {}
