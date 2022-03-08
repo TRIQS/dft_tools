@@ -150,14 +150,14 @@ class TransBasis:
 
         # build a full GF
         gfrotated = BlockGf(name_block_generator=[(block, GfImFreq(
-            indices=inner, mesh=gf_to_rot.mesh)) for block, inner in self.SK.gf_struct_sumk[0]], make_copies=False)
+            target_shape=(block_dim, block_dim), mesh=gf_to_rot.mesh)) for block, block_dim in self.SK.gf_struct_sumk[0]], make_copies=False)
 
         # transform the CTQMC blocks to the full matrix:
         # ish is the index of the inequivalent shell corresponding to icrsh
         ish = self.SK.corr_to_inequiv[0]
-        for block, inner in self.gf_struct_solver[ish].items():
-            for ind1 in inner:
-                for ind2 in inner:
+        for block, block_dim in self.gf_struct_solver[ish].items():
+            for ind1 in range(block_dim):
+                for ind2 in range(block_dim):
                     gfrotated[self.SK.solver_to_sumk_block[ish][block]][
                         ind1, ind2] << gf_to_rot[block][ind1, ind2]
 
@@ -168,9 +168,9 @@ class TransBasis:
 
         gfreturn = gf_to_rot.copy()
         # Put back into CTQMC basis:
-        for block, inner in self.gf_struct_solver[ish].items():
-            for ind1 in inner:
-                for ind2 in inner:
+        for block, block_dim in self.gf_struct_solver[ish].items():
+            for ind1 in range(block_dim):
+                for ind2 in range(block_dim):
                     gfreturn[block][ind1, ind2] << gfrotated[
                         self.SK.solver_to_sumk_block[0][block]][ind1, ind2]
 
