@@ -122,6 +122,7 @@ class BlockStructure(object):
                  transformation=None):
         
         # Ensure backwards-compatibility with pre-3.1.x gf_structs
+        # on second thought: would be better with gf_struct_flatten i guess... #TODO!
         if gf_struct_sumk != None:
             for gf_struct in gf_struct_sumk:
                 for i, block in enumerate(gf_struct):
