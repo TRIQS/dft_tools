@@ -120,8 +120,22 @@ class BlockStructure(object):
                  deg_shells=None,
                  corr_to_inequiv = None,
                  transformation=None):
+        
+        # Ensure backwards-compatibility with pre-3.1.x gf_structs
+        if gf_struct_sumk != None:
+            for gf_struct in gf_struct_sumk:
+                for i, block in enumerate(gf_struct):
+                    if isinstance(block[1], (list, np.ndarray)):
+                        gf_struct[i] = (block[0], len(block[1]))
+        if gf_struct_solver != None:
+            for gf_struct in gf_struct_solver:
+                for block in gf_struct:
+                    if isinstance(gf_struct[block], (list, np.ndarray)):
+                        gf_struct[block] = len(gf_struct[block])
+        
         self.gf_struct_sumk = gf_struct_sumk
         self.gf_struct_solver = gf_struct_solver
+
         self.solver_to_sumk = solver_to_sumk
         self.sumk_to_solver = sumk_to_solver
         self.solver_to_sumk_block = solver_to_sumk_block
