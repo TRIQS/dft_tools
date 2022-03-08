@@ -174,11 +174,9 @@ cmp(m2,
 
 # check full_structure
 full = BlockStructure.full_structure(
-    [{'up_0': [0, 1], 'up_1': [0], 'down_1': [0], 'down_0': [0, 1]}], None)
+    [{'up_0': 2, 'up_1': 1, 'down_1': 1, 'down_0': 2}], None)
 
-print(original_bs.gf_struct_sumk[0])
-print(gf_struct_flatten(original_bs.gf_struct_sumk[0]))
-G_sumk = BlockGf(mesh=G1.mesh, gf_struct=gf_struct_flatten(original_bs.gf_struct_sumk[0]))
+G_sumk = BlockGf(mesh=G1.mesh, gf_struct=original_bs.gf_struct_sumk[0])
 for i in range(3):
     G_sumk['up'][i, i] << SemiCircular(1 if i < 2 else 2)
     G_sumk['down'][i, i] << SemiCircular(4 if i < 2 else 3)
@@ -204,13 +202,13 @@ G_bT = transformed_bs.convert_gf(G_T, None, space_from='sumk',
 assert_block_gfs_are_close(G1, G_bT)
 
 assert original_bs.gf_struct_sumk_list ==\
-    [[('up', [0, 1, 2]), ('down', [0, 1, 2])]]
+    [[('up', 3), ('down', 3)]]
 assert original_bs.gf_struct_solver_dict ==\
-    [{'up_0': [0, 1], 'up_1': [0], 'down_1': [0], 'down_0': [0, 1]}]
+    [{'up_0': 2, 'up_1': 1, 'down_1': 1, 'down_0': 2}]
 assert original_bs.gf_struct_sumk_dict ==\
-    [{'down': [0, 1, 2], 'up': [0, 1, 2]}]
+    [{'down': 3, 'up': 3}]
 assert original_bs.gf_struct_solver_list ==\
-    [[('down_0', [0, 1]), ('down_1', [0]), ('up_0', [0, 1]), ('up_1', [0])]]
+    [[('down_0', 2), ('down_1', 1), ('up_0', 2), ('up_1', 1)]]
 
 # check __eq__
 assert full == full, 'equality not correct (equal structures not equal)'
