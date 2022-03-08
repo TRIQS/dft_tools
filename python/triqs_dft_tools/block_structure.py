@@ -280,13 +280,9 @@ class BlockStructure(object):
 
                 # zero out all the lines of the transformation that are
                 # not included in gf_struct_solver
-                #TODO CHECK THIS!
                 for iorb in range(self.gf_struct_sumk_dict[icrsh][block]):
                     if self.sumk_to_solver[ish][(block, iorb)][0] is None:
                         trans[icrsh][block][iorb, :] = 0.0
-                # for iorb, norb in enumerate(self.gf_struct_sumk_dict[icrsh][block]):
-                #     if self.sumk_to_solver[ish][(block, norb)][0] is None:
-                #         trans[icrsh][block][iorb, :] = 0.0
         return trans
 
     @property
@@ -560,7 +556,6 @@ class BlockStructure(object):
                     gfs[icrsh][ind_sol[0]].append(ind_sol[1])
         self.pick_gf_struct_solver(gfs)
 
-    # TODO!
     def map_gf_struct_solver(self, mapping):
         r""" Map the Green function structure from one struct to another.
 
@@ -611,6 +606,11 @@ class BlockStructure(object):
             for k in list(self.sumk_to_solver[ish].keys()):
                 if not k in su2so:
                     su2so[k] = (None, None)
+                    
+            for new_block in gf_struct:
+                assert all(np.sort(gf_struct[new_block]) == list(range(len(gf_struct[new_block])))) ,\
+                    "New gf_struct does not have valid 0-based indices!"
+                gf_struct[new_block] = len(gf_struct[new_block])
 
             self.adapt_deg_shells(gf_struct, ish)
 
