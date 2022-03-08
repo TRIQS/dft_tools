@@ -136,13 +136,13 @@ class BlockStructure(object):
         This is returned as a
         list (for each shell)
         of lists (for each block)
-        of tuples (block_name, block_indices).
+        of tuples (block_name, block_dimension).
 
         That is,
         ``gf_struct_solver_list[ish][b][0]``
         is the name of the block number ``b`` of shell ``ish``, and
         ``gf_struct_solver_list[ish][b][1]``
-        is a list of its indices.
+        is the dimension of the block ``b``.
 
         The list for each shell is sorted alphabetically by block name.
         """
@@ -159,13 +159,13 @@ class BlockStructure(object):
         This is returned as a
         list (for each shell)
         of lists (for each block)
-        of tuples (block_name, block_indices)
+        of tuples (block_name, block_dimension)
 
         That is,
         ``gf_struct_sumk_list[ish][b][0]``
         is the name of the block number ``b`` of shell ``ish``, and
         ``gf_struct_sumk_list[ish][b][1]``
-        is a list of its indices.
+        is the dimension of the block ``b``.
         """
         return self.gf_struct_sumk
 
@@ -179,7 +179,7 @@ class BlockStructure(object):
 
         That is,
         ``gf_struct_solver_dict[ish][bname]``
-        is a list of the indices of block ``bname`` of shell ``ish``.
+        is the dimension of block ``bname`` of shell ``ish``.
         """
         return self.gf_struct_solver
 
@@ -193,7 +193,7 @@ class BlockStructure(object):
 
         That is,
         ``gf_struct_sumk_dict[ish][bname]``
-        is a list of the indices of block ``bname`` of shell ``ish``.
+        is the dimension of block ``bname`` of shell ``ish``.
         """
         if self.gf_struct_sumk is None:
             return None
