@@ -92,7 +92,7 @@ BS.transformation = [{'up':np.array([[1,0,0],[0,1/np.sqrt(2),1/np.sqrt(2)],[0,1/
 H3 = BS.convert_operator(h_int_slater(spin_names=['up','down'], orb_names=[0,1,2], U_matrix=U3x3, off_diag=True))
 for op in H3:
     for c_op in op[0]:
-        assert(BS.gf_struct_solver_dict[0][c_op[1][0]][c_op[1][1]] is not None) # This crashes with a key error if the operator structure is not the solver structure
+        assert(BS.solver_to_sumk[0][(c_op[1][0], c_op[1][1])] is not None) # This crashes with a key error if the operator structure is not the solver structure
 
 U_trafod = transform_U_matrix(U3x3, BS.transformation[0]['up'].conjugate()) # The notorious .conjugate()
 H4 = h_int_slater(spin_names=['up','down'], orb_names=range(3), U_matrix=U_trafod, map_operator_structure=BS.sumk_to_solver[0])

@@ -22,6 +22,13 @@ DFTTools Version 3.1.0 is a release that
 * update documentation of W90 Converter
 * bugfix: This fix makes the function find_rot_mat() safer to use in case there are errors in finding the correct mapping. The converter will now abort if the agreement in mapping is below a user-definable threshold.
 
+### Change in gf_struct
+* In line with TRIQS 3.1.x, the form of the Green's function's structure (`gf_struct`) has been modified (see [triqs changelog](https://triqs.github.io/triqs/latest/ChangeLog.html#change-in-gf-struct-objects) for more information)
+* Instead of `gf_struct = [("up", [0, 1]), ("down", [0, 1])]`, the new convention uses `gf_struct = [("up", 2), ("down", 2)]`
+* This modifies the form of `gf_struct_solver` (and `sumk`) in `block_structure` and `SumkDFT` as well.
+* Backwards-compatibility with old, stored `block_structure` objects is given, however a warning is issued.
+* A helper-function `triqs.gf.block_gf.fix_gf_struct_type(gf_struct_old)` is provided in triqs to manually bring `gf_struct`s to the new form.
+
 ### Documentation
 * change to read the docs sphinx theme
 * clean up various doc files

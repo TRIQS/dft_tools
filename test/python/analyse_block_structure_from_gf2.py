@@ -54,11 +54,11 @@ SK.symm_deg_gf(G_new_symm, 0)
 assert_block_gfs_are_close(G_new[0], G_new_symm)
 
 
-assert SK.gf_struct_sumk == [[('ud', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])], [('ud', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])]],\
+assert SK.gf_struct_sumk == [[('ud', 10)], [('ud', 10)]],\
     "wrong gf_struct_sumk"
 for i in range(5):
     assert 'ud_{}'.format(i) in SK.gf_struct_solver[0], "missing block"
-    assert SK.gf_struct_solver[0]['ud_{}'.format(i)] == list(range(2)), "wrong block size"
+    assert SK.gf_struct_solver[0]['ud_{}'.format(i)] == 2, "wrong block size"
 for i in range(10):
     assert SK.sumk_to_solver[0]['ud',i] == ('ud_{}'.format(i//2), i%2), "wrong mapping"
 
@@ -98,11 +98,11 @@ G_new_symm = G_new[0].copy()
 SK.symm_deg_gf(G_new_symm, 0)
 assert_block_gfs_are_close(G_new[0], G_new_symm)
 
-assert SK.gf_struct_sumk == [[('ud', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])], [('ud', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])]],\
+assert SK.gf_struct_sumk == [[('ud', 10)], [('ud', 10)]],\
     "wrong gf_struct_sumk"
 for i in range(5):
     assert 'ud_{}'.format(i) in SK.gf_struct_solver[0], "missing block"
-    assert SK.gf_struct_solver[0]['ud_{}'.format(i)] == list(range(2)), "wrong block size"
+    assert SK.gf_struct_solver[0]['ud_{}'.format(i)] == 2, "wrong block size"
 for i in range(10):
     assert SK.sumk_to_solver[0]['ud',i] == ('ud_{}'.format(i//2), i%2), "wrong mapping"
 

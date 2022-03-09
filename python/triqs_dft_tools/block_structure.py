@@ -48,11 +48,11 @@ class BlockStructure(object):
     Parameters
     ----------
     gf_struct_sumk : list of list of tuple
-        gf_struct_sumk[ish][idx] = (block_name,list of indices in block)
+        gf_struct_sumk[ish][idx] = (block_name, dimension of block)
 
         for correlated shell ish; idx is just a counter in the list
     gf_struct_solver : list of dict
-        gf_struct_solver[ish][block] = list of indices in that block
+        gf_struct_solver[ish][block] = dimension of that block
 
         for *inequivalent* correlated shell ish
     solver_to_sumk : list of dict
@@ -120,8 +120,27 @@ class BlockStructure(object):
                  deg_shells=None,
                  corr_to_inequiv = None,
                  transformation=None):
+
+        # Ensure backwards-compatibility with pre-3.1.x gf_structs
+        show_gf_struct_warning = False
+        if gf_struct_sumk != None:
+            for gf_struct in gf_struct_sumk:
+                for i, block in enumerate(gf_struct):
+                    if isinstance(block[1], (list, np.ndarray)):
+                        gf_struct[i] = (block[0], len(block[1]))
+                        show_gf_struct_warning = True
+        if gf_struct_solver != None:
+            for gf_struct in gf_struct_solver:
+                for block in gf_struct:
+                    if isinstance(gf_struct[block], (list, np.ndarray)):
+                        gf_struct[block] = len(gf_struct[block])
+                        show_gf_struct_warning = True
+        if show_gf_struct_warning:
+            warn('Old (pre 3.1.x) form of gf_struct provided! The structure will be updated to the new convention!')
+
         self.gf_struct_sumk = gf_struct_sumk
         self.gf_struct_solver = gf_struct_solver
+
         self.solver_to_sumk = solver_to_sumk
         self.sumk_to_solver = sumk_to_solver
         self.solver_to_sumk_block = solver_to_sumk_block
@@ -136,13 +155,13 @@ class BlockStructure(object):
         This is returned as a
         list (for each shell)
         of lists (for each block)
-        of tuples (block_name, block_indices).
+        of tuples (block_name, block_dimension).
 
         That is,
         ``gf_struct_solver_list[ish][b][0]``
         is the name of the block number ``b`` of shell ``ish``, and
         ``gf_struct_solver_list[ish][b][1]``
-        is a list of its indices.
+        is the dimension of the block ``b``.
 
         The list for each shell is sorted alphabetically by block name.
         """
@@ -159,13 +178,13 @@ class BlockStructure(object):
         This is returned as a
         list (for each shell)
         of lists (for each block)
-        of tuples (block_name, block_indices)
+        of tuples (block_name, block_dimension)
 
         That is,
         ``gf_struct_sumk_list[ish][b][0]``
         is the name of the block number ``b`` of shell ``ish``, and
         ``gf_struct_sumk_list[ish][b][1]``
-        is a list of its indices.
+        is the dimension of the block ``b``.
         """
         return self.gf_struct_sumk
 
@@ -179,7 +198,7 @@ class BlockStructure(object):
 
         That is,
         ``gf_struct_solver_dict[ish][bname]``
-        is a list of the indices of block ``bname`` of shell ``ish``.
+        is the dimension of block ``bname`` of shell ``ish``.
         """
         return self.gf_struct_solver
 
@@ -193,11 +212,11 @@ class BlockStructure(object):
 
         That is,
         ``gf_struct_sumk_dict[ish][bname]``
-        is a list of the indices of block ``bname`` of shell ``ish``.
+        is the dimension of block ``bname`` of shell ``ish``.
         """
         if self.gf_struct_sumk is None:
             return None
-        return [{block: indices for block, indices in gfs}
+        return [{block: block_dim for block, block_dim in gfs}
                 for gfs in self.gf_struct_sumk]
 
     @property
@@ -249,7 +268,7 @@ class BlockStructure(object):
             raise Exception('gf_struct_solver not set.')
 
         if trans is None:
-            trans = [{block: np.eye(len(indices)) for block, indices in gfs}
+            trans = [{block: np.eye(block_dim) for block, block_dim in gfs}
                      for gfs in self.gf_struct_sumk]
 
         assert isinstance(trans, list),\
@@ -261,12 +280,12 @@ class BlockStructure(object):
         for icrsh in list(range(len(trans))):
             ish = self.corr_to_inequiv[icrsh]
             if trans[icrsh] is None:
-                trans[icrsh] = {block: np.eye(len(indices))
-                                for block, indices in self.gf_struct_sumk[icrsh]}
+                trans[icrsh] = {block: np.eye(block_dim)
+                                for block, block_dim in self.gf_struct_sumk[icrsh]}
 
             if not isinstance(trans[icrsh], dict):
                 trans[icrsh] = {block: copy.deepcopy(trans[icrsh])
-                                for block, indices in self.gf_struct_sumk[icrsh]}
+                                for block, block_dim in self.gf_struct_sumk[icrsh]}
 
             assert list(trans[icrsh].keys()) == list(self.gf_struct_sumk_dict[icrsh].keys()),\
                 "wrong block names used in transformation (icrsh = {})".format(icrsh)
@@ -275,13 +294,13 @@ class BlockStructure(object):
                 assert trans[icrsh][block].shape[0] == trans[icrsh][block].shape[1],\
                     "Transformation has to be quadratic; throwing away orbitals can be achieved on the level of the mapping. (icrsh = {}, block = {})".format(icrsh, block)
 
-                assert trans[icrsh][block].shape[0] == len(self.gf_struct_sumk_dict[icrsh][block]),\
+                assert trans[icrsh][block].shape[0] == self.gf_struct_sumk_dict[icrsh][block],\
                     "Transformation block shape does not match gf_struct_sumk. (icrsh = {}, block = {})".format(icrsh, block)
 
                 # zero out all the lines of the transformation that are
                 # not included in gf_struct_solver
-                for iorb, norb in enumerate(self.gf_struct_sumk_dict[icrsh][block]):
-                    if self.sumk_to_solver[ish][(block, norb)][0] is None:
+                for iorb in range(self.gf_struct_sumk_dict[icrsh][block]):
+                    if self.sumk_to_solver[ish][(block, iorb)][0] is None:
                         trans[icrsh][block][iorb, :] = 0.0
         return trans
 
@@ -321,10 +340,10 @@ class BlockStructure(object):
             for block in self.gf_struct_solver[ish]:
                 block_sumk = self.solver_to_sumk_block[ish][block]
                 T = eff_trans_sumk[icrsh][block_sumk]
-                ets[ish][block] = np.zeros((len(self.gf_struct_solver[ish][block]),
+                ets[ish][block] = np.zeros((self.gf_struct_solver[ish][block],
                                             len(T)),
                                            dtype=T.dtype)
-                for i in self.gf_struct_solver[ish][block]:
+                for i in range(self.gf_struct_solver[ish][block]):
                     i_sumk = self.solver_to_sumk[ish][block, i]
                     assert i_sumk[0] == block_sumk,\
                         "Wrong block in solver_to_sumk"
@@ -343,7 +362,7 @@ class BlockStructure(object):
         Parameters
         ----------
         gf_struct : list of dict
-            gf_struct[ish][block] = list of indices in that block
+            gf_struct[ish][block] = block dimension of that block
 
             for (inequivalent) correlated shell ish
         corr_to_inequiv : list
@@ -365,7 +384,7 @@ class BlockStructure(object):
             gss = []
             for block in gf_struct[ish]:
                 so2sublock[block]=block
-                for ind in gf_struct[ish][block]:
+                for ind in range(gf_struct[ish][block]):
                     so2su[(block,ind)]=(block,ind)
                 gss.append((block,gf_struct[ish][block]))
             solver_to_sumk.append(so2su)
@@ -409,16 +428,14 @@ class BlockStructure(object):
 
         [{'up':[0],'down':[1]}]
 
-        Note that the indices will be renamed to be a 0-based
-        sequence of integers, i.e. the new structure will actually
-        be  [{'up':[0],'down':[0]}].
+        Note that as of version 3.1.x, the new structure itself will
+        actually be stored as  [{'up':1,'down':1}].
 
         For dropped indices, sumk_to_solver will map to (None,None).
 
         Parameters
         ----------
         new_gf_struct : list of dict
-            formatted the same as gf_struct_solver:
 
             new_gf_struct[ish][block]=list of indices in that block.
         """
@@ -454,7 +471,8 @@ class BlockStructure(object):
 
             # reindexing gf_struct so that it starts with 0
             for k in gf_struct:
-                gf_struct[k]=list(range(len(gf_struct[k])))
+                # gf_struct[k]=list(range(len(gf_struct[k])))
+                gf_struct[k]=len(gf_struct[k])
             self.gf_struct_solver[ish]=gf_struct
 
     def adapt_deg_shells(self, gf_struct, ish=0):
@@ -468,7 +486,7 @@ class BlockStructure(object):
                         if not key in gf_struct:
                             del degsh[key]
                             continue
-                        if gf_struct[key] != self.gf_struct_solver[ish][key]:
+                        if len(gf_struct[key]) != self.gf_struct_solver[ish][key]:
                             v, C = degsh[key]
                             degsh[key][0] = \
                                 v[gf_struct[key], :][:, gf_struct[key]]
@@ -509,7 +527,6 @@ class BlockStructure(object):
         Parameters
         ----------
         new_gf_struct : list of dict
-            formatted the same as gf_struct_solver:
 
             new_gf_struct[ish][block]=list of indices in that block.
 
@@ -529,16 +546,16 @@ class BlockStructure(object):
         # one non-zero entry
 
         for icrsh in range(len(new_gf_struct)):
-            for block, indices in self.gf_struct_sumk[icrsh]:
+            for block, block_dim in self.gf_struct_sumk[icrsh]:
                 if not block in new_gf_struct[icrsh]:
                     #del new_gf_struct_transformed[block] # this MUST be wrong, as new_gf_struct_transformed needs to have a integer index for icrsh... # error when index is not kept at all
                     continue
                 T = eff_trans_sumk[icrsh][block]
-                for index in indices:
+                for index in range(block_dim):
                     if not index in new_gf_struct[icrsh][block]:
                         T[:, index] = 0.0
                 new_indices = []
-                for index in indices:
+                for index in range(block_dim):
                     if np.any(np.abs(T[index, :]) > 1.e-15):
                         new_indices.append(index)
                 new_gf_struct_transformed[icrsh][block] = new_indices
@@ -609,6 +626,11 @@ class BlockStructure(object):
                 if not k in su2so:
                     su2so[k] = (None, None)
 
+            for new_block in gf_struct:
+                assert all(np.sort(gf_struct[new_block]) == list(range(len(gf_struct[new_block])))) ,\
+                    "New gf_struct does not have valid 0-based indices!"
+                gf_struct[new_block] = len(gf_struct[new_block])
+
             self.adapt_deg_shells(gf_struct, ish)
 
             self.gf_struct_solver[ish] = gf_struct
@@ -660,8 +682,8 @@ class BlockStructure(object):
             which space the structure should correspond to
         """
 
-        def gf_function(indices):
-            return np.zeros((len(indices), len(indices)), dtype=dtype)
+        def gf_function(target_shape):
+            return np.zeros(target_shape, dtype=dtype)
 
         def block_function(name_list, block_list):
             d = dict()
@@ -683,7 +705,7 @@ class BlockStructure(object):
         names = list(gf_struct[ish].keys())
         blocks = []
         for n in names:
-            G = gf_function(indices=gf_struct[ish][n], **kwargs)
+            G = gf_function(target_shape=(gf_struct[ish][n],gf_struct[ish][n]), **kwargs)
             blocks.append(G)
         G = block_function(name_list=names, block_list=blocks)
         return G
@@ -766,7 +788,7 @@ class BlockStructure(object):
             for block, gf in G:
                 assert block in gf_struct[ish],\
                     "block " + block + " not in struct (shell {})".format(ish)
-                assert list(gf.indices) == 2 * [list(map(str, gf_struct[ish][block]))],\
+                assert (gf.target_shape) == (gf_struct[ish][block], gf_struct[ish][block]),\
                     "block " + block + \
                     " has wrong indices (shell {})".format(ish)
         else:
@@ -776,7 +798,7 @@ class BlockStructure(object):
             for block, gf in list(G.items()):
                 assert block in gf_struct[ish],\
                     "block " + block + " not in struct (shell {})".format(ish)
-                assert list(range(len(gf))) == 2 * [list(map(str, gf_struct[ish][block]))],\
+                assert len(gf) == gf_struct[ish][block],\
                     "block " + block + \
                     " has wrong indices (shell {})".format(ish)
 
@@ -936,8 +958,8 @@ class BlockStructure(object):
             block_mapping_from = G_struct.sumk_to_solver_block[ish_from]
         elif space_from == 'sumk':
             gf_struct_from = G_struct.gf_struct_sumk_dict[ish_from]
-            eff_trans_from = {block: np.eye(len(indices))
-                              for block, indices in G_struct.gf_struct_sumk[ish_from]}
+            eff_trans_from = {block: np.eye(block_dim)
+                              for block, block_dim in G_struct.gf_struct_sumk[ish_from]}
             block_mapping_from = {b: [b] for b in gf_struct_from}
         else:
             raise Exception(
@@ -949,8 +971,8 @@ class BlockStructure(object):
             block_mapping_to = self.solver_to_sumk_block[ish_to]
         elif space_to == 'sumk':
             gf_struct_to = self.gf_struct_sumk_dict[ish_to]
-            eff_trans_to = {block: np.eye(len(indices))
-                            for block, indices in self.gf_struct_sumk_list[ish_to]}
+            eff_trans_to = {block: np.eye(block_dim)
+                            for block, block_dim in self.gf_struct_sumk_list[ish_to]}
             block_mapping_to = {b: b for b in gf_struct_to}
         else:
             raise Exception(
@@ -1046,7 +1068,7 @@ class BlockStructure(object):
             self.solver_to_sumk_block.append({})
             for frm,to in list(self.sumk_to_solver[ish].items()):
                 if to[0] is not None:
-                    self.gf_struct_solver[ish][frm[0]+'_'+str(frm[1])]=[0]
+                    self.gf_struct_solver[ish][frm[0]+'_'+str(frm[1])]=1
                     self.sumk_to_solver[ish][frm]=(frm[0]+'_'+str(frm[1]),0)
                     self.solver_to_sumk[ish][(frm[0]+'_'+str(frm[1]),0)]=frm
                     self.solver_to_sumk_block[ish][frm[0]+'_'+str(frm[1])]=frm[0]
@@ -1167,46 +1189,6 @@ class BlockStructure(object):
         s += "transformation\n"
         s += str(self.transformation)
         return s
-
-def gf_struct_flatten(gf_struct):
-    '''
-    flattens gf_struct objecti
-
-    input gf_struct can looks like this:
-
-    [('up', [0, 1, 2]), ('down', [0, 1, 2])]
-
-    and will be returned as
-
-    [('up', 3), ('down', 3)]
-
-    Same for dict but replacing the values. This is for compatibility with the upcoming triqs releases.
-
-    Parameters
-    ----------
-    gf_struct: list of tuple or dict representing the Gf structure
-    __Returns:__
-    gf_struct_flat: flattens the values of the dict or the tuple representing the Gf indices by replacing them with the len of the list of indices
-
-    '''
-
-    if isinstance(gf_struct, list):
-        # create a copy of the original list
-        gf_struct_flat = gf_struct.copy()
-        for idx, block in enumerate(gf_struct_flat):
-            # exchange list of indices with length of list
-            gf_struct_flat[idx] = (block[0], len(block[1]))
-    elif isinstance(gf_struct, dict):
-        # create a copy of the original dict
-        gf_struct_flat = dict(gf_struct)
-        for key, value in gf_struct_flat.items():
-            # exchange list of indices with length of list
-            gf_struct_flat[key] = len(value)
-    else:
-        raise Exception('gf_struct input needs to be list or dict')
-
-
-    return gf_struct_flat
 
 from h5.formats import register_class
 register_class(BlockStructure)
