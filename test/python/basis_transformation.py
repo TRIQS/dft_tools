@@ -1,4 +1,3 @@
-from tkinter import W
 from triqs.utility.comparison_tests import *
 from triqs_dft_tools.sumk_dft import *
 import numpy as np
