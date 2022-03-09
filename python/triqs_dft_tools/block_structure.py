@@ -122,18 +122,22 @@ class BlockStructure(object):
                  transformation=None):
         
         # Ensure backwards-compatibility with pre-3.1.x gf_structs
-        # on second thought: would be better with gf_struct_flatten i guess... #TODO!
+        show_gf_struct_warning = False
         if gf_struct_sumk != None:
             for gf_struct in gf_struct_sumk:
                 for i, block in enumerate(gf_struct):
                     if isinstance(block[1], (list, np.ndarray)):
                         gf_struct[i] = (block[0], len(block[1]))
+                        show_gf_struct_warning = True
         if gf_struct_solver != None:
             for gf_struct in gf_struct_solver:
                 for block in gf_struct:
                     if isinstance(gf_struct[block], (list, np.ndarray)):
                         gf_struct[block] = len(gf_struct[block])
-        
+                        show_gf_struct_warning = True
+        if show_gf_struct_warning:
+            warn('Old (pre 3.1.x) form of gf_struct provided! The structure will be updated to the new convention!')
+
         self.gf_struct_sumk = gf_struct_sumk
         self.gf_struct_solver = gf_struct_solver
 
