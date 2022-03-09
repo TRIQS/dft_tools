@@ -1,17 +1,15 @@
 DFT_Tools - A TRIQS application for ab initio calculations
  
 Copyright (C) 2011-2019: M. Aichhorn, L. Pourovskii, V. Vildosola and C. Martins
-Copyright (C) 2020: The Simons Foundation
+Copyright (C) 2020-2022: The Simons Foundation
 
 1. Documentation
 
-You will find the documentation of this application under
-<https://triqs.github.io/dft_tools/>.
+You will find the documentation of this application under [triqs.github.io/dft_tools](https://triqs.github.io/dft_tools/).
 
 2. Installation
 
-The installation steps are described in
-<https://triqs.github.io/dft_tools/2.1.x/install.html>
+The installation steps are described in [triqs.github.io/dft_tools/latest/install](https://triqs.github.io/dft_tools/latest/install.html)
 
 3. Version
 
