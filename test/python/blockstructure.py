@@ -3,7 +3,7 @@ from triqs.utility.h5diff import h5diff, compare, failures
 from triqs.gf import *
 from triqs.utility.comparison_tests import assert_block_gfs_are_close
 from scipy.linalg import expm
-from triqs_dft_tools.block_structure import BlockStructure, gf_struct_flatten
+from triqs_dft_tools.block_structure import BlockStructure
 import numpy as np
 
 

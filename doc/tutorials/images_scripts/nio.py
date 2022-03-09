@@ -6,7 +6,6 @@ from triqs.gf import *
 import sys, triqs.version as triqs_version
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
-from triqs_dft_tools.block_structure import gf_struct_flatten
 from triqs.operators.util.hamiltonians import *
 from triqs.operators.util.U_matrix import *
 from triqs_cthyb import *
@@ -20,8 +19,8 @@ filename = 'nio'
 
 SK = SumkDFT(hdf_file = filename+'.h5', use_dft_blocks = False)
 
-beta = 5.0 
- 
+beta = 5.0
+
 Sigma = SK.block_structure.create_gf(beta=beta)
 SK.put_Sigma([Sigma])
 G = SK.extract_G_loc()
@@ -41,7 +40,7 @@ spin_names = ['up','down']
 orb_names = [i for i in range(0,n_orb)]
 
 #gf_struct = set_operator_structure(spin_names, orb_names, orb_hyb)
-gf_struct = gf_struct_flatten(SK.gf_struct_solver[0])
+gf_struct = SK.gf_struct_solver_list[0]
 mpi.report('Sumk to Solver: %s'%SK.sumk_to_solver)
 mpi.report('GF struct sumk: %s'%SK.gf_struct_sumk)
 mpi.report('GF struct solver: %s'%SK.gf_struct_solver)
@@ -49,7 +48,7 @@ mpi.report('GF struct solver: %s'%SK.gf_struct_solver)
 S = Solver(beta=beta, gf_struct=gf_struct)
 
 # Construct the Hamiltonian and save it in Hamiltonian_store.txt
-H = Operator() 
+H = Operator()
 U = 8.0
 J = 1.0
 
@@ -130,14 +129,14 @@ mpi.report('%s DMFT cycles requested. Starting with iteration %s.'%(n_iterations
 
 # The infamous DMFT self consistency cycle
 for it in range(iteration_offset, iteration_offset + n_iterations):
-    
+
     mpi.report('Doing iteration: %s'%it)
-    
+
     # Get G0
     S.G0_iw << inverse(S.Sigma_iw + inverse(S.G_iw))
     # Solve the impurity problem
     S.solve(h_int = H, **p)
-    if mpi.is_master_node(): 
+    if mpi.is_master_node():
         ar['DMFT_input']['Iterations']['solver_dict_it'+str(it)] = p
         ar['DMFT_results']['Iterations']['Gimp_it'+str(it)] = S.G_iw
         ar['DMFT_results']['Iterations']['Gtau_it'+str(it)] = S.G_tau
@@ -150,13 +149,13 @@ for it in range(iteration_offset, iteration_offset + n_iterations):
     SK.put_Sigma(Sigma_imp=[S.Sigma_iw])
     SK.calc_mu(precision=0.01)
     S.G_iw << SK.extract_G_loc()[0]
-    
+
     # print densities
     for sig,gf in S.G_iw:
         mpi.report("Orbital %s density: %.6f"%(sig,dm[sig][0,0]))
     mpi.report('Total charge of Gloc : %.6f'%S.G_iw.total_density())
 
-    if mpi.is_master_node(): 
+    if mpi.is_master_node():
         ar['DMFT_results']['iteration_count'] = it
         ar['DMFT_results']['Iterations']['Sigma_it'+str(it)] = S.Sigma_iw
         ar['DMFT_results']['Iterations']['Gloc_it'+str(it)] = S.G_iw

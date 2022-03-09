@@ -120,7 +120,7 @@ class BlockStructure(object):
                  deg_shells=None,
                  corr_to_inequiv = None,
                  transformation=None):
-        
+
         # Ensure backwards-compatibility with pre-3.1.x gf_structs
         show_gf_struct_warning = False
         if gf_struct_sumk != None:
@@ -625,7 +625,7 @@ class BlockStructure(object):
             for k in list(self.sumk_to_solver[ish].keys()):
                 if not k in su2so:
                     su2so[k] = (None, None)
-                    
+
             for new_block in gf_struct:
                 assert all(np.sort(gf_struct[new_block]) == list(range(len(gf_struct[new_block])))) ,\
                     "New gf_struct does not have valid 0-based indices!"
@@ -1189,46 +1189,6 @@ class BlockStructure(object):
         s += "transformation\n"
         s += str(self.transformation)
         return s
-
-def gf_struct_flatten(gf_struct):
-    '''
-    flattens gf_struct objecti
-
-    input gf_struct can looks like this:
-
-    [('up', [0, 1, 2]), ('down', [0, 1, 2])]
-
-    and will be returned as
-
-    [('up', 3), ('down', 3)]
-
-    Same for dict but replacing the values. This is for compatibility with the upcoming triqs releases.
-
-    Parameters
-    ----------
-    gf_struct: list of tuple or dict representing the Gf structure
-    __Returns:__
-    gf_struct_flat: flattens the values of the dict or the tuple representing the Gf indices by replacing them with the len of the list of indices
-
-    '''
-
-    if isinstance(gf_struct, list):
-        # create a copy of the original list
-        gf_struct_flat = gf_struct.copy()
-        for idx, block in enumerate(gf_struct_flat):
-            # exchange list of indices with length of list
-            gf_struct_flat[idx] = (block[0], len(block[1]))
-    elif isinstance(gf_struct, dict):
-        # create a copy of the original dict
-        gf_struct_flat = dict(gf_struct)
-        for key, value in gf_struct_flat.items():
-            # exchange list of indices with length of list
-            gf_struct_flat[key] = len(value)
-    else:
-        raise Exception('gf_struct input needs to be list or dict')
-
-
-    return gf_struct_flat
 
 from h5.formats import register_class
 register_class(BlockStructure)
