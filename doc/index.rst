@@ -4,9 +4,9 @@
 DFTTools
 #########
 
-.. sidebar:: DFTTools 3.0.0
+.. sidebar:: DFTTools |PROJECT_VERSION|
 
-   This is the homepage of DFTTools v3.0.0.
+   This is the homepage of DFTTools |PROJECT_VERSION|
    For changes see the :ref:`changelog page <changelog>`.
       
       .. image:: _static/logo_github.png
