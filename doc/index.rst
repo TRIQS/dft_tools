@@ -3,9 +3,9 @@
 app4triqs
 *********
 
-.. sidebar:: app4triqs 3.0.0
+.. sidebar:: app4triqs |PROJECT_VERSION|
 
-   This is the homepage of app4triqs v3.0.0.
+   This is the homepage of app4triqs |PROJECT_VERSION|.
    For changes see the :ref:`changelog page <changelog>`.
       
       .. image:: _static/logo_github.png
