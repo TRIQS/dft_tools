@@ -27,7 +27,7 @@ toolchainopts = {'pic': True, 'usempi': True}
 
 source_urls = ['https://github.com/TRIQS/dft_tools/releases/download/%(version)s/']
 sources = ['dft_tools-%(version)s.tar.gz']
-checksums = ['PUT HERE THE SHA256 OF THE RELEASE TARBALL']
+checksums = ['57b7d0fe5a96c5a42bb684c60ca8e136a33e1385bf6cd7e9d1371fa507dc2ec4']
 
 dependencies = [
     ('Python', '3.9.6'),
