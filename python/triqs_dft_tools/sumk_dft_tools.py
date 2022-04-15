@@ -862,7 +862,7 @@ class SumkDFTTools(SumkDFT):
         if ishell is not None:
             gf_struct_parproj = [
                 (sp, self.shells[ishell]['dim']) for sp in spn]
-            G_loc = BlockGf(name_block_generator=[(block, GfReFreq(target_shape=(block_dim, block_dim), mesh=self.Sigma_imp_w[0].mesh))
+            G_loc = BlockGf(name_block_generator=[(block, GfReFreq(target_shape=(block_dim, block_dim), mesh=self.Sigma_imp[0].mesh))
                                                   for block, block_dim in gf_struct_parproj], make_copies=False)
             G_loc.zero()
 
@@ -1207,7 +1207,7 @@ class SumkDFTTools(SumkDFT):
                     spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
                     glist = lambda: [GfReFreq(target_shape=(block_dim, block_dim), window=(self.omega[
                                               0], self.omega[-1]), n_points=n_om) for block, block_dim in self.gf_struct_sumk[icrsh]]
-                    self.Sigma_imp_w[icrsh] = BlockGf(
+                    self.Sigma_imp[icrsh] = BlockGf(
                         name_list=spn, block_list=glist(), make_copies=False)
                     for i, g in self.Sigma_imp[icrsh]:
                         for iL in g.indices[0]:
