@@ -860,7 +860,7 @@ def read_misc_input(w90_seed, n_spin_blocks, n_k):
             if line.strip() == 'End of band structure calculation':
                 break
 
-        assert 'k = ' in out_data[ct + 2], 'Cannot read occupations. Set verbosity = "high" in {}'.format(nscf_filename)
+        assert 'k =' in out_data[ct + 2], 'Cannot read occupations. Set verbosity = "high" in {}'.format(nscf_filename)
         out_data = out_data[ct+2:]
 
         # block size of eigenvalues + occupations per k-point
