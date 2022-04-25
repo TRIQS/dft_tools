@@ -25,7 +25,7 @@ General SumK class and helper functions for combining ab-initio code and triqs
 """
 
 from types import *
-import numpy
+import numpy as np
 import triqs.utility.dichotomy as dichotomy
 from triqs.gf import *
 import triqs.utility.mpi as mpi
@@ -42,7 +42,7 @@ from scipy.optimize import minimize
 class SumkDFT(object):
     """This class provides a general SumK method for combining ab-initio code and triqs."""
 
-    def __init__(self, hdf_file, h_field=0.0, use_dft_blocks=False,
+    def __init__(self, hdf_file, h_field=0.0, mesh=None, beta=40, n_iw=1025, use_dft_blocks=False,
                  dft_data='dft_input', symmcorr_data='dft_symmcorr_input', parproj_data='dft_parproj_input',
                  symmpar_data='dft_symmpar_input', bands_data='dft_bands_input', transp_data='dft_transp_input',
                  misc_data='dft_misc_input',bc_data='dft_bandchar_input',fs_data='dft_fs_input'):
@@ -57,6 +57,11 @@ class SumkDFT(object):
                   The value of magnetic field to add to the DFT Hamiltonian.
                   The contribution -h_field*sigma is added to diagonal elements of the Hamiltonian.
                   It cannot be used with the spin-orbit coupling on; namely h_field is set to 0 if self.SO=True.
+        mesh: MeshImFreq or MeshReFreq, optional. Frequency mesh of Sigma.
+        beta : real, optional
+               Inverse temperature. Used to construct imaginary frequency if mesh is not given.
+        n_iw : integer, optional
+               Number of Matsubara frequencies. Used to construct imaginary frequency if mesh is not given.
         use_dft_blocks : boolean, optional
                          If True, the local Green's function matrix for each spin is divided into smaller blocks
                           with the block structure determined from the DFT density matrix of the corresponding correlated shell.
@@ -98,6 +103,22 @@ class SumkDFT(object):
             self.bc_data = bc_data
             self.fs_data = fs_data
             self.h_field = h_field
+
+            if mesh is None:
+                self.mesh = MeshImFreq(beta=beta, S='Fermion', n_max=n_iw)
+                self.mesh_values = np.linspace(self.mesh(self.mesh.first_index()),
+                                               self.mesh(self.mesh.last_index()),
+                                               len(self.mesh))
+            elif isinstance(mesh, MeshImFreq):
+                self.mesh = mesh
+                self.mesh_values = np.linspace(self.mesh(self.mesh.first_index()),
+                                               self.mesh(self.mesh.last_index()),
+                                               len(self.mesh))
+            elif isinstance(mesh, MeshReFreq):
+                self.mesh = mesh
+                self.mesh_values = np.linspace(self.mesh.omega_min, self.mesh.omega_max, len(self.mesh))
+            else:
+                raise ValueError('mesh must be a triqs mesh of type MeshImFreq or MeshReFreq')
 
             self.block_structure = BlockStructure()
 
@@ -467,7 +488,7 @@ class SumkDFT(object):
 
         return gf_rotated
 
-    def lattice_gf(self, ik, mu=None, iw_or_w="iw", beta=40, broadening=None, mesh=None, with_Sigma=True, with_dc=True):
+    def lattice_gf(self, ik, mu=None, broadening=None, mesh=None, with_Sigma=True, with_dc=True):
         r"""
         Calculates the lattice Green function for a given k-point from the DFT Hamiltonian and the self energy.
 
@@ -478,19 +499,11 @@ class SumkDFT(object):
         mu : real, optional
              Chemical potential for which the Green's function is to be calculated.
              If not provided, self.chemical_potential is used for mu.
-        iw_or_w : string, optional
-
-                  - `iw_or_w` = 'iw' for a imaginary-frequency self-energy
-                  - `iw_or_w` = 'w' for a real-frequency self-energy
-
-        beta : real, optional
-               Inverse temperature.
         broadening : real, optional
                      Imaginary shift for the axis along which the real-axis GF is calculated.
                      If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
-        mesh : list, optional
-               Data defining mesh on which the real-axis GF will be calculated, given in the form
-               (om_min,om_max,n_points), where om_min is the minimum omega, om_max is the maximum omega and n_points is the number of points.
+        mesh : MeshReFreq or MeshImFreq, optional
+                    Mesh to be used if with_Sigma=False. If with Sigma=False and mesh is none then self.mesh is used.
         with_Sigma : boolean, optional
                      If True the GF will be calculated with the self-energy stored in self.Sigmaimp_(w/iw), for real/Matsubara GF, respectively.
                      In this case the mesh is taken from the self.Sigma_imp object.
@@ -508,9 +521,7 @@ class SumkDFT(object):
             mu = self.chemical_potential
         ntoi = self.spin_names_to_ind[self.SO]
         spn = self.spin_block_names[self.SO]
-        if (iw_or_w != "iw") and (iw_or_w != "w"):
-            raise ValueError("lattice_gf: Implemented only for Re/Im frequency functions.")
-        if not hasattr(self, "Sigma_imp_" + iw_or_w):
+        if not hasattr(self, "Sigma_imp"):
             with_Sigma = False
         if broadening is None:
             if mesh is None:
@@ -518,45 +529,48 @@ class SumkDFT(object):
             else:  # broadening = 2 * \Delta omega, where \Delta omega is the spacing of omega points
                 broadening = 2.0 * ((mesh[1] - mesh[0]) / (mesh[2] - 1))
 
-        # Are we including Sigma?
-        if with_Sigma:
-            Sigma_imp = getattr(self, "Sigma_imp_" + iw_or_w)
-            sigma_minus_dc = [s.copy() for s in Sigma_imp]
-            if with_dc:
-                sigma_minus_dc = self.add_dc(iw_or_w)
-            if iw_or_w == "iw":
-                # override beta if Sigma_iw is present
-                beta = Sigma_imp[0].mesh.beta
-                mesh = Sigma_imp[0].mesh
-            elif iw_or_w == "w":
-                mesh = Sigma_imp[0].mesh
-                if broadening>0 and mpi.is_master_node():
-                    warn('lattice_gf called with Sigma and broadening > 0 (broadening = {}). You might want to explicitly set the broadening to 0.'.format(broadening))
-        else:
-            if iw_or_w == "iw":
-                if beta is None:
-                    raise ValueError("lattice_gf: Give the beta for the lattice GfReFreq.")
-                # Default number of Matsubara frequencies
-                mesh = MeshImFreq(beta=beta, S='Fermion', n_max=1025)
-            elif iw_or_w == "w":
-                if mesh is None:
-                    raise ValueError("lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq.")
-                mesh = MeshReFreq(mesh[0], mesh[1], mesh[2])
-
         # Check if G_latt is present
         set_up_G_latt = False                       # Assume not
-        if not hasattr(self, "G_latt_" + iw_or_w):
+        if not hasattr(self, "G_latt" ):
             # Need to create G_latt_(i)w
             set_up_G_latt = True
         else:                                       # Check that existing GF is consistent
-            G_latt = getattr(self, "G_latt_" + iw_or_w)
+            G_latt = self.G_latt
             GFsize = [gf.target_shape[0] for bname, gf in G_latt]
             unchangedsize = all([self.n_orbitals[ik, ntoi[spn[isp]]] == GFsize[
                                 isp] for isp in range(self.n_spin_blocks[self.SO])])
-            if not unchangedsize:
+            if (not mesh is None) or (not unchangedsize):
                 set_up_G_latt = True
-            if (iw_or_w == "iw") and (self.G_latt_iw.mesh.beta != beta):
-                set_up_G_latt = True  # additional check for ImFreq
+
+        # Are we including Sigma?
+        if with_Sigma:
+            Sigma_imp = self.Sigma_imp
+            if with_dc:
+                sigma_minus_dc = self.add_dc()
+            else:
+                sigma_minus_dc = [s for s in Sigma_imp]
+            if not mesh is None:
+                warn('lattice_gf called with Sigma and given mesh. Mesh will be taken from Sigma.')
+
+            if self.mesh != Sigma_imp[0].mesh:
+                mesh = Sigma_imp[0].mesh
+                if isinstance(mesh, MeshImFreq):
+                    mesh_values = np.linspace(mesh(mesh.first_index()), mesh(mesh.last_index()), len(mesh))
+                else:
+                    mesh_values = np.linspace(mesh.omega_min, mesh.omega_max, len(mesh))
+            else:
+                mesh = self.mesh
+                mesh_values = self.mesh_values
+
+        elif not mesh is None:
+            assert isinstance(mesh, MeshReFreq) or isinstance(mesh, MeshImFreq),  "mesh must be a triqs MeshReFreq or MeshImFreq"
+            if isinstance(mesh, MeshImFreq):
+                mesh_values = np.linspace(mesh(mesh.first_index()), mesh(mesh.last_index()), len(mesh))
+            else:
+                mesh_values = np.linspace(mesh.omega_min, mesh.omega_max, len(mesh))
+        else:
+            mesh = self.mesh
+            mesh_values = self.mesh_values
 
         # Set up G_latt
         if set_up_G_latt:
@@ -565,41 +579,38 @@ class SumkDFT(object):
             gf_struct = [(spn[isp], block_structure[isp])
                          for isp in range(self.n_spin_blocks[self.SO])]
             block_ind_list = [block for block, inner in gf_struct]
-            if iw_or_w == "iw":
+            if isinstance(mesh, MeshImFreq):
                 glist = lambda: [GfImFreq(indices=inner, mesh=mesh)
                                  for block, inner in gf_struct]
-            elif iw_or_w == "w":
+            else:
                 glist = lambda: [GfReFreq(indices=inner, mesh=mesh)
                                  for block, inner in gf_struct]
             G_latt = BlockGf(name_list=block_ind_list,
                              block_list=glist(), make_copies=False)
             G_latt.zero()
 
-        if iw_or_w == "iw":
-            G_latt << iOmega_n
-        elif iw_or_w == "w":
-            G_latt << Omega + 1j * broadening
+        idmat = [np.identity(
+            self.n_orbitals[ik, ntoi[sp]], np.complex_) for sp in spn]
 
-        idmat = [numpy.identity(
-            self.n_orbitals[ik, ntoi[sp]], numpy.complex_) for sp in spn]
-        M = copy.deepcopy(idmat)
-
-        for ibl in range(self.n_spin_blocks[self.SO]):
-
+        # fill Glatt
+        for ibl, (block, gf) in enumerate(G_latt):
             ind = ntoi[spn[ibl]]
             n_orb = self.n_orbitals[ik, ind]
-            M[ibl] = self.hopping[ik, ind, 0:n_orb, 0:n_orb] - \
-                (idmat[ibl] * mu) - (idmat[ibl] * self.h_field * (1 - 2 * ibl))
-        G_latt -= M
+            if isinstance(mesh, MeshImFreq):
+                gf.data[:, :, :] = (idmat[ibl] * (mesh_values[:, None, None] + mu + self.h_field*(1-2*ibl))
+                                    - self.hopping[ik, ind, 0:n_orb, 0:n_orb])
+            else:
+                gf.data[:, :, :] = (idmat[ibl] *
+                                    (mesh_values[:, None, None] + mu + self.h_field*(1-2*ibl) + 1j*broadening)
+                                    - self.hopping[ik, ind, 0:n_orb, 0:n_orb])
 
-        if with_Sigma:
-            for icrsh in range(self.n_corr_shells):
-                for bname, gf in G_latt:
-                    gf -= self.upfold(ik, icrsh, bname,
-                                      sigma_minus_dc[icrsh][bname], gf)
+            if with_Sigma:
+                for icrsh in range(self.n_corr_shells):
+                    gf -= self.upfold(ik, icrsh, block,
+                                      sigma_minus_dc[icrsh][block], gf)
 
         G_latt.invert()
-        setattr(self, "G_latt_" + iw_or_w, G_latt)
+        self.G_latt = G_latt
 
         return G_latt
 
@@ -629,19 +640,19 @@ class SumkDFT(object):
         assert len(Sigma_imp) == self.n_corr_shells,\
             "put_Sigma: give exactly one Sigma for each corr. shell!"
 
-        if all((isinstance(gf, Gf) and isinstance(gf.mesh, MeshImFreq)) for bname, gf in Sigma_imp[0]):
+        if isinstance(self.mesh, MeshImFreq) and all(isinstance(gf.mesh, MeshImFreq) and isinstance(gf, Gf) and gf.mesh == self.mesh for bname, gf in Sigma_imp[0]):
             # Imaginary frequency Sigma:
-            self.Sigma_imp_iw = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, space='sumk')
+            self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, space='sumk')
                                  for icrsh in range(self.n_corr_shells)]
-            SK_Sigma_imp = self.Sigma_imp_iw
-        elif all(isinstance(gf, Gf) and isinstance(gf.mesh, MeshReFreq) for bname, gf in Sigma_imp[0]):
+            SK_Sigma_imp = self.Sigma_imp
+        elif isinstance(self.mesh, MeshReFreq) and all(isinstance(gf, Gf) and isinstance(gf.mesh, MeshReFreq) and gf.mesh == self.mesh for bname, gf in Sigma_imp[0]):
             # Real frequency Sigma:
-            self.Sigma_imp_w = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, gf_function=GfReFreq, space='sumk')
+            self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, gf_function=GfReFreq, space='sumk')
                                 for icrsh in range(self.n_corr_shells)]
-            SK_Sigma_imp = self.Sigma_imp_w
+            SK_Sigma_imp = self.Sigma_imp
 
         else:
-            raise ValueError("put_Sigma: This type of Sigma is not handled, give either BlockGf of GfReFreq or GfImFreq.")
+            raise ValueError("put_Sigma: Sigma_imp must have the same mesh as SumKDFT.mesh.")
 
         # rotation from local to global coordinate system:
         for icrsh in range(self.n_corr_shells):
@@ -654,13 +665,12 @@ class SumkDFT(object):
                     gf << Sigma_imp[icrsh][bname]
 
         #warning if real frequency self energy is within the bounds of the band energies
-        if isinstance(Sigma_imp[0].mesh, MeshReFreq):
+        if isinstance(self.mesh, MeshReFreq):
             if self.min_band_energy is None or self.max_band_energy is None:
                 self.calculate_min_max_band_energies()
-            for gf in Sigma_imp:
-                Sigma_mesh = numpy.array([i for i in gf.mesh.values()])
-                if Sigma_mesh[0] > (self.min_band_energy - self.chemical_potential) or Sigma_mesh[-1] < (self.max_band_energy - self.chemical_potential):
-                    warn('The given Sigma is on a mesh which does not cover the band energy range. The Sigma MeshReFreq runs from %f to %f, while the band energy (minus the chemical potential) runs from %f to %f'%(Sigma_mesh[0], Sigma_mesh[-1], self.min_band_energy, self.max_band_energy))
+            mesh = np.array([i for i in self.mesh.values()])
+            if mesh[0] > (self.min_band_energy - self.chemical_potential) or mesh[-1] < (self.max_band_energy - self.chemical_potential):
+                warn('The given Sigma is on a mesh which does not cover the band energy range. The Sigma MeshReFreq runs from %f to %f, while the band energy (minus the chemical potential) runs from %f to %f'%(mesh[0], mesh[-1], self.min_band_energy, self.max_band_energy))
 
     def transform_to_sumk_blocks(self, Sigma_imp, Sigma_out=None):
         r""" transform Sigma from solver to sumk space
@@ -703,7 +713,7 @@ class SumkDFT(object):
                 G_out=Sigma_out[icrsh])
         return Sigma_out
 
-    def extract_G_loc(self, mu=None, iw_or_w='iw', with_Sigma=True, with_dc=True, broadening=None,
+    def extract_G_loc(self, mu=None, with_Sigma=True, with_dc=True, broadening=None,
                       transform_to_solver_blocks=True, show_warnings=True):
         r"""
         Extracts the local downfolded Green function by the Brillouin-zone integration of the lattice Green's function.
@@ -739,14 +749,22 @@ class SumkDFT(object):
         if mu is None:
             mu = self.chemical_potential
 
-        if iw_or_w == "iw":
-            G_loc = [self.Sigma_imp_iw[icrsh].copy() for icrsh in range(
+        if with_Sigma:
+            mesh = self.Sigma_imp[0].mesh
+            if mesh != self.mesh:
+                warn('self.mesh and self.Sigma_imp[0].mesh are differen! Using mesh from Sigma')
+
+        else:
+            mesh = self.mesh
+
+        if isinstance(mesh, MeshImFreq):
+            G_loc = [self.Sigma_imp[icrsh].copy() for icrsh in range(
                 self.n_corr_shells)]   # this list will be returned
             beta = G_loc[0].mesh.beta
             G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfImFreq(target_shape=(block_dim, block_dim), mesh=G_loc[0].mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
                                      make_copies=False) for ish in range(self.n_inequiv_shells)]
-        elif iw_or_w == "w":
-            G_loc = [self.Sigma_imp_w[icrsh].copy() for icrsh in range(
+        else:
+            G_loc = [self.Sigma_imp[icrsh].copy() for icrsh in range(
                 self.n_corr_shells)]   # this list will be returned
             mesh = G_loc[0].mesh
             G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfReFreq(target_shape=(block_dim, block_dim), mesh=mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
@@ -755,24 +773,20 @@ class SumkDFT(object):
         for icrsh in range(self.n_corr_shells):
             G_loc[icrsh].zero()                          # initialize to zero
 
-        ikarray = numpy.array(list(range(self.n_k)))
+        ikarray = np.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
-            if iw_or_w == 'iw':
+            if isinstance(self.mesh, MeshImFreq):
                 G_latt = self.lattice_gf(
-                    ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, beta=beta)
-            elif iw_or_w == 'w':
-                mesh_parameters = (G_loc[0].mesh.omega_min,G_loc[0].mesh.omega_max,len(G_loc[0].mesh))
+                    ik=ik, mu=mu, with_Sigma=with_Sigma, with_dc=with_dc)
+            else:
                 G_latt = self.lattice_gf(
-                    ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening, mesh=mesh_parameters)
+                    ik=ik, mu=mu, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening)
             G_latt *= self.bz_weights[ik]
 
             for icrsh in range(self.n_corr_shells):
                 # init temporary storage
-                tmp = G_loc[icrsh].copy()
-                for bname, gf in tmp:
-                    tmp[bname] << self.downfold(
-                        ik, icrsh, bname, G_latt[bname], gf)
-                G_loc[icrsh] += tmp
+                for bname, gf in G_loc[icrsh]:
+                    gf += self.downfold(ik, icrsh, bname, G_latt[bname], gf)
 
         # Collect data from mpi
         for icrsh in range(self.n_corr_shells):
@@ -932,8 +946,8 @@ class SumkDFT(object):
             dm = {}
             for block, block_dim in self.gf_struct_solver[ish].items():
                 # get dm for the blocks:
-                dm[block] = numpy.zeros(
-                    [block_dim, block_dim], numpy.complex_)
+                dm[block] = np.zeros(
+                    [block_dim, block_dim], complex)
                 for ind1 in range(block_dim):
                     for ind2 in range(block_dim):
                         block_sumk, ind1_sumk = self.solver_to_sumk[
@@ -994,7 +1008,7 @@ class SumkDFT(object):
             gf = [g_sh.copy() for g_sh in G]
             for ish in range(len(gf)):
                 for name, g in gf[ish]:
-                    g << 1.0j*(g-g.conjugate().transpose())/2.0/numpy.pi
+                    g << 1.0j*(g-g.conjugate().transpose())/2.0/np.pi
         elif all(isinstance(g_sh.mesh, MeshReTime) for g_sh in G):
             def get_delta_from_mesh(mesh):
                 w0 = None
@@ -1004,15 +1018,15 @@ class SumkDFT(object):
                     else:
                         return w-w0
             gf = [BlockGf(name_block_generator = [(name, GfReFreq(
-                window=(-numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh)),
-                numpy.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh))),
+                window=(-np.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh)),
+                np.pi*(len(block.mesh)-1) / (len(block.mesh)*get_delta_from_mesh(block.mesh))),
                 n_points=len(block.mesh), indices=block.indices)) for name, block in g_sh], make_copies=False)
                 for g_sh in G]
 
             for ish in range(len(gf)):
                 for name, g in gf[ish]:
                     g.set_from_fourier(G[ish][name])
-                    g << 1.0j*(g-g.conjugate().transpose())/2.0/numpy.pi
+                    g << 1.0j*(g-g.conjugate().transpose())/2.0/np.pi
         else:
             raise Exception("G must be a list of BlockGf of either GfImFreq, GfImTime, GfReFreq or GfReTime")
         return gf
@@ -1063,7 +1077,7 @@ class SumkDFT(object):
                                      for ish in range(self.n_inequiv_shells)]
 
         # the maximum value of each matrix element of each block and shell
-        max_gf = [{name:numpy.max(numpy.abs(g.data),0) for name, g in gf[ish]} for ish in range(self.n_inequiv_shells)]
+        max_gf = [{name:np.max(np.abs(g.data),0) for name, g in gf[ish]} for ish in range(self.n_inequiv_shells)]
 
         if include_shells is None:
             # include all shells
@@ -1162,7 +1176,7 @@ class SumkDFT(object):
         # helper function
         def null(A, eps=1e-15):
             """ Calculate the null-space of matrix A """
-            u, s, vh = numpy.linalg.svd(A)
+            u, s, vh = np.linalg.svd(A)
             null_mask = (s <= eps)
             null_space = compress(null_mask, vh, axis=0)
             return null_space.conjugate().transpose()
@@ -1217,9 +1231,9 @@ class SumkDFT(object):
                     # one block to make it equal to the other (at least
                     # for tau=0).
 
-                    e1 = numpy.linalg.eigvalsh(gf1.data[0])
-                    e2 = numpy.linalg.eigvalsh(gf2.data[0])
-                    if numpy.any(abs(e1-e2) > threshold): continue
+                    e1 = np.linalg.eigvalsh(gf1.data[0])
+                    e2 = np.linalg.eigvalsh(gf2.data[0])
+                    if np.any(abs(e1-e2) > threshold): continue
 
                     for conjugate in [False,True]:
                         if conjugate:
@@ -1238,21 +1252,21 @@ class SumkDFT(object):
                         # product to get a linear problem, which consists
                         # of finding the null space of M vec T = 0.
 
-                        M = numpy.kron(numpy.eye(*gf1.target_shape),gf2.data[0])-numpy.kron(gf1.data[0].transpose(),numpy.eye(*gf1.target_shape))
+                        M = np.kron(np.eye(*gf1.target_shape),gf2.data[0])-np.kron(gf1.data[0].transpose(),np.eye(*gf1.target_shape))
                         N = null(M, threshold)
 
                         # now we get the intersection of the null spaces
                         # of all values of tau
                         for i in range(1,len(gf1.data)):
-                            M = numpy.kron(numpy.eye(*gf1.target_shape),gf2.data[i])-numpy.kron(gf1.data[i].transpose(),numpy.eye(*gf1.target_shape))
+                            M = np.kron(np.eye(*gf1.target_shape),gf2.data[i])-np.kron(gf1.data[i].transpose(),np.eye(*gf1.target_shape))
                             # transform M into current null space
-                            M = numpy.dot(M, N)
-                            N = numpy.dot(N, null(M, threshold))
-                            if numpy.size(N) == 0:
+                            M = np.dot(M, N)
+                            N = np.dot(N, null(M, threshold))
+                            if np.size(N) == 0:
                                 break
 
                         # no intersection of the null spaces -> no symmetry
-                        if numpy.size(N) == 0: continue
+                        if np.size(N) == 0: continue
 
                         # reshape N: it then has the indices matrix, matrix, number of basis vectors of the null space
                         N = N.reshape(gf1.target_shape[0], gf1.target_shape[1], -1).transpose([1, 0, 2])
@@ -1270,7 +1284,7 @@ class SumkDFT(object):
                             sum  y[i] N[:,:,i] y[j].conjugate() N[:,:,j].conjugate().transpose() = eye.
                         The object N[:,:,i] N[:,:,j] is a four-index object which we call Z.
                         """
-                        Z = numpy.einsum('aci,bcj->abij', N, N.conjugate())
+                        Z = np.einsum('aci,bcj->abij', N, N.conjugate())
 
                         """
                         function chi2
@@ -1280,16 +1294,16 @@ class SumkDFT(object):
                         """
                         def chi2(y):
                             # reinterpret y as complex number
-                            y = y.view(numpy.complex_)
+                            y = y.view(np.complex_)
                             ret = 0.0
                             for a in range(Z.shape[0]):
                                 for b in range(Z.shape[1]):
-                                    ret += numpy.abs(numpy.dot(y, numpy.dot(Z[a, b], y.conjugate()))
+                                    ret += np.abs(np.dot(y, np.dot(Z[a, b], y.conjugate()))
                                                   - (1.0 if a == b else 0.0))**2
                             return ret
 
                         # use the minimization routine from scipy
-                        res = minimize(chi2, numpy.ones(2 * N.shape[-1]))
+                        res = minimize(chi2, np.ones(2 * N.shape[-1]))
 
                         # if the minimization fails, there is probably no symmetry
                         if not res.success: continue
@@ -1297,10 +1311,10 @@ class SumkDFT(object):
                         if res.fun > threshold: continue
 
                         # reinterpret the solution as a complex number
-                        y = res.x.view(numpy.complex_)
+                        y = res.x.view(np.complex_)
 
                         # reconstruct the T matrix
-                        T = numpy.zeros(N.shape[:-1], dtype=numpy.complex_)
+                        T = np.zeros(N.shape[:-1], dtype=np.complex_)
                         for i in range(len(y)):
                             T += N[:, :, i] * y[i]
 
@@ -1338,9 +1352,9 @@ class SumkDFT(object):
                         # C1(v1^dagger G1 v1) = C2(v2^dagger G2 v2)
                         if (ind1 < 0) and (ind2 >= 0):
                             if conjugate:
-                                self.deg_shells[ish][ind2][block1] = numpy.dot(T.conjugate().transpose(), v2[0].conjugate()), not v2[1]
+                                self.deg_shells[ish][ind2][block1] = np.dot(T.conjugate().transpose(), v2[0].conjugate()), not v2[1]
                             else:
-                                self.deg_shells[ish][ind2][block1] = numpy.dot(T.conjugate().transpose(), v2[0]), v2[1]
+                                self.deg_shells[ish][ind2][block1] = np.dot(T.conjugate().transpose(), v2[0]), v2[1]
                         # the first block is already present
                         # set v2 and C2 so that they are compatible with
                         # C(T gf1 T^dagger) = gf2
@@ -1348,9 +1362,9 @@ class SumkDFT(object):
                         # C1(v1^dagger G1 v1) = C2(v2^dagger G2 v2)
                         elif (ind1 >= 0) and (ind2 < 0):
                             if conjugate:
-                                self.deg_shells[ish][ind1][block2] = numpy.dot(T.conjugate(), v1[0].conjugate()), not v1[1]
+                                self.deg_shells[ish][ind1][block2] = np.dot(T.conjugate(), v1[0].conjugate()), not v1[1]
                             else:
-                                self.deg_shells[ish][ind1][block2] = numpy.dot(T, v1[0]), v1[1]
+                                self.deg_shells[ish][ind1][block2] = np.dot(T, v1[0]), v1[1]
                         # the blocks are not already present
                         # we arbitrarily choose v1=eye and C1=False and
                         # set v2 and C2 so that they are compatible with
@@ -1359,7 +1373,7 @@ class SumkDFT(object):
                         # C1(v1^dagger G1 v1) = C2(v2^dagger G2 v2)
                         elif (ind1 < 0) and (ind2 < 0):
                             d = dict()
-                            d[block1] = numpy.eye(*gf1.target_shape), False
+                            d[block1] = np.eye(*gf1.target_shape), False
                             if conjugate:
                                 d[block2] = T.conjugate(), True
                             else:
@@ -1420,7 +1434,7 @@ class SumkDFT(object):
                 "calculate_diagonalization_matrix: Choices for prop_to_be_diagonal are 'eal' or 'dm'.")
             return 0
 
-        trans = [{block: numpy.eye(block_dim) for block, block_dim in gfs} for gfs in self.gf_struct_sumk]
+        trans = [{block: np.eye(block_dim) for block, block_dim in gfs} for gfs in self.gf_struct_sumk]
 
         for ish in shells:
             trafo = {}
@@ -1429,10 +1443,10 @@ class SumkDFT(object):
                 prop[ish] = self.block_structure.convert_matrix(prop[ish], space_from='sumk', space_to='solver')
             # Get diagonalisation matrix, if not already diagonal
             for name in prop[ish]:
-                if numpy.sum(abs(prop[ish][name]-numpy.diag(numpy.diagonal(prop[ish][name])))) > 1e-13:
-                    trafo[name] = numpy.linalg.eigh(prop[ish][name])[1].conj().T
+                if np.sum(abs(prop[ish][name]-np.diag(np.diagonal(prop[ish][name])))) > 1e-13:
+                    trafo[name] = np.linalg.eigh(prop[ish][name])[1].conj().T
                 else:
-                    trafo[name] = numpy.identity(numpy.shape(prop[ish][name])[0])
+                    trafo[name] = np.identity(np.shape(prop[ish][name])[0])
             # Transform back to sumk if necessay, blocks change in this step!
             if calc_in_solver_blocks:
                 trafo = self.block_structure.convert_matrix(trafo, space_from='solver', space_to='sumk')
@@ -1446,7 +1460,7 @@ class SumkDFT(object):
         return trans
 
 
-    def density_matrix(self, method='using_gf', beta=40.0):
+    def density_matrix(self, method='using_gf'):
         """Calculate density matrices in one of two ways.
 
         Parameters
@@ -1469,16 +1483,15 @@ class SumkDFT(object):
         dens_mat = [{} for icrsh in range(self.n_corr_shells)]
         for icrsh in range(self.n_corr_shells):
             for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]:
-                dens_mat[icrsh][sp] = numpy.zeros(
-                    [self.corr_shells[icrsh]['dim'], self.corr_shells[icrsh]['dim']], numpy.complex_)
+                dens_mat[icrsh][sp] = np.zeros(
+                    [self.corr_shells[icrsh]['dim'], self.corr_shells[icrsh]['dim']], np.complex_)
 
-        ikarray = numpy.array(list(range(self.n_k)))
+        ikarray = np.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
 
             if method == "using_gf":
 
-                G_latt_iw = self.lattice_gf(
-                    ik=ik, mu=self.chemical_potential, iw_or_w="iw", beta=beta)
+                G_latt_iw = self.lattice_gf(ik=ik, mu=self.chemical_potential)
                 G_latt_iw *= self.bz_weights[ik]
                 dm = G_latt_iw.density()
                 MMat = [dm[sp] for sp in self.spin_block_names[self.SO]]
@@ -1488,7 +1501,7 @@ class SumkDFT(object):
                 ntoi = self.spin_names_to_ind[self.SO]
                 spn = self.spin_block_names[self.SO]
                 dims = {sp:self.n_orbitals[ik, ntoi[sp]] for sp in spn}
-                MMat = [numpy.zeros([dims[sp], dims[sp]], numpy.complex_) for sp in spn]
+                MMat = [np.zeros([dims[sp], dims[sp]], np.complex_) for sp in spn]
 
                 for isp, sp in enumerate(spn):
                     ind = ntoi[sp]
@@ -1511,10 +1524,10 @@ class SumkDFT(object):
                     n_orb = self.n_orbitals[ik, ind]
                     projmat = self.proj_mat[ik, ind, icrsh, 0:dim, 0:n_orb]
                     if method == "using_gf":
-                        dens_mat[icrsh][sp] += numpy.dot(numpy.dot(projmat, MMat[isp]),
+                        dens_mat[icrsh][sp] += np.dot(np.dot(projmat, MMat[isp]),
                                                          projmat.transpose().conjugate())
                     elif method == "using_point_integration":
-                        dens_mat[icrsh][sp] += self.bz_weights[ik] * numpy.dot(numpy.dot(projmat, MMat[isp]),
+                        dens_mat[icrsh][sp] += self.bz_weights[ik] * np.dot(np.dot(projmat, MMat[isp]),
                                                                                projmat.transpose().conjugate())
 
         # get data from nodes:
@@ -1533,7 +1546,7 @@ class SumkDFT(object):
                 for sp in dens_mat[icrsh]:
                     if self.rot_mat_time_inv[icrsh] == 1:
                         dens_mat[icrsh][sp] = dens_mat[icrsh][sp].conjugate()
-                    dens_mat[icrsh][sp] = numpy.dot(numpy.dot(self.rot_mat[icrsh].conjugate().transpose(), dens_mat[icrsh][sp]),
+                    dens_mat[icrsh][sp] = np.dot(np.dot(self.rot_mat[icrsh].conjugate().transpose(), dens_mat[icrsh][sp]),
                                                     self.rot_mat[icrsh])
 
         return dens_mat
@@ -1568,8 +1581,8 @@ class SumkDFT(object):
         eff_atlevels = [{} for ish in range(self.n_inequiv_shells)]
         for ish in range(self.n_inequiv_shells):
             for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]:
-                eff_atlevels[ish][sp] = numpy.identity(
-                    self.corr_shells[self.inequiv_to_corr[ish]]['dim'], numpy.complex_)
+                eff_atlevels[ish][sp] = np.identity(
+                    self.corr_shells[self.inequiv_to_corr[ish]]['dim'], np.complex_)
                 eff_atlevels[ish][sp] *= -self.chemical_potential
                 eff_atlevels[ish][
                     sp] -= self.dc_imp[self.inequiv_to_corr[ish]][sp]
@@ -1582,18 +1595,18 @@ class SumkDFT(object):
             for icrsh in range(self.n_corr_shells):
                 dim = self.corr_shells[icrsh]['dim']
                 for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]:
-                    self.Hsumk[icrsh][sp] = numpy.zeros(
-                        [dim, dim], numpy.complex_)
+                    self.Hsumk[icrsh][sp] = np.zeros(
+                        [dim, dim], np.complex_)
                 for isp, sp in enumerate(self.spin_block_names[self.corr_shells[icrsh]['SO']]):
                     ind = self.spin_names_to_ind[
                         self.corr_shells[icrsh]['SO']][sp]
                     for ik in range(self.n_k):
                         n_orb = self.n_orbitals[ik, ind]
-                        MMat = numpy.identity(n_orb, numpy.complex_)
+                        MMat = np.identity(n_orb, np.complex_)
                         MMat = self.hopping[
                             ik, ind, 0:n_orb, 0:n_orb] - (1 - 2 * isp) * self.h_field * MMat
                         projmat = self.proj_mat[ik, ind, icrsh, 0:dim, 0:n_orb]
-                        self.Hsumk[icrsh][sp] += self.bz_weights[ik] * numpy.dot(numpy.dot(projmat, MMat),
+                        self.Hsumk[icrsh][sp] += self.bz_weights[ik] * np.dot(np.dot(projmat, MMat),
                                                                                  projmat.conjugate().transpose())
             # symmetrisation:
             if self.symm_op != 0:
@@ -1606,7 +1619,7 @@ class SumkDFT(object):
                         if self.rot_mat_time_inv[icrsh] == 1:
                             self.Hsumk[icrsh][sp] = self.Hsumk[
                                 icrsh][sp].conjugate()
-                        self.Hsumk[icrsh][sp] = numpy.dot(numpy.dot(self.rot_mat[icrsh].conjugate().transpose(), self.Hsumk[icrsh][sp]),
+                        self.Hsumk[icrsh][sp] = np.dot(np.dot(self.rot_mat[icrsh].conjugate().transpose(), self.Hsumk[icrsh][sp]),
                                                           self.rot_mat[icrsh])
 
         # add to matrix:
@@ -1631,7 +1644,7 @@ class SumkDFT(object):
             dim = self.corr_shells[icrsh]['dim']
             spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
             for sp in spn:
-                self.dc_imp[icrsh][sp] = numpy.zeros([dim, dim], numpy.float_)
+                self.dc_imp[icrsh][sp] = np.zeros([dim, dim], np.float_)
         self.dc_energ = [0.0 for icrsh in range(self.n_corr_shells)]
 
     def set_dc(self, dc_imp, dc_energ):
@@ -1709,7 +1722,7 @@ class SumkDFT(object):
                 Ncr[bl] += dens_mat[block].real.trace()
             Ncrtot = sum(Ncr.values())
             for sp in spn:
-                self.dc_imp[icrsh][sp] = numpy.identity(dim, numpy.float_)
+                self.dc_imp[icrsh][sp] = np.identity(dim, np.float_)
                 if self.SP == 0:  # average the densities if there is no SP:
                     Ncr[sp] = Ncrtot / len(spn)
                 # correction for SO: we have only one block in this case, but
@@ -1774,10 +1787,10 @@ class SumkDFT(object):
             if transform:
                 for sp in spn:
                     T = self.block_structure.effective_transformation_sumk[icrsh][sp]
-                    self.dc_imp[icrsh][sp] = numpy.dot(T.conjugate().transpose(),
-                            numpy.dot(self.dc_imp[icrsh][sp], T))
+                    self.dc_imp[icrsh][sp] = np.dot(T.conjugate().transpose(),
+                            np.dot(self.dc_imp[icrsh][sp], T))
 
-    def add_dc(self, iw_or_w="iw"):
+    def add_dc(self):
         r"""
         Subtracts the double counting term from the impurity self energy.
 
@@ -1796,18 +1809,15 @@ class SumkDFT(object):
         """
 
         # Be careful: Sigma_imp is already in the global coordinate system!!
-        sigma_minus_dc = [s.copy()
-                          for s in getattr(self, "Sigma_imp_" + iw_or_w)]
+        sigma_minus_dc = [s.copy() for s in self.Sigma_imp]
         for icrsh in range(self.n_corr_shells):
             for bname, gf in sigma_minus_dc[icrsh]:
                 # Transform dc_imp to global coordinate system
                 if self.use_rotations:
-                    dccont = numpy.dot(self.rot_mat[icrsh], numpy.dot(self.dc_imp[icrsh][
-                                    bname], self.rot_mat[icrsh].conjugate().transpose()))
+                    gf -= np.dot(self.rot_mat[icrsh], np.dot(self.dc_imp[icrsh][
+                                       bname], self.rot_mat[icrsh].conjugate().transpose()))
                 else:
-                    dccont = self.dc_imp[icrsh][bname]
-                    
-                sigma_minus_dc[icrsh][bname] -= dccont
+                    gf -= self.dc_imp[icrsh][bname]
 
         return sigma_minus_dc
 
@@ -1848,7 +1858,7 @@ class SumkDFT(object):
                     v, C = degsh[key]
                 else:
                     # for backward compatibility, allow degsh to be a list
-                    v = numpy.eye(*ss.target_shape)
+                    v = np.eye(*ss.target_shape)
                     C = False
                 # the helper is in the basis where the blocks are all equal
                 helper.from_L_G_R(v.conjugate().transpose(), gf_to_symm[key], v)
@@ -1862,14 +1872,14 @@ class SumkDFT(object):
                     v, C = degsh[key]
                 else:
                     # for backward compatibility, allow degsh to be a list
-                    v = numpy.eye(*ss.target_shape)
+                    v = np.eye(*ss.target_shape)
                     C = False
                 if C:
                     gf_to_symm[key].from_L_G_R(v, ss.transpose().copy(), v.conjugate().transpose())
                 else:
                     gf_to_symm[key].from_L_G_R(v, ss, v.conjugate().transpose())
 
-    def total_density(self, mu=None, iw_or_w="iw", with_Sigma=True, with_dc=True, broadening=None):
+    def total_density(self, mu=None, with_Sigma=True, with_dc=True, broadening=None):
         r"""
         Calculates the total charge within the energy window for a given chemical potential.
         The chemical potential is either given by parameter `mu` or, if it is not specified,
@@ -1919,10 +1929,10 @@ class SumkDFT(object):
         if mu is None:
             mu = self.chemical_potential
         dens = 0.0
-        ikarray = numpy.array(list(range(self.n_k)))
+        ikarray = np.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
             G_latt = self.lattice_gf(
-                ik=ik, mu=mu, iw_or_w=iw_or_w, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening)
+                ik=ik, mu=mu, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening)
             dens += self.bz_weights[ik] * G_latt.total_density()
         # collect data from mpi:
         dens = mpi.all_reduce(mpi.world, dens, lambda x, y: x + y)
@@ -2050,16 +2060,16 @@ class SumkDFT(object):
 # Convert Fermi weights to a density matrix
             dens_mat_dft = {}
             for sp in spn:
-                dens_mat_dft[sp] = [fermi_weights[ik, ntoi[sp], :].astype(numpy.complex_) for ik in range(self.n_k)]
+                dens_mat_dft[sp] = [fermi_weights[ik, ntoi[sp], :].astype(np.complex_) for ik in range(self.n_k)]
 
 
         # Set up deltaN:
         deltaN = {}
         for sp in spn:
-            deltaN[sp] = [numpy.zeros([self.n_orbitals[ik, ntoi[sp]], self.n_orbitals[
-                                      ik, ntoi[sp]]], numpy.complex_) for ik in range(self.n_k)]
+            deltaN[sp] = [np.zeros([self.n_orbitals[ik, ntoi[sp]], self.n_orbitals[
+                                      ik, ntoi[sp]]], np.complex_) for ik in range(self.n_k)]
 
-        ikarray = numpy.arange(self.n_k)
+        ikarray = np.arange(self.n_k)
         for ik in mpi.slice_array(ikarray):
             G_latt_iw = self.lattice_gf(
                 ik=ik, mu=self.chemical_potential, iw_or_w="iw")
@@ -2079,11 +2089,11 @@ class SumkDFT(object):
                 if dm_type in ['vasp','qe']:
 # In 'vasp'-mode subtract the DFT density matrix
                     nb = self.n_orbitals[ik, ntoi[bname]]
-                    diag_inds = numpy.diag_indices(nb)
+                    diag_inds = np.diag_indices(nb)
                     deltaN[bname][ik][diag_inds] -= dens_mat_dft[bname][ik][:nb]
 
                     if self.charge_mixing and self.deltaNOld is not None:
-                        G2 = numpy.sum(self.kpts_cart[ik,:]**2)
+                        G2 = np.sum(self.kpts_cart[ik,:]**2)
                         # Kerker mixing
                         mix_fac = self.charge_mixing_alpha * G2 / (G2 + self.charge_mixing_gamma**2)
                         deltaN[bname][ik][diag_inds] = (1.0 - mix_fac) * self.deltaNOld[bname][ik][diag_inds] + mix_fac * deltaN[bname][ik][diag_inds]
@@ -2092,7 +2102,7 @@ class SumkDFT(object):
                     b1, b2 = band_window[isp][ik, :2]
                     nb = b2 - b1 + 1
                     assert nb == self.n_orbitals[ik, ntoi[bname]], "Number of bands is inconsistent at ik = %s"%(ik)
-                    band_en_correction += numpy.dot(deltaN[bname][ik], self.hopping[ik, isp, :nb, :nb]).trace().real * self.bz_weights[ik]
+                    band_en_correction += np.dot(deltaN[bname][ik], self.hopping[ik, isp, :nb, :nb]).trace().real * self.bz_weights[ik]
 
         # mpi reduce:
         for bname in deltaN:
@@ -2161,9 +2171,9 @@ class SumkDFT(object):
                         fout.close()
         elif dm_type == 'vasp':
             if kpts_to_write is None:
-                kpts_to_write = numpy.arange(self.n_k)
+                kpts_to_write = np.arange(self.n_k)
             else:
-                assert numpy.min(kpts_to_write) >= 0 and numpy.max(kpts_to_write) < self.n_k
+                assert np.min(kpts_to_write) >= 0 and np.max(kpts_to_write) < self.n_k
 
             assert self.SP == 0, "Spin-polarized density matrix is not implemented"
 
@@ -2192,7 +2202,7 @@ class SumkDFT(object):
                 with open(filename, 'w') as f:
         # determine the number of spin blocks
                     n_spin_blocks = self.SP + 1 - self.SO
-                    nbmax = numpy.max(self.n_orbitals)
+                    nbmax = np.max(self.n_orbitals)
         # output beta and mu in Hartrees
                     beta = G_latt_iw.mesh.beta * self.energy_unit
                     mu = self.chemical_potential/self.energy_unit
@@ -2227,7 +2237,7 @@ class SumkDFT(object):
             assert self.SP == 0, "Spin-polarized density matrix is not implemented"
 
             subgrp = 'dft_update'
-            delta_N = numpy.zeros([self.n_k, max(self.n_orbitals[:,0]), max(self.n_orbitals[:,0])], dtype=complex)
+            delta_N = np.zeros([self.n_k, max(self.n_orbitals[:,0]), max(self.n_orbitals[:,0])], dtype=complex)
             mpi.report(" %i  -1  ! Number of k-points, default number of bands\n"%(self.n_k))
             for ik in range(self.n_k):
                 ib1 = band_window[0][ik, 0]
@@ -2259,10 +2269,10 @@ class SumkDFT(object):
 
     def calculate_min_max_band_energies(self):
         hop = self.hopping
-        diag_hop = numpy.zeros(hop.shape[:-1])
+        diag_hop = np.zeros(hop.shape[:-1])
         hop_slice = mpi.slice_array(hop)
         diag_hop_slice = mpi.slice_array(diag_hop)
-        diag_hop_slice[:] = numpy.linalg.eigvalsh(hop_slice)
+        diag_hop_slice[:] = np.linalg.eigvalsh(hop_slice)
         diag_hop = mpi.all_reduce(mpi.world, diag_hop, lambda x, y: x + y)
         min_band_energy = diag_hop.min().real
         max_band_energy = diag_hop.max().real
@@ -2301,7 +2311,7 @@ class SumkDFT(object):
     def check_projectors(self):
         """Calculated the density matrix from projectors (DM = P Pdagger) to check that it is correct and
            specifically that it matches DFT."""
-        dens_mat = [numpy.zeros([self.corr_shells[icrsh]['dim'], self.corr_shells[icrsh]['dim']], numpy.complex_)
+        dens_mat = [np.zeros([self.corr_shells[icrsh]['dim'], self.corr_shells[icrsh]['dim']], np.complex_)
                     for icrsh in range(self.n_corr_shells)]
 
         for ik in range(self.n_k):
@@ -2310,7 +2320,7 @@ class SumkDFT(object):
                 n_orb = self.n_orbitals[ik, 0]
                 projmat = self.proj_mat[ik, 0, icrsh, 0:dim, 0:n_orb]
                 dens_mat[icrsh][
-                    :, :] += numpy.dot(projmat, projmat.transpose().conjugate()) * self.bz_weights[ik]
+                    :, :] += np.dot(projmat, projmat.transpose().conjugate()) * self.bz_weights[ik]
 
         if self.symm_op != 0:
             dens_mat = self.symmcorr.symmetrize(dens_mat)
@@ -2320,7 +2330,7 @@ class SumkDFT(object):
             for icrsh in range(self.n_corr_shells):
                 if self.rot_mat_time_inv[icrsh] == 1:
                     dens_mat[icrsh] = dens_mat[icrsh].conjugate()
-                dens_mat[icrsh] = numpy.dot(numpy.dot(self.rot_mat[icrsh].conjugate().transpose(), dens_mat[icrsh]),
+                dens_mat[icrsh] = np.dot(np.dot(self.rot_mat[icrsh].conjugate().transpose(), dens_mat[icrsh]),
                                             self.rot_mat[icrsh])
 
         return dens_mat

@@ -17,9 +17,9 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 filename = 'nio'
 
-SK = SumkDFT(hdf_file = filename+'.h5', use_dft_blocks = False)
-
 beta = 5.0
+SK = SumkDFT(hdf_file = filename+'.h5', use_dft_blocks = False, beta=beta)
+
 
 Sigma = SK.block_structure.create_gf(beta=beta)
 SK.put_Sigma([Sigma])

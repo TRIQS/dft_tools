@@ -12,9 +12,9 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 filename = 'nio'
-SK = SumkDFT(hdf_file = filename+'.h5', use_dft_blocks = False)
-
 beta = 5.0
+SK = SumkDFT(hdf_file = filename+'.h5', use_dft_blocks = False, beta=beta)
+
 
 # We analyze the block structure of the Hamiltonian
 Sigma = SK.block_structure.create_gf(beta=beta)
@@ -79,12 +79,12 @@ for ik in mpi.slice_array(ikarray):
         add_g_ik.zero()
         add_g_ik << SK.downfold(ik, 0, bname, G_latt_KS[bname], gf, shells='csc', ir=None)
         gf << gf + add_g_ik
-        
+
 G_latt_orb << mpi.all_reduce(
                 mpi.world, G_latt_orb, lambda x, y: x + y)
 
 mpi.barrier()
 
-if mpi.is_master_node(): 
+if mpi.is_master_node():
     ar['DMFT_results']['Iterations']['G_latt_orb_it'+str(iteration_offset-1)] = G_latt_orb
 if mpi.is_master_node(): del ar
