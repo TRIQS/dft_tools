@@ -580,10 +580,10 @@ class SumkDFT(object):
                          for isp in range(self.n_spin_blocks[self.SO])]
             block_ind_list = [block for block, inner in gf_struct]
             if isinstance(mesh, MeshImFreq):
-                glist = lambda: [GfImFreq(indices=inner, mesh=mesh)
+                glist = lambda: [Gf(indices=inner, mesh=mesh)
                                  for block, inner in gf_struct]
             else:
-                glist = lambda: [GfReFreq(indices=inner, mesh=mesh)
+                glist = lambda: [Gf(indices=inner, mesh=mesh)
                                  for block, inner in gf_struct]
             G_latt = BlockGf(name_list=block_ind_list,
                              block_list=glist(), make_copies=False)
@@ -647,7 +647,7 @@ class SumkDFT(object):
             SK_Sigma_imp = self.Sigma_imp
         elif isinstance(self.mesh, MeshReFreq) and all(isinstance(gf, Gf) and isinstance(gf.mesh, MeshReFreq) and gf.mesh == self.mesh for bname, gf in Sigma_imp[0]):
             # Real frequency Sigma:
-            self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, gf_function=GfReFreq, space='sumk')
+            self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, gf_function=Gf, space='sumk')
                                 for icrsh in range(self.n_corr_shells)]
             SK_Sigma_imp = self.Sigma_imp
 
@@ -761,13 +761,13 @@ class SumkDFT(object):
             G_loc = [self.Sigma_imp[icrsh].copy() for icrsh in range(
                 self.n_corr_shells)]   # this list will be returned
             beta = G_loc[0].mesh.beta
-            G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfImFreq(target_shape=(block_dim, block_dim), mesh=G_loc[0].mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
+            G_loc_inequiv = [BlockGf(name_block_generator=[(block, Gf(target_shape=(block_dim, block_dim), mesh=G_loc[0].mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
                                      make_copies=False) for ish in range(self.n_inequiv_shells)]
         else:
             G_loc = [self.Sigma_imp[icrsh].copy() for icrsh in range(
                 self.n_corr_shells)]   # this list will be returned
             mesh = G_loc[0].mesh
-            G_loc_inequiv = [BlockGf(name_block_generator=[(block, GfReFreq(target_shape=(block_dim, block_dim), mesh=mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
+            G_loc_inequiv = [BlockGf(name_block_generator=[(block, Gf(target_shape=(block_dim, block_dim), mesh=mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
                                      make_copies=False) for ish in range(self.n_inequiv_shells)]
 
         for icrsh in range(self.n_corr_shells):
@@ -1796,10 +1796,6 @@ class SumkDFT(object):
 
         Parameters
         ----------
-        iw_or_w : string, optional
-
-                  - `iw_or_w` = 'iw' for a imaginary-frequency self-energy
-                  - `iw_or_w` = 'w' for a real-frequency self-energy
 
         Returns
         -------
@@ -1906,9 +1902,6 @@ class SumkDFT(object):
         ----------
         mu : float, optional
              Input chemical potential. If not specified, `self.chemical_potential` is used instead.
-        iw_or_w : string, optional
-                  - `iw_or_w` = 'iw' for a imaginary-frequency self-energy
-                  - `iw_or_w` = 'w' for a real-frequency self-energy
         with_Sigma : boolean, optional
              If `True` the full interacing GF is evaluated, otherwise the self-energy is not
              included and the charge would correspond to a non-interacting system.
@@ -1954,7 +1947,7 @@ class SumkDFT(object):
         """
         self.chemical_potential = mu
 
-    def calc_mu(self, precision=0.01, iw_or_w='iw', broadening=None, delta=0.5, max_loops=100):
+    def calc_mu(self, precision=0.01, broadening=None, delta=0.5, max_loops=100):
         r"""
         Searches for the chemical potential that gives the DFT total charge.
         A simple bisection method is used.
@@ -1963,9 +1956,6 @@ class SumkDFT(object):
         ----------
         precision : float, optional
                     A desired precision of the resulting total charge.
-        iw_or_w : string, optional
-                  - `iw_or_w` = 'iw' for a imaginary-frequency self-energy
-                  - `iw_or_w` = 'w' for a real-frequency self-energy
         broadening : float, optional
                      Imaginary shift for the axis along which the real-axis GF is calculated.
                      If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
@@ -1980,8 +1970,7 @@ class SumkDFT(object):
              within specified precision.
 
         """
-        F = lambda mu: self.total_density(
-            mu=mu, iw_or_w=iw_or_w, broadening=broadening).real
+        def F(mu): return self.total_density(mu=mu, broadening=broadening).real
         density = self.density_required - self.charge_below
 
         self.chemical_potential = dichotomy.dichotomy(function=F,
@@ -2072,7 +2061,7 @@ class SumkDFT(object):
         ikarray = np.arange(self.n_k)
         for ik in mpi.slice_array(ikarray):
             G_latt_iw = self.lattice_gf(
-                ik=ik, mu=self.chemical_potential, iw_or_w="iw")
+                ik=ik, mu=self.chemical_potential)
             if dm_type == 'vasp' and self.proj_or_hk == 'hk':
                 # rotate the Green function into the DFT band basis
                 for bname, gf in G_latt_iw:
