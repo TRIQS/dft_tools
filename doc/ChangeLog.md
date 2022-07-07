@@ -2,6 +2,12 @@
 
 # Changelog
 
+## unstable
+
+* SumK requires now to pass a mesh on init to clarify the mesh on which it operates
+* rename / unify name of `sumk.Sigma_imp_iw` and `sumk.Sigma_imp_w` -> `sumk.Sigma_imp`
+* remove `iw_or_w` arguments
+
 ## Version 3.1.0
 
 DFTTools Version 3.1.0 is a release that

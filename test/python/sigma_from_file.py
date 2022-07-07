@@ -50,6 +50,6 @@ Sigma_txt = BlockGf(name_list = a_list, block_list = g_list, make_copies=False)
 SK.set_Sigma([Sigma_txt])
 
 SK.hdf_file = 'sigma_from_file.out.h5'
-SK.save(['Sigma_imp_w'])
+SK.save(['Sigma_imp'])
 
 assert_block_gfs_are_close(Sigma_txt, Sigma_hdf)
