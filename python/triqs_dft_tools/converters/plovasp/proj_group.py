@@ -111,7 +111,7 @@ class ProjectorGroup:
         """
         self.nelect = 0
         nk, ns_band, _ = self.ib_win.shape
-        rspin = 2.0 if ns_band == 1 else 1.0
+        rspin = 2.0 if (ns_band == 1 and el_struct.nc_flag == False) else 1.0
         for isp in range(ns_band):
             for ik in range(nk):
                 ib1 = self.ib_win[ik, isp, 0]
@@ -416,8 +416,9 @@ class ProjectorGroup:
         overlap = np.dot(p_matrix, p_matrix.conj().T)
 # Calculate [O^{-1/2}]_{m m'}
         eig, eigv = np.linalg.eigh(overlap)
-        assert np.all(eig > 0.0), ("Negative eigenvalues of the overlap matrix:"
-           "projectors are ill-defined")
+        eig = np.around(eig,10)  
+        #assert np.all(eig > 0.0), ("Negative eigenvalues of the overlap matrix:"
+        #   "projectors are ill-defined")
         sqrt_eig = 1.0 / np.sqrt(eig)
         shalf = np.dot(eigv * sqrt_eig, eigv.conj().T)
 # Apply \tilde{P}_{m v} = \sum_{m'} [O^{-1/2}]_{m m'} P_{m' v}

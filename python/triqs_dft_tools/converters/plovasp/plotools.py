@@ -85,7 +85,7 @@ def check_data_consistency(pars, el_struct):
 # Check that ions inside each shell are of the same sort
     for sh in pars.shells:
         max_ion_index = max([max(gr) for gr in sh['ions']['ion_list']])
-        assert max_ion_index < el_struct.natom, "Site index in the projected shell exceeds the number of ions in the structure"
+        assert max_ion_index <= el_struct.natom, "Site index in the projected shell exceeds the number of ions in the structure"
         ion_list = list(it.chain(*sh['ions']['ion_list']))
 
         sorts = set([el_struct.type_of_ion[io] for io in ion_list])

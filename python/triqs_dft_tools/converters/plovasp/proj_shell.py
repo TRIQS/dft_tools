@@ -115,7 +115,11 @@ class ProjectorShell:
         to avoid superfluous matrix multiplications.
         """
         nion = self.nion
-        nm = self.lm2 - self.lm1
+        # VASP.6.
+        if self.nc_flag == False:
+            nm = self.lm2 - self.lm1
+        else:
+            nm = 2*(self.lm2 - self.lm1)
 
         if 'tmatrices' in sh_pars:
             self.do_transform = True
@@ -133,21 +137,7 @@ class ProjectorShell:
             nr = nrow // nion
             nsize = ncol // nm
             assert nsize in (1, 2, 4), "Number of columns in TRANSFILE must be divisible by either 1, 2, or 4"
-#
-# Determine the spin-dimension and whether the matrices are real or complex
-#
-#            if nsize == 1 or nsize == 2:
-# Matrices (either real or complex) are spin-independent
-#                nls_dim = nm
-#                if msize == 2:
-#                    is_complex = True
-#                else:
-#                    is_complex = False
-#            elif nsize = 4:
-# Matrices are complex and spin-dependent
-#                nls_dim = 2 * nm
-#                is_complex = True
-#
+
             is_complex = nsize > 1
             ns_dim = max(1, nsize // 2)
 
@@ -186,6 +176,9 @@ class ProjectorShell:
                 matrix = raw_matrix
 
             ndim = nrow
+            print("ndim = {}".format(ndim))
+            print("nrow = {}".format(nrow))
+            print("nm = {}".format(nm))
 
             self.tmatrices = np.zeros((nion, nrow, nm), dtype=np.complex128)
             for io in range(nion):
@@ -196,7 +189,7 @@ class ProjectorShell:
 # If no transformation matrices are provided define a default one
         self.do_transform = False
 
-        ns_dim = 2 if self.nc_flag else 1
+        ns_dim = 1 #2 if self.nc_flag else 1
         ndim = nm * ns_dim
 
 # We still need the matrices for the output
@@ -219,16 +212,15 @@ class ProjectorShell:
         according to the shell parameters.
         If necessary the projectors are transformed usin 'self.tmatrices'.
         """
-        assert self.nc_flag == False, "Non-collinear case is not implemented"
-
-#        nion = len(self.ion_list)
+        
         nion = self.nion
-        nlm = self.lm2 - self.lm1
-        _, ns, nk, nb = proj_raw.shape
-
+        nproj, ns, nk, nb = proj_raw.shape
+        if self.nc_flag == 0:
+            nlm = self.lm2 - self.lm1
+        else:
+            nlm = 2*(self.lm2 - self.lm1)
+        
         if self.do_transform:
-# TODO: implement a non-collinear case
-#       for a non-collinear case 'ndim' is 'ns * nm'
             ndim = self.tmatrices.shape[1]
             self.proj_arr = np.zeros((nion, ns, nk, ndim, nb), dtype=np.complex128)
             for ik in range(nk):
@@ -236,8 +228,6 @@ class ProjectorShell:
                 for io, ion in enumerate(self.ion_list):
                     proj_k = np.zeros((ns, nlm, nb), dtype=np.complex128)
                     qcoord = structure['qcoords'][ion]
-#                    kphase = np.exp(-2.0j * np.pi * np.dot(kp, qcoord))
-#                    kphase = 1.0
                     for m in range(nlm):
 # Here we search for the index of the projector with the given isite/l/m indices
                         for ip, par in enumerate(proj_params):
@@ -252,18 +242,12 @@ class ProjectorShell:
             self.proj_arr = np.zeros((nion, ns, nk, nlm, nb), dtype=np.complex128)
             for io, ion in enumerate(self.ion_list):
                 qcoord = structure['qcoords'][ion]
-                for m in range(nlm):
+                for m in range(nlm):                    
 # Here we search for the index of the projector with the given isite/l/m indices
                     for ip, par in enumerate(proj_params):
                         if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
                             self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :]
-#                            for ik in range(nk):
-#                                kp = kmesh['kpoints'][ik]
-##                                kphase = np.exp(-2.0j * np.pi * np.dot(kp, qcoord))
-#                                kphase = 1.0
-#                                self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :] # * kphase
-                            break
-
+                            break            
 
 ################################################################################
 #
@@ -277,7 +261,8 @@ class ProjectorShell:
         self.ib_win = ib_win
         self.ib_min = ib_min
         self.ib_max = ib_max
-        nb_max = ib_max - ib_min + 1
+        nb_max = ib_max - ib_min + 1    
+        print("nb_max : {}".format(nb_max))
 
 # Set the dimensions of the array
         nion, ns, nk, nlm, nbtot = self.proj_arr.shape
@@ -286,14 +271,22 @@ class ProjectorShell:
 
 # Select projectors for a given energy window
         ns_band = self.ib_win.shape[1]
-        for isp in range(ns):
+        if ns == 1:
             for ik in range(nk):
 # TODO: for non-collinear case something else should be done here
-                is_b = min(isp, ns_band)
+                is_b = min(0, ns_band)
                 ib1 = self.ib_win[ik, is_b, 0]
                 ib2 = self.ib_win[ik, is_b, 1] + 1
                 ib_win = ib2 - ib1
-                self.proj_win[:, isp, ik, :, :ib_win] = self.proj_arr[:, isp, ik, :, ib1:ib2]
+                self.proj_win[:, :, ik, :, :ib_win] = self.proj_arr[:, :, ik, :, ib1:ib2]
+        else:
+            for isp in range(ns):
+                for ik in range(nk):
+                    is_b = min(isp, ns_band)
+                    ib1 = self.ib_win[ik, is_b, 0]
+                    ib2 = self.ib_win[ik, is_b, 1] + 1
+                    ib_win = ib2 - ib1
+                    self.proj_win[:, isp, ik, :, :ib_win] = self.proj_arr[:, isp, ik, :, ib1:ib2]            
 
 ################################################################################
 #
@@ -322,15 +315,26 @@ class ProjectorShell:
         occnums = el_struct.ferw
         ib1 = self.ib_min
         ib2 = self.ib_max + 1
+        # VASP.6.
+        count_nan = 0
+        print("Site diag : {}".format(site_diag))
         if site_diag:
             for isp in range(ns):
                 for ik, weight, occ in zip(it.count(), kweights, occnums[isp, :, :]):
                     for io in range(nion):
                         proj_k = self.proj_win[io, isp, ik, ...]
-                        occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2],
-                                                     proj_k.conj().T).real * weight
-                        overlaps[isp, io, :, :] += np.dot(proj_k,
-                                                     proj_k.conj().T).real * weight
+                        # VASP.6.
+                        array_sum = np.sum(proj_k)
+                        if np.isnan(array_sum) == True: 
+                            count_nan += 1
+                        if self.nc_flag == True:
+                            occ_mats[isp, io, :, :] += 0.5 * np.dot(proj_k * occ[ib1:ib2], proj_k.T.conj()).real * weight
+                            overlaps[isp, io, :, :] += np.dot(proj_k, proj_k.T.conj()).real * weight
+                        else:
+                            occ_mats[isp, io, :, :] += np.dot(proj_k * occ[ib1:ib2], proj_k.T.conj()).real * weight
+                            overlaps[isp, io, :, :] += np.dot(proj_k, proj_k.T.conj()).real * weight
+            assert count_nan == 0, "!!! WARNING !!!: There are %s  NaN in your Projectors"%(count_nan)
+
         else:
             proj_k = np.zeros((ndim, nbtot), dtype=np.complex128)
             for isp in range(ns):
@@ -339,13 +343,11 @@ class ProjectorShell:
                         i1 = io * nlm
                         i2 = (io + 1) * nlm
                         proj_k[i1:i2, :] = self.proj_win[io, isp, ik, ...]
+                    # TODO
                     occ_mats[isp, 0, :, :] += np.dot(proj_k * occ[ib1:ib2],
                                                  proj_k.conj().T).real * weight
-                    overlaps[isp, 0, :, :] += np.dot(proj_k,
-                                                 proj_k.conj().T).real * weight
+                    overlaps[isp, 0, :, :] += np.dot(proj_k,proj_k.conj().T).real * weight
 
-#        if not symops is None:
-#            occ_mats = symmetrize_matrix_set(occ_mats, symops, ions, perm_map)
 
         return occ_mats, overlaps
 
@@ -375,11 +377,13 @@ class ProjectorShell:
                                           el_struct.eigvals[:, ib1:ib2, isp]):
                 for io in range(nion):
                     proj_k = self.proj_win[io, isp, ik, ...]
-                    loc_ham[isp, io, :, :] += np.dot(proj_k * (eigk - el_struct.efermi),
-                                                 proj_k.conj().T) * weight
-
-#        if not symops is None:
-#            occ_mats = symmetrize_matrix_set(occ_mats, symops, ions, perm_map)
+                    # VASP.6.
+                    if self.nc_flag == True:
+                        loc_ham[isp, io, :, :] += np.dot(proj_k * (eigk - el_struct.efermi),
+                                                     proj_k.conj().T) * weight * 0.5
+                    else:
+                        loc_ham[isp, io, :, :] += np.dot(proj_k * (eigk - el_struct.efermi),
+                                                     proj_k.conj().T) * weight
 
         return loc_ham
 
@@ -420,7 +424,7 @@ class ProjectorShell:
                         w_k[ik, ib, isp, io, :] = proj_k * proj_k.conj()
 
 #        eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
-        itt = el_struct.kmesh['itet'].T.copy()
+        itt = el_struct.kmesh['itet'].T
 # k-indices are starting from 0 in Python
         itt[1:, :] -= 1
         for isp in range(ns):
