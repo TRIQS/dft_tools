@@ -140,84 +140,6 @@ class Plocar:
 #        self.proj_params, self.plo = self.temp_parser(projcar_filename=vasp_dir + "PROJCAR", locproj_filename=vasp_dir + "LOCPROJ")
         self.proj_params, self.plo = self.locproj_parser(locproj_filename=vasp_dir + "LOCPROJ")
 
-    def temp_parser(self, projcar_filename='PROJCAR', locproj_filename='LOCPROJ'):
-        r"""
-        Parses PROJCAR (and partially LOCPROJ) to get VASP projectors.
-
-        This is a prototype parser that should eventually be written in C for
-        better performance on large files.
-
-        Returns projector parameters (site/orbital indices etc.) and an array
-        with projectors.
-        """
-        orb_labels = ["s", "py", "pz", "px", "dxy", "dyz", "dz2", "dxz", "dx2-y2",
-                      "fz3", "fxz2", "fyz2", "fz(x2-y2)", "fxyz", "fx(x2-3y2)", "fy(3x2-y2)"]
-
-        def lm_to_l_m(lm):
-            l = int(np.sqrt(lm))
-            m = lm - l*l
-            return l, m
-
-# Read the first line of LOCPROJ to get the dimensions
-        with open(locproj_filename, 'rt') as f:
-            line = f.readline()
-            nproj, nspin, nk, nband = list(map(int, line.split()))
-
-        plo = np.zeros((nproj, nspin, nk, nband), dtype=np.complex128)
-        proj_params = [{} for i in range(nproj)]
-
-        iproj_site = 0
-        is_first_read = True
-        with open(projcar_filename, 'rt') as f:
-            line = self.search_for(f, "^ *ISITE")
-            while line:
-                isite = int(line.split()[1])
-                if not is_first_read:
-                    for il in range(norb):
-                        ip_new = iproj_site * norb + il
-                        ip_prev = (iproj_site - 1) * norb + il
-                        proj_params[ip_new]['label'] = proj_params[ip_prev]['label']
-                        proj_params[ip_new]['isite'] = isite
-                        proj_params[ip_new]['l'] = proj_params[ip_prev]['l']
-                        proj_params[ip_new]['m'] = proj_params[ip_prev]['m']
-
-                for ispin in range(nspin):
-                    for ik in range(nk):
-# Parse the orbital labels and convert them to l,m-indices
-                        line = self.search_for(f, "^ *band")
-                        if is_first_read:
-                            cpatt = re.compile("lm= *([^\s]+)")
-                            labels = re.findall(cpatt, line)
-                            norb = len(labels)
-                            for il, label in enumerate(labels):
-                                lm = orb_labels.index(label)
-                                l, m = lm_to_l_m(lm)
-
-# For the first read 'iproj_site = 0' and only orbital index 'il' is used
-                                proj_params[il]['label'] = label
-                                proj_params[il]['isite'] = isite
-                                proj_params[il]['l'] = l
-                                proj_params[il]['m'] = m
-
-                            is_first_read = False
-
-# Read the block of nk * ns * nband complex numbers
-                        for ib in range(nband):
-                            line = f.readline()
-                            rtmp = list(map(float, line.split()[1:]))
-                            for il in range(norb):
-                                ctmp = complex(rtmp[2 * il], rtmp[2 * il + 1])
-                                plo[iproj_site * norb + il, ispin, ik, ib] = ctmp
-
-# End of site-block
-                iproj_site += 1
-                line = self.search_for(f, "^ *ISITE")
-
-        print("Read parameters:")
-        for il, par in enumerate(proj_params):
-            print(il, " -> ", par)
-
-        return proj_params, plo
 
     def locproj_parser(self, locproj_filename='LOCPROJ'):
         r"""
@@ -242,8 +164,12 @@ class Plocar:
             line = f.readline()
             line = line.split("#")[0]
             sline = line.split()
-            self.ncdij, nk, self.nband, nproj = list(map(int, sline[:4]))
-            self.nspin = 1 if self.ncdij == 1 else 2
+            self.ncdij, nk, self.nband, nproj = list(map(int, sline[0:4]))
+            
+            # VASP.6.
+            self.nspin = self.ncdij if self.ncdij < 4 else 1
+            print("ISPIN is {}".format(self.nspin))            
+            
             self.nspin_band = 2 if self.ncdij == 2 else 1
 
             try:
@@ -256,6 +182,14 @@ class Plocar:
 
             iproj_site = 0
             is_first_read = True
+            
+            # VASP.6.
+            if self.ncdij == 4:
+                self.nc_flag = 1
+                self.ncdij = 1
+            else:
+                self.nc_flag = 0
+            print("NC FLAG : {}".format(self.nc_flag))
 
 # First read the header block with orbital labels
             line = self.search_for(f, "^ *ISITE")
@@ -271,19 +205,25 @@ class Plocar:
                 proj_params[ip]['label'] = label
                 proj_params[ip]['isite'] = isite
                 proj_params[ip]['l'] = l
-                proj_params[ip]['m'] = m
+                if self.nc_flag == True:
+                    if (ip % 2) == 0:
+                        proj_params[ip]['m'] = 2*m
+                    else:
+                        proj_params[ip]['m'] = 2*m + 1
+                else:
+                    proj_params[ip]['m'] = m
 
-                ip += 1
+                ip +=1
+                
                 line = f.readline().strip()
-
+            
             assert ip == nproj, "Number of projectors in the header is wrong in LOCPROJ"
 
             self.eigs = np.zeros((nk, self.nband, self.nspin_band))
             self.ferw = np.zeros((nk, self.nband, self.nspin_band))
 
             patt = re.compile("^orbital")
-# FIXME: fix spin indices for NCDIJ = 4 (non-collinear)
-            assert self.ncdij < 4, "Non-collinear case is not implemented"
+
             for ispin in range(self.nspin):
                 for ik in range(nk):
                     for ib in range(self.nband):
@@ -299,9 +239,9 @@ class Plocar:
                             line = f.readline()
                             sline = line.split()
                             ctmp = complex(float(sline[1]), float(sline[2]))
-                            plo[ip, ispin, ik, ib] = ctmp
+                            plo[ip, ispin, ik, ib] = ctmp 
 
-        print("Read parameters:")
+        print("Read parameters: LOCPROJ")
         for il, par in enumerate(proj_params):
             print(il, " -> ", par)
 
@@ -504,7 +444,7 @@ class Kpoints:
             self.kpts[ik, :] = list(map(float, sline[:3]))
             self.kwghts[ik] = float(sline[3])
 
-        self.kwghts /= np.sum(self.kwghts)
+        self.kwghts /= self.nktot
 
 # Attempt to read tetrahedra
 #   Skip comment line ("Tetrahedra")
@@ -636,8 +576,7 @@ class Doscar:
 
 # First line: NION, NION, JOBPAR, NCDIJ
         sline = next(f).split()
-        self.ncdij = int(sline[3])
-
+    
 # Skip next 4 lines
         for _ in range(4):
             sline = next(f)
