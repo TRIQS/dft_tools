@@ -416,9 +416,8 @@ class ProjectorGroup:
         overlap = np.dot(p_matrix, p_matrix.conj().T)
 # Calculate [O^{-1/2}]_{m m'}
         eig, eigv = np.linalg.eigh(overlap)
-        eig = np.around(eig,10)  
-        #assert np.all(eig > 0.0), ("Negative eigenvalues of the overlap matrix:"
-        #   "projectors are ill-defined")
+        assert np.all(eig > 0.0), ("Negative eigenvalues of the overlap matrix:"
+          "projectors are ill-defined")
         sqrt_eig = 1.0 / np.sqrt(eig)
         shalf = np.dot(eigv * sqrt_eig, eigv.conj().T)
 # Apply \tilde{P}_{m v} = \sum_{m'} [O^{-1/2}]_{m m'} P_{m' v}
