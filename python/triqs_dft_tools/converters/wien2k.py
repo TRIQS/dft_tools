@@ -39,7 +39,8 @@ class Wien2kConverter(ConverterTools):
                  dft_subgrp='dft_input', symmcorr_subgrp='dft_symmcorr_input',
                  parproj_subgrp='dft_parproj_input', symmpar_subgrp='dft_symmpar_input',
                  bands_subgrp='dft_bands_input', misc_subgrp='dft_misc_input',
-                 transp_subgrp='dft_transp_input', repacking=False):
+                 transp_subgrp='dft_transp_input', repacking=False,
+                 keep_corr_shells=None):
         """
         Initialise the class.
 
@@ -65,6 +66,8 @@ class Wien2kConverter(ConverterTools):
                         Name of subgroup storing transport data.
         repacking : boolean, optional
                     Does the hdf5 archive need to be repacked to save space?
+        keep_corr_shells : list[int], optional
+                    A list of shells for which we want to keep as correlated.
 
         """
 
@@ -89,6 +92,8 @@ class Wien2kConverter(ConverterTools):
         self.misc_subgrp = misc_subgrp
         self.transp_subgrp = transp_subgrp
         self.fortran_to_replace = {'D': 'E'}
+
+        self.keep_corr_shells = keep_corr_shells
 
         # Checks if h5 file is there and repacks it if wanted:
         if (os.path.exists(self.hdf_file) and repacking):
@@ -147,6 +152,7 @@ class Wien2kConverter(ConverterTools):
             corr_shell_entries = ['atom', 'sort', 'l', 'dim', 'SO', 'irep']
             corr_shells = [{name: int(val) for name, val in zip(
                 corr_shell_entries, R)} for icrsh in range(n_corr_shells)]
+
 
             # determine the number of inequivalent correlated shells and maps,
             # needed for further reading
@@ -259,6 +265,31 @@ class Wien2kConverter(ConverterTools):
         R.close()
         # Reading done!
 
+        # here we use the keep_corr_shells flag to remove any unwanted shells.
+        proj_mat_orig = proj_mat.copy()
+        if self.keep_corr_shells is not None:
+            print("removing correlated shells!")
+
+            proj_mat_orig = proj_mat.copy()
+
+            n_corr_shells = len(self.keep_corr_shells)
+            corr_shells = [corr_shells[icrsh] for icrsh in self.keep_corr_shells]
+
+            n_inequiv_shells, corr_to_inequiv, inequiv_to_corr = ConverterTools.det_shell_equivalence(
+                self, corr_shells)
+
+            rot_mat = [rot_mat[icrsh] for icrsh in self.keep_corr_shells]
+            rot_mat_time_inv = [rot_mat_time_inv[icrsh] for icrsh in self.keep_corr_shells]
+
+            T = [T[corr_to_inequv[icrsh]] for icrsh in self.keep_corr_shells]
+
+            proj_mat = proj_mat[:,:,self.keep_corr_shells,:,:]
+
+            # we will reset the correlated shells
+            things_to_set = ['n_corr_shells', 'corr_shells']
+            for it in things_to_set:
+                setattr(self, it, locals()[it])
+
         # Save it to the HDF:
         with HDFArchive(self.hdf_file, 'a') as ar:
             if not (self.dft_subgrp in ar):
@@ -267,8 +298,9 @@ class Wien2kConverter(ConverterTools):
             # created. If it exists, the data is overwritten!
             things_to_save = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                           'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
-                          'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
+                          'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'proj_mat_orig', 'bz_weights', 'hopping',
                           'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
+
             for it in things_to_save:
                 ar[self.dft_subgrp][it] = locals()[it]
 
