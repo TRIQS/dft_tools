@@ -696,6 +696,14 @@ class Wien2kConverter(ConverterTools):
                                         nu_i][nu_j][i].conjugate()
                 velocities_k[isp].append(velocity_xyz)
             band_window_optics.append(numpy.array(band_window_optics_isp))
+            # check the number of kpoints is correct
+            last_kpt = None
+            try:
+                last_kpt = next(R)
+            except:
+                pass
+            if last_kpt is not None: 
+                raise ValueError("The number of kpoints in case.pmat is larger than number of kpoints of Green's function. Please rerun dmftproj")
             R.close()  # Reading done!
 
         # Put data to HDF5 file
