@@ -176,9 +176,6 @@ class ProjectorShell:
                 matrix = raw_matrix
 
             ndim = nrow
-            print("ndim = {}".format(ndim))
-            print("nrow = {}".format(nrow))
-            print("nm = {}".format(nm))
 
             self.tmatrices = np.zeros((nion, nrow, nm), dtype=np.complex128)
             for io in range(nion):
@@ -189,7 +186,7 @@ class ProjectorShell:
 # If no transformation matrices are provided define a default one
         self.do_transform = False
 
-        ns_dim = 1 #2 if self.nc_flag else 1
+        ns_dim = 1
         ndim = nm * ns_dim
 
 # We still need the matrices for the output
@@ -212,14 +209,14 @@ class ProjectorShell:
         according to the shell parameters.
         If necessary the projectors are transformed usin 'self.tmatrices'.
         """
-        
+
         nion = self.nion
         nproj, ns, nk, nb = proj_raw.shape
         if self.nc_flag == 0:
             nlm = self.lm2 - self.lm1
         else:
             nlm = 2*(self.lm2 - self.lm1)
-        
+
         if self.do_transform:
             ndim = self.tmatrices.shape[1]
             self.proj_arr = np.zeros((nion, ns, nk, ndim, nb), dtype=np.complex128)
@@ -242,12 +239,12 @@ class ProjectorShell:
             self.proj_arr = np.zeros((nion, ns, nk, nlm, nb), dtype=np.complex128)
             for io, ion in enumerate(self.ion_list):
                 qcoord = structure['qcoords'][ion]
-                for m in range(nlm):                    
+                for m in range(nlm):
 # Here we search for the index of the projector with the given isite/l/m indices
                     for ip, par in enumerate(proj_params):
                         if par['isite'] - 1 == ion and par['l'] == self.lorb and par['m'] == m:
                             self.proj_arr[io, :, :, m, :] = proj_raw[ip, :, :, :]
-                            break            
+                            break
 
 ################################################################################
 #
@@ -261,8 +258,7 @@ class ProjectorShell:
         self.ib_win = ib_win
         self.ib_min = ib_min
         self.ib_max = ib_max
-        nb_max = ib_max - ib_min + 1    
-        print("nb_max : {}".format(nb_max))
+        nb_max = ib_max - ib_min + 1
 
 # Set the dimensions of the array
         nion, ns, nk, nlm, nbtot = self.proj_arr.shape
@@ -286,7 +282,7 @@ class ProjectorShell:
                     ib1 = self.ib_win[ik, is_b, 0]
                     ib2 = self.ib_win[ik, is_b, 1] + 1
                     ib_win = ib2 - ib1
-                    self.proj_win[:, isp, ik, :, :ib_win] = self.proj_arr[:, isp, ik, :, ib1:ib2]            
+                    self.proj_win[:, isp, ik, :, :ib_win] = self.proj_arr[:, isp, ik, :, ib1:ib2]
 
 ################################################################################
 #
@@ -325,7 +321,7 @@ class ProjectorShell:
                         proj_k = self.proj_win[io, isp, ik, ...]
                         # VASP.6.
                         array_sum = np.sum(proj_k)
-                        if np.isnan(array_sum) == True: 
+                        if np.isnan(array_sum) == True:
                             count_nan += 1
                         if self.nc_flag == True:
                             occ_mats[isp, io, :, :] += 0.5 * np.dot(proj_k * occ[ib1:ib2], proj_k.T.conj()).real * weight
@@ -424,7 +420,7 @@ class ProjectorShell:
                         w_k[ik, ib, isp, io, :] = proj_k * proj_k.conj()
 
 #        eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
-        itt = el_struct.kmesh['itet'].T
+        itt = el_struct.kmesh['itet'].T.copy()
 # k-indices are starting from 0 in Python
         itt[1:, :] -= 1
         for isp in range(ns):
