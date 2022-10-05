@@ -61,6 +61,8 @@ class ElectronicStructure:
 
         self.kmesh = {'nktot': self.nktot}
         self.kmesh['kpoints'] = vasp_data.kpoints.kpts
+        # VASP.6.
+        self.nc_flag = vasp_data.plocar.nc_flag
         self.kmesh['kweights'] = vasp_data.kpoints.kwghts
         try:
             self.kmesh['ntet'] = vasp_data.kpoints.ntet
@@ -80,8 +82,6 @@ class ElectronicStructure:
 # Note that the number of spin-components of projectors might be different from those
 # of bands in case of non-collinear calculations
         self.nspin = vasp_data.plocar.nspin
-        self.nc_flag = vasp_data.plocar.ncdij == 4
-
         self.nband = vasp_data.plocar.nband
 
 # Check that the number of k-points is the same in all files
@@ -150,41 +150,75 @@ class ElectronicStructure:
         norb = nproj // nions
 
 # Spin factor
-        sp_fac = 2.0 if ns == 1 and not self.nc_flag else 1.0
+        sp_fac = 2.0 if ns == 1 and self.nc_flag == False else 1.0
+        
+        if self.nc_flag == False:
+            den_mat = np.zeros((ns, nproj, nproj), dtype=np.float64)
+            overlap = np.zeros((ns, nproj, nproj), dtype=np.float64)
+            for ispin in range(ns):
+                for ik in range(nk):
+                    kweight = self.kmesh['kweights'][ik]
+                    occ = self.ferw[ispin, ik, :]
+                    den_mat[ispin, :, :] += np.dot(plo[:, ispin, ik, :] * occ, plo[:, ispin, ik, :].T.conj()).real * kweight * sp_fac
+                    ov = np.dot(plo[:, ispin, ik, :], plo[:, ispin, ik, :].T.conj()).real
+                    overlap[ispin, :, :] += ov * kweight
+            # Output only the site-diagonal parts of the matrices
+            print()
+            print("  Unorthonormalized density matrices and overlaps:")
+            for ispin in range(ns):
+                print("  Spin:", ispin + 1)
+                for io, ion in enumerate(ions):
+                    print("  Site:", ion)
+                    iorb_inds = [(ip, param['m']) for ip, param in enumerate(self.proj_params) if param['isite'] == ion]
+                    norb = len(iorb_inds)
+                    dm = np.zeros((norb, norb))
+                    ov = np.zeros((norb, norb))
+                    for ind, iorb in iorb_inds:
+                        for ind2, iorb2 in iorb_inds:
+                            dm[iorb, iorb2] = den_mat[ispin, ind, ind2]
+                            ov[iorb, iorb2] = overlap[ispin, ind, ind2]
 
-        den_mat = np.zeros((ns, nproj, nproj), dtype=np.float64)
-        overlap = np.zeros((ns, nproj, nproj), dtype=np.float64)
-#        ov_min = np.ones((ns, nproj, nproj), dtype=np.float64) * 100.0
-#        ov_max = np.zeros((ns, nproj, nproj), dtype=np.float64)
-        for ispin in range(ns):
-            for ik in range(nk):
-                kweight = self.kmesh['kweights'][ik]
-                occ = self.ferw[ispin, ik, :]
-                den_mat[ispin, :, :] += np.dot(plo[:, ispin, ik, :] * occ, plo[:, ispin, ik, :].T.conj()).real * kweight * sp_fac
-                ov = np.dot(plo[:, ispin, ik, :], plo[:, ispin, ik, :].T.conj()).real
-                overlap[ispin, :, :] += ov * kweight
-#                ov_max = np.maximum(ov, ov_max)
-#                ov_min = np.minimum(ov, ov_min)
+                    print("  Density matrix" + (12*norb - 12 + 2)*" " + "Overlap")
+                    for drow, dov in zip(dm, ov):
+                        out = ''.join(map("{0:12.7f}".format, drow))
+                        out += "    "
+                        out += ''.join(map("{0:12.7f}".format, dov))
+                        print(out)
+                    
+                    
+                    
+        else:
+            print("!! WARNING !! Non Collinear Routine")
+            den_mat = np.zeros((ns, nproj, nproj), dtype=np.float64)
+            overlap = np.zeros((ns, nproj, nproj), dtype=np.float64)
+            for ispin in range(ns):
+                for ik in range(nk):
+                    kweight = self.kmesh['kweights'][ik]
+                    occ = self.ferw[ispin, ik, :]
+                    den_mat[ispin, :, :] += np.dot(plo[:, ispin, ik, :] * occ, plo[:, ispin, ik, :].T.conj()).real * kweight * sp_fac
+                    ov = np.dot(plo[:, ispin, ik, :], plo[:, ispin, ik, :].T.conj()).real
+                    overlap[ispin, :, :] += ov * kweight
+            # Output only the site-diagonal parts of the matrices
+            print()
+            print("  Unorthonormalized density matrices and overlaps:")
+            for ispin in range(ns):
+                print("  Spin:", ispin + 1)
+                for io, ion in enumerate(ions):
+                    print("  Site:", ion)
+                    iorb_inds = [(ip, param['m']) for ip, param in enumerate(self.proj_params) if param['isite'] == ion]
+                    norb = len(iorb_inds)
+                    dm = np.zeros((norb, norb))
+                    ov = np.zeros((norb, norb))
+                    for ind, iorb in iorb_inds:
+                        for ind2, iorb2 in iorb_inds:
+                            dm[iorb, iorb2] = den_mat[ispin, ind, ind2]
+                            ov[iorb, iorb2] = overlap[ispin, ind, ind2]
 
-# Output only the site-diagonal parts of the matrices
-        print()
-        print("  Unorthonormalized density matrices and overlaps:")
-        for ispin in range(ns):
-            print("  Spin:", ispin + 1)
-            for io, ion in enumerate(ions):
-                print("  Site:", ion)
-                iorb_inds = [(ip, param['m']) for ip, param in enumerate(self.proj_params) if param['isite'] == ion]
-                norb = len(iorb_inds)
-                dm = np.zeros((norb, norb))
-                ov = np.zeros((norb, norb))
-                for ind, iorb in iorb_inds:
-                    for ind2, iorb2 in iorb_inds:
-                        dm[iorb, iorb2] = den_mat[ispin, ind, ind2]
-                        ov[iorb, iorb2] = overlap[ispin, ind, ind2]
+                    print("  Density matrix" + (12*norb - 12 + 2)*" " + "Overlap")
+                    for drow, dov in zip(dm, ov):
+                        out = ''.join(map("{0:12.7f}".format, drow))
+                        out += "    "
+                        out += ''.join(map("{0:12.7f}".format, dov))
+                        print(out)
 
-                print("  Density matrix" + (12*norb - 12 + 2)*" " + "Overlap")
-                for drow, dov in zip(dm, ov):
-                    out = ''.join(map("{0:12.7f}".format, drow))
-                    out += "    "
-                    out += ''.join(map("{0:12.7f}".format, dov))
-                    print(out)
+

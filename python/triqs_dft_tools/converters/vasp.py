@@ -186,12 +186,11 @@ class VaspConverter(ConverterTools):
             raise "VaspConverter: error reading %s"%self.ctrl_file
 
 #        if nc_flag:
-## TODO: check this
-#            n_spin_blocs = 1
-#        else:
-#            n_spin_blocs = ns
-        n_spin_blocs = SP + 1 - SO
-
+# VASP.6.
+        if SO == 1:
+            n_spin_blocs = 1
+        else:
+            n_spin_blocs = SP + 1
 # Read PLO groups
 # First, we read everything into a temporary data structure
 # TODO: think about multiple shell groups and how to map them on h5 structures
@@ -283,7 +282,7 @@ class VaspConverter(ConverterTools):
 #                raise NotImplementedError("Noncollinear calculations are not implemented")
 #            else:
             hopping = numpy.zeros([n_k, n_spin_blocs, nb_max, nb_max], numpy.complex_)
-            f_weights = numpy.zeros([n_k, n_spin_blocs, nb_max], numpy.float_)
+            f_weights = numpy.zeros([n_k, n_spin_blocs, nb_max], numpy.complex_)
             band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(n_spin_blocs)]
             n_orbitals = numpy.zeros([n_k, n_spin_blocs], numpy.int)
 
