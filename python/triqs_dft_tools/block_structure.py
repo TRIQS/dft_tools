@@ -27,7 +27,7 @@ Block structure class and helper functions
 
 import copy
 import numpy as np
-from triqs.gf import GfImFreq, BlockGf
+from triqs.gf import BlockGf, Gf, GfImFreq
 from ast import literal_eval
 import triqs.utility.mpi as mpi
 from warnings import warn
@@ -639,14 +639,15 @@ class BlockStructure(object):
             self.solver_to_sumk_block[ish] = so2su_block
             self.deg_shells[ish] = []
 
-    def create_gf(self, ish=0, gf_function=GfImFreq, space='solver', **kwargs):
+    def create_gf(self, ish=0, gf_function=Gf, space='solver', **kwargs):
         """ Create a zero BlockGf having the correct structure.
 
         For ``space='solver'``, the structure is according to
         ``gf_struct_solver``, else according to ``gf_struct_sumk``.
 
-        When using GfImFreq as gf_function, typically you have to
-        supply beta as keyword argument.
+        Default constructor is Gf which needs a mesh to be provided along.
+        When using GfImFreq as gf_function, you have to
+        supply at least beta as keyword argument.
 
         Parameters
         ----------
@@ -656,7 +657,7 @@ class BlockStructure(object):
             if ``space='sumk'``, the index of the correlated shell
         gf_function : constructor
             function used to construct the Gf objects constituting the
-            individual blocks; default: GfImFreq
+            individual blocks; default: Gf
         space : 'solver' or 'sumk'
             which space the structure should correspond to
         **kwargs :
@@ -693,7 +694,7 @@ class BlockStructure(object):
 
         return self._create_gf_or_matrix(ish, gf_function, block_function, space)
 
-    def _create_gf_or_matrix(self, ish=0, gf_function=GfImFreq, block_function=BlockGf, space='solver', **kwargs):
+    def _create_gf_or_matrix(self, ish=0, gf_function=Gf, block_function=BlockGf, space='solver', **kwargs):
         if space == 'solver':
             gf_struct = self.gf_struct_solver
         elif space == 'sumk':
@@ -701,6 +702,9 @@ class BlockStructure(object):
         else:
             raise Exception(
                 "Argument space has to be either 'solver' or 'sumk'.")
+
+        if 'mesh' not in kwargs and 'beta' in kwargs:
+            gf_function = GfImFreq
 
         names = list(gf_struct[ish].keys())
         blocks = []
@@ -983,6 +987,9 @@ class BlockStructure(object):
             if G_out is None:
                 if not 'mesh' in kwargs and not 'beta' in kwargs:
                     kwargs['mesh'] = G.mesh
+                elif not 'mesh' in kwargs and 'beta' in kwargs:
+                    kwargs['gf_function'] = GfImFreq
+
                 G_out = self.create_gf(ish=ish_to, space=space_to, **kwargs)
             else:
                 self.check_gf(G_out, ish=ish_to, space=space_to)

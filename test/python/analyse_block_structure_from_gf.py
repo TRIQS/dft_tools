@@ -18,9 +18,9 @@ full_test = False
 # for the SrIrO3_rot.h5 file                                          #
 #######################################################################
 
-beta = 40
-SK = SumkDFT(hdf_file = 'SrIrO3_rot.h5')
-Sigma = SK.block_structure.create_gf(beta=beta)
+mesh = MeshImFreq(40, 'Fermion', 1025)
+SK = SumkDFT(hdf_file = 'SrIrO3_rot.h5', mesh=mesh)
+Sigma = SK.block_structure.create_gf(mesh=mesh)
 SK.put_Sigma([Sigma])
 G = SK.extract_G_loc()
 
