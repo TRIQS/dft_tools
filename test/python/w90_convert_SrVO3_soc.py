@@ -33,7 +33,8 @@ subfolder = 'w90_convert/'
 # bloch_basis False
 seedname = subfolder+'SrVO3_soc'
 converter = Wannier90Converter(seedname=seedname, hdf_filename=seedname+'.out.h5',
-                               rot_mat_type='wannier', bloch_basis=False)
+                               rot_mat_type='wannier', bloch_basis=False,
+                               reorder_orbital_and_spin_vasp5=True)
 converter.convert_dft_input()
 
 if mpi.is_master_node():
