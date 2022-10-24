@@ -62,7 +62,7 @@ class Wannier90Converter(ConverterTools):
     def __init__(self, seedname, hdf_filename=None, dft_subgrp='dft_input',
                  symmcorr_subgrp='dft_symmcorr_input', misc_subgrp='dft_misc_input',
                  repacking=False, rot_mat_type='hloc_diag', bloch_basis=False, add_lambda=None,
-                 w90zero=2e-6):
+                 w90zero=2e-6, reorder_orbital_and_spin_vasp5=False):
         """
         Initialise the class.
 
@@ -86,9 +86,15 @@ class Wannier90Converter(ConverterTools):
         bloch_basis : boolean, optional
             Should the Hamiltonian be written in Bloch rather than Wannier basis?
         add_lambda : list of floats, optional
-            add local spin-orbit term
+            Add local spin-orbit term
         w90zero : float, optional
-            threshold on symmetry checks of Hamiltonian and rot_mat
+            Threshold on symmetry checks of Hamiltonian and rot_mat
+        reorder_orbital_and_spin_vasp5 : bool, optional
+            Is false for output from VASP 6 and Quantum Espresso
+            Reorder orbitals and spins from the VASP 5 convention of first all
+            orbitals with up and then all orbitals with down to the "usual"
+            convention of every up orbital immediately being followed by its
+            corresponding down orbital
         """
         self._name = 'Wannier90Converter'
         assert isinstance(seedname, str), self._name + \
@@ -110,6 +116,7 @@ class Wannier90Converter(ConverterTools):
         self.rot_mat_type = rot_mat_type
         self.bloch_basis = bloch_basis
         self.add_lambda = add_lambda
+        self.reorder_orbital_and_spin_vasp5 = reorder_orbital_and_spin_vasp5
         if self.add_lambda is not None and len(self.add_lambda) != 3:
             raise ValueError('If specifying add_lambda, give three values.')
         if self.rot_mat_type not in ('hloc_diag', 'wannier', 'none'):
@@ -191,8 +198,8 @@ class Wannier90Converter(ConverterTools):
             mpi.report('Overwriting required density with DFT result {:.5f}'.format(density_required))
             mpi.report('and using the DFT Fermi energy {:.5f} eV\n'.format(fermi_energy))
 
-        # Switches from wannier90 order to triqs order
-        if SO and not self.add_lambda:
+        # Switches from Vasp 5 + wannier90 order to triqs order
+        if SO and not self.add_lambda and self.reorder_orbital_and_spin_vasp5:
             wannier_hr, u_total = reorder_orbital_and_spin(n_wannier, wannier_hr, u_total)
 
         # Finds R=0 index
@@ -933,10 +940,10 @@ def read_misc_input(w90_seed, n_spin_blocks, n_k):
 
 def reorder_orbital_and_spin(nwfs, wannier_hr, u_total):
     """
-    Changes order from wannier90 (first all up spin wannier orbitals, then all
-    down spin) to triqs order (every up orbital is followed directly by the
-    corresponding down orbital). The order between orbital degrees of freedom
-    is not changed.
+    Changes order from VASP5 + wannier90 (first all up spin wannier orbitals,
+    then all down spin) to usual order (every up orbital is followed directly
+    by the corresponding down orbital). The order between orbital degrees of
+    freedom is not changed.
 
     Returns
     -------
@@ -958,8 +965,8 @@ def reorder_orbital_and_spin(nwfs, wannier_hr, u_total):
 def generate_local_so_matrix_t2g(add_lambda, n_corr_shells, nwfs):
     """
     Adds local spin-orbit interaction term to the t2g subspace. Orbital order
-    is assumed to be the triqs order xz_up, xz_dn, yz_up, yz_dn, xy_up, xy_dn
-    as given after reordering the Wannier input.
+    is assumed to be the wannier90/triqs order xz_up, xz_dn, yz_up, yz_dn,
+    xy_up, xy_dn.
     Parameters are defined as add_lambda = [lambda_x, lambda_y, lambda_z],
     representative of the orbital coupling terms perpendicular to [x, y, z],
     i.e., [d_yz, d_xz, d_xy], respectively.
