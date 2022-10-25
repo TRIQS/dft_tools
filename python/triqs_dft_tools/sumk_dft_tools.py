@@ -831,7 +831,7 @@ class SumkDFTTools(SumkDFT):
             subgrp=self.bands_data, things_to_read=things_to_read)
         if not value_read:
             return value_read
-        if ishell:
+        if ishell is not None:
             things_to_read = ['rot_mat_all', 'rot_mat_all_time_inv']
             value_read = self.read_input_from_hdf(
                 subgrp=self.parproj_data, things_to_read=things_to_read)
@@ -860,6 +860,7 @@ class SumkDFTTools(SumkDFT):
                 [self.shells[ishell]['dim'], self.n_k, n_om], numpy.float_) for sp in spn}
 
         if ishell is not None:
+            assert isinstance(ishell, int) and ishell in range(len(self.shells)), "ishell must be of type integer and consistent with number of shells."
             gf_struct_parproj = [
                 (sp, self.shells[ishell]['dim']) for sp in spn]
             G_loc = BlockGf(name_block_generator=[(block, GfReFreq(target_shape=(block_dim, block_dim), mesh=self.Sigma_imp[0].mesh))
@@ -897,7 +898,7 @@ class SumkDFTTools(SumkDFT):
 
                 for ish in range(self.shells[ishell]['dim']):
                     for sp in spn:
-                        Akw[sp][ish, ik] = -gf.data[numpy.where((mesh > om_minplot)&(mesh < om_maxplot))].imag.trace(axis1=1, axis2=2)/numpy.pi
+                        Akw[sp][ish, ik] = -G_loc[sp].data[numpy.where((mesh > om_minplot)&(mesh < om_maxplot)),ish,ish].imag/numpy.pi
         # Collect data from mpi
         for sp in spn:
             Akw[sp] = mpi.all_reduce(mpi.world, Akw[sp], lambda x, y: x + y)
