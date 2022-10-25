@@ -860,6 +860,7 @@ class SumkDFTTools(SumkDFT):
                 [self.shells[ishell]['dim'], self.n_k, n_om], numpy.float_) for sp in spn}
 
         if ishell is not None:
+            assert isinstance(ishell, int) and ishell in range(len(self.shells)), "ishell must be of type integer and consistent with number of shells."
             gf_struct_parproj = [
                 (sp, self.shells[ishell]['dim']) for sp in spn]
             G_loc = BlockGf(name_block_generator=[(block, GfReFreq(target_shape=(block_dim, block_dim), mesh=self.Sigma_imp[0].mesh))
