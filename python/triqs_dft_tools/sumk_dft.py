@@ -1730,6 +1730,11 @@ class SumkDFT(object):
                 elif self.SP == 1 and self.SO == 1:
                     Ncr[sp] = Ncrtot / 2.0
 
+            # Uses "orbital" dimension with SO for double counting
+            if self.SP == 1 and self.SO == 1:
+                assert dim % 2 == 0
+                dim //= 2
+
             if use_dc_value is None:
 
                 if U_interact is None and J_hund is None:
@@ -1744,7 +1749,7 @@ class SumkDFT(object):
                             J_hund * (Ncr[sp] - 0.5)
                         self.dc_imp[icrsh][sp] *= Uav
                         self.dc_energ[icrsh] -= J_hund / \
-                            2.0 * (Ncr[sp]) * (Ncr[sp] - 1.0)
+                            len(spn) * (Ncr[sp]) * (Ncr[sp] - 1.0)
                         mpi.report(
                             "DC for shell %(icrsh)i and block %(sp)s = %(Uav)f" % locals())
 
@@ -1768,7 +1773,7 @@ class SumkDFT(object):
                             J_hund * (Ncr[sp] - Ncr[sp] / dim)
                         self.dc_imp[icrsh][sp] *= Uav
                         self.dc_energ[
-                            icrsh] -= (U_interact + (dim - 1) * J_hund) / dim * 0.5 * Ncr[sp] * Ncr[sp]
+                            icrsh] -= (U_interact + (dim - 1) * J_hund) / dim / len(spn) * Ncr[sp] * Ncr[sp]
                         mpi.report(
                             "DC for shell %(icrsh)i and block %(sp)s = %(Uav)f" % locals())
 
