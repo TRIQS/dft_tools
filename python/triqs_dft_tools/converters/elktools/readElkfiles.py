@@ -185,10 +185,10 @@ class readElkfiles:
           na=proj[ip]['natom'] # integer which reduces when reading in atom info
           while(na>0):
             neqatom.append(int(next(R)))
-            na-=neqatom[ip]
+            na-=neqatom[n_inequiv_shells]
             #appends the mapping array to index of inequivalent atom in shells
             inequiv_to_corr.append(icorr)
-            for ia in range(neqatom[ip]):
+            for ia in range(neqatom[n_inequiv_shells]):
               corr_to_inequiv.append(n_inequiv_shells)
               at.append({name: int(val) for name, val in zip(at_entries, R)})
               shells.append(proj[ip].copy())
@@ -224,10 +224,10 @@ class readElkfiles:
            #index for the next inequivalent atom (+1 to index is not needed as this is incorporated in
            #neqatom[ish]
               n_shells+=1
+           #increase the inequiv_to_corr value
+            icorr+=neqatom[n_inequiv_shells]
            #increase the numer of inequivalent atoms
             n_inequiv_shells+=1
-           #increase the inequiv_to_corr value
-            icorr+=neqatom[ip]
            #end reading the file if read the last projector
           if (ip+1==gen_info['nproj']):
             break
@@ -483,16 +483,14 @@ class readElkfiles:
           symmat=[]
           spinmat=[]
           tr=[]
-          #maximum symmetries
-          nsym = 48
+          #read the number of crystal symmetries
+          x = next(R)
+          nsym = int(atof(x[0]))
           #set up symmetry matrices
           for isym in range(nsym):
             symmat.append(numpy.zeros([3, 3], numpy.float_))
             spinmat.append(numpy.zeros([3, 3], numpy.float_))
             tr.append(numpy.zeros([3], numpy.float_))
-          #read the number of crystal symmetries
-          x = next(R)
-          nsym = int(atof(x[0]))
           #read each symmetry
           for isym in range(nsym):
             #read the symmetry index and check it
