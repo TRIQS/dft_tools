@@ -47,12 +47,19 @@ def read_transport_input_from_hdf(sum_k):
     sum_k : sum_k object
             triqs SumkDFT object
     """
+    assert sum_k.dft_code in ('wien2k','elk'), "read_transport_input_from_hdf() is only implemented for wien2k and elk inputs"
     thingstoread = ['band_window_optics', 'velocities_k']
     sum_k.read_input_from_hdf(
         subgrp=sum_k.transp_data, things_to_read=thingstoread)
-    thingstoread = ['band_window', 'lattice_angles', 'lattice_constants',
-                    'lattice_type', 'n_symmetries', 'rot_symmetries']
+    if(sum_k.dft_code=="wien2k"):
+        thingstoread = ['band_window', 'lattice_angles', 'lattice_constants',
+                        'lattice_type', 'n_symmetries', 'rot_symmetries']
+    elif(sum_k.dft_code=="elk"):
+        thingstoread = ['band_window', 'n_symmetries',
+                        'rot_symmetries','cell_vol']
     sum_k.read_input_from_hdf(subgrp=sum_k.misc_data, things_to_read=thingstoread)
+    if(self.dft_code=="wien2k"):
+        self.cell_vol = self.cellvolume(self.lattice_type, self.lattice_constants, self.lattice_angles)[1]
 
     return sum_k
 
@@ -278,7 +285,7 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
         kpts = dataK.kpoints_all
 
     # broadcast everything
-    cell_volume = mpi.bcast(cell_volume)
+    sum_k.cell_vol = mpi.bcast(cell_volume)
     kpts = mpi.bcast(kpts)
     hopping = mpi.bcast(hopping)
     proj_mat = mpi.bcast(proj_mat)
@@ -319,7 +326,7 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
             ar = HDFArchive(sum_k.hdf_file, 'a')
             ar['dft_transp_input']['inverse_mass'] = inverse_mass
 
-    return sum_k, cell_volume, things_to_store
+    return sum_k, things_to_store
 
 # ----------------- transport -----------------------
 
@@ -341,15 +348,13 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
     -------
     sum_k : sum_k object
             triqs SumkDFT object, interpolated
-    cell_volume : double
-            primitive unit cell volume
     """
 
     n_inequiv_spin_blocks = sum_k.SP + 1 - sum_k.SO
     # up and down are equivalent if SP = 0
 
     # ----------------- set-up input from DFT -----------------------
-    if code in ('wien2k'):
+    if code in ('wien2k', 'elk'):
         # Check if wien converter was called and read transport subgroup form
         # hdf file
         if mpi.is_master_node():
@@ -361,7 +366,6 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
                 raise IOError("transport_distribution: n_symmetries missing. Check if case.outputs file is present and call convert_misc_input() or convert_dft_input().")
 
         sum_k = read_transport_input_from_hdf(sum_k)
-        _, cell_volume = cellvolume(sum_k.lattice_type, sum_k.lattice_constants, sum_k.lattice_angles)
 
     elif code in ('wannier90'):
         required_entries = ['seedname', 'nk_optics']
@@ -380,7 +384,7 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
         assert all(isinstance(name, bool) for name in [calc_velocity, calc_inverse_mass]), f'Parameter {calc_velocity} or {calc_inverse_mass} not bool!'
 
         # recompute sum_k instances on denser grid
-        sum_k, cell_volume, _ = recompute_w90_input_on_different_mesh(sum_k, w90_params['seedname'], nk_optics=w90_params['nk_optics'], pathname=pathname,
+        sum_k, _ = recompute_w90_input_on_different_mesh(sum_k, w90_params['seedname'], nk_optics=w90_params['nk_optics'], pathname=pathname,
                                                                       calc_velocity=calc_velocity, calc_inverse_mass=calc_inverse_mass)
 
     # k-dependent-projections.
@@ -388,10 +392,10 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
     # k_dep_projection is nowhere used
     # assert sum_k.k_dep_projection == 0, "transport_distribution: k dependent projection is not implemented!"
 
-    return sum_k, cell_volume
+    return sum_k
 
 # Uses .data of only GfReFreq objects.
-def transport_distribution(sum_k, beta, cell_volume, directions=['xx'], energy_window=None, Om_mesh=[0.0], with_Sigma=False, n_om=None, broadening=0.0, code='wien2k'):
+def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, Om_mesh=[0.0], with_Sigma=False, n_om=None, broadening=0.0, code='wien2k'):
     r"""
     Calculates the transport distribution
 
@@ -406,8 +410,6 @@ def transport_distribution(sum_k, beta, cell_volume, directions=['xx'], energy_w
             triqs SumkDFT object
     beta : double
         Inverse temperature :math:`\beta`.
-    cell_volume : double
-            primitive unit cell volume
     directions : list of string, optional
         :math:`\alpha\beta` e.g.: ['xx','yy','zz','xy','xz','yz'].
     energy_window : list of double, optional
@@ -495,8 +497,8 @@ def transport_distribution(sum_k, beta, cell_volume, directions=['xx'], energy_w
         assert broadening != 0.0 and broadening is not None, "transport_distribution: Broadening necessary to calculate transport distribution!"
         omega = numpy.linspace(
             energy_window[0] - max(Om_mesh), energy_window[1] + max(Om_mesh), n_om)
-        mesh = [energy_window[0] -
-                max(Om_mesh), energy_window[1] + max(Om_mesh), n_om]
+        mesh = MeshReFreq(energy_window[0] -
+                max(Om_mesh), energy_window[1] + max(Om_mesh), n_om)
         mu = 0.0
 
     dir_to_int = {'x': 0, 'y': 1, 'z': 2}
@@ -569,7 +571,7 @@ def transport_distribution(sum_k, beta, cell_volume, directions=['xx'], energy_w
 
 
     for direction in directions:
-        Gamma_w[direction] = (mpi.all_reduce(mpi.world, Gamma_w[direction], lambda x, y: x + y) / cell_volume / sum_k.n_symmetries)
+        Gamma_w[direction] = (mpi.all_reduce(mpi.world, Gamma_w[direction], lambda x, y: x + y) / sum_k.cell_vol / sum_k.n_symmetries)
 
     return Gamma_w, omega, temp_Om_mesh
 
