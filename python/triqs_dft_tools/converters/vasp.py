@@ -386,6 +386,10 @@ class VaspConverter(ConverterTools):
 
         proj_or_hk = self.proj_or_hk
 
+        #new variable: dft_code - this determines which DFT code the inputs come from.
+        #used for certain routines within dft_tools if treating the inputs differently is required.
+        dft_code = 'vasp'
+
         # Save it to the HDF:
         with HDFArchive(self.hdf_file,'a') as ar:
             if not (self.dft_subgrp in ar): ar.create_group(self.dft_subgrp)
@@ -394,7 +398,7 @@ class VaspConverter(ConverterTools):
                               'symm_op','n_shells','shells','n_corr_shells','corr_shells','use_rotations','rot_mat',
                               'rot_mat_time_inv','n_reps','dim_reps','T','n_orbitals','proj_mat','bz_weights',
                               'hopping','n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr','proj_or_hk',
-                              'kpts','kpt_weights', 'kpt_basis']
+                              'kpts','kpt_weights', 'kpt_basis', 'dft_code']
             if self.proj_or_hk == 'hk' or self.proj_or_hk ==  True:
                 things_to_save.append('proj_mat_csc')
             for it in things_to_save: ar[self.dft_subgrp][it] = locals()[it]

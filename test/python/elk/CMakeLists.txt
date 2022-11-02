@@ -4,6 +4,7 @@ set(all_tests
     elk_equiv_convert
     elk_bands_convert
     elk_bandcharacter_convert
+    elk_transport_convert
 )
 
 file(GLOB all_test_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.py)

@@ -527,7 +527,7 @@ class readElkfiles:
 
     def readlat(self):
         """
-        Read in the symmetries in lattice coordinates
+        Read in information about the lattice.
         """
         dft_file='LATTICE.OUT'
         R = self.read_elk_file2( dft_file, self.fortran_to_replace)
@@ -552,9 +552,11 @@ class readElkfiles:
             x = next(R)
             for j in range(3):
               amatinv[i,j] = atof(x[j])
-          #reciprocal lattice matrices
+          #read in cell volume (for transport)
+          x = next(R)
+          cell_vol = atof(x[-1])    
           #cycling through information which is not needed
-          for i in range(5):
+          for i in range(4):
             x = next(R)
           #reading in the reciprocal lattice vectors as matrix
           for i in range(3):
@@ -572,7 +574,7 @@ class readElkfiles:
         except StopIteration:  # a more explicit error if the file is corrupted.
           raise IOError("Elk_converter : reading PROJ.OUT file failed!")
         R.close()
-        return amat,amatinv,bmat,bmatinv
+        return amat,amatinv,bmat,bmatinv,cell_vol
 
     def read_geometry(self):
       """

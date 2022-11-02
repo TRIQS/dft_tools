@@ -259,6 +259,10 @@ class Wien2kConverter(ConverterTools):
         R.close()
         # Reading done!
 
+        #new variable: dft_code - this determines which DFT code the inputs come from.
+        #used for certain routines within dft_tools if treating the inputs differently is required.
+        dft_code = 'wien2k'
+
         # Save it to the HDF:
         with HDFArchive(self.hdf_file, 'a') as ar:
             if not (self.dft_subgrp in ar):
@@ -268,7 +272,7 @@ class Wien2kConverter(ConverterTools):
             things_to_save = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                           'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
                           'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
-                          'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
+                          'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr', 'dft_code']
             for it in things_to_save:
                 ar[self.dft_subgrp][it] = locals()[it]
 

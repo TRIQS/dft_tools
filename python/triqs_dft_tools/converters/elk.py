@@ -310,7 +310,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         mpi.report("Reading SYMCRYS.OUT")
         [n_symm,spinmat,symmat,tr] = read_Elk.readsym(self)
         mpi.report("Reading LATTICE.OUT")
-        [amat,amatinv,bmat,bmatinv] = read_Elk.readlat(self)
+        [amat,amatinv,bmat,bmatinv,cell_vol] = read_Elk.readlat(self)
         #calculating atom permutations
         perm = Elk_tools.gen_perm(self,n_symm,ns,na,n_atoms,symmat,tr,atpos)
         #determine the cartesian lattice symmetries and the spin axis rotations
@@ -388,8 +388,11 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
            #remove "spatom"
            del shells[ish]['spatom']
         n_orbits=len(orbits)
-
         #Note that the T numpy array is defined for all shells.
+
+        #new variable: dft_code - this determines which DFT code the inputs come from.
+        #used for certain routines within dft_tools if treating the inputs differently is required.
+        dft_code = 'elk'
 
         # Save it to the HDF:
         ar = HDFArchive(self.hdf_file, 'a')
@@ -400,7 +403,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         things_to_save = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                           'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
                           'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
-                          'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
+                          'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr', 'dft_code']
         for it in things_to_save:
             ar[self.dft_subgrp][it] = locals()[it]
         del ar
@@ -647,3 +650,110 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         del ar
         mpi.report('Converted the band character data')
 
+
+    def convert_transport_input(self):
+        """
+        Reads the necessary information for transport calculations on:
+
+        - the optical band window and the velocity matrix elements from :file:`case.pmat`
+
+        and stores the data in the hdf5 archive.
+
+        """
+
+        if not (mpi.is_master_node()):
+            return
+
+        # get needed data from hdf file
+        with HDFArchive(self.hdf_file, 'r') as ar:
+            if not (self.dft_subgrp in ar):
+                raise IOError("convert_transport_input: No %s subgroup in hdf file found! Call convert_dft_input first." % self.dft_subgrp)
+            things_to_read = ['SP', 'SO','n_k','n_orbitals']
+            for it in things_to_read:
+               if not hasattr(self, it):
+                  setattr(self, it, ar[self.dft_subgrp][it])
+            #from misc info
+            things_to_read = ['band_window','vkl','nstsv']
+            for it in things_to_read:
+               if not hasattr(self, it):
+                  setattr(self, it, ar[self.misc_subgrp][it])
+
+        #unlike in WIEN2k, Elk writes the velocities (momentum) matrix elements for all bands.
+        #Therefore, we can use the indices in the n_orbitals array to extract the desired elements.
+        #However, the PMAT.OUT file is in Fortran-binary, so the file is read in by python wrappers
+        #around the reading fortran code.
+
+        # Read relevant data from PMAT.OUT binary file
+        ###########################################
+        # band_window_optics: same as Elk converter's band_window, but rearranged to be compatible
+        #                     for the transport calculations.
+        # velocities_k: velocity (momentum) matrix elements between all bands in band_window_optics
+        #               and each k-point.
+
+        #load fortran wrapper module
+        import triqs_dft_tools.converters.elktools.elkbin.getpmatelk as et
+        #elk velocities for all bands
+        pmat=numpy.zeros([self.nstsv,self.nstsv,3],dtype=complex)
+
+        n_spin_blocks = self.SP + 1 - self.SO
+        #TRIQS' velocities array used in its transport routines
+        velocities_k = [[] for isp in range(n_spin_blocks)]
+        #TRIQS' band_window array used in its transport routines
+        band_window_optics = []
+
+
+        mpi.report("Reading PMAT.OUT")
+        #read velocities for each k-point
+        for ik in range(self.n_k):
+          #need to use a fortran array for wrapper
+          f_vkl = numpy.asfortranarray(self.vkl[ik,:])
+          #read the ik velocity using the wrapper
+          pmat[:,:,:]=et.getpmatelk(ik+1,self.nstsv,f_vkl)
+          #loop over spin
+          for isp in range(n_spin_blocks):
+            #no. correlated bands at ik
+            nu1=self.band_window[isp][ik,0]-1
+            nu2=self.band_window[isp][ik,1]-1
+            n_bands=nu2-nu1+1
+            #put into velocity array (code similar to that in wien.py.
+            if n_bands <= 0:
+                velocity_xyz = numpy.zeros((1, 1, 3), dtype=complex)
+            else:
+                velocity_xyz = numpy.zeros(
+                    (n_bands, n_bands, 3), dtype=complex)
+            #CHECK these lines
+            velocity_xyz[:,:,:]=pmat[nu1:nu2+1,nu1:nu2+1,:]
+            velocities_k[isp].append(velocity_xyz)
+
+        #rearrange Elk's band_window array into band_window_optics array format
+        for isp in range(n_spin_blocks):
+          band_window_optics_isp = []
+          for ik in range(self.n_k):
+            nu1=self.band_window[isp][ik,0]
+            nu2=self.band_window[isp][ik,1]
+            band_window_optics_isp.append((nu1, nu2))
+            n_bands=nu2-nu1+1
+          band_window_optics.append(numpy.array(band_window_optics_isp))
+
+        #read in the cell volume from LATTICE.OUT
+        mpi.report("Reading LATTICE.OUT")
+        [amat,amatinv,bmat,bmatinv,cell_vol] = read_Elk.readlat(self)
+
+        #read in the crystal symmetries
+        mpi.report("Reading SYMCRYS.OUT")
+        [n_symmetries,spinmat,rot_symmetries,tr] = read_Elk.readsym(self)
+
+
+        # Put data to HDF5 file
+        with HDFArchive(self.hdf_file, 'a') as ar:
+            if not (self.transp_subgrp in ar):
+                ar.create_group(self.transp_subgrp)
+            # The subgroup containing the data. If it does not exist, it is
+            # created. If it exists, the data is overwritten!!!
+            things_to_save = ['band_window_optics', 'velocities_k']
+            for it in things_to_save:
+                ar[self.transp_subgrp][it] = locals()[it]
+            things_to_save_misc = ['n_symmetries', 'rot_symmetries','cell_vol']
+            for it in things_to_save_misc:
+              ar[self.misc_subgrp][it] = locals()[it]
+        mpi.report("Reading complete!")

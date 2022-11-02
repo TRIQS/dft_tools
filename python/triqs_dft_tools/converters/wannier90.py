@@ -300,6 +300,10 @@ class Wannier90Converter(ConverterTools):
         # n_orbitals required by triqs h5 standard, which actually contains the number of bands
         n_orbitals = np.full((n_k, n_spin_blocks), n_bands)
 
+        #new variable: dft_code - this determines which DFT code the inputs come from.
+        #used for certain routines within dft_tools if treating the inputs differently is required.
+        dft_code = 'w90'
+
         # Finally, save all required data into the HDF archive:
         if mpi.is_master_node():
             with HDFArchive(self.hdf_file, 'a') as archive:
@@ -310,7 +314,7 @@ class Wannier90Converter(ConverterTools):
                 things_to_save = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                               'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
                               'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
-                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr', 'kpt_weights', 'kpts']
+                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr', 'kpt_weights', 'kpts', 'dft_code']
                 if self.bloch_basis:
                     np.append(things_to_save, 'kpt_basis')
                 for it in things_to_save:

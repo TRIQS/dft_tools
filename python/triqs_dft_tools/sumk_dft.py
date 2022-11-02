@@ -126,7 +126,7 @@ class SumkDFT(object):
             req_things_to_read = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                               'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
                               'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
-                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
+                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr', 'dft_code']
             self.subgroup_present, self.values_not_read = self.read_input_from_hdf(
                 subgrp=self.dft_data, things_to_read=req_things_to_read)
             # test if all required properties have been found
@@ -1986,7 +1986,7 @@ class SumkDFT(object):
 
         return self.chemical_potential
 
-    def calc_density_correction(self, filename=None, dm_type='wien2k', spinave=False, kpts_to_write=None):
+    def calc_density_correction(self, filename=None, dm_type=None, spinave=False, kpts_to_write=None):
         r"""
         Calculates the charge density correction and stores it into a file.
 
@@ -2004,7 +2004,10 @@ class SumkDFT(object):
                    Name of the file to store the charge density correction.
         dm_type : string
                    DFT code to write the density correction for. Options:
-                   'vasp', 'wien2k', 'elk'
+                   'vasp', 'wien2k', 'elk' or 'eq'. Needs to be set for 'qe'
+        spinave : logical
+                   Elk specific and for magnetic calculations in DMFT only. 
+                   It averages the spin to keep the DFT part non-magnetic.            
         kpts_to_write : iterable of int
                    Indices of k points that are written to file. If None (default),
                    all k points are written. Only implemented for dm_type 'vasp'
@@ -2016,6 +2019,10 @@ class SumkDFT(object):
                          the corresponing total charge `dens`.
 
         """
+        #automatically set dm_type if required
+        if dm_type==None:
+            dm_type = self.dft_code
+
         assert dm_type in ('vasp', 'wien2k','elk', 'qe'), "'dm_type' must be either 'vasp', 'wienk', 'elk' or 'qe'"
         #default file names
         if filename is None:
