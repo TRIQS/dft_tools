@@ -167,9 +167,9 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
 
         #change dim for each shell
         for ish in range(n_shells):
-          shells[ish]['dim'] = 2*shells[ish]['dim']
+          shells[ish]['dim'] *= 2
         for ish in range(n_corr_shells):
-          corr_shells[ish]['dim'] = 2*corr_shells[ish]['dim']
+          corr_shells[ish]['dim'] *= 2
         for ish in range(n_inequiv_shells):
           dim_reps[ish]=[2*dim_reps[ish][i] for i in range(len(dim_reps[ish]))]
         #Make temporary array of original n_orbitals
@@ -304,7 +304,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         [bz_weights,vkl]=read_Elk.read_kpoints(self)
         #symmetry matrix
         mpi.report("Reading GEOMETRY.OUT")
-        #read in atom posistions, the symmetry operators (in lattice coordinates) and lattice vectors
+        #read in atom positions, the symmetry operators (in lattice coordinates) and lattice vectors
         [ns, na, atpos]=read_Elk.read_geometry(self)
         #Read symmetry files
         mpi.report("Reading SYMCRYS.OUT")
@@ -351,10 +351,12 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         use_rotations = 1
         rot_mat = [numpy.identity(corr_shells[icrsh]['dim'], numpy.complex_) for icrsh in range(n_corr_shells)]
         for icrsh in range(n_corr_shells):
-          #incrsh = corr_to_inequiv[icrsh]
-          #iatom = corr_shells[incrsh]['atom']
+          #return inequivalent index  
+          incrsh = corr_to_inequiv[icrsh]
+          #return first inequivalent corr_shell index
+          jcrsh = inequiv_to_corr[incrsh]
           #want to rotate atom to first inequivalent atom in list
-          iatom = 1
+          iatom = corr_shells[jcrsh]['atom']
           for isym in range(n_symm):
             jatom=perm[isym][corr_shells[icrsh]['atom']-1]
             #determinant determines if crystal symmetry matrix has inversion symmetry (=-1)
@@ -490,7 +492,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         #put the energy eigenvalues arrays in TRIQS format
         hopping = self.sort_dft_eigvalues(n_spin_blocs,SO,n_k,n_orbitals,band_window,entmp,energy_unit)
 
-        # No partial projectors generate, set to 0:
+        # No partial projectors generated here, so set to 0:
         n_parproj = numpy.array([0])
         proj_mat_all = numpy.array([0])
 
