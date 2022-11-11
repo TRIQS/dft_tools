@@ -1230,8 +1230,8 @@ class SumkDFTTools(SumkDFT):
             assert broadening != 0.0 and broadening is not None, "transport_distribution: Broadening necessary to calculate transport distribution!"
             self.omega = numpy.linspace(
                 energy_window[0] - max(Om_mesh), energy_window[1] + max(Om_mesh), n_om)
-            mesh = [energy_window[0] -
-                    max(Om_mesh), energy_window[1] + max(Om_mesh), n_om]
+            mesh = MeshReFreq(energy_window[0] -
+                    max(Om_mesh), energy_window[1] + max(Om_mesh), n_om)
             mu = 0.0
 
         # Define mesh for optic conductivity
