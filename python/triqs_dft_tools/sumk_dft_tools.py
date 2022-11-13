@@ -1064,7 +1064,7 @@ class SumkDFTTools(SumkDFT):
         r"""
         Reads the data for transport calculations from the hdf5 archive.
         """
-        assert self.dft_code in ('wien2k','elk'), "Transport has only implement for wien2k and elk inputs"
+        assert self.dft_code in ('wien2k','elk'), "Transport has only been implemented for wien2k and elk inputs"
         thingstoread = ['band_window_optics', 'velocities_k']
         self.read_input_from_hdf(
             subgrp=self.transp_data, things_to_read=thingstoread)
