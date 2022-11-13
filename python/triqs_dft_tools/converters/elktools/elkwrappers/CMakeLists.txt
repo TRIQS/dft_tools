@@ -29,7 +29,7 @@ message(STATUS "foo include dir: ${TRIQS_PYTHON_LIB_DEST_ROOT}/${PROJECT_NAME}")
 # user warning
 message(STATUS "-----------------------------------------------------------------------------")
 message(STATUS "                             ********  USER NOTE ******** ")
-message(STATUS "  This version of DFTTools contains interface routines to read Elk's binary ")
-message(STATUS "  I/O code. ")
+message(STATUS "  This version of DFTTools contains interface routines to read Elk's binary  ")
+message(STATUS "  files. ")
 message(STATUS "-----------------------------------------------------------------------------")
 

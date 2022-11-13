@@ -691,7 +691,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         #               and each k-point.
 
         #load fortran wrapper module
-        import triqs_dft_tools.converters.elktools.elkbin.getpmatelk as et
+        import triqs_dft_tools.converters.elktools.elkwrappers.getpmatelk as et
         #elk velocities for all bands
         pmat=numpy.zeros([self.nstsv,self.nstsv,3],dtype=complex)
 
