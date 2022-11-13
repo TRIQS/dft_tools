@@ -962,7 +962,7 @@ class SumkDFTTools(SumkDFT):
         dens_mat : list of numpy array
                    A list of density matrices projected to all shells provided in the input.
         """
-        assert self.dft_code in ('wien2k'), "This routine has only implement for wien2k inputs"
+        assert self.dft_code in ('wien2k'), "This routine has only been implemented for wien2k inputs"
 
         things_to_read = ['dens_mat_below', 'n_parproj',
                           'proj_mat_all', 'rot_mat_all', 'rot_mat_all_time_inv']
