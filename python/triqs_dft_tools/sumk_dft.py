@@ -2004,7 +2004,7 @@ class SumkDFT(object):
                    Name of the file to store the charge density correction.
         dm_type : string
                    DFT code to write the density correction for. Options:
-                   'vasp', 'wien2k', 'elk' or 'eq'. Needs to be set for 'qe'
+                   'vasp', 'wien2k', 'elk' or 'qe'. Needs to be set for 'qe'
         spinave : logical
                    Elk specific and for magnetic calculations in DMFT only. 
                    It averages the spin to keep the DFT part non-magnetic.            
