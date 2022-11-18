@@ -3,7 +3,17 @@
 set(module_name "getpmatelk")
 set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/getpmatelk.f90") 
 
-set(generated_module_file ${module_name}.so)
+execute_process(COMMAND ${TRIQS_PYTHON_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_config_var('EXT_SUFFIX') or sysconfig.get_config_var('SO'))"
+              OUTPUT_VARIABLE PYTHON_EXT_SUFFIX
+              RESULT_VARIABLE FOUND_PYTHON_EXT_SUFFIX
+              OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (NOT ${FOUND_PYTHON_EXT_SUFFIX} EQUAL 0)
+message(FATAL_ERROR "Unable to determine file extension of compiled Python modules - specify it with F2PY_SUFFIX")
+endif (NOT ${FOUND_PYTHON_EXT_SUFFIX} EQUAL 0)
+
+message(STATUS ${module_name}${PYTHON_EXT_SUFFIX})
+
+set(generated_module_file ${module_name}${PYTHON_EXT_SUFFIX})
 
 add_custom_target(${module_name} ALL
   DEPENDS ${generated_module_file} 
@@ -13,7 +23,7 @@ add_custom_target(${module_name} ALL
 ##generate the fortran python wrapper shared library
 add_custom_command(
   OUTPUT ${generated_module_file}
-  COMMAND python3 -m numpy.f2py -c ${fortran_src_file} -m ${module_name} > elk_f2py.log
+  COMMAND ${TRIQS_PYTHON_EXECUTABLE} -m numpy.f2py --f90exec=${CMAKE_Fortran_COMPILER} -c ${fortran_src_file} -m ${module_name} > elk_f2py.log
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
