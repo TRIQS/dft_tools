@@ -99,7 +99,6 @@ The first step is done using methods of the :ref:`TRIQS <triqslibs:welcome>` lib
   n_orb = SK.corr_shells[0]['dim']
   l = SK.corr_shells[0]['l']
   spin_names = ["up","down"]
-  orb_names = [i for i in range(n_orb)]
   # Use GF structure determined by DFT blocks:
   gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].iteritems()]
   # Construct U matrix for density-density calculations:
@@ -109,7 +108,7 @@ We assumed here that we want to use an interaction matrix with Kanamori definiti
 
 Next, we construct the Hamiltonian and the solver::
 
-  h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
+  h_int = h_int_density(spin_names, n_orb, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
   S = Solver(beta=beta, gf_struct=gf_struct)
 
 For simplicity, we take only density-density interactions into account here. Other Hamiltonians with, e.g. with full rotational invariant interactions are:

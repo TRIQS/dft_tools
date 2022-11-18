@@ -30,7 +30,7 @@ dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
 #U_cubic = transform_U_matrix(U_sph, spherical_to_cubic(l=2, convention='wien2k'))
 #Umat = t2g_submatrix(U_cubic, convention='wien2k')
 ## Construct Slater Hamiltonian
-#h_int = h_int_slater(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U_matrix=Umat)
+#h_int = h_int_slater(spin_names, n_orb, map_operator_structure=SK.sumk_to_solver[0], U_matrix=Umat)
 
 # Solver parameters
 p = {}
@@ -69,11 +69,11 @@ SK=SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=use_blocks,h_field=h_field
 n_orb = SK.corr_shells[0]['dim']
 l = SK.corr_shells[0]['l']
 spin_names = ["up","down"]
-orb_names = [i for i in range(n_orb)]
+n_orb = 3
 # Construct U matrix for density-density calculations
 Umat, Upmat = U_matrix_kanamori(n_orb=n_orb, U_int=U, J_hund=J)
 # Construct density-density Hamiltonian
-h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
+h_int = h_int_density(spin_names, n_orb, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
 
 # Use GF structure determined by DFT blocks
 gf_struct = [(block, indices) for block, indices in SK.gf_struct_solver[0].items()]

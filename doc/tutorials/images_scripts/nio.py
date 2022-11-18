@@ -37,9 +37,7 @@ for i_sh in range(len(SK.deg_shells)):
 
 n_orb = SK.corr_shells[0]['dim']
 spin_names = ['up','down']
-orb_names = [i for i in range(0,n_orb)]
 
-#gf_struct = set_operator_structure(spin_names, orb_names, orb_hyb)
 gf_struct = SK.gf_struct_solver_list[0]
 mpi.report('Sumk to Solver: %s'%SK.sumk_to_solver)
 mpi.report('GF struct sumk: %s'%SK.gf_struct_sumk)
@@ -57,7 +55,7 @@ U_sph = U_matrix(l=2, U_int=U, J_hund=J)
 U_cubic = transform_U_matrix(U_sph, spherical_to_cubic(l=2, convention=''))
 Umat, Upmat = reduce_4index_to_2index(U_cubic)
 
-H = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
+H = h_int_density(spin_names, n_orb, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
 
 # Print some information on the master node
 mpi.report('Greens function structure is: %s '%gf_struct)

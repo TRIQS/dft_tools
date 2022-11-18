@@ -27,8 +27,6 @@ SK.analyse_block_structure_from_gf(G, threshold = 1e-3)
 # Setup CTQMC Solver
 n_orb = SK.corr_shells[0]['dim']
 spin_names = ['up','down']
-orb_names = [i for i in range(0,n_orb)]
-
 
 # Print some information on the master node
 iteration_offset = 0

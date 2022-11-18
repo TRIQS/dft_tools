@@ -145,7 +145,6 @@ The first step is done using methods of the :ref:`TRIQS <triqslibs:welcome>` lib
 
   n_orb = SK.corr_shells[0]['dim']
   spin_names = ["up","down"]
-  orb_names = [i for i in range(n_orb)]
   # Use GF structure determined by DFT blocks:
   gf_struct = SK.gf_struct_solver_list[0]
   # Construct U matrix for density-density calculations:
@@ -156,7 +155,7 @@ Kanamori definitions of :math:`U` and :math:`J`.
 
 Next, we construct the Hamiltonian and the solver::
 
-  h_int = h_int_density(spin_names, orb_names, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
+  h_int = h_int_density(spin_names, n_orb, map_operator_structure=SK.sumk_to_solver[0], U=Umat, Uprime=Upmat)
   S = Solver(beta=beta, gf_struct=gf_struct)
 
 As you see, we take only density-density interactions into
