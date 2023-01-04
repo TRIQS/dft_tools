@@ -145,6 +145,8 @@ endif()
 # Python
 if(PythonSupport)
   add_subdirectory(python/${PROJECT_NAME})
+  # elk binary i/o code for wrappers
+  add_subdirectory(python/${PROJECT_NAME}/converters/elktools/elkwrappers)
 endif()
 
 # Docs

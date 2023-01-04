@@ -962,6 +962,7 @@ class SumkDFTTools(SumkDFT):
         dens_mat : list of numpy array
                    A list of density matrices projected to all shells provided in the input.
         """
+        assert self.dft_code in ('wien2k'), "This routine has only been implemented for wien2k inputs"
 
         things_to_read = ['dens_mat_below', 'n_parproj',
                           'proj_mat_all', 'rot_mat_all', 'rot_mat_all_time_inv']
@@ -1063,13 +1064,20 @@ class SumkDFTTools(SumkDFT):
         r"""
         Reads the data for transport calculations from the hdf5 archive.
         """
+        assert self.dft_code in ('wien2k','elk'), "Transport has only been implemented for wien2k and elk inputs"
         thingstoread = ['band_window_optics', 'velocities_k']
         self.read_input_from_hdf(
             subgrp=self.transp_data, things_to_read=thingstoread)
-        thingstoread = ['band_window', 'lattice_angles', 'lattice_constants',
-                        'lattice_type', 'n_symmetries', 'rot_symmetries']
+        if(self.dft_code=="wien2k"):
+          thingstoread = ['band_window', 'lattice_angles', 'lattice_constants',
+                          'lattice_type', 'n_symmetries', 'rot_symmetries']
+        elif(self.dft_code=="elk"):
+          thingstoread = ['band_window', 'n_symmetries',
+                            'rot_symmetries','cell_vol']
         self.read_input_from_hdf(
             subgrp=self.misc_data, things_to_read=thingstoread)
+        if(self.dft_code=="wien2k"):
+          self.cell_vol = self.cellvolume(self.lattice_type, self.lattice_constants, self.lattice_angles)[1]
 
     def cellvolume(self, lattice_type, lattice_constants, latticeangle):
         r"""
@@ -1222,8 +1230,8 @@ class SumkDFTTools(SumkDFT):
             assert broadening != 0.0 and broadening is not None, "transport_distribution: Broadening necessary to calculate transport distribution!"
             self.omega = numpy.linspace(
                 energy_window[0] - max(Om_mesh), energy_window[1] + max(Om_mesh), n_om)
-            mesh = [energy_window[0] -
-                    max(Om_mesh), energy_window[1] + max(Om_mesh), n_om]
+            mesh = MeshReFreq(energy_window[0] -
+                    max(Om_mesh), energy_window[1] + max(Om_mesh), n_om)
             mu = 0.0
 
         # Define mesh for optic conductivity
@@ -1291,8 +1299,8 @@ class SumkDFTTools(SumkDFT):
                                                                               A_kw[isp][A_i, A_i, iw]).trace().real * self.bz_weights[ik])
 
         for direction in self.directions:
-            self.Gamma_w[direction] = (mpi.all_reduce(mpi.world, self.Gamma_w[direction], lambda x, y: x + y)
-                                       / self.cellvolume(self.lattice_type, self.lattice_constants, self.lattice_angles)[1] / self.n_symmetries)
+              self.Gamma_w[direction] = (mpi.all_reduce(mpi.world, self.Gamma_w[direction], lambda x, y: x + y) / self.cell_vol / self.n_symmetries)
+
 
     def transport_coefficient(self, direction, iq, n, beta, method=None):
         r"""
