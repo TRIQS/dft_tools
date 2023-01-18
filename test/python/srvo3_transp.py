@@ -24,6 +24,7 @@ from h5 import HDFArchive
 from triqs_dft_tools.converters.wien2k import *
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
+from triqs_dft_tools.sumk_dft_transport import transport_distribution, init_spectroscopy, conductivity_and_seebeck, write_output_to_hdf
 from triqs.utility.comparison_tests import *
 from triqs.utility.h5diff import h5diff
 
@@ -40,12 +41,16 @@ with HDFArchive('SrVO3_Sigma_transport.h5', 'a') as ar:
     SK.chemical_potential = ar['dmft_transp_input']['chemical_potential']
     SK.dc_imp = ar['dmft_transp_input']['dc_imp']
 
-SK.transport_distribution(directions=['xx'], broadening=0.0, energy_window=[-0.3,0.3], Om_mesh=[0.00, 0.02] , beta=beta, with_Sigma=True)
+SK = init_spectroscopy(SK, code='wien2k')
+Gamma_w, omega, Om_mesh = transport_distribution(SK, directions=['xx'], broadening=0.0, energy_window=[-0.3,0.3],
+                                                 Om_mesh=[0.00, 0.02], beta=beta, with_Sigma=True, code='wien2k')
+
 #SK.save(['Gamma_w','Om_meshr','omega','directions'])
 #SK.load(['Gamma_w','Om_meshr','omega','directions'])
-SK.conductivity_and_seebeck(beta=beta)
-SK.hdf_file = 'srvo3_transp.out.h5'
-SK.save(['seebeck','optic_cond','kappa'])
+optic_cond, seebeck, kappa = conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SK.SP, ['xx'], beta=beta)
+output_dict = {'seebeck': seebeck, 'optic_cond': optic_cond, 'kappa': kappa}
+write_output_to_hdf(SK, output_dict, 'transp_output')
+
 
 if mpi.is_master_node():
-    h5diff("srvo3_transp.out.h5","srvo3_transp.ref.h5")
+    h5diff('SrVO3.ref.h5', "srvo3_transp.ref.h5")

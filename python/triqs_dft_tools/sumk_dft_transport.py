@@ -59,8 +59,8 @@ def read_transport_input_from_hdf(sum_k):
         thingstoread = ['band_window', 'n_symmetries',
                         'rot_symmetries','cell_vol']
     sum_k.read_input_from_hdf(subgrp=sum_k.misc_data, things_to_read=thingstoread)
-    if(self.dft_code=="wien2k"):
-        self.cell_vol = self.cellvolume(self.lattice_type, self.lattice_constants, self.lattice_angles)[1]
+    if(sum_k.dft_code=="wien2k"):
+        sum_k.cell_vol = cellvolume(sum_k.lattice_type, sum_k.lattice_constants, sum_k.lattice_angles)[1]
 
     return sum_k
 

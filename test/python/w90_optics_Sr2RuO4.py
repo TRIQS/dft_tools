@@ -4,6 +4,7 @@ import numpy as np
 import triqs.utility.mpi as mpi
 from h5 import HDFArchive
 from triqs.gf import MeshReFreq
+from triqs.utility.h5diff import h5diff
 
 from triqs_dft_tools.sumk_dft import SumkDFT
 from triqs_dft_tools.sumk_dft_transport import transport_distribution, init_spectroscopy, conductivity_and_seebeck, write_output_to_hdf
@@ -59,12 +60,18 @@ Om_mesh = [0.0, 0.2]
 eta_lattice = 0.001
 directions = ['xx']
 
-sum_k, cell_volume = init_spectroscopy(sum_k, code='wannier90', w90_params=w90_params)
+sum_k = init_spectroscopy(sum_k, code='wannier90', w90_params=w90_params)
 
 Gamma_w, omega, Om_mesh = transport_distribution(sum_k, directions=directions,
                                                  Om_mesh=Om_mesh, energy_window=window,
                                                  with_Sigma=True, broadening=eta_lattice,
-                                                 beta=beta, code='wannier90', cell_volume=cell_volume)
+                                                 beta=beta, code='wannier90')
 
 if mpi.is_master_node():
     optic_cond, seebeck, kappa = conductivity_and_seebeck(Gamma_w, omega, Om_mesh, sum_k.SP, directions, beta=beta, method=None)
+
+    output_dict = {'Gamma_w': Gamma_w, 'Om_mesh': Om_mesh, 'omega': omega, 'directions': directions,
+                   'seebeck': seebeck, 'optic_cond': optic_cond, 'kappa': kappa}
+    write_output_to_hdf(sum_k, output_dict, 'transp_output')
+
+    h5diff(h5_archive, "sr2ruo4_transp.ref.h5")
