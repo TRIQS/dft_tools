@@ -21,6 +21,7 @@
 ##########################################################################
 import sys
 import numpy
+from warnings import warn
 from triqs.gf import *
 import triqs.utility.mpi as mpi
 from .symmetry import *
@@ -175,7 +176,7 @@ def fermi_dis(w, beta, der=0):
     else:
         raise('higher order of derivative than 1 not implemented')
 
-def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='./', calc_velocity=False, calc_inverse_mass=False):
+def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='./', calc_velocity=False, calc_inverse_mass=False, oc_select='both', oc_basis='h'):
     r"""
     Recomputes dft_input objects on a finer mesh using WannierBerri and Wannier90 input.
 
@@ -196,6 +197,10 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
                     whether the velocity (first derivative of H(k)) is computed
     calc_inverse_mass : boolean, optional, default=False
                         whether the inverse effective mass (second derivative of H(k)) is computed
+    oc_select : string, optional, default='both'
+                select contributions for optical conductivity from ['intra', 'inter', 'both']
+    oc_basis : string, optional, default='h'
+               gauge choice options 'h' for Hamiltonian/band and 'w' for Wannier basis
 
     Returns
     -------
@@ -204,6 +209,8 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
     things_to_store : dictionary
                       dictionary of datasets to be temporarily overwritten
     """
+
+    mpi.report('Starting Wannier interpolation...')
 
     BOHRTOANG = cst.physical_constants['Bohr radius'][0]/cst.angstrom
     HARTREETOEV = cst.physical_constants['Hartree energy'][0]/cst.eV
@@ -259,19 +266,68 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
         dataK = wb.data_K.Data_K(wberri, dK=shift_gamma, grid=grid, fftlib='numpy')
 
         # read in hoppings and proj_mat
-        hopping[:,0,range(hopping.shape[2]),range(hopping.shape[3])] = dataK.E_K
+        if oc_basis == 'h':
+            hopping[:,0,range(hopping.shape[2]),range(hopping.shape[3])] = dataK.E_K
+        elif oc_basis == 'w':
+            hopping[:,0,:,:] = dataK.HH_K
+            fake_proj_mat = numpy.zeros(numpy.shape(dataK.UU_K), dtype=complex)
+            fake_proj_mat[:,range(numpy.shape(fake_proj_mat)[1]),range(numpy.shape(fake_proj_mat)[2])] = 1. + 1j*0.0
+
         for isp in range(n_inequiv_spin_blocks):
             iorb = 0
             for icrsh in range(sum_k.n_corr_shells):
                 dim = sum_k.corr_shells[icrsh]['dim']
-                proj_mat[:,isp,icrsh,0:dim,:] = dataK.UU_K[:,iorb:iorb+dim,:]
+                if oc_basis == 'h':
+                    proj_mat[:,isp,icrsh,0:dim,:] = dataK.UU_K[:,iorb:iorb+dim,:]
+                elif oc_basis == 'w':
+                    proj_mat[:,isp,icrsh,0:dim,:] = fake_proj_mat[:,iorb:iorb+dim,:]
                 iorb += dim
 
         if calc_velocity:
-            # construct velocities from dataK
-            V_H_diag = numpy.zeros(numpy.shape(dataK.Xbar('Ham', 1)), dtype=complex)
-            V_H_diag[:, range(V_H_diag.shape[1]), range(V_H_diag.shape[1]), :] = numpy.einsum('knna -> kna', dataK.Xbar('Ham', 1))
-            velocities_k = ( V_H_diag - dataK.Xbar('AA') * 1j*( dataK.E_K[:,None,:,None] - dataK.E_K[:,:,None,None] ) ) / HARTREETOEV / BOHRTOANG
+            # velocity: [k x n_orb x n_orb x R]
+            def _commutator(A, B):
+                term1 = numpy.einsum('kmo, kona -> kmna', A, B)
+                term2 = numpy.einsum('kmoa, kon -> kmna', B, A)
+                return term1 - term2
+
+            # in the band basis
+            # vh_alpha = Hhbar_alpha + i [Hh, Ahbar_alpha]
+            if oc_basis == 'h':
+                # first term
+                Hhbar_alpha = dataK.Xbar('Ham', 1)
+                # second term
+                c_Hh_Ahbar_alpha = _commutator(hopping[:,0,:,:], dataK.Xbar('AA'))
+                velocities_k = (Hhbar_alpha + 1j * c_Hh_Ahbar_alpha) / HARTREETOEV / BOHRTOANG
+
+                # split into diag and offdiag elements, corresponding to intra- and interband contributions
+                v_diag = numpy.zeros(numpy.shape(velocities_k), dtype=complex)
+                v_diag[:,range(numpy.shape(velocities_k)[1]),
+                         range(numpy.shape(velocities_k)[2]),:] = velocities_k[:,range(numpy.shape(velocities_k)[1]),
+                                                                                 range(numpy.shape(velocities_k)[2]),:] 
+                v_offdiag = velocities_k.copy()
+                v_offdiag[:,range(numpy.shape(velocities_k)[1]),range(numpy.shape(velocities_k)[2]),:] = 0. + 1j*0.0
+
+                if oc_select == 'intra':
+                    velocities_k = v_diag
+                elif oc_select == 'inter':
+                    velocities_k = v_offdiag
+                elif oc_select == 'both':
+                    velocities_k = v_diag + v_offdiag
+
+            # in the orbital basis
+            # vw_alpha = Hw_alpha + i [Hw, Aw_alpha]
+            elif oc_basis == 'w':
+                # first term
+                Hw_alpha_R = dataK.Ham_R.copy()
+                for i in range(1):
+                    shape_cR = numpy.shape(dataK.cRvec_wcc)
+                    Hw_alpha_R = 1j * Hw_alpha_R.reshape((Hw_alpha_R.shape) + (1, )) * dataK.cRvec_wcc.reshape(
+                        (shape_cR[0], shape_cR[1], dataK.system.nRvec) + (1, ) * len(Hw_alpha_R.shape[3:]) + (3, ))
+                Hw_alpha = dataK.fft_R_to_k(Hw_alpha_R, hermitean=False)[dataK.select_K]
+                # second term
+                Aw_alpha = dataK.fft_R_to_k(dataK.AA_R, hermitean=True)
+                c_Hw_Aw_alpha = _commutator(hopping[:,0,:,:], Aw_alpha)
+                velocities_k = (Hw_alpha + 1j * c_Hw_Aw_alpha) / HARTREETOEV / BOHRTOANG
 
         if calc_inverse_mass:
             V_dot_D = numpy.einsum('kmnab, knoab -> kmoab', dataK.Xbar('Ham', 1)[:,:,:,:,None], dataK.D_H[:,:,:,None,:])
@@ -350,8 +406,9 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
             triqs SumkDFT object, interpolated
     """
 
-    n_inequiv_spin_blocks = sum_k.SP + 1 - sum_k.SO
+    mpi.report('Initializing optical conductivity...')
     # up and down are equivalent if SP = 0
+    n_inequiv_spin_blocks = sum_k.SP + 1 - sum_k.SO
 
     # ----------------- set-up input from DFT -----------------------
     if code in ('wien2k', 'elk'):
@@ -383,9 +440,27 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
         calc_inverse_mass = w90_params['calc_inverse_mass'] if 'calc_inverse_mass' in w90_params else False
         assert all(isinstance(name, bool) for name in [calc_velocity, calc_inverse_mass]), f'Parameter {calc_velocity} or {calc_inverse_mass} not bool!'
 
+        # select contributions to be used
+        oc_select = w90_params['oc_select'] if 'oc_select' in w90_params else 'both'
+        assert oc_select in ['intra', 'inter', 'both'], '"oc_select" needs to be either ["intra", "inter", "both"]'
+        # gauge choice options 'h' for Hamiltonian and 'w' for Wannier
+        oc_basis = w90_params['oc_basis'] if 'oc_basis' in w90_params else 'h'
+        assert oc_basis in ['h', 'w'], '"oc_basis" needs to be either ["h", "w"]'
+        # finally, make sure oc_select is 'both' for oc_basis = 'w'
+        if oc_basis == 'w' and oc_select != 'both':
+            warn(f'"oc_select" must be "both" for "oc_basis" = "w"!')
+            oc_select = 'both'
+        # further checks for calc_inverse_mass
+        if calc_inverse_mass:
+            assert oc_basis == 'h', '"calc_inverse_mass" only implemented for "oc_basis" == "h"'
+            assert oc_select == 'both', '"oc_select" not implemented for "calc_inverse_mass"'
+        # print some information
+        mpi.report(f'{"Basis choice [h (Hamiltonian), w (Wannier)]:":<60s} {oc_basis}')
+        mpi.report(f'{"Contributions from [intra(-band), inter(-band), both]:":<60s} {oc_select}')
+
         # recompute sum_k instances on denser grid
         sum_k, _ = recompute_w90_input_on_different_mesh(sum_k, w90_params['seedname'], nk_optics=w90_params['nk_optics'], pathname=pathname,
-                                                                      calc_velocity=calc_velocity, calc_inverse_mass=calc_inverse_mass)
+                                                                      calc_velocity=calc_velocity, calc_inverse_mass=calc_inverse_mass, oc_select=oc_select, oc_basis=oc_basis)
 
     # k-dependent-projections.
     # to be checked. But this should be obsolete atm, works for both cases
@@ -438,6 +513,8 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
     Om_mesh_out : list of double
                   frequency mesh of the optical conductivity recomputed on the mesh provided by the self energy
     """
+
+    mpi.report('Computing transport distribution...')
 
     n_inequiv_spin_blocks = sum_k.SP + 1 - sum_k.SO
     # up and down are equivalent if SP = 0
@@ -569,13 +646,12 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
                             Gamma_w[direction][iq, iw] += (numpy.dot(numpy.dot(numpy.dot(vel_R[v_i, v_i, dir_to_int[direction[0]]], A_kw[isp][A_i, A_i, int(iw + iOm_mesh[iq])]),
                                                                             vel_R[v_i, v_i, dir_to_int[direction[1]]]), A_kw[isp][A_i, A_i, iw]).trace().real * sum_k.bz_weights[ik])
 
-
     for direction in directions:
         Gamma_w[direction] = (mpi.all_reduce(mpi.world, Gamma_w[direction], lambda x, y: x + y) / sum_k.cell_vol / sum_k.n_symmetries)
 
     return Gamma_w, omega, temp_Om_mesh
 
-def transport_function(beta, directions, hopping, velocities, energy_window, n_om):
+def transport_function(beta, directions, hopping, velocities, energy_window, n_om, rot_symmetries):
     r"""
     Calculates the transport function
 
@@ -600,12 +676,19 @@ def transport_function(beta, directions, hopping, velocities, energy_window, n_o
     n_om : integer
         Number of equidistant frequency points in the interval [energy_window[0]-max(Om_mesh), energy_window[1]+max(Om_mesh)]. This parameters is only used if
         with_Sigma = False.
+    rot_symmetries :  list of 3 x 3 matrices
+        rotational symmetries to restore the full FBZ
 
     Returns
     -------
     transp_func : dictionary of double array
               transport function in each direction, frequencies given by energy_window
     """
+
+    mpi.report('Computing transport function...')
+
+    # check that velocities are computed on the FBZ
+    assert numpy.shape(rot_symmetries)[0] == 1, 'Using symmetries currently not implemented for transport function.'
 
     dir_to_int = {'x': 0, 'y': 1, 'z': 2}
 
@@ -619,7 +702,8 @@ def transport_function(beta, directions, hopping, velocities, energy_window, n_o
         fermi_wg = fermi_dis(hopping[:,0,range(orb_1),range(orb_2)][idx].real - w, beta, 1)/fermi_dis(0., beta, 1)
         for direction in directions:
             dir_a, dir_b = [dir_to_int[x] for x in direction]
-            transp_func[direction][ct] = numpy.sum(fermi_wg * velocities[:,range(orb_1),range(orb_2),dir_a][idx] * velocities[:,range(orb_1),range(orb_2),dir_b][idx], axis=0).real
+            matrix_product = numpy.einsum('kmn, kno -> kmo' , velocities[:,:,:,dir_a], velocities[:,:,:,dir_b])
+            transp_func[direction][ct] = numpy.sum(fermi_wg * matrix_product[:,range(orb_1),range(orb_2)][idx]).real
 
     return transp_func
 
@@ -726,6 +810,8 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
     kappa : dictionary of double.
         thermal conductivity in each direction. If zero is not present in Om_mesh the thermal conductivity is set to NaN
     """
+
+    mpi.report('Computing optical conductivity and kinetic coefficients...')
 
     if not (mpi.is_master_node()):
         return
