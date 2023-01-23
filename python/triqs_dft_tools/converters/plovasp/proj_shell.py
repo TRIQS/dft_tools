@@ -145,7 +145,7 @@ class ProjectorShell:
             assert nr%ns_dim == 0, "Number of rows in TRANSFILE is not compatible with the spin dimension"
             ndim = nr // ns_dim
 
-            self.tmatrices = np.zeros((nion, nr, nm * ns_dim), dtype=np.complex128)
+            self.tmatrices = np.zeros((nion, nr, nm * ns_dim), dtype=complex)
 
             if is_complex:
                 raw_matrices = raw_matrices[:, ::2] + raw_matrices[:, 1::2] * 1j
@@ -177,7 +177,7 @@ class ProjectorShell:
 
             ndim = nrow
 
-            self.tmatrices = np.zeros((nion, nrow, nm), dtype=np.complex128)
+            self.tmatrices = np.zeros((nion, nrow, nm), dtype=complex)
             for io in range(nion):
                 self.tmatrices[io, :, :] = raw_matrix
 
@@ -190,9 +190,9 @@ class ProjectorShell:
         ndim = nm * ns_dim
 
 # We still need the matrices for the output
-        self.tmatrices = np.zeros((nion, ndim, ndim), dtype=np.complex128)
+        self.tmatrices = np.zeros((nion, ndim, ndim), dtype=complex)
         for io in range(nion):
-            self.tmatrices[io, :, :] = np.identity(ndim, dtype=np.complex128)
+            self.tmatrices[io, :, :] = np.identity(ndim, dtype=complex)
 
         return ndim
 
@@ -219,11 +219,11 @@ class ProjectorShell:
 
         if self.do_transform:
             ndim = self.tmatrices.shape[1]
-            self.proj_arr = np.zeros((nion, ns, nk, ndim, nb), dtype=np.complex128)
+            self.proj_arr = np.zeros((nion, ns, nk, ndim, nb), dtype=complex)
             for ik in range(nk):
                 kp = kmesh['kpoints'][ik]
                 for io, ion in enumerate(self.ion_list):
-                    proj_k = np.zeros((ns, nlm, nb), dtype=np.complex128)
+                    proj_k = np.zeros((ns, nlm, nb), dtype=complex)
                     qcoord = structure['qcoords'][ion]
                     for m in range(nlm):
 # Here we search for the index of the projector with the given isite/l/m indices
@@ -236,7 +236,7 @@ class ProjectorShell:
 
         else:
 # No transformation: just copy the projectors as they are
-            self.proj_arr = np.zeros((nion, ns, nk, nlm, nb), dtype=np.complex128)
+            self.proj_arr = np.zeros((nion, ns, nk, nlm, nb), dtype=complex)
             for io, ion in enumerate(self.ion_list):
                 qcoord = structure['qcoords'][ion]
                 for m in range(nlm):
@@ -263,7 +263,7 @@ class ProjectorShell:
 # Set the dimensions of the array
         nion, ns, nk, nlm, nbtot = self.proj_arr.shape
 # !!! Note that the order of the two last indices is different !!!
-        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=np.complex128)
+        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=complex)
 
 # Select projectors for a given energy window
         ns_band = self.ib_win.shape[1]
@@ -299,14 +299,14 @@ class ProjectorShell:
         assert spin_diag, "spin_diag = False is not implemented"
 
         if site_diag:
-            occ_mats = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
-            overlaps = np.zeros((ns, nion, nlm, nlm), dtype=np.float64)
+            occ_mats = np.zeros((ns, nion, nlm, nlm), dtype=float)
+            overlaps = np.zeros((ns, nion, nlm, nlm), dtype=float)
         else:
             ndim = nion * nlm
-            occ_mats = np.zeros((ns, 1, ndim, ndim), dtype=np.float64)
-            overlaps = np.zeros((ns, 1, ndim, ndim), dtype=np.float64)
+            occ_mats = np.zeros((ns, 1, ndim, ndim), dtype=float)
+            overlaps = np.zeros((ns, 1, ndim, ndim), dtype=float)
 
-#        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=np.complex128)
+#        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=complex)
         kweights = el_struct.kmesh['kweights']
         occnums = el_struct.ferw
         ib1 = self.ib_min
@@ -332,7 +332,7 @@ class ProjectorShell:
             assert count_nan == 0, "!!! WARNING !!!: There are %s  NaN in your Projectors"%(count_nan)
 
         else:
-            proj_k = np.zeros((ndim, nbtot), dtype=np.complex128)
+            proj_k = np.zeros((ndim, nbtot), dtype=complex)
             for isp in range(ns):
                 for ik, weight, occ in zip(it.count(), kweights, occnums[isp, :, :]):
                     for io in range(nion):
@@ -361,9 +361,9 @@ class ProjectorShell:
         assert site_diag, "site_diag = False is not implemented"
         assert spin_diag, "spin_diag = False is not implemented"
 
-        loc_ham = np.zeros((ns, nion, nlm, nlm), dtype=np.complex128)
+        loc_ham = np.zeros((ns, nion, nlm, nlm), dtype=complex)
 
-#        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=np.complex128)
+#        self.proj_win = np.zeros((nion, ns, nk, nlm, nb_max), dtype=complex)
         kweights = el_struct.kmesh['kweights']
         occnums = el_struct.ferw
         ib1 = self.ib_min
@@ -403,7 +403,7 @@ class ProjectorShell:
 
         ne = len(emesh)
         dos = np.zeros((ne, ns, nion, nlm))
-        w_k = np.zeros((nk, nb_max, ns, nion, nlm), dtype=np.complex128)
+        w_k = np.zeros((nk, nb_max, ns, nion, nlm), dtype=complex)
         for isp in range(ns):
             for ik in range(nk):
                 is_b = min(isp, ns_band)

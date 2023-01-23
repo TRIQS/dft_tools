@@ -159,13 +159,13 @@ class readElkfiles:
         n_shells=0
         n_inequiv_shells=0
         #local arrays
-        neqatom=[]#numpy.zeros([n_shells], numpy.int)
+        neqatom=[]#numpy.zeros([n_shells], int)
         proj=[]
-        shells=[]#numpy.zeros([n_shells], numpy.int)
-        corr_shells=[]#numpy.zeros([n_shells], numpy.int)
+        shells=[]#numpy.zeros([n_shells], int)
+        corr_shells=[]#numpy.zeros([n_shells], int)
         prjtype=[]
         wan=[]
-        proj_info=[]#numpy.zeros([n_shells], numpy.int)
+        proj_info=[]#numpy.zeros([n_shells], int)
         T=[]
         basis=[]
         inequiv_to_corr=[]
@@ -196,7 +196,7 @@ class readElkfiles:
               corr_shells.append(shells[n_shells].copy())
               n_orb=2*shells[n_shells]['l']+1
               #lm submatrix indices
-              idxlm.append(numpy.zeros(2*lmax+1, dtype=numpy.int_))
+              idxlm.append(numpy.zeros(2*lmax+1, dtype=int))
               nrep=proj[ip]['dim']
               for i in range(nrep):
                 idxlm[n_shells][i]=next(R)-1
@@ -205,7 +205,7 @@ class readElkfiles:
               basis.append(int(next(R)))
               #determine whether which basis the projectors where generated in
               #spherical harmonics
-              T.append(numpy.zeros([n_orb, n_orb], dtype=numpy.complex_))
+              T.append(numpy.zeros([n_orb, n_orb], dtype=complex))
               #Elk generated unitary basis
               if (basis[n_shells]==2):
                 #reads the transformation matrix
@@ -354,7 +354,7 @@ class readElkfiles:
           dim_rep=gen['dim_rep']
           lat=[]
           n_k=gen['n_k']
-          n_orbitals = numpy.zeros([n_k, n_spin_blocks], numpy.int)
+          n_orbitals = numpy.zeros([n_k, n_spin_blocks], int)
           band_window = [None for isp in range(n_spin_blocks)]
           for isp in range(n_spin_blocks):
             band_window[isp] = numpy.zeros([n_k, 2], dtype=int)
@@ -375,7 +375,7 @@ class readElkfiles:
                band_window[isp][ik, 0] = proj_dim['ist_min']
                band_window[isp][ik, 1] = proj_dim['ist_max']
                #define temporary matrix for reading in the projectors
-               mat = numpy.zeros([dim, n_orbitals[ik,isp]], numpy.complex_)
+               mat = numpy.zeros([dim, n_orbitals[ik,isp]], complex)
                # Real part
                for j in range(dim):
                   for i in range(n_orbitals[ik,isp]):
@@ -453,9 +453,9 @@ class readElkfiles:
           kp=[]
         #reads in the k index, lattice vectors, weights and nmat for each kpt
           #array for bz weights
-          bz_weights = numpy.ones([n_k], numpy.float_) / float(n_k)
+          bz_weights = numpy.ones([n_k], float) / float(n_k)
           #array for lattice vectors
-          vkl = numpy.ones([n_k,3], numpy.float_)
+          vkl = numpy.ones([n_k,3], float)
           for ik in range(n_k):
           #k-grid info
             k_entries = ['ik', 'vklx','vkly','vklz', 'bz_weights', 'nmat']
@@ -488,9 +488,9 @@ class readElkfiles:
           nsym = int(atof(x[0]))
           #set up symmetry matrices
           for isym in range(nsym):
-            symmat.append(numpy.zeros([3, 3], numpy.float_))
-            spinmat.append(numpy.zeros([3, 3], numpy.float_))
-            tr.append(numpy.zeros([3], numpy.float_))
+            symmat.append(numpy.zeros([3, 3], float))
+            spinmat.append(numpy.zeros([3, 3], float))
+            tr.append(numpy.zeros([3], float))
           #read each symmetry
           for isym in range(nsym):
             #read the symmetry index and check it
@@ -532,10 +532,10 @@ class readElkfiles:
         dft_file='LATTICE.OUT'
         R = self.read_elk_file2( dft_file, self.fortran_to_replace)
         try:
-          amat = numpy.zeros([3, 3], numpy.float_)
-          amatinv = numpy.zeros([3, 3], numpy.float_)
-          bmat = numpy.zeros([3, 3], numpy.float_)
-          bmatinv = numpy.zeros([3, 3], numpy.float_)
+          amat = numpy.zeros([3, 3], float)
+          amatinv = numpy.zeros([3, 3], float)
+          bmat = numpy.zeros([3, 3], float)
+          bmatinv = numpy.zeros([3, 3], float)
           #real space lattice matrices
           #cycling through information which is not needed
           for i in range(4):
@@ -612,7 +612,7 @@ class readElkfiles:
            #loop over atomss pre species
            atpos.append([])
            for ia in range(na[js]):
-             atpos[js].append(numpy.zeros(6, numpy.float_))
+             atpos[js].append(numpy.zeros(6, float))
              x = next(R)
              for j in range(6):
                atpos[js][ia][j]=atof(x[j])
@@ -657,7 +657,7 @@ class readElkfiles:
 
           dim=gen['maxlm']
           lmax=numpy.sqrt(dim)-1
-          bc = numpy.zeros([dim,nspinor,self.n_atoms,self.nstsv,self.n_k], numpy.float_)
+          bc = numpy.zeros([dim,nspinor,self.n_atoms,self.nstsv,self.n_k], float)
 
           for ik in range(0,self.n_k):
             for iatom in range(0,self.n_atoms):

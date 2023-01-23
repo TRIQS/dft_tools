@@ -153,8 +153,8 @@ class ElectronicStructure:
         sp_fac = 2.0 if ns == 1 and self.nc_flag == False else 1.0
         
         if self.nc_flag == False:
-            den_mat = np.zeros((ns, nproj, nproj), dtype=np.float64)
-            overlap = np.zeros((ns, nproj, nproj), dtype=np.float64)
+            den_mat = np.zeros((ns, nproj, nproj), dtype=float)
+            overlap = np.zeros((ns, nproj, nproj), dtype=float)
             for ispin in range(ns):
                 for ik in range(nk):
                     kweight = self.kmesh['kweights'][ik]
@@ -189,8 +189,8 @@ class ElectronicStructure:
                     
         else:
             print("!! WARNING !! Non Collinear Routine")
-            den_mat = np.zeros((ns, nproj, nproj), dtype=np.float64)
-            overlap = np.zeros((ns, nproj, nproj), dtype=np.float64)
+            den_mat = np.zeros((ns, nproj, nproj), dtype=float)
+            overlap = np.zeros((ns, nproj, nproj), dtype=float)
             for ispin in range(ns):
                 for ik in range(nk):
                     kweight = self.kmesh['kweights'][ik]

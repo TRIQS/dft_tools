@@ -25,20 +25,20 @@ calculation. The default name of this group is `dft_input`. Its contents are
 =================  ======================================================================  =====================================================================================
 Name               Type                                                                    Meaning
 =================  ======================================================================  =====================================================================================
-energy_unit        numpy.float                                                             Unit of energy used for the calculation.
+energy_unit        float                                                                   Unit of energy used for the calculation.
 dft_code           string                                                                  DFT code used to generate input data.
-n_k                numpy.int                                                               Number of k-points used for the BZ integration.
-k_dep_projection   numpy.int                                                               1 if the dimension of the projection operators depend on the k-point,
+n_k                int                                                                     Number of k-points used for the BZ integration.
+k_dep_projection   int                                                                     1 if the dimension of the projection operators depend on the k-point,
                                                                                            0 otherwise.
-SP                 numpy.int                                                               1 for spin-polarised Hamiltonian, 0 for paramagnetic Hamiltonian.
-SO                 numpy.int                                                               1 if spin-orbit interaction is included, 0 otherwise.
-charge_below       numpy.float                                                             Number of electrons in the crystal below the correlated orbitals.
+SP                 int                                                                     1 for spin-polarised Hamiltonian, 0 for paramagnetic Hamiltonian.
+SO                 int                                                                     1 if spin-orbit interaction is included, 0 otherwise.
+charge_below       float                                                                   Number of electrons in the crystal below the correlated orbitals.
                                                                                            Note that this is for compatibility with dmftproj, otherwise set to 0
-density_required   numpy.float                                                             Required total electron density. Needed to determine the chemical potential.
+density_required   float                                                                   Required total electron density. Needed to determine the chemical potential.
                                                                                            The density in the projection window is then `density_required`-`charge_below`.
-symm_op            numpy.int                                                               1 if symmetry operations are used for the BZ sums,
+symm_op            int                                                                     1 if symmetry operations are used for the BZ sums,
                                                                                            0 if all k-points are directly included in the input.
-n_shells           numpy.int                                                               Number of atomic shells for which post-processing is possible.
+n_shells           int                                                                     Number of atomic shells for which post-processing is possible.
                                                                                            Note: this is `not` the number of correlated orbitals!
                                                                                            If there are two equivalent atoms in the unit cell, `n_shells` is 2.
 shells             list of dict {string:int}, dim n_shells x 4                             Atomic shell information.
@@ -47,17 +47,17 @@ shells             list of dict {string:int}, dim n_shells x 4                  
                                                                                            'l' is the angular quantum number, 'dim' is the dimension of the atomic shell.
                                                                                            e.g. for two equivalent atoms in the unit cell, `atom` runs from 0 to 1,
                                                                                            but `sort` can take only one value 0.
-n_corr_shells      numpy.int                                                               Number of correlated atomic shells.
+n_corr_shells      int                                                                     Number of correlated atomic shells.
                                                                                            If there are two correlated equivalent atoms in the unit cell, `n_corr_shells` is 2.
-n_inequiv_shells   numpy.int                                                               Number of inequivalent atomic shells. Needs to be smaller than `n_corr_shells`.
+n_inequiv_shells   int                                                                     Number of inequivalent atomic shells. Needs to be smaller than `n_corr_shells`.
                                                                                            The up / downfolding routines mediate between all correlated shells and the
                                                                                            actual inequivalent shells, by using the self-energy etc. for all equal shells
                                                                                            belonging to the same class of inequivalent shells. The mapping is performed with
                                                                                            information stored in `corr_to_inequiv` and `inequiv_to_corr`.
-corr_to_inequiv    list of numpy.int, dim `n_corr_shells`                                  mapping from correlated shells to inequivalent correlated shells.
+corr_to_inequiv    list of int, dim `n_corr_shells`                                        mapping from correlated shells to inequivalent correlated shells.
                                                                                            A list of length `n_corr_shells` containing integers, where same numbers mark
                                                                                            equivalent sites.
-inequiv_to_corr    list of numpy.int, dim `n_inequiv_shells`                               A list of length `n_inequiv_shells` containing list indices as integers pointing
+inequiv_to_corr    list of int, dim `n_inequiv_shells`                                     A list of length `n_inequiv_shells` containing list indices as integers pointing
                                                                                            to the corresponding sites in `corr_to_inequiv`.
 corr_shells        list of dict {string:int}, dim n_corr_shells x 6                        Correlated orbital information.
                                                                                            For each correlated shell, have a dict with keys
@@ -65,15 +65,15 @@ corr_shells        list of dict {string:int}, dim n_corr_shells x 6             
                                                                                            'atom' is the atom index, 'sort' defines the equivalency of the atoms,
                                                                                            'l' is the angular quantum number, 'dim' is the dimension of the atomic shell.
                                                                                            'SO' is one if spin-orbit is included, 0 otherwise, 'irep' is a dummy integer 0.
-use_rotations      numpy.int                                                               1 if local and global coordinate systems are used, 0 otherwise.
+use_rotations      int                                                                     1 if local and global coordinate systems are used, 0 otherwise.
 rot_mat            list of numpy.array.complex,                                            Rotation matrices for correlated shells, if `use_rotations`.
                    dim n_corr_shells x [corr_shells['dim'],corr_shells['dim']]             These rotations are automatically applied for up / downfolding.
                                                                                            Set to the unity matrix if no rotations are used.
-rot_mat_time_inv   list of numpy.int, dim n_corr_shells                                    If `SP` is 1, 1 if the coordinate transformation contains inversion, 0 otherwise.
+rot_mat_time_inv   list of int, dim n_corr_shells                                          If `SP` is 1, 1 if the coordinate transformation contains inversion, 0 otherwise.
                                                                                            If `use_rotations` or `SP` is 0, give a list of zeros.
-n_reps             numpy.int                                                               Number of irreducible representations of the correlated shell.
+n_reps             int                                                                     Number of irreducible representations of the correlated shell.
                                                                                            e.g. 2 if eg/t2g splitting is used.
-dim_reps           list of numpy.int, dim n_reps                                           Dimension of the representations.
+dim_reps           list of int, dim n_reps                                                 Dimension of the representations.
                                                                                            e.g. [2,3] for eg/t2g subsets.
 T                  list of numpy.array.complex,                                            Transformation matrix from the spherical harmonics to impurity problem basis
                    dim n_inequiv_corr_shell x                                              normally the real cubic harmonics).

@@ -68,7 +68,7 @@ class ProjectorGroup:
 # Determine the minimum and maximum band numbers
         if 'bands' in gr_pars:
             nk, nband, ns_band = eigvals.shape
-            ib_win = np.zeros((nk, ns_band, 2), dtype=np.int32)
+            ib_win = np.zeros((nk, ns_band, 2), dtype=int)
             ib_win[:,:,0] = gr_pars['bands'][0]-1
             ib_win[:,:,1] = gr_pars['bands'][1]-1
             ib_min = gr_pars['bands'][0] - 1
@@ -152,7 +152,7 @@ class ProjectorGroup:
         block_maps, ndim = self.get_block_matrix_map()
 
         _, ns, nk, _, _ = self.shells[0].proj_win.shape
-        p_mat = np.zeros((ndim, self.nb_max), dtype=np.complex128)
+        p_mat = np.zeros((ndim, self.nb_max), dtype=complex)
 # Note that 'ns' and 'nk' are the same for all shells
         for isp in range(ns):
             for ik in range(nk):
@@ -201,7 +201,7 @@ class ProjectorGroup:
 
         _, ns, nk, _, _ = self.shells[0].proj_win.shape
 
-        self.hk = np.zeros((ns,nk,ndim,ndim), dtype=np.complex128)
+        self.hk = np.zeros((ns,nk,ndim,ndim), dtype=complex)
 # Note that 'ns' and 'nk' are the same for all shells
         for isp in range(ns):
             for ik in range(nk):
@@ -209,7 +209,7 @@ class ProjectorGroup:
                 bmax = self.ib_win[ik, isp, 1]+1
 
                 nb = bmax - bmin
-                p_mat = np.zeros((ndim, nb), dtype=np.complex128)
+                p_mat = np.zeros((ndim, nb), dtype=complex)
                 #print(bmin,bmax,nb)
 # Combine all projectors of the group to one block projector
                 for bl_map in block_maps:
@@ -251,8 +251,8 @@ class ProjectorGroup:
 
         block_maps, ndim = self.get_block_matrix_map()
         _, ns, nk, _, _ = self.shells[0].proj_win.shape
-        p_mat = np.zeros((ndim, self.nb_max), dtype=np.complex128)
-        p_full = np.zeros((1,ns,nk,self.nb_max, self.nb_max), dtype=np.complex128)
+        p_mat = np.zeros((ndim, self.nb_max), dtype=complex)
+        p_full = np.zeros((1,ns,nk,self.nb_max, self.nb_max), dtype=complex)
 
 # Note that 'ns' and 'nk' are the same for all shells
 
@@ -452,7 +452,7 @@ class ProjectorGroup:
             raise Exception("Energy window does not overlap with the band structure")
 
         nk, nband, ns_band = eigvals.shape
-        ib_win = np.zeros((nk, ns_band, 2), dtype=np.int32)
+        ib_win = np.zeros((nk, ns_band, 2), dtype=int)
 
         ib_min = 10000000
         ib_max = 0

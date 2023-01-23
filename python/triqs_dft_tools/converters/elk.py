@@ -183,7 +183,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         n_orbitals=n_orbitals[:,:1]
         #Resize proj_mat, mat, T
         #make temporary projector array
-        proj_mat_tmp = numpy.zeros([n_k, 1, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
+        proj_mat_tmp = numpy.zeros([n_k, 1, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], complex)
         for ish in range(n_corr_shells):
           #update proj_mat
           for ik in range(n_k):
@@ -206,7 +206,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
             #size of each quadrant in the lm symmetry array.
             size=int(0.5*corr_shells[ish]['dim'])
             #temporary spin block array for SU(2) spin operations on mat
-            spinmat = numpy.zeros([size,2,size,2],numpy.complex_)
+            spinmat = numpy.zeros([size,2,size,2],complex)
             for isym in range(n_symm):
               #expand size of array
               mat[isym][ish]=numpy.lib.pad(mat[isym][ish],((0,size),(0,size)),'constant',constant_values=(0.0))
@@ -233,7 +233,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         Rearranges the energy eigenvalue arrays into TRIQS format
         """
 
-        hopping = numpy.zeros([n_k, n_spin_blocs, numpy.max(n_orbitals), numpy.max(n_orbitals)], numpy.complex_)
+        hopping = numpy.zeros([n_k, n_spin_blocs, numpy.max(n_orbitals), numpy.max(n_orbitals)], complex)
         #loop over spin
         for isp in range(n_spin_blocs):
           #loop over k-points
@@ -295,7 +295,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         mpi.report("Reading %s and EFERMI.OUT" % self.eval_file)
         [en,occ,nstsv]=read_Elk.read_eig(self)
         #read projectors calculated in the Elk calculation
-        proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), nstsv], numpy.complex_)
+        proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), nstsv], complex)
         mpi.report("Reading projector(s)")
         for ish in range(n_corr_shells):
           [n_orbitals,band_window,rep,proj_mat]=read_Elk.read_projector(self,corr_shells,n_spin_blocs,ish,proj_mat,ind,T,basis,filext)
@@ -349,7 +349,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         #require a symmetry matrix to rotate from jatom to iatom. Below finds the non inversion
         #symmetric matrices which were used in calculating the projectors
         use_rotations = 1
-        rot_mat = [numpy.identity(corr_shells[icrsh]['dim'], numpy.complex_) for icrsh in range(n_corr_shells)]
+        rot_mat = [numpy.identity(corr_shells[icrsh]['dim'], complex) for icrsh in range(n_corr_shells)]
         for icrsh in range(n_corr_shells):
           #return inequivalent index  
           incrsh = corr_to_inequiv[icrsh]
@@ -412,7 +412,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         symm_subgrp=self.symmcorr_subgrp
         #Elk does not use time inversion symmetry
         time_inv = [0 for j in range(n_symm)]
-        mat_tinv = [numpy.identity(orbits[orb]['dim'], numpy.complex_)
+        mat_tinv = [numpy.identity(orbits[orb]['dim'], complex)
                         for orb in range(n_orbits)]
         #Save all the symmetry data
         if not (symm_subgrp in ar):
@@ -470,7 +470,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         en=numpy.loadtxt('BAND.OUT')
         nstsv=int(len(en[:,1])/n_k)
         #convert the en array into a workable format
-        entmp = numpy.zeros([n_k,nstsv], numpy.complex_)
+        entmp = numpy.zeros([n_k,nstsv], complex)
         enj=0
         for ist in range(nstsv):
           for ik in range(n_k):
@@ -478,7 +478,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
             enj+=1
         del en
         #read projectors
-        proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), nstsv], numpy.complex_)
+        proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), nstsv], complex)
         mpi.report("Reading projector(s)")
         for ish in range(n_corr_shells):
           [n_orbitals,band_window,rep,proj_mat]=read_Elk.read_projector(self,corr_shells,n_spin_blocs,ish,proj_mat,ind,T,basis,filext)
@@ -551,7 +551,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         [bz_weights,vkl]=read_Elk.read_kpoints(self,filext=filext)
 
         #read projectors
-        proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), nstsv], numpy.complex_)
+        proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), nstsv], complex)
         mpi.report("Reading projector(s)")
         for ish in range(n_corr_shells):
           [n_orbitals,band_window,rep,proj_mat]=read_Elk.read_projector(self,corr_shells,n_spin_blocs,ish,proj_mat,ind,T,basis,filext)
@@ -620,7 +620,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         [bc,maxlm] = read_Elk.read_bc(self)
         #set up SO bc array
         if (self.SO):
-          tmp = numpy.zeros([2*maxlm,1,self.n_atoms,self.nstsv,self.n_k], numpy.float_)
+          tmp = numpy.zeros([2*maxlm,1,self.n_atoms,self.nstsv,self.n_k], float)
           #put both spinors into the lm array indices.
           tmp[0:maxlm,0,:,:,:]=bc[0:maxlm,0,:,:,:]
           tmp[maxlm:2*maxlm,0,:,:,:]=bc[0:maxlm,1,:,:,:]
@@ -631,7 +631,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
 
         #reduce bc matrix to band states stored in hdf file
         n_spin_blocs=self.SP+1-self.SO
-        tmp = numpy.zeros([maxlm,n_spin_blocs,self.n_atoms,numpy.max(self.n_orbitals),self.n_k], numpy.float_)
+        tmp = numpy.zeros([maxlm,n_spin_blocs,self.n_atoms,numpy.max(self.n_orbitals),self.n_k], float)
         for ik in range(self.n_k):
           for isp in range(n_spin_blocs):
             nst=self.n_orbitals[ik,isp]
