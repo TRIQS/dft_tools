@@ -65,7 +65,7 @@ static void fun_dos_case3(double en, double *eigs, double *ci);
 
 static const int NUM_TET_CORNERS = 4;
 static const std::complex<double> I(0.0, 1.0);
-static const double small = 2.5e-2, tol = 1e-8;
+static const double tol = 1e-8;
 
 /*
   Returns corner contributions to the DOS of a band
@@ -95,7 +95,7 @@ array<double, 2> dos_tetra_weights_3d(array<double, 1> eigk, double en, array<lo
 //
   double eigs[4], ci[4];
   
-  int i, it, ik, inds[4], flag;
+  int i, it, ik, inds[4];
 #ifdef __TETRA_DEBUG
   double ct, ci_sum;
 #endif
