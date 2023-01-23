@@ -26,6 +26,7 @@ calculation. The default name of this group is `dft_input`. Its contents are
 Name               Type                                                                    Meaning
 =================  ======================================================================  =====================================================================================
 energy_unit        numpy.float                                                             Unit of energy used for the calculation.
+dft_code           string                                                                  DFT code used to generate input data.
 n_k                numpy.int                                                               Number of k-points used for the BZ integration.
 k_dep_projection   numpy.int                                                               1 if the dimension of the projection operators depend on the k-point,
                                                                                            0 otherwise.

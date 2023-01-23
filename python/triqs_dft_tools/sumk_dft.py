@@ -126,17 +126,23 @@ class SumkDFT(object):
             req_things_to_read = ['energy_unit', 'n_k', 'k_dep_projection', 'SP', 'SO', 'charge_below', 'density_required',
                               'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
                               'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
-                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr', 'dft_code']
+                              'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr']
             self.subgroup_present, self.values_not_read = self.read_input_from_hdf(
                 subgrp=self.dft_data, things_to_read=req_things_to_read)
+
             # test if all required properties have been found
             if len(self.values_not_read) > 0 and mpi.is_master_node:
-                raise ValueError('ERROR: One or more necessary SumK input properties have not been found in the given h5 archive:',self.values_not_read)
+                raise ValueError('ERROR: One or more necessary SumK input properties have not been found in the given h5 archive:', self.values_not_read)
 
             # optional properties to load
             # soon bz_weights is depraced and replaced by kpt_weights, kpts_basis and kpts will become required to read soon
-            optional_things_to_read = ['proj_mat_csc', 'proj_or_hk', 'kpt_basis','kpts','kpt_weights']
+            optional_things_to_read = ['proj_mat_csc', 'proj_or_hk', 'kpt_basis', 'kpts', 'kpt_weights', 'dft_code']
             subgroup_present, self.optional_values_not_read = self.read_input_from_hdf(subgrp=self.dft_data, things_to_read=optional_things_to_read)
+
+            # warning if dft_code was not read (old h5 structure)
+            if 'dft_code' in self.optional_values_not_read:
+                self.dft_code = None
+                mpi.report('\nWarning: old h5 archive without dft_code input flag detected. Please specify sumk.dft_code manually!\n')
 
             if self.symm_op:
                 self.symmcorr = Symmetry(hdf_file, subgroup=self.symmcorr_data)
