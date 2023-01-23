@@ -73,7 +73,7 @@ class TestProjectorGroupCompl(mytest.MyTestCase):
                 bmax = self.proj_gr.ib_win[ik, isp, 1]+1
 
                 nb = bmax - bmin
-                p_mat = np.zeros((ndim, nb), dtype=np.complex128)
+                p_mat = np.zeros((ndim, nb), dtype=complex)
                 #print(bmin,bmax,nb)
 # Combine all projectors of the group to one block projector
                 for bl_map in block_maps:

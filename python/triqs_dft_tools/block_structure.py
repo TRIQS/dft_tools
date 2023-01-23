@@ -666,7 +666,7 @@ class BlockStructure(object):
 
         return self._create_gf_or_matrix(ish, gf_function, BlockGf, space, **kwargs)
 
-    def create_matrix(self, ish=0, space='solver', dtype=np.complex_):
+    def create_matrix(self, ish=0, space='solver', dtype=complex):
         """ Create a zero matrix having the correct structure.
 
         For ``space='solver'``, the structure is according to

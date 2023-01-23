@@ -20,7 +20,7 @@ def get_random_transformation(dim):
     return T
 
 # construct a random block-diagonal Hloc
-Hloc = np.zeros((10,10), dtype=np.complex_)
+Hloc = np.zeros((10,10), dtype=complex)
 # the Hloc of the first three 2x2 blocks is equal
 Hloc0 = get_random_hermitian(2)
 Hloc[:2,:2] = Hloc0
@@ -88,7 +88,7 @@ Gt = BlockGf(name_block_generator = [(name,
                 n_points=len(block.mesh),
                 indices=block.indices)) for name, block in G], make_copies=False)
 
-known_moments = np.zeros((2,10,10), dtype=np.complex)
+known_moments = np.zeros((2,10,10), dtype=complex)
 known_moments[1,:] = np.eye(10)
 tail, err = fit_tail(G['ud'], known_moments)
 Gt['ud'].set_from_fourier(G['ud'], tail)

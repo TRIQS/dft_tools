@@ -42,7 +42,7 @@ class ElkConverterTools:
       routine.
       """
       eps=1E-8
-      v=numpy.zeros([3], numpy.float_)
+      v=numpy.zeros([3], float)
     # find the determinant
       det=numpy.linalg.det(rot)
       if (abs(det-1.0)<eps):
@@ -100,7 +100,7 @@ class ElkConverterTools:
       """
       Calculate the rotation SU(2) matrix - see Elk's axangsu2 routine.
       """
-      su2=numpy.zeros([2,2], numpy.complex_)
+      su2=numpy.zeros([2,2], complex)
       t1=numpy.sqrt(numpy.dot(v,v))
       if(t1<1E-8):
           raise "sym_converter : zero length axis vector!"
@@ -143,12 +143,12 @@ class ElkConverterTools:
         perm=[]
         iea=[]
         for isym in range(nsym):
-          iea.append(numpy.zeros([natmtot,ns], numpy.int_))
+          iea.append(numpy.zeros([natmtot,ns], int))
        #loop over species
           for js in range(ns):
        #loop over species atoms
-            v=numpy.zeros([3,na[js]], numpy.float_)
-            v2=numpy.zeros(3, numpy.float_)
+            v=numpy.zeros([3,na[js]], float)
+            v2=numpy.zeros(3, float)
             for ia in range(na[js]):
               v[:,ia]=self.v3frac(atpos[js][ia][0:3],epslat)
             for ia in range(na[js]):
@@ -180,14 +180,14 @@ class ElkConverterTools:
         #need SciPy routines to get Euler angles - need version 1.4+
         #from scipy.spatial.transform import Rotation as R
         symmat=[]
-        rot=numpy.identity(3, numpy.float_)
-        angi=numpy.zeros(3, numpy.float_)
+        rot=numpy.identity(3, float)
+        angi=numpy.zeros(3, float)
         #loop over symmetries
         for isym in range(nsym):
           symmat.append([])
           for ish in range(n_shells):
             l=shells[ish]['l']
-            symmat[isym].append(numpy.zeros([2*l+1, 2*l+1], numpy.complex_))
+            symmat[isym].append(numpy.zeros([2*l+1, 2*l+1], complex))
             #get determinant
             det=numpy.linalg.det(symlat[isym])
             p=1
@@ -217,7 +217,7 @@ class ElkConverterTools:
         """
         eps=1E-8
         pi=numpy.pi
-        ang=numpy.zeros(3, numpy.float_)
+        ang=numpy.zeros(3, float)
         #get the Euler angles
         if((abs(rot[2,0])>eps) or (abs(rot[2,1])>eps)):
           ang[0]=numpy.arctan2(rot[2,1],rot[2,0])
@@ -243,7 +243,7 @@ class ElkConverterTools:
         calculates the rotation matrix in complex spherical harmonics for l.
         THIS HAS ONLY BEEN TESTED FOR l=2.
         """
-        d=numpy.identity(2*l+1, numpy.complex_)
+        d=numpy.identity(2*l+1, complex)
         # generate the rotation matrix about the y-axis
         dy=self.ylmroty(angi[1],l)
         # apply inversion to odd l values if required
@@ -268,7 +268,7 @@ class ElkConverterTools:
         #import the factorial function - needed for later versions of scipy (needs testing)
         from scipy import special as spec
         #calculates the rotation matrix in complex spherical harmonics for l
-        dy=numpy.identity(2*l+1, numpy.float_)
+        dy=numpy.identity(2*l+1, float)
         #sine and cosine of beta
         cb=numpy.cos(beta/2.0)
         sb=numpy.sin(beta/2.0)

@@ -251,7 +251,7 @@ class Plocar:
             except:
                 print("!!! WARNING !!!: Error reading E-Fermi from LOCPROJ, trying DOSCAR")
 
-            plo = np.zeros((nproj, self.nspin, nk, self.nband), dtype=np.complex128)
+            plo = np.zeros((nproj, self.nspin, nk, self.nband), dtype=complex)
             proj_params = [{} for i in range(nproj)]
 
             iproj_site = 0
@@ -685,7 +685,7 @@ def read_symmcar(vasp_dir, symm_filename='SYMMCAR'):
     print("   {0:>26} {1:d}".format("L_max:", lmax))
 
     rot_mats = np.zeros((nrot, lmax+1, mmax, mmax))
-    rot_map = np.zeros((nrot, ntrans, nion), dtype=np.int32)
+    rot_map = np.zeros((nrot, ntrans, nion), dtype=int)
 
     for irot in range(nrot):
 #   Empty line

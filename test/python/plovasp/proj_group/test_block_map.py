@@ -29,7 +29,7 @@ class TestBlockMap(mytest.MyTestCase):
         self.mock_eigvals = np.zeros((1, 11, 1))
 
         nproj = 16
-        self.mock_plo = np.zeros((nproj, 1, 1, 11), dtype=np.complex128)
+        self.mock_plo = np.zeros((nproj, 1, 1, 11), dtype=complex)
         self.mock_proj_params = [{} for i in range(nproj)]
         ip = 0
 # Mock d-sites

@@ -105,7 +105,7 @@ else:
 
 for conjugate in conjugate_values:
     # construct a random block-diagonal Hloc
-    Hloc = np.zeros((10,10), dtype=np.complex_)
+    Hloc = np.zeros((10,10), dtype=complex)
     # the Hloc of the first three 2x2 blocks is equal
     Hloc0 = get_random_hermitian(2)
     Hloc[:2,:2] = Hloc0

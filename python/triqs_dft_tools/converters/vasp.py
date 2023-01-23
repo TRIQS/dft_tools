@@ -259,7 +259,7 @@ class VaspConverter(ConverterTools):
 
 # NB!: these rotation matrices are specific to Wien2K! Set to identity in VASP
             use_rotations = 1
-            rot_mat = [numpy.identity(corr_shells[icrsh]['dim'],numpy.complex_) for icrsh in range(n_corr_shells)]
+            rot_mat = [numpy.identity(corr_shells[icrsh]['dim'],complex) for icrsh in range(n_corr_shells)]
             rot_mat_time_inv = [0 for i in range(n_corr_shells)]
 
 # TODO: implement transformation matrices
@@ -276,16 +276,16 @@ class VaspConverter(ConverterTools):
                 ll = 2 * corr_shells[inequiv_to_corr[ish]]['l']+1
                 lmax = ll * (corr_shells[inequiv_to_corr[ish]]['SO'] + 1)
 # TODO: at the moment put T-matrices to identities
-                T.append(numpy.identity(lmax, numpy.complex_))
+                T.append(numpy.identity(lmax, complex))
 
 #            if nc_flag:
 ## TODO: implement the noncollinear part
 #                raise NotImplementedError("Noncollinear calculations are not implemented")
 #            else:
-            hopping = numpy.zeros([n_k, n_spin_blocs, nb_max, nb_max], numpy.complex_)
-            f_weights = numpy.zeros([n_k, n_spin_blocs, nb_max], numpy.float_)
+            hopping = numpy.zeros([n_k, n_spin_blocs, nb_max, nb_max], complex)
+            f_weights = numpy.zeros([n_k, n_spin_blocs, nb_max], float)
             band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(n_spin_blocs)]
-            n_orbitals = numpy.zeros([n_k, n_spin_blocs], numpy.int)
+            n_orbitals = numpy.zeros([n_k, n_spin_blocs], int)
 
 
             for isp in range(n_spin_blocs):
@@ -299,7 +299,7 @@ class VaspConverter(ConverterTools):
                         f_weights[ik, isp, ib] = next(rf)
 
             if self.proj_or_hk == 'hk':
-                hopping = numpy.zeros([n_k, n_spin_blocs, n_orbs, n_orbs], numpy.complex_)
+                hopping = numpy.zeros([n_k, n_spin_blocs, n_orbs, n_orbs], complex)
                 # skip header lines
                 hk_file = self.basename + '.hk%i'%(ig + 1)
                 f_hk = open(hk_file, 'rt')
@@ -324,7 +324,7 @@ class VaspConverter(ConverterTools):
 # Projectors
 #            print n_orbitals
 #            print [crsh['dim'] for crsh in corr_shells]
-            proj_mat_csc = numpy.zeros([n_k, n_spin_blocs, sum([sh['dim'] for sh in shells]), numpy.max(n_orbitals)], numpy.complex_)
+            proj_mat_csc = numpy.zeros([n_k, n_spin_blocs, sum([sh['dim'] for sh in shells]), numpy.max(n_orbitals)], complex)
 
 # TODO: implement reading from more than one projector group
 # In 'dmftproj' each ion represents a separate correlated shell.
@@ -351,7 +351,7 @@ class VaspConverter(ConverterTools):
                                     proj_mat_csc[ik, isp, ilm, ib] = complex(pr, pi)
 
 # now save only projectors with flag 'corr' to proj_mat
-            proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
+            proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], complex)
             if self.proj_or_hk == 'proj':
                 for ish, sh in enumerate(p_shells):
                     if sh['corr']:
