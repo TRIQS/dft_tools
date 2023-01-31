@@ -36,7 +36,7 @@ from .block_structure import BlockStructure
 from itertools import product
 from warnings import warn
 from scipy import compress
-from scipy.optimize import minimize
+from scipy.optimize import minimize, newton
 
 
 class SumkDFT(object):
@@ -1958,7 +1958,7 @@ class SumkDFT(object):
         """
         self.chemical_potential = mu
 
-    def calc_mu(self, precision=0.01, broadening=None, delta=0.5, max_loops=100):
+    def calc_mu(self, precision=0.01, broadening=None, delta=0.5, max_loops=100, method="dichotomy"):
         r"""
         Searches for the chemical potential that gives the DFT total charge.
         A simple bisection method is used.
@@ -1973,6 +1973,12 @@ class SumkDFT(object):
                      Only relevant for real-frequency GF.
         max_loops : int, optional
                     Number of dichotomy loops maximally performed.
+        
+        max_loops : string, optional
+                    Type of optimization used:
+                        * dichotomy: usual bisection algorithm from the TRIQS library
+                        * newton: newton method, faster convergence but more unstable 
+                        * preconditioned_newton: uses a dichotomy adjustement with low tolerence to initialize the newton algorithm to improve stability
 
         Returns
         -------
@@ -1981,14 +1987,67 @@ class SumkDFT(object):
              within specified precision.
 
         """
-        def F(mu): return self.total_density(mu=mu, broadening=broadening).real
+        def F_bisection(mu): return self.total_density(mu=mu, broadening=broadening).real
         density = self.density_required - self.charge_below
+        def F_newton(mu):
 
-        self.chemical_potential = dichotomy.dichotomy(function=F,
-                                                      x_init=self.chemical_potential, y_value=density,
-                                                      precision_on_y=precision, delta_x=delta, max_loops=max_loops,
-                                                      x_name="Chemical Potential", y_name="Total Density",
-                                                      verbosity=3)[0]
+            mpi.report("Trying out mu = {}".format(str(mu)))
+            calc_dens = self.total_density(mu=mu, broadening=broadening).real - density
+            mpi.report("Delta to target density = {}".format(str(calc_dens)))
+            return calc_dens
+        
+        #check for lowercase matching for the method variable
+        match method.lower():
+
+            case "dichotomy":
+                mpi.report("SUMK calc_mu: Using dichtomy adjustment to find chemical potential")
+                self.chemical_potential = dichotomy.dichotomy(function=F_bisection,
+                                                              x_init=self.chemical_potential, y_value=density,
+                                                              precision_on_y=precision, delta_x=delta, max_loops=max_loops,
+                                                              x_name="Chemical Potential", y_name="Total Density",
+                                                              verbosity=3)[0]
+            case 'newton':
+                mpi.report("SUMK calc_mu: Using newton method to find chemical potential")
+                self.chemical_potential =                newton(func=F_newton,
+                                                              x0=self.chemical_potential,
+                                                              tol=precision, maxiter=max_loops,
+                                                              )
+
+            case 'preconditioned-newton':
+                mpi.report("SUMK calc_mu: preconditioning newton with low tolerance dichtomy")
+                mu_guess_0  = dichotomy.dichotomy(function=F_bisection,
+                                                  x_init=self.chemical_potential, y_value=density,
+                                                  precision_on_y=0.2, delta_x=delta, max_loops=max_loops,
+                                                  x_name="Chemical Potential", y_name="Total Density",
+                                                  verbosity=3)[0]
+                
+                mu_guess_1  = dichotomy.dichotomy(function=F_bisection,
+                                                  x_init=mu_guess_0, y_value=density,
+                                                  precision_on_y=0.05, delta_x=delta, max_loops=max_loops,
+                                                  x_name="Chemical Potential", y_name="Total Density",
+                                                  verbosity=3)[0]
+                
+                mu_guess_1 = np.round(mu_guess_1, 4)+0.01 # rounding off second guess in case it is numerically too similar to guess 0
+
+                mpi.report(f"SUMK calc_mu: Chemical potential guesses are: {mu_guess_0} and {mu_guess_1}")
+                mpi.report("SUMK calc_mu: Refining guesses with newton method to find chemical potential")
+
+                self.chemical_potential =   newton(func=F_newton,
+                                                   x0=mu_guess_0,
+                                                   x1=mu_guess_1,
+                                                   tol=precision, maxiter=max_loops,
+                                                   )
+            
+            case _:
+                raise ValueError(
+                        f"SUMK calc_mu: The method selected: {method}, is not implemented",
+                        """
+                        Please check for typos or select one of the following:
+                            * dichotomy: usual bisection algorithm from the TRIQS library
+                            * newton: newton method, faster convergence but more unstable 
+                            * preconditioned_newton: uses a dichotomy adjustement with low tolerence to initialize the newton algorithm to improve stability
+                        """
+                        )
 
         return self.chemical_potential
 
