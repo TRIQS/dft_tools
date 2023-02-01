@@ -79,8 +79,8 @@ from triqs.operators.util import h_int_slater, U_matrix, t2g_submatrix, transfor
 U3x3 = t2g_submatrix(U_matrix(2, U_int=2, J_hund=0.2, basis='spheric'))
 
 BS.transformation = [{'up':np.eye(3), 'down': np.eye(3)}]
-H0 = h_int_slater(spin_names=['up','down'], orb_names=range(3), U_matrix=U3x3, off_diag=False)
-H1 = h_int_slater(spin_names=['up','down'], orb_names=range(3), U_matrix=U3x3, off_diag=True)
+H0 = h_int_slater(spin_names=['up','down'], n_orb=3, U_matrix=U3x3, off_diag=False)
+H1 = h_int_slater(spin_names=['up','down'], n_orb=3, U_matrix=U3x3, off_diag=True)
 assert( H0 == BS.convert_operator(H1) )
 
 # Trafo Matrix switching index 1 & 2
@@ -91,15 +91,15 @@ map_op = {('up', 0): ('up', 0),
           ('down', 0): ('down', 0),
           ('down', 1): ('down', 2),
           ('down', 2): ('down', 1)}
-H2 = BS.convert_operator(h_int_slater(spin_names=['up','down'], orb_names=range(3), U_matrix=U3x3, off_diag=True, map_operator_structure=map_op))
+H2 = BS.convert_operator(h_int_slater(spin_names=['up','down'], n_orb=3, U_matrix=U3x3, off_diag=True, map_operator_structure=map_op))
 assert( H0 == H2 )
 
 BS.transformation = [{'up':np.array([[1,0,0],[0,1/np.sqrt(2),1/np.sqrt(2)],[0,1/np.sqrt(2),-1/np.sqrt(2)]]), 'down': np.array([[1,0,0],[0,1/np.sqrt(2),1/np.sqrt(2)],[0,1/np.sqrt(2),-1/np.sqrt(2)]])}]
-H3 = BS.convert_operator(h_int_slater(spin_names=['up','down'], orb_names=range(3), U_matrix=U3x3, off_diag=True))
+H3 = BS.convert_operator(h_int_slater(spin_names=['up','down'], n_orb=3, U_matrix=U3x3, off_diag=True))
 for op in H3:
     for c_op in op[0]:
         assert(BS.solver_to_sumk[0][(c_op[1][0], c_op[1][1])] is not None) # This crashes with a key error if the operator structure is not the solver structure
 
 U_trafod = transform_U_matrix(U3x3, BS.transformation[0]['up'].conjugate()) # The notorious .conjugate()
-H4 = h_int_slater(spin_names=['up','down'], orb_names=range(3), U_matrix=U_trafod, map_operator_structure=BS.sumk_to_solver[0])
+H4 = h_int_slater(spin_names=['up','down'], n_orb=3, U_matrix=U_trafod, map_operator_structure=BS.sumk_to_solver[0])
 assert( H4  == H3 ) # check that convert_operator does the same as transform_U_matrix
