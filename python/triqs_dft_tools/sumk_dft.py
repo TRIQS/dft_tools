@@ -36,7 +36,7 @@ from .block_structure import BlockStructure
 from itertools import product
 from warnings import warn
 from scipy import compress
-from scipy.optimize import minimize, newton
+from scipy.optimize import minimize, newton, brenth, brentq
 
 
 class SumkDFT(object):
@@ -1978,7 +1978,7 @@ class SumkDFT(object):
                     Type of optimization used:
                         * dichotomy: usual bisection algorithm from the TRIQS library
                         * newton: newton method, faster convergence but more unstable 
-                        * preconditioned_newton: uses a dichotomy adjustement with low tolerence to initialize the newton algorithm to improve stability
+                        * brent: finds bounds and proceeds with hyperbolic brent method, a compromise between speed and ensuring convergence
 
         Returns
         -------
@@ -1987,9 +1987,45 @@ class SumkDFT(object):
              within specified precision.
 
         """
+        def find_bounds(function, x_init, delta_x, max_loops=1000):
+            mpi.report("Finding bounds on chemical potential" )
+            x= x_init
+            # First find the bounds
+            y1 = function(x)
+            eps = np.sign(y1)
+            x1= x;
+            x2= x1;y2 = y1
+            
+            nbre_loop=0
+            #abort the loop after maxiter is reached or when y1 and y2 have different sign 
+            while (nbre_loop<= max_loops) and (y2*y1)>0:
+                nbre_loop +=1
+                x1=x2
+                y1=y2
+
+                x2 -=  eps*delta_x
+                y2 = function(x2)
+
+            if nbre_loop > (max_loops):
+                raise ValueError("The bounds could not be found")
+
+            # Make sure that x2 > x1
+            if x1 > x2:
+                x1,x2 = x2,x1
+                y1,y2 = y2,y1
+
+
+            mpi.report(f"mu_interval: [  {x1:.4f}  ; {x2:.4f} ]")
+            mpi.report(f"delta to target density interval: [ {y1:.4f} ; {y2:.4f} ]")
+            return x1, x2
+
+
+
+        # previous implementation
         def F_bisection(mu): return self.total_density(mu=mu, broadening=broadening).real
         density = self.density_required - self.charge_below
-        def F_newton(mu):
+        #using scipy.optimize
+        def F_optimize(mu):
 
             mpi.report("Trying out mu = {}".format(str(mu)))
             calc_dens = self.total_density(mu=mu, broadening=broadening).real - density
@@ -2000,52 +2036,43 @@ class SumkDFT(object):
         match method.lower():
 
             case "dichotomy":
-                mpi.report("SUMK calc_mu: Using dichtomy adjustment to find chemical potential")
+                mpi.report("\nSUMK calc_mu: Using dichtomy adjustment to find chemical potential\n")
                 self.chemical_potential = dichotomy.dichotomy(function=F_bisection,
                                                               x_init=self.chemical_potential, y_value=density,
                                                               precision_on_y=precision, delta_x=delta, max_loops=max_loops,
                                                               x_name="Chemical Potential", y_name="Total Density",
                                                               verbosity=3)[0]
             case 'newton':
-                mpi.report("SUMK calc_mu: Using newton method to find chemical potential")
-                self.chemical_potential =                newton(func=F_newton,
+                mpi.report("\nSUMK calc_mu: Using Newton method to find chemical potential\n")
+                self.chemical_potential =                newton(func=F_optimize,
                                                               x0=self.chemical_potential,
                                                               tol=precision, maxiter=max_loops,
                                                               )
 
-            case 'preconditioned-newton':
-                mpi.report("SUMK calc_mu: preconditioning newton with low tolerance dichtomy")
-                mu_guess_0  = dichotomy.dichotomy(function=F_bisection,
-                                                  x_init=self.chemical_potential, y_value=density,
-                                                  precision_on_y=0.2, delta_x=delta, max_loops=max_loops,
-                                                  x_name="Chemical Potential", y_name="Total Density",
-                                                  verbosity=3)[0]
+            case 'brent':
+                mpi.report("\nSUMK calc_mu: Using Brent method to find chemical potential")
+                mpi.report("SUMK calc_mu: Finding bounds \n")
                 
-                mu_guess_1  = dichotomy.dichotomy(function=F_bisection,
-                                                  x_init=mu_guess_0, y_value=density,
-                                                  precision_on_y=0.05, delta_x=delta, max_loops=max_loops,
-                                                  x_name="Chemical Potential", y_name="Total Density",
-                                                  verbosity=3)[0]
-                
-                mu_guess_1 = np.round(mu_guess_1, 4)+0.01 # rounding off second guess in case it is numerically too similar to guess 0
-
-                mpi.report(f"SUMK calc_mu: Chemical potential guesses are: {mu_guess_0} and {mu_guess_1}")
-                mpi.report("SUMK calc_mu: Refining guesses with newton method to find chemical potential")
-
-                self.chemical_potential =   newton(func=F_newton,
-                                                   x0=mu_guess_0,
-                                                   x1=mu_guess_1,
-                                                   tol=precision, maxiter=max_loops,
+                mu_guess_0, mu_guess_1  =  find_bounds(function=F_optimize,
+                                                      x_init=self.chemical_potential,
+                                                      delta_x=delta, max_loops=max_loops,
+                                                      )
+                mu_guess_1 += 0.01 #scrambles higher lying interval to avoid getting stuck
+                mpi.report("\nSUMK calc_mu: Searching root with Brent method\n")
+                self.chemical_potential = brenth(f=F_optimize,
+                                                   a=mu_guess_0,
+                                                   b=mu_guess_1,
+                                                   xtol=precision, maxiter=max_loops,
                                                    )
             
             case _:
                 raise ValueError(
-                        f"SUMK calc_mu: The method selected: {method}, is not implemented",
+                        f"SUMK calc_mu: The method selected: {method}, is not implemented\n",
                         """
                         Please check for typos or select one of the following:
                             * dichotomy: usual bisection algorithm from the TRIQS library
-                            * newton: newton method, faster convergence but more unstable 
-                            * preconditioned_newton: uses a dichotomy adjustement with low tolerence to initialize the newton algorithm to improve stability
+                            * newton: newton method, fastest convergence but more unstable 
+                            * brent: finds bounds and proceeds with hyperbolic brent method, a compromise between speed and ensuring convergence
                         """
                         )
 
