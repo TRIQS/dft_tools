@@ -36,7 +36,85 @@ from .block_structure import BlockStructure
 from itertools import product
 from warnings import warn
 from scipy import compress
-from scipy.optimize import minimize, newton, brenth, brentq
+from scipy.optimize import minimize, newton, brenth
+
+def compute_DC_from_density(N_tot, U, J, N_spin = None,  n_orbitals=5,  method='cFLL'):
+    """
+    Computes the double counting correction in terms using various methods
+
+
+    Parameters
+    ----------
+    N_tot : float 
+        Total density of the impurity
+    N_spin : float , default = None
+        Spin density, defaults to N_tot*0.5 if not specified
+    U : float 
+        U value
+    J : float 
+        J value
+    n_orbitals : int, default = 5
+        Total number of orbitals
+    method : string, default = 'cFLL' 
+        possibilities:
+        -    cFLL: DC potential from Ryee for spin unpolarized DFT: (DOI: 10.1038/s41598-018-27731-4)
+        -    sFLL: same as above for spin polarized DFT
+        -    cAMF: around mean field
+        -    sAMF: spin polarized around mean field
+        -    cHeld: unpolarized Held's formula as reported in (DOI: 10.1103/PhysRevResearch.2.03308)
+        -    sHeld: NOT IMPLEMENTED
+    
+    Returns
+    -------
+    List of floats:
+        -   DC_val: double counting potential
+        -   E_val: double counting energy
+    """
+    if N_spin is not None:
+        N_spin2 = N_tot-N_spin
+        Mag = N_spin - N_spin2
+    L_orbit = (n_orbitals-1)/2 
+
+    match method:
+        case 'cFLL':
+            E_val = 0.5 * U * N_tot * (N_tot-1) - 0.5 * J * N_tot * (N_tot*0.5-1)
+            DC_val = U * (N_tot-0.5) - J *(N_tot*0.5-0.5)
+
+        case 'sFLL':
+            assert N_spin is not None, "Spin density not given"
+            E_val = 0.5 * U * N_tot * (N_tot-1) - 0.5 * J * N_tot * (N_tot*0.5-1) - 0.25 * J * Mag**2
+            DC_val = U * (N_tot-0.5) - J *(N_spin-0.5)
+        
+        case 'cAMF':
+            E_val = +0.5 * U * N_tot **2
+            E_val -= 0.25*(U+2*L_orbit*J)/(2*L_orbit+1)*N_tot**2
+            DC_val = U * N_tot - 0.5*(U+2*L_orbit*J)/(2*L_orbit+1)*N_tot
+            
+
+        case 'sAMF':
+            assert N_spin is not None, "Spin density not given"
+            E_val = 0.5 * U * N_tot **2
+            E_val -= 0.25*(U+2*L_orbit*J)/(2*L_orbit+1)*N_tot**2
+            E_val -= 0.25*(U+2*L_orbit*J)/(2*L_orbit+1)*Mag**2
+            DC_val = U * N_tot  - (U+2*L_orbit*J)/(2*L_orbit+1)*N_spin
+        
+        case 'cHeld':
+            U_mean = (U + (n_orbitals-1)*(U-2*J)+(n_orbitals-1)*(U-3*J))/(2*n_orbitals-1)
+            E_val = 0.5 * U_mean * N_tot * (N_tot - 1)
+            DC_val = U_mean * (N_tot-0.5)
+        
+        case 'sHeld':
+            raise ValueError(f"Method sHeld not yet implemented")
+        
+        case _:
+            raise ValueError(f"DC type {method} not supported")
+
+    mpi.report(f"DC potential computed using the {method} method, V_DC = {DC_val:.6f} eV")
+    mpi.report(f"E_DC using the {method} method, E_DC = {E_val:.6f} eV")
+    if 'Held' in method:
+        mpi.report(f"Held method for {n_orbitals} orbitals, computed U_mean={U_mean:.6f} eV")
+
+    return DC_val, E_val
 
 
 class SumkDFT(object):
@@ -1670,7 +1748,7 @@ class SumkDFT(object):
         self.dc_energ = dc_energ
 
     def calc_dc(self, dens_mat, orb=0, U_interact=None, J_hund=None,
-                use_dc_formula=0, use_dc_value=None, transform=True):
+                use_dc_formula=0, use_dc_value=None, transform=True, legacy=True):
         r"""
         Calculate and set the double counting corrections.
 
@@ -1740,51 +1818,73 @@ class SumkDFT(object):
             if self.SP == 1 and self.SO == 1:
                 assert dim % 2 == 0
                 dim //= 2
-
+            
             if use_dc_value is None:
+                if legacy:
 
-                if U_interact is None and J_hund is None:
-                    raise ValueError("set_dc: either provide U_interact and J_hund or set use_dc_value to dc value.")
+                    if U_interact is None and J_hund is None:
+                        raise ValueError("set_dc: either provide U_interact and J_hund or set use_dc_value to dc value.")
 
-                if use_dc_formula == 0:  # FLL
+                    if use_dc_formula == 0:  # FLL
 
-                    self.dc_energ[icrsh] = U_interact / \
-                        2.0 * Ncrtot * (Ncrtot - 1.0)
+                        self.dc_energ[icrsh] = U_interact / \
+                            2.0 * Ncrtot * (Ncrtot - 1.0)
+                        for sp in spn:
+                            Uav = U_interact * (Ncrtot - 0.5) - \
+                                J_hund * (Ncr[sp] - 0.5)
+                            self.dc_imp[icrsh][sp] *= Uav
+                            self.dc_energ[icrsh] -= J_hund / \
+                                len(spn) * (Ncr[sp]) * (Ncr[sp] - 1.0)
+                            mpi.report(
+                                "DC for shell %(icrsh)i and block %(sp)s = %(Uav)f" % locals())
+
+                    elif use_dc_formula == 1:  # Held's formula, with U_interact the interorbital onsite interaction
+
+                        self.dc_energ[icrsh] = (U_interact + (dim - 1) * (U_interact - 2.0 * J_hund) + (
+                            dim - 1) * (U_interact - 3.0 * J_hund)) / (2 * dim - 1) / 2.0 * Ncrtot * (Ncrtot - 1.0)
+                        for sp in spn:
+                            Uav = (U_interact + (dim - 1) * (U_interact - 2.0 * J_hund) + (dim - 1)
+                                   * (U_interact - 3.0 * J_hund)) / (2 * dim - 1) * (Ncrtot - 0.5)
+                            self.dc_imp[icrsh][sp] *= Uav
+                            mpi.report(
+                                "DC for shell %(icrsh)i and block %(sp)s = %(Uav)f" % locals())
+
+                    elif use_dc_formula == 2:  # AMF
+
+                        self.dc_energ[icrsh] = 0.5 * U_interact * Ncrtot * Ncrtot
+                        for sp in spn:
+                            Uav = U_interact * \
+                                (Ncrtot - Ncr[sp] / dim) - \
+                                J_hund * (Ncr[sp] - Ncr[sp] / dim)
+                            self.dc_imp[icrsh][sp] *= Uav
+                            self.dc_energ[
+                                icrsh] -= (U_interact + (dim - 1) * J_hund) / dim / len(spn) * Ncr[sp] * Ncr[sp]
+                            mpi.report(
+                                "DC for shell %(icrsh)i and block %(sp)s = %(Uav)f" % locals())
+
+                    mpi.report("DC energy for shell %s = %s" %
+                               (icrsh, self.dc_energ[icrsh]))
+                
+                else:
+                    #For legacy compatibility 
+                    match use_dc_formula:
+                        case 0:
+                            mpi.report(f"Detected {use_dc_formula=}, changing to sFLL")
+                            use_dc_formula = "sFLL"
+                        case 1:
+                            mpi.report(f"Detected {use_dc_formula=}, changing to cHeld")
+                            use_dc_formula = "cHeld"
+                        case 2:
+                            mpi.report(f"Detected {use_dc_formula=}, changing to sAMF")
+                            use_dc_formula = "sAMF"
+                    
                     for sp in spn:
-                        Uav = U_interact * (Ncrtot - 0.5) - \
-                            J_hund * (Ncr[sp] - 0.5)
-                        self.dc_imp[icrsh][sp] *= Uav
-                        self.dc_energ[icrsh] -= J_hund / \
-                            len(spn) * (Ncr[sp]) * (Ncr[sp] - 1.0)
-                        mpi.report(
-                            "DC for shell %(icrsh)i and block %(sp)s = %(Uav)f" % locals())
+                        DC_val, E_val = compute_DC_from_density(N_tot=Ncrtot,U=U_interact, J=J_hund, n_orbitals=dim, N_spin=Ncr[sp], method=use_dc_formula)
+                        self.dc_imp[icrsh][sp] *= DC_val
+                        self.dc_energ[icrsh] -= E_val
 
-                elif use_dc_formula == 1:  # Held's formula, with U_interact the interorbital onsite interaction
 
-                    self.dc_energ[icrsh] = (U_interact + (dim - 1) * (U_interact - 2.0 * J_hund) + (
-                        dim - 1) * (U_interact - 3.0 * J_hund)) / (2 * dim - 1) / 2.0 * Ncrtot * (Ncrtot - 1.0)
-                    for sp in spn:
-                        Uav = (U_interact + (dim - 1) * (U_interact - 2.0 * J_hund) + (dim - 1)
-                               * (U_interact - 3.0 * J_hund)) / (2 * dim - 1) * (Ncrtot - 0.5)
-                        self.dc_imp[icrsh][sp] *= Uav
-                        mpi.report(
-                            "DC for shell %(icrsh)i and block %(sp)s = %(Uav)f" % locals())
 
-                elif use_dc_formula == 2:  # AMF
-
-                    self.dc_energ[icrsh] = 0.5 * U_interact * Ncrtot * Ncrtot
-                    for sp in spn:
-                        Uav = U_interact * \
-                            (Ncrtot - Ncr[sp] / dim) - \
-                            J_hund * (Ncr[sp] - Ncr[sp] / dim)
-                        self.dc_imp[icrsh][sp] *= Uav
-                        self.dc_energ[
-                            icrsh] -= (U_interact + (dim - 1) * J_hund) / dim / len(spn) * Ncr[sp] * Ncr[sp]
-                        mpi.report(
-                            "DC for shell %(icrsh)i and block %(sp)s = %(Uav)f" % locals())
-
-                mpi.report("DC energy for shell %s = %s" %
-                           (icrsh, self.dc_energ[icrsh]))
 
             else:  # use value provided for user to determine dc_energ and dc_imp
 
