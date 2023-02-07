@@ -100,16 +100,16 @@ class SumkDFTTools(SumkDFT):
         for icrsh in range(self.n_corr_shells):
             G_loc[icrsh].zero()
 
-        DOS = {sp: numpy.zeros([n_om], numpy.float_)
+        DOS = {sp: numpy.zeros([n_om], float)
                for sp in self.spin_block_names[self.SO]}
         DOSproj = [{} for ish in range(self.n_inequiv_shells)]
         DOSproj_orb = [{} for ish in range(self.n_inequiv_shells)]
         for ish in range(self.n_inequiv_shells):
             for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]:
                 dim = self.corr_shells[self.inequiv_to_corr[ish]]['dim']
-                DOSproj[ish][sp] = numpy.zeros([n_om], numpy.float_)
+                DOSproj[ish][sp] = numpy.zeros([n_om], float)
                 DOSproj_orb[ish][sp] = numpy.zeros(
-                    [n_om, dim, dim], numpy.complex_)
+                    [n_om, dim, dim], complex)
 
         ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
@@ -240,16 +240,16 @@ class SumkDFTTools(SumkDFT):
                      for block, inner in gf_struct_parproj_all[0]]
         G_loc_all = BlockGf(name_list=spn, block_list=glist_all, make_copies=False)
 
-        DOS = {sp: numpy.zeros([n_om], numpy.float_)
+        DOS = {sp: numpy.zeros([n_om], float)
                for sp in self.spin_block_names[self.SO]}
         DOSproj = {}
         DOSproj_orb = {}
 
         for sp in self.spin_block_names[self.SO]:
             dim = n_local_orbs
-            DOSproj[sp] = numpy.zeros([n_om], numpy.float_)
+            DOSproj[sp] = numpy.zeros([n_om], float)
             DOSproj_orb[sp] = numpy.zeros(
-                    [n_om, dim, dim], numpy.complex_)
+                    [n_om, dim, dim], complex)
 
         ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
@@ -375,16 +375,16 @@ class SumkDFTTools(SumkDFT):
         for ish in range(self.n_shells):
             G_loc[ish].zero()
 
-        DOS = {sp: numpy.zeros([n_om], numpy.float_)
+        DOS = {sp: numpy.zeros([n_om], float)
                for sp in self.spin_block_names[self.SO]}
         DOSproj = [{} for ish in range(self.n_shells)]
         DOSproj_orb = [{} for ish in range(self.n_shells)]
         for ish in range(self.n_shells):
             for sp in self.spin_block_names[self.SO]:
                 dim = self.shells[ish]['dim']
-                DOSproj[ish][sp] = numpy.zeros([n_om], numpy.float_)
+                DOSproj[ish][sp] = numpy.zeros([n_om], float)
                 DOSproj_orb[ish][sp] = numpy.zeros(
-                    [n_om, dim, dim], numpy.complex_)
+                    [n_om, dim, dim], complex)
 
         ikarray = numpy.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
@@ -518,11 +518,11 @@ class SumkDFTTools(SumkDFT):
             om_maxplot = plot_range[1]
 
         if ishell is None:
-            Akw = {sp: numpy.zeros([self.n_k, n_om], numpy.float_)
+            Akw = {sp: numpy.zeros([self.n_k, n_om], float)
                    for sp in spn}
         else:
             Akw = {sp: numpy.zeros(
-                [self.shells[ishell]['dim'], self.n_k, n_om], numpy.float_) for sp in spn}
+                [self.shells[ishell]['dim'], self.n_k, n_om], float) for sp in spn}
 
         if not ishell is None:
             gf_struct_parproj = [
@@ -649,7 +649,7 @@ class SumkDFTTools(SumkDFT):
         spn = self.spin_block_names[self.SO]
         ntoi = self.spin_names_to_ind[self.SO]
         # Density matrix in the window
-        self.dens_mat_window = [[numpy.zeros([self.shells[ish]['dim'], self.shells[ish]['dim']], numpy.complex_)
+        self.dens_mat_window = [[numpy.zeros([self.shells[ish]['dim'], self.shells[ish]['dim']], complex)
                                  for ish in range(self.n_shells)]
                                 for isp in range(len(spn))]
         # Set up G_loc
@@ -921,7 +921,7 @@ class SumkDFTTools(SumkDFT):
             print("Omega mesh automatically repined to:  ", self.Om_mesh)
 
         self.Gamma_w = {direction: numpy.zeros(
-            (len(self.Om_mesh), n_om), dtype=numpy.float_) for direction in self.directions}
+            (len(self.Om_mesh), n_om), dtype=float) for direction in self.directions}
 
         # Sum over all k-points
         ikarray = numpy.array(list(range(self.n_k)))
@@ -929,7 +929,7 @@ class SumkDFTTools(SumkDFT):
             # Calculate G_w  for ik and initialize A_kw
             G_w = self.lattice_gf(ik, mu, iw_or_w="w", beta=beta,
                                   broadening=broadening, mesh=mesh, with_Sigma=with_Sigma)
-            A_kw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=numpy.complex_)
+            A_kw = [numpy.zeros((self.n_orbitals[ik][isp], self.n_orbitals[ik][isp], n_om), dtype=complex)
                     for isp in range(n_inequiv_spin_blocks)]
 
             for isp in range(n_inequiv_spin_blocks):

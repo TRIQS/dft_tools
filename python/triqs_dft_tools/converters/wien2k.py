@@ -152,7 +152,7 @@ class Wien2kConverter(ConverterTools):
 
             use_rotations = 1
             rot_mat = [numpy.identity(
-                corr_shells[icrsh]['dim'], numpy.complex_) for icrsh in range(n_corr_shells)]
+                corr_shells[icrsh]['dim'], complex) for icrsh in range(n_corr_shells)]
 
             # read the matrices
             rot_mat_time_inv = [0 for i in range(n_corr_shells)]
@@ -183,7 +183,7 @@ class Wien2kConverter(ConverterTools):
                 # is of dimension 2l+1 without SO, and 2*(2l+1) with SO!
                 ll = 2 * corr_shells[inequiv_to_corr[ish]]['l'] + 1
                 lmax = ll * (corr_shells[inequiv_to_corr[ish]]['SO'] + 1)
-                T.append(numpy.zeros([lmax, lmax], numpy.complex_))
+                T.append(numpy.zeros([lmax, lmax], complex))
 
                 # now read it from file:
                 for i in range(lmax):
@@ -197,14 +197,14 @@ class Wien2kConverter(ConverterTools):
             n_spin_blocs = SP + 1 - SO
 
             # read the list of n_orbitals for all k points
-            n_orbitals = numpy.zeros([n_k, n_spin_blocs], numpy.int)
+            n_orbitals = numpy.zeros([n_k, n_spin_blocs], int)
             for isp in range(n_spin_blocs):
                 for ik in range(n_k):
                     n_orbitals[ik, isp] = int(next(R))
 
             # Initialise the projectors:
             proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max(
-                [crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
+                [crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], complex)
 
             # Read the projectors from the file:
             for ik in range(n_k):
@@ -224,9 +224,9 @@ class Wien2kConverter(ConverterTools):
 
             # now define the arrays for weights and hopping ...
             # w(k_index),  default normalisation
-            bz_weights = numpy.ones([n_k], numpy.float_) / float(n_k)
+            bz_weights = numpy.ones([n_k], float) / float(n_k)
             hopping = numpy.zeros([n_k, n_spin_blocs, numpy.max(
-                n_orbitals), numpy.max(n_orbitals)], numpy.complex_)
+                n_orbitals), numpy.max(n_orbitals)], complex)
 
             # weights in the file
             for ik in range(n_k):
@@ -301,7 +301,7 @@ class Wien2kConverter(ConverterTools):
 
         mpi.report("Reading input from %s..." % self.parproj_file)
 
-        dens_mat_below = [[numpy.zeros([self.shells[ish]['dim'], self.shells[ish]['dim']], numpy.complex_) for ish in range(self.n_shells)]
+        dens_mat_below = [[numpy.zeros([self.shells[ish]['dim'], self.shells[ish]['dim']], complex) for ish in range(self.n_shells)]
                           for isp in range(self.n_spin_blocs)]
 
         R = ConverterTools.read_fortran_file(
@@ -312,10 +312,10 @@ class Wien2kConverter(ConverterTools):
 
         # Initialise P, here a double list of matrices:
         proj_mat_all = numpy.zeros([self.n_k, self.n_spin_blocs, self.n_shells, max(
-            n_parproj), max([sh['dim'] for sh in self.shells]), numpy.max(self.n_orbitals)], numpy.complex_)
+            n_parproj), max([sh['dim'] for sh in self.shells]), numpy.max(self.n_orbitals)], complex)
 
         rot_mat_all = [numpy.identity(
-            self.shells[ish]['dim'], numpy.complex_) for ish in range(self.n_shells)]
+            self.shells[ish]['dim'], complex) for ish in range(self.n_shells)]
         rot_mat_all_time_inv = [0 for i in range(self.n_shells)]
 
         for ish in range(self.n_shells):
@@ -406,14 +406,14 @@ class Wien2kConverter(ConverterTools):
             n_k = int(next(R))
 
             # read the list of n_orbitals for all k points
-            n_orbitals = numpy.zeros([n_k, self.n_spin_blocs], numpy.int)
+            n_orbitals = numpy.zeros([n_k, self.n_spin_blocs], int)
             for isp in range(self.n_spin_blocs):
                 for ik in range(n_k):
                     n_orbitals[ik, isp] = int(next(R))
 
             # Initialise the projectors:
             proj_mat = numpy.zeros([n_k, self.n_spin_blocs, self.n_corr_shells, max(
-                [crsh['dim'] for crsh in self.corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
+                [crsh['dim'] for crsh in self.corr_shells]), numpy.max(n_orbitals)], complex)
 
             # Read the projectors from the file:
             for ik in range(n_k):
@@ -432,7 +432,7 @@ class Wien2kConverter(ConverterTools):
                                 proj_mat[ik, isp, icrsh, i, j] += 1j * next(R)
 
             hopping = numpy.zeros([n_k, self.n_spin_blocs, numpy.max(
-                n_orbitals), numpy.max(n_orbitals)], numpy.complex_)
+                n_orbitals), numpy.max(n_orbitals)], complex)
 
             # Grab the H
             # we use now the convention of a DIAGONAL Hamiltonian!!!!
@@ -448,7 +448,7 @@ class Wien2kConverter(ConverterTools):
 
             # Initialise P, here a double list of matrices:
             proj_mat_all = numpy.zeros([n_k, self.n_spin_blocs, self.n_shells, max(n_parproj), max(
-                [sh['dim'] for sh in self.shells]), numpy.max(n_orbitals)], numpy.complex_)
+                [sh['dim'] for sh in self.shells]), numpy.max(n_orbitals)], complex)
 
             for ish in range(self.n_shells):
                 for ik in range(n_k):
@@ -751,7 +751,7 @@ class Wien2kConverter(ConverterTools):
             for i_symm in range(n_symm):
 
                 mat.append([numpy.zeros([orbits[orb]['dim'], orbits[orb][
-                           'dim']], numpy.complex_) for orb in range(n_orbits)])
+                           'dim']], complex) for orb in range(n_orbits)])
                 for orb in range(n_orbits):
                     for i in range(orbits[orb]['dim']):
                         for j in range(orbits[orb]['dim']):
@@ -762,7 +762,7 @@ class Wien2kConverter(ConverterTools):
                             mat[i_symm][orb][i, j] += 1j * \
                                 next(R)      # imaginary part
 
-            mat_tinv = [numpy.identity(orbits[orb]['dim'], numpy.complex_)
+            mat_tinv = [numpy.identity(orbits[orb]['dim'], complex)
                         for orb in range(n_orbits)]
 
             if ((SO == 0) and (SP == 0)):

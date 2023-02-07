@@ -152,10 +152,10 @@ class ElectronicStructure:
 # Spin factor
         sp_fac = 2.0 if ns == 1 and not self.nc_flag else 1.0
 
-        den_mat = np.zeros((ns, nproj, nproj), dtype=np.float64)
-        overlap = np.zeros((ns, nproj, nproj), dtype=np.float64)
-#        ov_min = np.ones((ns, nproj, nproj), dtype=np.float64) * 100.0
-#        ov_max = np.zeros((ns, nproj, nproj), dtype=np.float64)
+        den_mat = np.zeros((ns, nproj, nproj), dtype=float)
+        overlap = np.zeros((ns, nproj, nproj), dtype=float)
+#        ov_min = np.ones((ns, nproj, nproj), dtype=float) * 100.0
+#        ov_max = np.zeros((ns, nproj, nproj), dtype=float)
         for ispin in range(ns):
             for ik in range(nk):
                 kweight = self.kmesh['kweights'][ik]

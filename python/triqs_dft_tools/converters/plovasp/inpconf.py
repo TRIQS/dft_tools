@@ -268,7 +268,7 @@ class ConfigParameters:
             err_mess = "Complex matrix must contain 2*M values:\n%s"%(par_str)
             assert 2 * (nm // 2) == nm, err_mess
 
-            tmp = np.array(rows, dtype=np.complex128)
+            tmp = np.array(rows, dtype=complex)
             mat = tmp[:, 0::2] + 1.0j * tmp[:, 1::2]
 
         return mat

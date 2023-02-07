@@ -200,7 +200,7 @@ class Wannier90Converter(ConverterTools):
         for ish in range(n_inequiv_shells):
             ll = 2 * corr_shells[inequiv_to_corr[ish]]['l'] + 1
             lmax = ll * (corr_shells[inequiv_to_corr[ish]]['SO'] + 1)
-            T.append(numpy.zeros([lmax, lmax], numpy.complex_))
+            T.append(numpy.zeros([lmax, lmax], complex))
 
         spin_w90name = ['_up', '_down']
         hamr_full = []
@@ -267,7 +267,7 @@ class Wannier90Converter(ConverterTools):
                 # we assume spin up and spin down always have same total number
                 # of WFs
                 n_orbitals = numpy.ones(
-                    [self.n_k, n_spin], numpy.int) * self.nwfs
+                    [self.n_k, n_spin], int) * self.nwfs
 
             else:
                 # consistency check between the _up and _down file contents
@@ -322,7 +322,7 @@ class Wannier90Converter(ConverterTools):
 
         # Third, compute the hoppings in reciprocal space
         hopping = numpy.zeros([self.n_k, n_spin, numpy.max(
-            n_orbitals), numpy.max(n_orbitals)], numpy.complex_)
+            n_orbitals), numpy.max(n_orbitals)], complex)
         for isp in range(n_spin):
             # make Fourier transform H(R) -> H(k) : it can be done one spin at
             # a time
@@ -336,7 +336,7 @@ class Wannier90Converter(ConverterTools):
         # Then, initialise the projectors
         k_dep_projection = 0   # we always have the same number of WFs at each k-point
         proj_mat = numpy.zeros([self.n_k, n_spin, n_corr_shells, max(
-            [crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], numpy.complex_)
+            [crsh['dim'] for crsh in corr_shells]), numpy.max(n_orbitals)], complex)
         iorb = 0
         # Projectors simply consist in identity matrix blocks selecting those MLWFs that
         # correspond to the specific correlated shell indexed by icrsh.
@@ -346,7 +346,7 @@ class Wannier90Converter(ConverterTools):
         for icrsh in range(n_corr_shells):
             norb = corr_shells[icrsh]['dim']
             proj_mat[:, :, icrsh, 0:norb, iorb:iorb +
-                     norb] = numpy.identity(norb, numpy.complex_)
+                     norb] = numpy.identity(norb, complex)
             iorb += norb
 
         # Finally, save all required data into the HDF archive:
@@ -410,7 +410,7 @@ class Wannier90Converter(ConverterTools):
         # Hamiltonian
         rvec_idx = numpy.zeros((nrpt, 3), dtype=int)
         rvec_deg = numpy.zeros(nrpt, dtype=int)
-        h_of_r = [numpy.zeros((num_wf, num_wf), dtype=numpy.complex_)
+        h_of_r = [numpy.zeros((num_wf, num_wf), dtype=complex)
                   for n in range(nrpt)]
 
         # variable currpos points to the current line in the file
@@ -607,7 +607,7 @@ class Wannier90Converter(ConverterTools):
         """
 
         twopi = 2 * numpy.pi
-        h_of_k = [numpy.zeros((norb, norb), dtype=numpy.complex_)
+        h_of_k = [numpy.zeros((norb, norb), dtype=complex)
                   for ik in range(self.n_k)]
         ridx = numpy.array(list(range(self.nrpt)))
         for ik, ir in product(list(range(self.n_k)), ridx):
