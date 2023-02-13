@@ -2,6 +2,20 @@
 
 # Changelog
 
+## Version 3.1.1
+
+DFTTools Version 3.1.1 is a patch release that contains a few bug fixes.
+In particular, we resolve incompatibility with recent numpy versions.
+
+We thank all contributors: Alexander Hampel, Harry LaBollita
+
+Find below an itemized list of changes in this release.
+
+### General
+* fix: np.int / np.float / np. complex are  depracted (np v1.20) / removed (np v1.24)
+* Fixes issue with projected A(k,w) (#225)
+
+
 ## Version 3.1.0
 
 DFTTools Version 3.1.0 is a release that
