@@ -38,10 +38,11 @@ from warnings import warn
 from scipy import compress
 from scipy.optimize import minimize, newton, brenth
 
-def compute_DC_from_density(N_tot, U, J, N_spin = None,  n_orbitals=5,  method='cFLL'):
+def compute_DC_from_density(N_tot, U, J, N_spin = None,  n_orbitals=5,  method='sFLL'):
     """
-    Computes the double counting correction in terms using various methods
-
+    Computes the double counting correction using various methods.
+    For FLL and AMF DC the notations and equations from doi.org/10.1038/s41598-018-27731-4
+    are used, whereas for the Held DC the definitions from doi.org/10.1080/00018730701619647 are used.
 
     Parameters
     ----------
@@ -69,45 +70,48 @@ def compute_DC_from_density(N_tot, U, J, N_spin = None,  n_orbitals=5,  method='
     List of floats:
         -   DC_val: double counting potential
         -   E_val: double counting energy
+
+
+    todo: See whether to move this to TRIQS directly instead of dft_tools
     """
     if N_spin is not None:
         N_spin2 = N_tot-N_spin
         Mag = N_spin - N_spin2
     L_orbit = (n_orbitals-1)/2 
 
-    match method:
-        case 'cFLL':
-            E_val = 0.5 * U * N_tot * (N_tot-1) - 0.5 * J * N_tot * (N_tot*0.5-1)
-            DC_val = U * (N_tot-0.5) - J *(N_tot*0.5-0.5)
+    if method == 'cFLL':
+        E_val = 0.5 * U * N_tot * (N_tot-1) - 0.5 * J * N_tot * (N_tot*0.5-1)
+        DC_val = U * (N_tot-0.5) - J *(N_tot*0.5-0.5)
 
-        case 'sFLL':
-            assert N_spin is not None, "Spin density not given"
-            E_val = 0.5 * U * N_tot * (N_tot-1) - 0.5 * J * N_tot * (N_tot*0.5-1) - 0.25 * J * Mag**2
-            DC_val = U * (N_tot-0.5) - J *(N_spin-0.5)
+    elif method == 'sFLL':
+        assert N_spin is not None, "Spin density not given"
+        E_val = 0.5 * U * N_tot * (N_tot-1) - 0.5 * J * N_tot * (N_tot*0.5-1) - 0.25 * J * Mag**2
+        DC_val = U * (N_tot-0.5) - J *(N_spin-0.5)
         
-        case 'cAMF':
-            E_val = +0.5 * U * N_tot **2
-            E_val -= 0.25*(U+2*L_orbit*J)/(2*L_orbit+1)*N_tot**2
-            DC_val = U * N_tot - 0.5*(U+2*L_orbit*J)/(2*L_orbit+1)*N_tot
+    elif method == 'cAMF':
+        E_val = +0.5 * U * N_tot **2
+        E_val -= 0.25*(U+2*L_orbit*J)/(2*L_orbit+1)*N_tot**2
+        DC_val = U * N_tot - 0.5*(U+2*L_orbit*J)/(2*L_orbit+1)*N_tot
             
 
-        case 'sAMF':
-            assert N_spin is not None, "Spin density not given"
-            E_val = 0.5 * U * N_tot **2
-            E_val -= 0.25*(U+2*L_orbit*J)/(2*L_orbit+1)*N_tot**2
-            E_val -= 0.25*(U+2*L_orbit*J)/(2*L_orbit+1)*Mag**2
-            DC_val = U * N_tot  - (U+2*L_orbit*J)/(2*L_orbit+1)*N_spin
+    elif method == 'sAMF':
+        assert N_spin is not None, "Spin density not given"
+        E_val = 0.5 * U * N_tot **2
+        E_val -= 0.25*(U+2*L_orbit*J)/(2*L_orbit+1)*N_tot**2
+        E_val -= 0.25*(U+2*L_orbit*J)/(2*L_orbit+1)*Mag**2
+        DC_val = U * N_tot  - (U+2*L_orbit*J)/(2*L_orbit+1)*N_spin
         
-        case 'cHeld':
-            U_mean = (U + (n_orbitals-1)*(U-2*J)+(n_orbitals-1)*(U-3*J))/(2*n_orbitals-1)
-            E_val = 0.5 * U_mean * N_tot * (N_tot - 1)
-            DC_val = U_mean * (N_tot-0.5)
+    elif method == 'cHeld':
+        # Valid for a Kanamori-type Hamiltonian where U'=U-2J
+        U_mean = (U + (n_orbitals-1)*(U-2*J)+(n_orbitals-1)*(U-3*J))/(2*n_orbitals-1)
+        E_val = 0.5 * U_mean * N_tot * (N_tot - 1)
+        DC_val = U_mean * (N_tot-0.5)
         
-        case 'sHeld':
-            raise ValueError(f"Method sHeld not yet implemented")
+    elif method == 'sHeld':
+        raise ValueError(f"Method sHeld not yet implemented")
         
-        case _:
-            raise ValueError(f"DC type {method} not supported")
+    else:
+        raise ValueError(f"DC type {method} not supported")
 
     mpi.report(f"DC potential computed using the {method} method, V_DC = {DC_val:.6f} eV")
     mpi.report(f"E_DC using the {method} method, E_DC = {E_val:.6f} eV")
@@ -1748,7 +1752,7 @@ class SumkDFT(object):
         self.dc_energ = dc_energ
 
     def calc_dc(self, dens_mat, orb=0, U_interact=None, J_hund=None,
-                use_dc_formula=0, use_dc_value=None, transform=True, legacy=True):
+                use_dc_formula=0, use_dc_value=None, transform=True):
         r"""
         Calculate and set the double counting corrections.
 
@@ -1780,8 +1784,13 @@ class SumkDFT(object):
             Value of interaction parameter `U`.
         J_hund : float, optional
             Value of interaction parameter `J`.
-        use_dc_formula : int, optional
-            Type of double-counting correction (see description).
+        use_dc_formula : int or string, optional 
+            Type of double-counting correction (see description of `compute_DC_from_density` above).
+            There is an interface with the legacy implementation which allows for the old convention:
+            * 0 -> 'sFLL'  spin dependent fully localized limit
+            * 1 -> 'cHeld' spin independent Held formula
+            * 2 -> 'sAMF'  spin dependent around-mean field approximation
+
         use_dc_value : float, optional
             Value of the double-counting correction. If specified
             `U_interact`, `J_hund` and `use_dc_formula` are ignored.
@@ -1820,68 +1829,21 @@ class SumkDFT(object):
                 dim //= 2
             
             if use_dc_value is None:
-                if legacy:
-
-                    if U_interact is None and J_hund is None:
-                        raise ValueError("set_dc: either provide U_interact and J_hund or set use_dc_value to dc value.")
-
-                    if use_dc_formula == 0:  # FLL
-
-                        self.dc_energ[icrsh] = U_interact / \
-                            2.0 * Ncrtot * (Ncrtot - 1.0)
-                        for sp in spn:
-                            Uav = U_interact * (Ncrtot - 0.5) - \
-                                J_hund * (Ncr[sp] - 0.5)
-                            self.dc_imp[icrsh][sp] *= Uav
-                            self.dc_energ[icrsh] -= J_hund / \
-                                len(spn) * (Ncr[sp]) * (Ncr[sp] - 1.0)
-                            mpi.report(
-                                "DC for shell %(icrsh)i and block %(sp)s = %(Uav)f" % locals())
-
-                    elif use_dc_formula == 1:  # Held's formula, with U_interact the interorbital onsite interaction
-
-                        self.dc_energ[icrsh] = (U_interact + (dim - 1) * (U_interact - 2.0 * J_hund) + (
-                            dim - 1) * (U_interact - 3.0 * J_hund)) / (2 * dim - 1) / 2.0 * Ncrtot * (Ncrtot - 1.0)
-                        for sp in spn:
-                            Uav = (U_interact + (dim - 1) * (U_interact - 2.0 * J_hund) + (dim - 1)
-                                   * (U_interact - 3.0 * J_hund)) / (2 * dim - 1) * (Ncrtot - 0.5)
-                            self.dc_imp[icrsh][sp] *= Uav
-                            mpi.report(
-                                "DC for shell %(icrsh)i and block %(sp)s = %(Uav)f" % locals())
-
-                    elif use_dc_formula == 2:  # AMF
-
-                        self.dc_energ[icrsh] = 0.5 * U_interact * Ncrtot * Ncrtot
-                        for sp in spn:
-                            Uav = U_interact * \
-                                (Ncrtot - Ncr[sp] / dim) - \
-                                J_hund * (Ncr[sp] - Ncr[sp] / dim)
-                            self.dc_imp[icrsh][sp] *= Uav
-                            self.dc_energ[
-                                icrsh] -= (U_interact + (dim - 1) * J_hund) / dim / len(spn) * Ncr[sp] * Ncr[sp]
-                            mpi.report(
-                                "DC for shell %(icrsh)i and block %(sp)s = %(Uav)f" % locals())
-
-                    mpi.report("DC energy for shell %s = %s" %
-                               (icrsh, self.dc_energ[icrsh]))
+                #For legacy compatibility 
+                if use_dc_formula == 0:
+                    mpi.report(f"Detected {use_dc_formula=}, changing to sFLL")
+                    use_dc_formula = "sFLL"
+                if use_dc_formula == 1:
+                    mpi.report(f"Detected {use_dc_formula=}, changing to cHeld")
+                    use_dc_formula = "cHeld"
+                if use_dc_formula == 2:
+                    mpi.report(f"Detected {use_dc_formula=}, changing to sAMF")
+                    use_dc_formula = "sAMF"
                 
-                else:
-                    #For legacy compatibility 
-                    match use_dc_formula:
-                        case 0:
-                            mpi.report(f"Detected {use_dc_formula=}, changing to sFLL")
-                            use_dc_formula = "sFLL"
-                        case 1:
-                            mpi.report(f"Detected {use_dc_formula=}, changing to cHeld")
-                            use_dc_formula = "cHeld"
-                        case 2:
-                            mpi.report(f"Detected {use_dc_formula=}, changing to sAMF")
-                            use_dc_formula = "sAMF"
-                    
-                    for sp in spn:
-                        DC_val, E_val = compute_DC_from_density(N_tot=Ncrtot,U=U_interact, J=J_hund, n_orbitals=dim, N_spin=Ncr[sp], method=use_dc_formula)
-                        self.dc_imp[icrsh][sp] *= DC_val
-                        self.dc_energ[icrsh] -= E_val
+                for sp in spn:
+                    DC_val, E_val = compute_DC_from_density(N_tot=Ncrtot,U=U_interact, J=J_hund, n_orbitals=dim, N_spin=Ncr[sp], method=use_dc_formula)
+                    self.dc_imp[icrsh][sp] *= DC_val
+                    self.dc_energ[icrsh] = E_val
 
 
 
@@ -2061,7 +2023,6 @@ class SumkDFT(object):
     def calc_mu(self, precision=0.01, broadening=None, delta=0.5, max_loops=100, method="dichotomy"):
         r"""
         Searches for the chemical potential that gives the DFT total charge.
-        A simple bisection method is used.
 
         Parameters
         ----------
@@ -2074,7 +2035,7 @@ class SumkDFT(object):
         max_loops : int, optional
                     Number of dichotomy loops maximally performed.
         
-        max_loops : string, optional
+        method : string, optional
                     Type of optimization used:
                         * dichotomy: usual bisection algorithm from the TRIQS library
                         * newton: newton method, faster convergence but more unstable 
@@ -2129,52 +2090,50 @@ class SumkDFT(object):
 
             mpi.report("Trying out mu = {}".format(str(mu)))
             calc_dens = self.total_density(mu=mu, broadening=broadening).real - density
-            mpi.report("Delta to target density = {}".format(str(calc_dens)))
+            mpi.report(f"Target density = {density}; Delta to target = {calc_dens}")
             return calc_dens
         
         #check for lowercase matching for the method variable
-        match method.lower():
+        if method.lower()=="dichotomy":
+            mpi.report("\nSUMK calc_mu: Using dichtomy adjustment to find chemical potential\n")
+            self.chemical_potential = dichotomy.dichotomy(function=F_bisection,
+                                                          x_init=self.chemical_potential, y_value=density,
+                                                          precision_on_y=precision, delta_x=delta, max_loops=max_loops,
+                                                          x_name="Chemical Potential", y_name="Total Density",
+                                                          verbosity=3)[0]
+        elif method.lower()=="newton":
+            mpi.report("\nSUMK calc_mu: Using Newton method to find chemical potential\n")
+            self.chemical_potential =                newton(func=F_optimize,
+                                                          x0=self.chemical_potential,
+                                                          tol=precision, maxiter=max_loops,
+                                                          )
 
-            case "dichotomy":
-                mpi.report("\nSUMK calc_mu: Using dichtomy adjustment to find chemical potential\n")
-                self.chemical_potential = dichotomy.dichotomy(function=F_bisection,
-                                                              x_init=self.chemical_potential, y_value=density,
-                                                              precision_on_y=precision, delta_x=delta, max_loops=max_loops,
-                                                              x_name="Chemical Potential", y_name="Total Density",
-                                                              verbosity=3)[0]
-            case 'newton':
-                mpi.report("\nSUMK calc_mu: Using Newton method to find chemical potential\n")
-                self.chemical_potential =                newton(func=F_optimize,
-                                                              x0=self.chemical_potential,
-                                                              tol=precision, maxiter=max_loops,
-                                                              )
-
-            case 'brent':
-                mpi.report("\nSUMK calc_mu: Using Brent method to find chemical potential")
-                mpi.report("SUMK calc_mu: Finding bounds \n")
-                
-                mu_guess_0, mu_guess_1  =  find_bounds(function=F_optimize,
-                                                      x_init=self.chemical_potential,
-                                                      delta_x=delta, max_loops=max_loops,
-                                                      )
-                mu_guess_1 += 0.01 #scrambles higher lying interval to avoid getting stuck
-                mpi.report("\nSUMK calc_mu: Searching root with Brent method\n")
-                self.chemical_potential = brenth(f=F_optimize,
-                                                   a=mu_guess_0,
-                                                   b=mu_guess_1,
-                                                   xtol=precision, maxiter=max_loops,
-                                                   )
+        elif method.lower()=="brent":
+            mpi.report("\nSUMK calc_mu: Using Brent method to find chemical potential")
+            mpi.report("SUMK calc_mu: Finding bounds \n")
             
-            case _:
-                raise ValueError(
-                        f"SUMK calc_mu: The method selected: {method}, is not implemented\n",
-                        """
-                        Please check for typos or select one of the following:
-                            * dichotomy: usual bisection algorithm from the TRIQS library
-                            * newton: newton method, fastest convergence but more unstable 
-                            * brent: finds bounds and proceeds with hyperbolic brent method, a compromise between speed and ensuring convergence
-                        """
-                        )
+            mu_guess_0, mu_guess_1  =  find_bounds(function=F_optimize,
+                                                  x_init=self.chemical_potential,
+                                                  delta_x=delta, max_loops=max_loops,
+                                                  )
+            mu_guess_1 += 0.01 #scrambles higher lying interval to avoid getting stuck
+            mpi.report("\nSUMK calc_mu: Searching root with Brent method\n")
+            self.chemical_potential = brenth(f=F_optimize,
+                                               a=mu_guess_0,
+                                               b=mu_guess_1,
+                                               xtol=precision, maxiter=max_loops,
+                                               )
+            
+        else:
+            raise ValueError(
+                    f"SUMK calc_mu: The selected method: {method}, is not implemented\n",
+                    """
+                    Please check for typos or select one of the following:
+                        * dichotomy: usual bisection algorithm from the TRIQS library
+                        * newton: newton method, fastest convergence but more unstable 
+                        * brent: finds bounds and proceeds with hyperbolic brent method, a compromise between speed and ensuring convergence
+                    """
+                    )
 
         return self.chemical_potential
 
@@ -2427,7 +2386,8 @@ class SumkDFT(object):
                             f.write("\n")
 
         elif dm_type == 'qe':
-            assert self.SP == 0, "Spin-polarized density matrix is not implemented"
+            if self.SP == 0:
+                mpi.report("SUMK calc_density_correction: WARNING! Averaging out spin-polarized correction in the density channel")
 
             subgrp = 'dft_update'
             delta_N = np.zeros([self.n_k, max(self.n_orbitals[:,0]), max(self.n_orbitals[:,0])], dtype=complex)
