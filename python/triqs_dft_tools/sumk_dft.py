@@ -763,21 +763,8 @@ class SumkDFT(object):
         else:
             mesh = self.mesh
 
-        if isinstance(mesh, MeshImFreq):
-            G_loc = [self.Sigma_imp[icrsh].copy() for icrsh in range(
-                self.n_corr_shells)]   # this list will be returned
-            beta = G_loc[0].mesh.beta
-            G_loc_inequiv = [BlockGf(name_block_generator=[(block, Gf(target_shape=(block_dim, block_dim), mesh=G_loc[0].mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
-                                     make_copies=False) for ish in range(self.n_inequiv_shells)]
-        else:
-            G_loc = [self.Sigma_imp[icrsh].copy() for icrsh in range(
-                self.n_corr_shells)]   # this list will be returned
-            mesh = G_loc[0].mesh
-            G_loc_inequiv = [BlockGf(name_block_generator=[(block, Gf(target_shape=(block_dim, block_dim), mesh=mesh)) for block, block_dim in self.gf_struct_solver[ish].items()],
-                                     make_copies=False) for ish in range(self.n_inequiv_shells)]
-
-        for icrsh in range(self.n_corr_shells):
-            G_loc[icrsh].zero()                          # initialize to zero
+        # create G_loc to be returned in sumk space for all correlated shells. Trafo to solver block structure done later
+        G_loc = [self.block_structure.create_gf(ish=ish, mesh=mesh, space='sumk') for ish in range(self.n_corr_shells)]
 
         ikarray = np.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
