@@ -34,6 +34,7 @@ __all__ = ['transport_distribution', 'conductivity_and_seebeck', 'write_output_t
 
 # ----------------- helper functions -----------------------
 
+
 def read_transport_input_from_hdf(sum_k):
     r"""
     Reads the data for transport calculations from the hdf5 archive.
@@ -48,43 +49,34 @@ def read_transport_input_from_hdf(sum_k):
     sum_k : sum_k object
             triqs SumkDFT object
     """
-    assert sum_k.dft_code in ('wien2k','elk'), "read_transport_input_from_hdf() is only implemented for wien2k and elk inputs"
-    thingstoread = ['band_window_optics', 'velocities_k']
-    sum_k.read_input_from_hdf(
-        subgrp=sum_k.transp_data, things_to_read=thingstoread)
-    if(sum_k.dft_code=="wien2k"):
+
+    assert sum_k.dft_code in (
+        'wien2k', 'elk', 'w90'), "read_transport_input_from_hdf() is only implemented for wien2k and elk inputs"
+
+    if sum_k.dft_code in ('wien2k', 'elk'):
+        thingstoread = ['band_window_optics', 'velocities_k']
+    else:
+        thingstoread = ['band_window_optics']
+
+    sum_k.read_input_from_hdf(subgrp=sum_k.transp_data, things_to_read=thingstoread)
+
+    if (sum_k.dft_code == "wien2k"):
         thingstoread = ['band_window', 'lattice_angles', 'lattice_constants',
                         'lattice_type', 'n_symmetries', 'rot_symmetries']
-    elif(sum_k.dft_code=="elk"):
-        thingstoread = ['band_window', 'n_symmetries',
-                        'rot_symmetries','cell_vol']
+    elif (sum_k.dft_code == "elk"):
+        thingstoread = ['band_window', 'n_symmetries', 'rot_symmetries',
+                        'cell_vol']
+    elif (sum_k.dft_code == 'w90'):
+        thingstoread = ['band_window', 'n_symmetries', 'rot_symmetries']
+
     sum_k.read_input_from_hdf(subgrp=sum_k.misc_data, things_to_read=thingstoread)
-    if(sum_k.dft_code=="wien2k"):
-        sum_k.cell_vol = cellvolume(sum_k.lattice_type, sum_k.lattice_constants, sum_k.lattice_angles)[1]
+
+    if (sum_k.dft_code == "wien2k"):
+        sum_k.cell_vol = cellvolume(
+            sum_k.lattice_type, sum_k.lattice_constants, sum_k.lattice_angles)[1]
 
     return sum_k
 
-def read_transport_input_from_hdf_wannier90(sum_k):
-    r"""
-    Reads the data for transport calculations from the hdf5 archive.
-
-    Parameters
-    ----------
-    sum_k : sum_k object
-            triqs SumkDFT object
-
-    Returns
-    -------
-    sum_k : sum_k object
-            triqs SumkDFT object
-    """
-    thingstoread = ['band_window_optics']
-    sum_k.read_input_from_hdf(
-        subgrp=sum_k.transp_data, things_to_read=thingstoread)
-    thingstoread = ['band_window', 'n_symmetries', 'rot_symmetries']
-    sum_k.read_input_from_hdf(subgrp=sum_k.misc_data, things_to_read=thingstoread)
-
-    return sum_k
 
 def write_output_to_hdf(sum_k, things_to_save, subgrp='user_data'):
     r"""
@@ -103,12 +95,14 @@ def write_output_to_hdf(sum_k, things_to_save, subgrp='user_data'):
     if not (mpi.is_master_node()):
         return  # do nothing on nodes
     with HDFArchive(sum_k.hdf_file, 'a') as ar:
-        if not subgrp in ar: ar.create_group(subgrp)
+        if not subgrp in ar:
+            ar.create_group(subgrp)
         for it, val in things_to_save.items():
-            if it in [ "gf_struct_sumk", "gf_struct_solver",
-                    "solver_to_sumk", "sumk_to_solver", "solver_to_sumk_block"]:
+            if it in ["gf_struct_sumk", "gf_struct_solver",
+                      "solver_to_sumk", "sumk_to_solver", "solver_to_sumk_block"]:
                 warn("It is not recommended to save '{}' individually. Save 'block_structure' instead.".format(it))
             ar[subgrp][it] = val
+
 
 def cellvolume(lattice_type, lattice_constants, latticeangle):
     r"""
@@ -147,6 +141,7 @@ def cellvolume(lattice_type, lattice_constants, latticeangle):
 
     return vol_c, vol_p
 
+
 def fermi_dis(w, beta, der=0):
     r"""
     Fermi distribution.
@@ -174,7 +169,8 @@ def fermi_dis(w, beta, der=0):
     elif der == 1:
         return - beta * fermi ** 2 * numpy.exp(exponent)
     else:
-        raise('higher order of derivative than 1 not implemented')
+        raise ('higher order of derivative than 1 not implemented')
+
 
 def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='./', calc_velocity=False, calc_inverse_mass=False, oc_select='both', oc_basis='h'):
     r"""
@@ -221,12 +217,16 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
     read_transport_input_from_hdf_wannier90(sum_k)
 
     # first check for right formatting of sum_k.nk_optics
-    assert len(nk_optics) in [1,3], '"nk_optics" must be given as three integers or one float'
-    if len(nk_optics) == 1: assert numpy.array(list(nk_optics)).dtype in (int, float), '"nk_optics" single value must be float or integer'
-    if len(nk_optics) == 3: assert numpy.array(list(nk_optics)).dtype == int, '"nk_optics" mesh must be integers'
+    assert len(nk_optics) in [1, 3], '"nk_optics" must be given as three integers or one float'
+    if len(nk_optics) == 1:
+        assert numpy.array(list(nk_optics)).dtype in (
+            int, float), '"nk_optics" single value must be float or integer'
+    if len(nk_optics) == 3:
+        assert numpy.array(list(nk_optics)).dtype == int, '"nk_optics" mesh must be integers'
     if len(nk_optics) == 1:
         interpolate_factor = nk_optics[0]
-        nk_x, nk_y, nk_z = list(map(lambda i: int(numpy.ceil(interpolate_factor * len(set(sum_k.kpts[:,i])))), range(3)))
+        nk_x, nk_y, nk_z = list(
+            map(lambda i: int(numpy.ceil(interpolate_factor * len(set(sum_k.kpts[:, i])))), range(3)))
     else:
         nk_x, nk_y, nk_z = nk_optics
 
@@ -241,10 +241,13 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
     n_kpts = nk_x * nk_y * nk_z
     kpts = numpy.zeros((n_kpts, 3))
     hopping = numpy.zeros((n_kpts, 1, n_orb, n_orb), dtype=complex)
-    proj_mat = numpy.zeros(numpy.shape(hopping[:,0,0,0]) + numpy.shape(sum_k.proj_mat[0,:]), dtype=complex)
+    proj_mat = numpy.zeros(numpy.shape(
+        hopping[:, 0, 0, 0]) + numpy.shape(sum_k.proj_mat[0, :]), dtype=complex)
     cell_volume = kpts = None
-    if calc_velocity: velocities_k = None
-    if calc_inverse_mass: inverse_mass = None
+    if calc_velocity:
+        velocities_k = None
+    if calc_inverse_mass:
+        inverse_mass = None
 
     if mpi.is_master_node():
         # try wannierberri import
@@ -257,8 +260,8 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
             except:
                 sys.exit()
         # initialize WannierBerri system
-        shift_gamma = numpy.array([0.0,0.0,0.0])
-        #wberri = wb.System_w90(pathname + seedname, berry=True, fft='numpy')
+        shift_gamma = numpy.array([0.0, 0.0, 0.0])
+        # wberri = wb.System_w90(pathname + seedname, berry=True, fft='numpy')
         # WannierBerri uses python multiprocessing which might conflict with mpi.
         # if there's a segfault, uncomment the following line
         wberri = wb.System_w90(pathname + seedname, berry=True, fft='numpy', npar=16)
@@ -267,20 +270,21 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
 
         # read in hoppings and proj_mat
         if oc_basis == 'h':
-            hopping[:,0,range(hopping.shape[2]),range(hopping.shape[3])] = dataK.E_K
+            hopping[:, 0, range(hopping.shape[2]), range(hopping.shape[3])] = dataK.E_K
         elif oc_basis == 'w':
-            hopping[:,0,:,:] = dataK.HH_K
+            hopping[:, 0, :, :] = dataK.HH_K
             fake_proj_mat = numpy.zeros(numpy.shape(dataK.UU_K), dtype=complex)
-            fake_proj_mat[:,range(numpy.shape(fake_proj_mat)[1]),range(numpy.shape(fake_proj_mat)[2])] = 1. + 1j*0.0
+            fake_proj_mat[:, range(numpy.shape(fake_proj_mat)[1]), range(
+                numpy.shape(fake_proj_mat)[2])] = 1. + 1j*0.0
 
         for isp in range(n_inequiv_spin_blocks):
             iorb = 0
             for icrsh in range(sum_k.n_corr_shells):
                 dim = sum_k.corr_shells[icrsh]['dim']
                 if oc_basis == 'h':
-                    proj_mat[:,isp,icrsh,0:dim,:] = dataK.UU_K[:,iorb:iorb+dim,:]
+                    proj_mat[:, isp, icrsh, 0:dim, :] = dataK.UU_K[:, iorb:iorb+dim, :]
                 elif oc_basis == 'w':
-                    proj_mat[:,isp,icrsh,0:dim,:] = fake_proj_mat[:,iorb:iorb+dim,:]
+                    proj_mat[:, isp, icrsh, 0:dim, :] = fake_proj_mat[:, iorb:iorb+dim, :]
                 iorb += dim
 
         if calc_velocity:
@@ -296,16 +300,17 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
                 # first term
                 Hhbar_alpha = dataK.Xbar('Ham', 1)
                 # second term
-                c_Hh_Ahbar_alpha = _commutator(hopping[:,0,:,:], dataK.Xbar('AA'))
+                c_Hh_Ahbar_alpha = _commutator(hopping[:, 0, :, :], dataK.Xbar('AA'))
                 velocities_k = (Hhbar_alpha + 1j * c_Hh_Ahbar_alpha) / HARTREETOEV / BOHRTOANG
 
                 # split into diag and offdiag elements, corresponding to intra- and interband contributions
                 v_diag = numpy.zeros(numpy.shape(velocities_k), dtype=complex)
-                v_diag[:,range(numpy.shape(velocities_k)[1]),
-                         range(numpy.shape(velocities_k)[2]),:] = velocities_k[:,range(numpy.shape(velocities_k)[1]),
-                                                                                 range(numpy.shape(velocities_k)[2]),:] 
+                v_diag[:, range(numpy.shape(velocities_k)[1]),
+                       range(numpy.shape(velocities_k)[2]), :] = velocities_k[:, range(numpy.shape(velocities_k)[1]),
+                                                                              range(numpy.shape(velocities_k)[2]), :]
                 v_offdiag = velocities_k.copy()
-                v_offdiag[:,range(numpy.shape(velocities_k)[1]),range(numpy.shape(velocities_k)[2]),:] = 0. + 1j*0.0
+                v_offdiag[:, range(numpy.shape(velocities_k)[1]), range(
+                    numpy.shape(velocities_k)[2]), :] = 0. + 1j*0.0
 
                 if oc_select == 'intra':
                     velocities_k = v_diag
@@ -326,12 +331,13 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
                 Hw_alpha = dataK.fft_R_to_k(Hw_alpha_R, hermitean=False)[dataK.select_K]
                 # second term
                 Aw_alpha = dataK.fft_R_to_k(dataK.AA_R, hermitean=True)
-                c_Hw_Aw_alpha = _commutator(hopping[:,0,:,:], Aw_alpha)
+                c_Hw_Aw_alpha = _commutator(hopping[:, 0, :, :], Aw_alpha)
                 velocities_k = (Hw_alpha + 1j * c_Hw_Aw_alpha) / HARTREETOEV / BOHRTOANG
 
         if calc_inverse_mass:
-            V_dot_D = numpy.einsum('kmnab, knoab -> kmoab', dataK.Xbar('Ham', 1)[:,:,:,:,None], dataK.D_H[:,:,:,None,:])
-            V_dot_D_dagger = V_dot_D.conj().transpose(0,2,1,3,4)
+            V_dot_D = numpy.einsum('kmnab, knoab -> kmoab', dataK.Xbar('Ham', 1)
+                                   [:, :, :, :, None], dataK.D_H[:, :, :, None, :])
+            V_dot_D_dagger = V_dot_D.conj().transpose(0, 2, 1, 3, 4)
             V_curly = numpy.einsum('knnab -> knab', V_dot_D + V_dot_D_dagger)
             del2E_H_diag = numpy.einsum('knnab->knab', dataK.Xbar('Ham', 2)).real
             inverse_mass = del2E_H_diag + V_curly
@@ -345,8 +351,10 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
     kpts = mpi.bcast(kpts)
     hopping = mpi.bcast(hopping)
     proj_mat = mpi.bcast(proj_mat)
-    if calc_velocity: velocities_k = mpi.bcast(velocities_k)
-    if calc_inverse_mass: inverse_mass = mpi.bcast(inverse_mass)
+    if calc_velocity:
+        velocities_k = mpi.bcast(velocities_k)
+    if calc_inverse_mass:
+        inverse_mass = mpi.bcast(inverse_mass)
 
     # write interpolated sumk quantities into "things_to_modify"
     things_to_modify['n_k'] = n_kpts
@@ -355,7 +363,8 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
         things_to_modify[key] = numpy.full(n_kpts, 1/n_kpts)
     n_inequiv_spin_blocks = sum_k.SP + 1 - sum_k.SO
     for key in ['band_window', 'band_window_optics']:
-        things_to_modify[key] = [numpy.full((n_kpts, 2), sum_k.band_window[isp][0]) for isp in range(n_inequiv_spin_blocks)]
+        things_to_modify[key] = [numpy.full((n_kpts, 2), sum_k.band_window[isp][0])
+                                 for isp in range(n_inequiv_spin_blocks)]
     things_to_modify['kpts'] = kpts
     things_to_modify['hopping'] = hopping
     things_to_modify['proj_mat'] = proj_mat
@@ -385,6 +394,7 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
     return sum_k, things_to_store
 
 # ----------------- transport -----------------------
+
 
 def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
     r"""
@@ -417,10 +427,12 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
         if mpi.is_master_node():
             ar = HDFArchive(sum_k.hdf_file, 'r')
             if not (sum_k.transp_data in ar):
-                raise IOError("transport_distribution: No %s subgroup in hdf file found! Call convert_transp_input first." % sum_k.transp_data)
+                raise IOError(
+                    "transport_distribution: No %s subgroup in hdf file found! Call convert_transp_input first." % sum_k.transp_data)
             # check if outputs file was converted
             if not ('n_symmetries' in ar['dft_misc_input']):
-                raise IOError("transport_distribution: n_symmetries missing. Check if case.outputs file is present and call convert_misc_input() or convert_dft_input().")
+                raise IOError(
+                    "transport_distribution: n_symmetries missing. Check if case.outputs file is present and call convert_misc_input() or convert_dft_input().")
 
         sum_k = read_transport_input_from_hdf(sum_k)
 
@@ -432,17 +444,21 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
 
         # check some of the input
         pathname = w90_params['pathname'] if 'pathname' in w90_params else './'
-        assert all(isinstance(name, str) for name in ['seedname', 'pathname']), f'Check pathname {w90_params["pathname"]} and seedname {w90_params["seedname"]}'
+        assert all(isinstance(name, str) for name in [
+                   'seedname', 'pathname']), f'Check pathname {w90_params["pathname"]} and seedname {w90_params["seedname"]}'
         for file_ending in ['.wout', '_hr.dat', '.chk', '.mmn', '.eig']:
             filename = [pathname, w90_params['seedname'], file_ending]
-            assert os.path.isfile(''.join(filename)), f'Filename {"".join(filename)} does not exist!'
+            assert os.path.isfile(
+                ''.join(filename)), f'Filename {"".join(filename)} does not exist!'
         calc_velocity = w90_params['calc_velocity'] if 'calc_velocity' in w90_params else True
         calc_inverse_mass = w90_params['calc_inverse_mass'] if 'calc_inverse_mass' in w90_params else False
-        assert all(isinstance(name, bool) for name in [calc_velocity, calc_inverse_mass]), f'Parameter {calc_velocity} or {calc_inverse_mass} not bool!'
+        assert all(isinstance(name, bool) for name in [
+                   calc_velocity, calc_inverse_mass]), f'Parameter {calc_velocity} or {calc_inverse_mass} not bool!'
 
         # select contributions to be used
         oc_select = w90_params['oc_select'] if 'oc_select' in w90_params else 'both'
-        assert oc_select in ['intra', 'inter', 'both'], '"oc_select" needs to be either ["intra", "inter", "both"]'
+        assert oc_select in ['intra', 'inter',
+                             'both'], '"oc_select" needs to be either ["intra", "inter", "both"]'
         # gauge choice options 'h' for Hamiltonian and 'w' for Wannier
         oc_basis = w90_params['oc_basis'] if 'oc_basis' in w90_params else 'h'
         assert oc_basis in ['h', 'w'], '"oc_basis" needs to be either ["h", "w"]'
@@ -460,7 +476,7 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
 
         # recompute sum_k instances on denser grid
         sum_k, _ = recompute_w90_input_on_different_mesh(sum_k, w90_params['seedname'], nk_optics=w90_params['nk_optics'], pathname=pathname,
-                                                                      calc_velocity=calc_velocity, calc_inverse_mass=calc_inverse_mass, oc_select=oc_select, oc_basis=oc_basis)
+                                                         calc_velocity=calc_velocity, calc_inverse_mass=calc_inverse_mass, oc_select=oc_select, oc_basis=oc_basis)
 
     # k-dependent-projections.
     # to be checked. But this should be obsolete atm, works for both cases
@@ -470,6 +486,8 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
     return sum_k
 
 # Uses .data of only GfReFreq objects.
+
+
 def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, Om_mesh=[0.0], with_Sigma=False, n_om=None, broadening=0.0, code='wien2k'):
     r"""
     Calculates the transport distribution
@@ -520,7 +538,8 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
     # up and down are equivalent if SP = 0
 
     # positive om_mesh
-    assert all(Om >= 0.0 for Om in Om_mesh), "transport_distribution: Om_mesh should not contain negative values!"
+    assert all(
+        Om >= 0.0 for Om in Om_mesh), "transport_distribution: Om_mesh should not contain negative values!"
     # Check if energy_window is sufficiently large and correct
     if (energy_window[0] >= energy_window[1] or energy_window[0] >= 0 or energy_window[1] <= 0):
         assert 0, "transport_distribution: energy_window wrong!"
@@ -539,7 +558,7 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
     # Define mesh for Green's function and in the specified energy window
     if (with_Sigma == True):
         omega = numpy.array([round(x.real, 12)
-                                  for x in sum_k.Sigma_imp[0].mesh])
+                             for x in sum_k.Sigma_imp[0].mesh])
         mesh = None
         mu = sum_k.chemical_potential
         n_om = len(omega)
@@ -549,7 +568,8 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
             # Find according window in Sigma mesh
             ioffset = numpy.sum(
                 omega < energy_window[0] - max(Om_mesh))
-            omega = omega[numpy.logical_and(omega >= energy_window[0] - max(Om_mesh), omega <= energy_window[1] + max(Om_mesh))]
+            omega = omega[numpy.logical_and(
+                omega >= energy_window[0] - max(Om_mesh), omega <= energy_window[1] + max(Om_mesh))]
             n_om = len(omega)
 
             # Truncate Sigma to given omega window
@@ -558,8 +578,8 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
             for icrsh in range(sum_k.n_corr_shells):
                 Sigma_save = sum_k.Sigma_imp[icrsh].copy()
                 spn = sum_k.spin_block_names[sum_k.corr_shells[icrsh]['SO']]
-                glist = lambda: [GfReFreq(target_shape=(block_dim, block_dim), window=(omega[
-                                          0], omega[-1]), n_points=n_om) for block, block_dim in sum_k.gf_struct_sumk[icrsh]]
+                def glist(): return [GfReFreq(target_shape=(block_dim, block_dim), window=(omega[
+                    0], omega[-1]), n_points=n_om) for block, block_dim in sum_k.gf_struct_sumk[icrsh]]
                 sum_k.Sigma_imp[icrsh] = BlockGf(
                     name_list=spn, block_list=glist(), make_copies=False)
                 for i, g in sum_k.Sigma_imp[icrsh]:
@@ -575,7 +595,7 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
         omega = numpy.linspace(
             energy_window[0] - max(Om_mesh), energy_window[1] + max(Om_mesh), n_om)
         mesh = MeshReFreq(energy_window[0] -
-                max(Om_mesh), energy_window[1] + max(Om_mesh), n_om)
+                          max(Om_mesh), energy_window[1] + max(Om_mesh), n_om)
         mu = 0.0
 
     dir_to_int = {'x': 0, 'y': 1, 'z': 2}
@@ -587,13 +607,15 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
 
     if mpi.is_master_node():
         print("Chemical potential: ", mu)
-        print("Using n_om = %s points in the energy_window [%s,%s]" % (n_om, omega[0], omega[-1]), end=' ')
+        print("Using n_om = %s points in the energy_window [%s,%s]" % (
+            n_om, omega[0], omega[-1]), end=' ')
         print("where the omega vector is:")
         print(omega)
         print("Calculation requested for Omega mesh:   ", numpy.array(Om_mesh))
         print("Omega mesh automatically repined to:  ", temp_Om_mesh)
 
-    Gamma_w = {direction: numpy.zeros((len(temp_Om_mesh), n_om), dtype=numpy.float_) for direction in directions}
+    Gamma_w = {direction: numpy.zeros((len(temp_Om_mesh), n_om),
+                                      dtype=numpy.float_) for direction in directions}
 
     # Sum over all k-points
     ikarray = numpy.array(list(range(sum_k.n_k)))
@@ -612,7 +634,7 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
             for iw in range(n_om):
                 A_kw[isp][:, :, iw] = -1.0 / (2.0 * numpy.pi * 1j) * (
                     A_kw[isp][:, :, iw] - numpy.conjugate(numpy.transpose(A_kw[isp][:, :, iw])))
-            #Akw_write[ik] = A_kw[isp].copy() * sum_k.bz_weights[ik]
+            # Akw_write[ik] = A_kw[isp].copy() * sum_k.bz_weights[ik]
 
             b_min = max(sum_k.band_window[isp][
                         ik, 0], sum_k.band_window_optics[isp][ik, 0])
@@ -640,16 +662,18 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
                 for direction in directions:
                     for iw in range(n_om):
                         for iq in range(len(temp_Om_mesh)):
-                            if(iw + iOm_mesh[iq] >= n_om or omega[iw] < -temp_Om_mesh[iq] + energy_window[0] or omega[iw] > temp_Om_mesh[iq] + energy_window[1]):
+                            if (iw + iOm_mesh[iq] >= n_om or omega[iw] < -temp_Om_mesh[iq] + energy_window[0] or omega[iw] > temp_Om_mesh[iq] + energy_window[1]):
                                 continue
 
                             Gamma_w[direction][iq, iw] += (numpy.dot(numpy.dot(numpy.dot(vel_R[v_i, v_i, dir_to_int[direction[0]]], A_kw[isp][A_i, A_i, int(iw + iOm_mesh[iq])]),
-                                                                            vel_R[v_i, v_i, dir_to_int[direction[1]]]), A_kw[isp][A_i, A_i, iw]).trace().real * sum_k.bz_weights[ik])
+                                                                               vel_R[v_i, v_i, dir_to_int[direction[1]]]), A_kw[isp][A_i, A_i, iw]).trace().real * sum_k.bz_weights[ik])
 
     for direction in directions:
-        Gamma_w[direction] = (mpi.all_reduce(mpi.world, Gamma_w[direction], lambda x, y: x + y) / sum_k.cell_vol / sum_k.n_symmetries)
+        Gamma_w[direction] = (mpi.all_reduce(mpi.world, Gamma_w[direction],
+                              lambda x, y: x + y) / sum_k.cell_vol / sum_k.n_symmetries)
 
     return Gamma_w, omega, temp_Om_mesh
+
 
 def transport_function(beta, directions, hopping, velocities, energy_window, n_om, rot_symmetries):
     r"""
@@ -688,7 +712,8 @@ def transport_function(beta, directions, hopping, velocities, energy_window, n_o
     mpi.report('Computing transport function...')
 
     # check that velocities are computed on the FBZ
-    assert numpy.shape(rot_symmetries)[0] == 1, 'Using symmetries currently not implemented for transport function.'
+    assert numpy.shape(rot_symmetries)[
+        0] == 1, 'Using symmetries currently not implemented for transport function.'
 
     dir_to_int = {'x': 0, 'y': 1, 'z': 2}
 
@@ -698,14 +723,18 @@ def transport_function(beta, directions, hopping, velocities, energy_window, n_o
     transp_func = {direction: numpy.zeros(shape=(ws.shape[0])) for direction in directions}
 
     for ct, w in enumerate(ws):
-        idx = numpy.where(numpy.abs(hopping[:,0,range(orb_1),range(orb_2)].real - w) <= tol)
-        fermi_wg = fermi_dis(hopping[:,0,range(orb_1),range(orb_2)][idx].real - w, beta, 1)/fermi_dis(0., beta, 1)
+        idx = numpy.where(numpy.abs(hopping[:, 0, range(orb_1), range(orb_2)].real - w) <= tol)
+        fermi_wg = fermi_dis(hopping[:, 0, range(orb_1), range(orb_2)]
+                             [idx].real - w, beta, 1)/fermi_dis(0., beta, 1)
         for direction in directions:
             dir_a, dir_b = [dir_to_int[x] for x in direction]
-            matrix_product = numpy.einsum('kmn, kno -> kmo' , velocities[:,:,:,dir_a], velocities[:,:,:,dir_b])
-            transp_func[direction][ct] = numpy.sum(fermi_wg * matrix_product[:,range(orb_1),range(orb_2)][idx]).real
+            matrix_product = numpy.einsum(
+                'kmn, kno -> kmo', velocities[:, :, :, dir_a], velocities[:, :, :, dir_b])
+            transp_func[direction][ct] = numpy.sum(
+                fermi_wg * matrix_product[:, range(orb_1), range(orb_2)][idx]).real
 
     return transp_func
+
 
 def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction, iq, n, beta, method=None):
     r"""
@@ -747,9 +776,11 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
         A = 0.0
         # setup the integrand
         if (Om_mesh[iq] == 0.0):
-            A_int = Gamma_w[direction][iq] * (fermi_dis(omega, beta) * fermi_dis(-omega, beta)) * (omega * beta)**n
+            A_int = Gamma_w[direction][iq] * \
+                (fermi_dis(omega, beta) * fermi_dis(-omega, beta)) * (omega * beta)**n
         elif (n == 0.0):
-            A_int = Gamma_w[direction][iq] * (fermi_dis(omega, beta) - fermi_dis(omega + Om_mesh[iq], beta)) / (Om_mesh[iq] * beta)
+            A_int = Gamma_w[direction][iq] * (fermi_dis(omega, beta) -
+                                              fermi_dis(omega + Om_mesh[iq], beta)) / (Om_mesh[iq] * beta)
 
         # w-integration
         if method == 'quad':
@@ -773,6 +804,7 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
     else:
         A = numpy.nan
     return A
+
 
 def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, method=None):
     r"""
@@ -828,27 +860,37 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
 
     for direction in directions:
         for iq in range(n_q):
-            A0[direction][iq] = transport_coefficient(Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=0, beta=beta, method=method)
-            A1[direction][iq] = transport_coefficient(Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=1, beta=beta, method=method)
-            A2[direction][iq] = transport_coefficient(Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=2, beta=beta, method=method)
-            print("A_0 in direction %s for Omega = %.2f    %e a.u." % (direction, Om_mesh[iq], A0[direction][iq]))
-            print("A_1 in direction %s for Omega = %.2f    %e a.u." % (direction, Om_mesh[iq], A1[direction][iq]))
-            print("A_2 in direction %s for Omega = %.2f    %e a.u." % (direction, Om_mesh[iq], A2[direction][iq]))
+            A0[direction][iq] = transport_coefficient(
+                Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=0, beta=beta, method=method)
+            A1[direction][iq] = transport_coefficient(
+                Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=1, beta=beta, method=method)
+            A2[direction][iq] = transport_coefficient(
+                Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=2, beta=beta, method=method)
+            print("A_0 in direction %s for Omega = %.2f    %e a.u." %
+                  (direction, Om_mesh[iq], A0[direction][iq]))
+            print("A_1 in direction %s for Omega = %.2f    %e a.u." %
+                  (direction, Om_mesh[iq], A1[direction][iq]))
+            print("A_2 in direction %s for Omega = %.2f    %e a.u." %
+                  (direction, Om_mesh[iq], A2[direction][iq]))
             if ~numpy.isnan(A1[direction][iq]):
                 # Seebeck and kappa are overwritten if there is more than one Omega =
                 # 0 in Om_mesh
                 seebeck[direction] = - A1[direction][iq] / A0[direction][iq] * 86.17
-                kappa[direction] = A2[direction][iq] - A1[direction][iq]*A1[direction][iq]/A0[direction][iq]
+                kappa[direction] = A2[direction][iq] - \
+                    A1[direction][iq]*A1[direction][iq]/A0[direction][iq]
                 kappa[direction] *= 293178.0
 
         # factor for optical conductivity: hbar * velocity_Hartree_to_SI * volume_Hartree_to_SI * m_to_cm * 10^-4 final unit
-        convert_to_SI = cst.hbar * (cst.c * cst.fine_structure) **2 * (1/cst.physical_constants['Bohr radius'][0]) **3 * 1e-6
+        convert_to_SI = cst.hbar * (cst.c * cst.fine_structure) ** 2 * \
+            (1/cst.physical_constants['Bohr radius'][0]) ** 3 * 1e-6
         optic_cond[direction] = beta * convert_to_SI * A0[direction]
         for iq in range(n_q):
-            print("Conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" % (direction, Om_mesh[iq], optic_cond[direction][iq]))
+            print("Conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" %
+                  (direction, Om_mesh[iq], optic_cond[direction][iq]))
             if not (numpy.isnan(A1[direction][iq])):
-                print("Seebeck in direction      %s for Omega = 0.00      %f  x 10^(-6) V/K" % (direction, seebeck[direction]))
-                print("kappa in direction      %s for Omega = 0.00      %f  W/(m * K)" % (direction, kappa[direction]))
+                print("Seebeck in direction      %s for Omega = 0.00      %f  x 10^(-6) V/K" %
+                      (direction, seebeck[direction]))
+                print("kappa in direction      %s for Omega = 0.00      %f  W/(m * K)" %
+                      (direction, kappa[direction]))
 
     return optic_cond, seebeck, kappa
-
