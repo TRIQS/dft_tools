@@ -4,8 +4,7 @@ import numpy as np
 import triqs.utility.mpi as mpi
 from h5 import HDFArchive
 from triqs.gf import MeshReFreq
-from triqs.utility.h5diff import h5diff
-
+from triqs.utility import h5diff
 from triqs_dft_tools.sumk_dft import SumkDFT
 from triqs_dft_tools.sumk_dft_transport import transport_distribution, init_spectroscopy, conductivity_and_seebeck, write_output_to_hdf
 from triqs_dft_tools.converters.wannier90 import Wannier90Converter
@@ -74,4 +73,8 @@ if mpi.is_master_node():
                    'seebeck': seebeck, 'optic_cond': optic_cond, 'kappa': kappa}
     write_output_to_hdf(sum_k, output_dict, 'transp_output')
 
-    h5diff(h5_archive, "sr2ruo4_transp.ref.h5")
+    # comparison of the output transport data
+    # velocities can differ depending on LAPACK diagonalization
+    out = HDFArchive(h5_archive,'r')
+    ref = HDFArchive('sr2ruo4_transp.ref.h5', 'r')
+    h5diff.compare('', out['transp_output'], ref['transp_output'], 0, 1e-8)

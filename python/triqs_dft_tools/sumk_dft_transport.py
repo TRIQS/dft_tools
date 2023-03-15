@@ -4,6 +4,7 @@
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
 #
 # Copyright (C) 2011 by M. Aichhorn, L. Pourovskii, V. Vildosola
+# Copyright (c) 2022-2023 Simons Foundation
 #
 # TRIQS is free software: you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software
@@ -18,6 +19,8 @@
 # You should have received a copy of the GNU General Public License along with
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
+# Authors: M. Aichhorn, S. Beck, A. Hampel, L. Pourovskii, V. Vildosola
+
 ##########################################################################
 import sys
 import numpy
@@ -25,7 +28,6 @@ from warnings import warn
 from triqs.gf import *
 import triqs.utility.mpi as mpi
 from .symmetry import *
-from .sumk_dft import SumkDFT
 import scipy.constants as cst
 import os.path
 
@@ -38,12 +40,10 @@ __all__ = ['transport_distribution', 'conductivity_and_seebeck', 'write_output_t
 def read_transport_input_from_hdf(sum_k):
     r"""
     Reads the data for transport calculations from the hdf5 archive.
-
     Parameters
     ----------
     sum_k : sum_k object
             triqs SumkDFT object
-
     Returns
     -------
     sum_k : sum_k object
@@ -214,7 +214,7 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
 
     # set-up k mesh depending on input shape
     # read in transport input and some checks
-    read_transport_input_from_hdf_wannier90(sum_k)
+    read_transport_input_from_hdf(sum_k)
 
     # first check for right formatting of sum_k.nk_optics
     assert len(nk_optics) in [1, 3], '"nk_optics" must be given as three integers or one float'
@@ -229,6 +229,9 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
             map(lambda i: int(numpy.ceil(interpolate_factor * len(set(sum_k.kpts[:, i])))), range(3)))
     else:
         nk_x, nk_y, nk_z = nk_optics
+
+    # check for spin calculation (not supported)
+    assert sum_k.SP == 0, 'spin dependent transport calculations are not supported.'
 
     n_orb = numpy.max([sum_k.n_orbitals[ik][0] for ik in range(sum_k.n_k)])
 
@@ -267,6 +270,8 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
         wberri = wb.System_w90(pathname + seedname, berry=True, fft='numpy', npar=16)
         grid = wb.Grid(wberri, NKdiv=1, NKFFT=[nk_x, nk_y, nk_z])
         dataK = wb.data_K.Data_K(wberri, dK=shift_gamma, grid=grid, fftlib='numpy')
+
+        assert dataK.HH_K.shape == hopping[:, 0, :, :].shape, 'wberri / wannier Hamiltonian has different number of orbitals than SumK object. Disentanglement is not supported as of now.'
 
         # read in hoppings and proj_mat
         if oc_basis == 'h':
@@ -769,6 +774,9 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
         Transport coefficient.
     """
 
+    from scipy.interpolate import interp1d
+    from scipy.integrate import simpson, quad
+
     if not (mpi.is_master_node()):
         return
 
@@ -791,7 +799,7 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
             A = A[0]
         elif method == 'simps':
             # simpson rule for w-grid
-            A = simps(A_int, omega)
+            A = simpson(A_int, omega)
         elif method == 'trapz':
             # trapezoidal rule for w-grid
             A = numpy.trapz(A_int, omega)
