@@ -23,6 +23,7 @@
 
 import numpy as np
 from triqs_dft_tools.sumk_dft import *
+from triqs_dft_tools.util import compute_DC_from_density
 from triqs.gf import  *
 from h5 import HDFArchive
 from triqs.operators.util import *
@@ -50,7 +51,7 @@ method_dict = {
 
 
 
-def test_dc(method, method_dict, dens, Uval, Jval, filename):
+def test_dc(SK_compat, SK_new, method, method_dict, dens, Uval, Jval, filename):
 
     dc_no = method_dict[method]["numbering_convention"]
     dc_string = method_dict[method]["new_convention"]
@@ -117,7 +118,7 @@ N_tot = N_up + N_down
 mpi.report(f"{N_up=} ,{N_down=}, {N_tot=}\n")
 
 for method in ["FLL", "AMF", "Held"]: 
-    test_dc(method, method_dict, dens, Uval, Jval, filename = f"{dft_filename}.h5")
+    test_dc(SK_compat, SK_new, method, method_dict, dens, Uval, Jval, filename = f"{dft_filename}.h5")
 
     #in case implementation changes, to write new testing data into archive
     #R = HDFArchive('./NiO.ref.h5', 'a')
@@ -158,7 +159,7 @@ Uval = 5
 Jval = 0.3
 
 for method in ["FLL", "AMF", "Held"]: 
-    test_dc(method, method_dict, dens, Uval, Jval, filename = f"{dft_filename}.h5" )
+    test_dc(SK_compat, SK_new, method, method_dict, dens, Uval, Jval, filename = f"{dft_filename}.h5" )
     
     #in case implementation changes, to write new testing data into archive
     #R = HDFArchive(f'./{dft_filename}.h5', 'a')
