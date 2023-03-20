@@ -319,10 +319,10 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
             elif oc_basis == 'w':
                 # first term
                 Hw_alpha_R = dataK.Ham_R.copy()
-                for i in range(1):
-                    shape_cR = numpy.shape(dataK.cRvec_wcc)
-                    Hw_alpha_R = 1j * Hw_alpha_R.reshape((Hw_alpha_R.shape) + (1, )) * dataK.cRvec_wcc.reshape(
-                        (shape_cR[0], shape_cR[1], dataK.system.nRvec) + (1, ) * len(Hw_alpha_R.shape[3:]) + (3, ))
+                # following three lines copied from wannierberri/data_K.py
+                shape_cR = numpy.shape(dataK.cRvec_wcc)
+                Hw_alpha_R = 1j * Hw_alpha_R.reshape((Hw_alpha_R.shape) + (1, )) * dataK.cRvec_wcc.reshape(
+                    (shape_cR[0], shape_cR[1], dataK.system.nRvec) + (1, ) * len(Hw_alpha_R.shape[3:]) + (3, ))
                 Hw_alpha = dataK.fft_R_to_k(Hw_alpha_R, hermitean=False)[dataK.select_K]
                 # second term
                 Aw_alpha = dataK.fft_R_to_k(dataK.AA_R, hermitean=True)
