@@ -3,6 +3,7 @@
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
 #
 # Copyright (C) 2011 by M. Aichhorn, L. Pourovskii, V. Vildosola
+# Copyright (c) 2022-2023 Simons Foundation
 #
 # TRIQS is free software: you can redistribute it and/or modify it under the
 # terms of the GNU General Public License as published by the Free Software
@@ -17,6 +18,7 @@
 # You should have received a copy of the GNU General Public License along with
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
+# Authors: M. Aichhorn, S. Beck, A. Hampel, L. Pourovskii, V. Vildosola
 ################################################################################
 
 from numpy import *
@@ -26,7 +28,7 @@ from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
 from triqs_dft_tools.sumk_dft_transport import transport_distribution, init_spectroscopy, conductivity_and_seebeck, write_output_to_hdf
 from triqs.utility.comparison_tests import *
-from triqs.utility.h5diff import h5diff
+from triqs.utility import h5diff
 
 beta = 40
 
@@ -51,6 +53,8 @@ optic_cond, seebeck, kappa = conductivity_and_seebeck(Gamma_w, omega, Om_mesh, S
 output_dict = {'seebeck': seebeck, 'optic_cond': optic_cond, 'kappa': kappa}
 write_output_to_hdf(SK, output_dict, 'transp_output')
 
-
+# comparison of the output transport data
 if mpi.is_master_node():
-    h5diff('SrVO3.ref.h5', "srvo3_transp.ref.h5")
+    out = HDFArchive('SrVO3.ref.h5','r')
+    ref = HDFArchive('srvo3_transp.ref.h5', 'r')
+    h5diff.compare('', out['transp_output'], ref['transp_output'], 0, 1e-8)

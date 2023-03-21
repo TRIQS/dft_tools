@@ -775,7 +775,7 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
     """
 
     from scipy.interpolate import interp1d
-    from scipy.integrate import simpson, quad
+    from scipy.integrate import simps, quad
 
     if not (mpi.is_master_node()):
         return
@@ -799,7 +799,7 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
             A = A[0]
         elif method == 'simps':
             # simpson rule for w-grid
-            A = simpson(A_int, omega)
+            A = simps(A_int, omega)
         elif method == 'trapz':
             # trapezoidal rule for w-grid
             A = numpy.trapz(A_int, omega)
