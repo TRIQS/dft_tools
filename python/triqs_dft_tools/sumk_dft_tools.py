@@ -343,10 +343,11 @@ class SumkDFTTools(SumkDFT):
 
         things_to_read = ['n_parproj', 'proj_mat_all',
                           'rot_mat_all', 'rot_mat_all_time_inv']
-        value_read = self.read_input_from_hdf(
+        subgroup_present, values_not_read = self.read_input_from_hdf(
             subgrp=self.parproj_data, things_to_read=things_to_read)
-        if not value_read:
-            return value_read
+        if len(values_not_read) > 0 and mpi.is_master_node:
+            raise ValueError(
+                'ERROR: One or more necessary SumK input properties have not been found in the given h5 archive:', self.values_not_read)
         if self.symm_op:
             self.symmpar = Symmetry(self.hdf_file, subgroup=self.symmpar_data)
 
@@ -492,15 +493,17 @@ class SumkDFTTools(SumkDFT):
 
         if (pdos):
           things_to_read = ['maxlm', 'bc']
-          value_read = self.read_input_from_hdf(
-            subgrp=self.bc_data, things_to_read=things_to_read)
-          if not value_read:
-            return value_read
+          subgroup_present, values_not_read = self.read_input_from_hdf(
+              subgrp=self.bc_data, things_to_read=things_to_read)
+          if len(values_not_read) > 0 and mpi.is_master_node:
+            raise ValueError(
+                'ERROR: One or more necessary SumK input properties have not been found in the given h5 archive:', self.values_not_read)
           things_to_read = ['n_atoms']
-          value_read = self.read_input_from_hdf(
-            subgrp=self.symmcorr_data, things_to_read=things_to_read)
-          if not value_read:
-            return value_read
+          subgroup_present, values_not_read = self.read_input_from_hdf(
+              subgrp=self.symmcorr_data, things_to_read=things_to_read)
+          if len(values_not_read) > 0 and mpi.is_master_node:
+            raise ValueError(
+                'ERROR: One or more necessary SumK input properties have not been found in the given h5 archive:', self.values_not_read)
 
         if (mesh is None) and (not with_Sigma):
             raise ValueError("lattice_gf: Give the mesh=(om_min,om_max,n_points) for the lattice GfReFreq.")
@@ -662,10 +665,11 @@ class SumkDFTTools(SumkDFT):
         #read in the energy contour energies and projectors
         things_to_read = ['n_k','bmat','symlat','n_symm','vkl',
                           'n_orbitals', 'proj_mat', 'hopping']
-        value_read = self.read_input_from_hdf(
+        subgroup_present, values_not_read = self.read_input_from_hdf(
           subgrp=self.fs_data, things_to_read=things_to_read)
-        if not value_read:
-          return value_read
+        if len(values_not_read) > 0 and mpi.is_master_node:
+            raise ValueError(
+                'ERROR: One or more necessary SumK input properties have not been found in the given h5 archive:', self.values_not_read)
 
         if with_Sigma is True:
             om_mesh = [x.real for x in self.Sigma_imp_w[0].mesh]
@@ -840,16 +844,18 @@ class SumkDFTTools(SumkDFT):
             self, "Sigma_imp_w"), "spaghettis: Set Sigma_imp_w first."
         things_to_read = ['n_k', 'n_orbitals', 'proj_mat',
                           'hopping', 'n_parproj', 'proj_mat_all']
-        value_read = self.read_input_from_hdf(
+        subgroup_present, values_not_read = self.read_input_from_hdf(
             subgrp=self.bands_data, things_to_read=things_to_read)
-        if not value_read:
-            return value_read
+        if len(values_not_read) > 0 and mpi.is_master_node:
+            raise ValueError(
+                'ERROR: One or more necessary SumK input properties have not been found in the given h5 archive:', self.values_not_read)
         if ishell is not None:
             things_to_read = ['rot_mat_all', 'rot_mat_all_time_inv']
-            value_read = self.read_input_from_hdf(
+            subgroup_present, values_not_read = self.read_input_from_hdf(
                 subgrp=self.parproj_data, things_to_read=things_to_read)
-            if not value_read:
-                return value_read
+            if len(values_not_read) > 0 and mpi.is_master_node:
+                raise ValueError(
+                    'ERROR: One or more necessary SumK input properties have not been found in the given h5 archive:', self.values_not_read)
 
         if mu is None:
             mu = self.chemical_potential
@@ -980,10 +986,11 @@ class SumkDFTTools(SumkDFT):
 
         things_to_read = ['dens_mat_below', 'n_parproj',
                           'proj_mat_all', 'rot_mat_all', 'rot_mat_all_time_inv']
-        value_read = self.read_input_from_hdf(
+        subgroup_present, values_not_read = self.read_input_from_hdf(
             subgrp=self.parproj_data, things_to_read=things_to_read)
-        if not value_read:
-            return value_read
+        if len(values_not_read) > 0 and mpi.is_master_node:
+            raise ValueError(
+                'ERROR: One or more necessary SumK input properties have not been found in the given h5 archive:', self.values_not_read)
         if self.symm_op:
             self.symmpar = Symmetry(self.hdf_file, subgroup=self.symmpar_data)
 
