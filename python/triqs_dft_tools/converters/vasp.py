@@ -135,7 +135,7 @@ class VaspConverter(ConverterTools):
 
         f_gen = self.read_data(fh)
 
-        return header, f_gen
+        return header, f_gen, fh
 
     def convert_dft_input(self):
         """
@@ -152,7 +152,7 @@ class VaspConverter(ConverterTools):
         mpi.report("Reading input from %s..."%self.ctrl_file)
 
         # R is a generator : each R.Next() will return the next number in the file
-        jheader, rf = self.read_header_and_data(self.ctrl_file)
+        jheader, rf, fh = self.read_header_and_data(self.ctrl_file)
         print(jheader)
         ctrl_head = json.loads(jheader)
 
@@ -185,6 +185,8 @@ class VaspConverter(ConverterTools):
         except StopIteration:
             raise "VaspConverter: error reading %s"%self.ctrl_file
 
+        fh.close()
+
 #        if nc_flag:
 # VASP.6.
         if SO == 1:
@@ -199,7 +201,7 @@ class VaspConverter(ConverterTools):
         try:
             for ig in range(ng):
                 gr_file = self.basename + '.pg%i'%(ig + 1)
-                jheader, rf = self.read_header_and_data(gr_file)
+                jheader, rf, fh = self.read_header_and_data(gr_file)
                 gr_head = json.loads(jheader)
 
 
@@ -230,15 +232,14 @@ class VaspConverter(ConverterTools):
                         pars['l'] = sh['lorb']
                         #pars['corr'] = sh['corr']
                         pars['dim'] = sh['ndim']
-                        #pars['ion_list'] = sh['ion_list']
                         pars['SO'] = SO
 # TODO: check what 'irep' entry does (it seems to be very specific to dmftproj)
                         pars['irep'] = 0
                         shells.append(pars)
                         shion_to_shell[ish].append(i)
                         shorbs_to_globalorbs[ish].append([last_dimension,
-                                                 last_dimension+sh['ndim']])
-                        last_dimension = last_dimension+sh['ndim']
+                                                 last_dimension + sh['ndim']])
+                        last_dimension = last_dimension + sh['ndim']
                         if sh['corr']:
                             corr_shells.append(pars)
 
@@ -381,7 +382,7 @@ class VaspConverter(ConverterTools):
         except StopIteration:
            raise "VaspConverter: error reading %s"%self.gr_file
 
-        rf.close()
+        fh.close()
 
 
         proj_or_hk = self.proj_or_hk
