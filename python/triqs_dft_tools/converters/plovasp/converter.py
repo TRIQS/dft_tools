@@ -40,6 +40,36 @@ from . import vaspio
 from .inpconf import ConfigParameters
 from .elstruct import ElectronicStructure
 from .plotools import generate_plo, output_as_text
+import logging
+
+class PloFormatter(logging.Formatter):
+    def format(self, record):
+		# Save the original format
+        _style = self._style
+
+        # Customized WARNING format
+        if record.levelno == logging.WARNING:
+            self._style = logging.PercentStyle("\n!!! WARNING !!!: %(msg)s\n")
+
+        result = super().format(record)
+
+        # Restore the original format
+        self._style = _style
+
+        return result
+
+# Uncomment this to get extra output
+#logging.basicConfig(level=logging.DEBUG)
+
+# Main logger from which all other loggers should be inherited
+main_log = logging.getLogger('plovasp')
+main_log.propagate = False
+
+handler = logging.StreamHandler(sys.stdout)
+formatter = PloFormatter("[%(levelname)s]:[%(name)s]: %(message)s")
+handler.setFormatter(formatter)
+main_log.addHandler(handler)
+
 
 def generate_and_output_as_text(conf_filename, vasp_dir):
     """

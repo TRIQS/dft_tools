@@ -29,19 +29,16 @@ r"""
 
     Storage and manipulation on projector shells.
 """
-def issue_warning(message):
-    """
-    Issues a warning.
-    """
-    print()
-    print("  !!! WARNING !!!: " + message)
-    print()
 
 import itertools as it
+import logging
 import numpy as np
+
 from . import atm
 
 np.set_printoptions(suppress=True)
+
+log = logging.getLogger('plovasp.proj_shell')
 
 ################################################################################
 ################################################################################
@@ -60,37 +57,49 @@ class ProjectorShell:
     Parameters:
 
     - sh_pars (dict) : shell parameters from the config-file
-    - proj_raw (numpy.array) : array of raw projectors
-
+    - proj_raw (numpy.array) : array of raw projectors from LOCPROJ
+    - proj_params (list[dict]) : parameters of raw projectors from LOCPROJ
+    - nc_flag (bool) : True if projectors are for non-collinear magnetic state
     """
     def __init__(self, sh_pars, proj_raw, proj_params, kmesh, structure, nc_flag):
         self.lorb = sh_pars['lshell']
         self.ions = sh_pars['ions']
         self.user_index = sh_pars['user_index']
+
+        log.debug(f"-- Shell index: {self.user_index}")
+
         self.corr = sh_pars['corr']
         self.ion_sort = [sh_pars['ion_sort']]
         self.nc_flag = nc_flag
-#        try:
-#            self.tmatrix = sh_pars['tmatrix']
-#        except KeyError:
-#            self.tmatrix = None
 
         self.lm1 = self.lorb**2
-        self.lm2 = (self.lorb+1)**2
+        self.lm2 = (self.lorb + 1)**2
 
         self.nion = self.ions['nion']
-# Extract ion list and equivalence classes (ion sorts)
+
+        # Extract ion list and equivalence classes (ion sorts)
+        # `ion_sort` contains actual indices of ions representing an equivalence class
         self.ion_list = sorted(it.chain(*self.ions['ion_list']))
+
+        log.debug(f"--   ions:  {self.ions}")
+        log.debug(f"--   ion_list:  {self.ion_list}")
 
         if self.ion_sort[0] is None:
             self.ion_sort = []
+
+            # Not the most efficient algorithm but ensures that ion indices are properly
+            # ordered in the resulting `ion_sort`
             for ion in self.ion_list:
                 for icl, eq_cl in enumerate(self.ions['ion_list']):
                     # Representative ion index of equivalence class `eq_cl`
                     ion_rep = eq_cl[0]
                     if ion in eq_cl:
+                        log.debug(f"--     adding to equivalence class ({icl}, {eq_cl})")
+                        log.debug(f"--     ion = {ion}, ion_rep = {ion_rep}")
                         self.ion_sort.append(ion_rep + 1) # Enumerate classes starting from 1
                         break
+
+        log.debug(f"--   ion_sort: {self.ion_sort}")
 
         self.ndim = self.extract_tmatrices(sh_pars)
 
@@ -121,14 +130,13 @@ class ProjectorShell:
         if self.nc_flag == False:
             nm = self.lm2 - self.lm1
         else:
-            nm = 2*(self.lm2 - self.lm1)
+            nm = 2 * (self.lm2 - self.lm1)
 
         if 'tmatrices' in sh_pars:
             self.do_transform = True
 
             if 'tmatrix' in sh_pars:
-                mess = "Both TRANSFORM and TRANSFILE are specified, TRANSFORM will be ignored."
-                issue_warning(mess)
+                log.warning("Both TRANSFORM and TRANSFILE are specified, TRANSFORM will be ignored")
 
             raw_matrices = sh_pars['tmatrices']
             nrow, ncol = raw_matrices.shape
