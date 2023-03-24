@@ -86,8 +86,10 @@ class ProjectorShell:
             self.ion_sort = []
             for ion in self.ion_list:
                 for icl, eq_cl in enumerate(self.ions['ion_list']):
+                    # Representative ion index of equivalence class `eq_cl`
+                    ion_rep = eq_cl[0]
                     if ion in eq_cl:
-                        self.ion_sort.append(icl + 1) # Enumerate classes starting from 1
+                        self.ion_sort.append(ion_rep + 1) # Enumerate classes starting from 1
                         break
 
         self.ndim = self.extract_tmatrices(sh_pars)
