@@ -236,11 +236,12 @@ class VaspConverter(ConverterTools):
 # TODO: check what 'irep' entry does (it seems to be very specific to dmftproj)
                         pars['irep'] = 0
                         shells.append(pars)
-                        shion_to_shell[ish].append(i)
                         shorbs_to_globalorbs[ish].append([last_dimension,
                                                  last_dimension + sh['ndim']])
                         last_dimension = last_dimension + sh['ndim']
                         if sh['corr']:
+                            shion_to_shell[ish].append(icsh)
+                            icsh += 1
                             corr_shells.append(pars)
 
 
@@ -254,8 +255,7 @@ class VaspConverter(ConverterTools):
 #        to define equivalence classes of sites.
             n_inequiv_shells, corr_to_inequiv, inequiv_to_corr = ConverterTools.det_shell_equivalence(self, corr_shells)
 
-            if mpi.is_master_node():
-                print("  No. of inequivalent shells:", n_inequiv_shells)
+            mpi.report(f"  No. of inequivalent shells: {n_inequiv_shells}")
 
 # NB!: these rotation matrices are specific to Wien2K! Set to identity in VASP
             use_rotations = 1
@@ -278,10 +278,6 @@ class VaspConverter(ConverterTools):
 # TODO: at the moment put T-matrices to identities
                 T.append(numpy.identity(lmax, complex))
 
-#            if nc_flag:
-## TODO: implement the noncollinear part
-#                raise NotImplementedError("Noncollinear calculations are not implemented")
-#            else:
             hopping = numpy.zeros([n_k, n_spin_blocs, nb_max, nb_max], complex)
             f_weights = numpy.zeros([n_k, n_spin_blocs, nb_max], complex)
             band_window = [numpy.zeros((n_k, 2), dtype=int) for isp in range(n_spin_blocs)]
@@ -322,8 +318,6 @@ class VaspConverter(ConverterTools):
                 rf_hk.close()
 
 # Projectors
-#            print n_orbitals
-#            print [crsh['dim'] for crsh in corr_shells]
             proj_mat_csc = numpy.zeros([n_k, n_spin_blocs, sum([sh['dim'] for sh in shells]), numpy.max(n_orbitals)], complex)
 
 # TODO: implement reading from more than one projector group
@@ -376,14 +370,12 @@ class VaspConverter(ConverterTools):
             #corr_shell.pop('ion_list')
             things_to_set = ['n_shells','shells','n_corr_shells','corr_shells','n_spin_blocs','n_orbitals','n_k','SO','SP','energy_unit']
             for it in things_to_set:
-#                print "%s:"%(it), locals()[it]
                 setattr(self,it,locals()[it])
 
         except StopIteration:
            raise "VaspConverter: error reading %s"%self.gr_file
 
         fh.close()
-
 
         proj_or_hk = self.proj_or_hk
 
