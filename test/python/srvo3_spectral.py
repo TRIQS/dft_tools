@@ -13,9 +13,13 @@ SK.chemical_potential = chemical_potential
 SK.dc_imp = dc_imp
 SK.set_Sigma([Sigma])
 
-dos_wannier = SK.dos_wannier_basis(broadening=0.01, with_Sigma=True, with_dc=True, save_to_file=False)
-dos_parproj = SK.dos_parproj_basis(broadening=0.01, with_Sigma=True, with_dc=True, save_to_file=False)
-spaghetti = SK.spaghettis(broadening=0.01, plot_shift=0.0, plot_range=(-1,1), ishell=None, save_to_file=False)
+#dos_wannier = SK.dos_wannier_basis(broadening=0.01, with_Sigma=True, with_dc=True, save_to_file=False)
+#dos_parproj = SK.dos_parproj_basis(broadening=0.01, with_Sigma=True, with_dc=True, save_to_file=False)
+dos_wannier = SK.density_of_states(broadening=0.01, with_Sigma=True, with_dc=True, proj_type='wann', save_to_file=False)
+dos_parproj = SK.density_of_states(broadening=0.01, with_Sigma=True, with_dc=True, proj_type='wien2k', save_to_file=False)
+#spaghetti = SK.spaghettis(broadening=0.01, plot_shift=0.0, plot_range=(-1,1), ishell=None, save_to_file=False)
+[spaghetti, pAkw, pAkw_orb] = SK.spaghettis(broadening=0.01, plot_shift=0.0, plot_range=(-1,1), shell_list=None, save_to_file=False)
+
 
 if mpi.is_master_node():
 

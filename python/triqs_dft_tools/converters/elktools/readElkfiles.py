@@ -621,67 +621,68 @@ class readElkfiles:
       R.close()
       return ns, na, atpos
 
-#band character dependent calculations
-    def read_bc(self):
-        """
-        Read in the ELK generated band characters from BC.OUT
-        """
+#commented out for now - unsure this will produce DFT+DMFT PDOS
+##band character dependent calculations
+#    def read_bc(self,fileext):
+#        """
+#        Read in the ELK generated band characters from BC.OUT
+#        """
 
-        #import string
-        file = 'BC.OUT'
-        R = self.read_elk_file(file, self.fortran_to_replace)
-        try:
-        #no. of kpts and number of orbital
-          gen_entries = ['maxlm', 'nspinor','natmtot','nstsv','nkpt','irep']
-          gen = {name: int(val) for name, val in zip(gen_entries, R)}
-          #projector lm size
-          #check the read in information complies with previous read in data
-          nspinor=self.SP+1
-          if(gen['nspinor'] != nspinor):
-            mpi.report('HDF file nspinor = %s'%nspinor)
-            mpi.report('BC.OUT nspinor = %s'%gen['nspinor'])
-            raise IOError("Elk_converter (",file,") : reading nspinor failed!")
-            return
-          if(gen['natmtot'] != self.n_atoms):
-            raise IOError("Elk_converter (",file,") : reading no. of atoms failed!")
-            return
-          if(gen['nstsv'] != self.nstsv):
-            raise IOError("Elk_converter (",file,") : reading all states failed!")
-            return
-          if(gen['nkpt'] != self.n_k):
-            raise IOError("Elk_converter (",file,") : reading kpoints failed failed!")
-            return
-          if(gen['irep'] == 0):
-            raise IOError("Elk_converter (",file,") : Band characters are in spherical hamonics, may have issues with the PDOS!")
-            return
+#        #import string
+#        file = 'BC'+fileext
+#        R = self.read_elk_file(file, self.fortran_to_replace)
+#        try:
+#        #no. of kpts and number of orbital
+#          gen_entries = ['maxlm', 'nspinor','natmtot','nstsv','nkpt','irep']
+#          gen = {name: int(val) for name, val in zip(gen_entries, R)}
+#          #projector lm size
+#          #check the read in information complies with previous read in data
+#          nspinor=self.SP+1
+#          if(gen['nspinor'] != nspinor):
+#            mpi.report('HDF file nspinor = %s'%nspinor)
+#            mpi.report('BC.OUT nspinor = %s'%gen['nspinor'])
+#            raise IOError("Elk_converter (",file,") : reading nspinor failed!")
+#            return
+#          if(gen['natmtot'] != self.n_atoms):
+#            raise IOError("Elk_converter (",file,") : reading no. of atoms failed!")
+#            return
+#          if(gen['nstsv'] != self.nstsv):
+#            raise IOError("Elk_converter (",file,") : reading all states failed!")
+#            return
+#          if(gen['nkpt'] != self.n_k):
+#            raise IOError("Elk_converter (",file,") : reading kpoints failed failed!")
+#            return
+#          if(gen['irep'] == 0):
+#            raise IOError("Elk_converter (",file,") : Band characters are in spherical hamonics, may have issues with the PDOS!")
+#            return
 
-          dim=gen['maxlm']
-          lmax=numpy.sqrt(dim)-1
-          bc = numpy.zeros([dim,nspinor,self.n_atoms,self.nstsv,self.n_k], float)
+#          dim=gen['maxlm']
+#          lmax=numpy.sqrt(dim)-1
+#          bc = numpy.zeros([dim,nspinor,self.n_atoms,self.nstsv,self.n_k], float)
 
-          for ik in range(0,self.n_k):
-            for iatom in range(0,self.n_atoms):
-              for ispn in range(0,nspinor):
-                entry =  ['ispn','ias','is','ia','ik']
-                ent = {name: int(val) for name, val in zip(entry, R)}
-          #k-point index and correlated band window indices
-          #check read in values
-                if(ent['ispn'] != ispn+1):
-                  raise IOError("Elk_converter (",file,") : reading ispn failed!")
-                  return
-                if(ent['ias'] != iatom+1):
-                  raise IOError("Elk_converter (",file,") : reading iatom failed!")
-                  return
-                if(ent['ik'] != ik+1):
-                  raise IOError("Elk_converter (",file,") : reading ik failed!")
-                  return
+#          for ik in range(0,self.n_k):
+#            for iatom in range(0,self.n_atoms):
+#              for ispn in range(0,nspinor):
+#                entry =  ['ispn','ias','is','ia','ik']
+#                ent = {name: int(val) for name, val in zip(entry, R)}
+#          #k-point index and correlated band window indices
+#          #check read in values
+#                if(ent['ispn'] != ispn+1):
+#                  raise IOError("Elk_converter (",file,") : reading ispn failed!")
+#                  return
+#                if(ent['ias'] != iatom+1):
+#                  raise IOError("Elk_converter (",file,") : reading iatom failed!")
+#                  return
+#                if(ent['ik'] != ik+1):
+#                  raise IOError("Elk_converter (",file,") : reading ik failed!")
+#                  return
 
-                for ist in range(self.nstsv):
-                  for lm in range(dim):
-                     bc[lm,ispn,iatom,ist,ik] = next(R)
+#                for ist in range(self.nstsv):
+#                  for lm in range(dim):
+#                     bc[lm,ispn,iatom,ist,ik] = next(R)
 
-        except StopIteration:  # a more explicit error if the file is corrupted.
-            raise IOError("Elk_converter (read BC.OUT): reading file failed!")
-        R.close()
-        return(bc,dim)
+#        except StopIteration:  # a more explicit error if the file is corrupted.
+#            raise IOError("Elk_converter (read BC.OUT): reading file failed!")
+#        R.close()
+#        return(bc,dim)
 

@@ -295,4 +295,132 @@ class ElkConverterTools:
             dy[m1+l,m2+l]=t1*sm
         #return y-rotation matrix
         return dy
+        
+    def plotpt3d(self,n_k,vkl,n_symm,symlat,grid3d,ngrid):
+        #import time
+        import triqs.utility.mpi as mpi
+        #default vector tolerance used in Elk. This should not be altered.
+        epslat=1E-6
+        tol=int(numpy.log10(1/epslat))
+        b = numpy.zeros([3,3], float)
+        b = grid3d[1:4,:] - grid3d[0,:]
+        nk = ngrid[0]*ngrid[1]*ngrid[2]
+        BZvkl = numpy.zeros([nk,3], float)
+        BZvkl[:,:] = None
+        vklir = numpy.zeros([3], float)
+        vklir[:] = None
+        #array which maps the new vkl to the symmetrically equivalent interface self.vkl
+        iknr = numpy.zeros([nk], int)
+        v = numpy.zeros([3], float)
+        nk_ = 0
+        ik = 0
+        vklIBZ = [self.v3frac(vkl[ik,:],epslat) for ik in range(n_k)]
+        vklIBZ = numpy.array(vklIBZ)
+        #print(vklIBZ)
+        #st = time.time()
+        #loop over the number of grid points for each reciprocal lattice
+        for i2 in range(ngrid[2]):
+          t2=float(i2)/float(ngrid[2])
+          for i1 in range(ngrid[1]):
+            t1=float(i1)/float(ngrid[1])
+            for i0 in range(ngrid[0]):
+              t0=float(i0)/float(ngrid[0])
+              #br = None
+              #calculate Brillouin zone lattice vector
+              v = t0*b[0,:]+t1*b[1,:]+t2*b[2,:]+grid3d[0,:]
+              BZvkl[ik,:] = v.copy()
+              ik += 1
+
+        #check if generated points are symmetrically equivalent to interfaced vkl
+        #Note that this loop is the bottle neck for this routine hence the 
+        #parallelisation.
+        ikarray = numpy.array(range(nk))
+        for ik in mpi.slice_array(ikarray):
+              #apply translation to reduce back to first Brillouin zone
+              v = self.v3frac(BZvkl[ik,:].copy(),epslat)
+              br = None
+
+              if v.round(tol).tolist() in vklIBZ.copy().round(tol).tolist():
+                #Find index of v in self.vkl
+                ikk = vkl.copy().round(tol).tolist().index(v.round(tol).tolist())
+                iknr[ik] = ikk
+                #ikir = numpy.append(ikir,ikk)
+                #check if v is a irreducible vector and tally these vectors
+                if v.round(tol).tolist() not in vklir.round(tol).tolist():
+                  nk_+=1
+                  vklir = numpy.vstack((vklir,v))
+                continue
+              #if v is not in interface set, see if it's symmetrically equivalent to
+              #a vector in self.vkl
+              for isym in range(n_symm):
+                if numpy.allclose(symlat[isym][:,:],numpy.eye(3)):
+                    continue
+                v_symm=numpy.matmul(symlat[isym][:,:].transpose(),v)
+                v_symm=self.v3frac(v_symm,epslat)
+                if v_symm.round(tol).tolist() in vklIBZ.copy().round(tol).tolist():
+                   ikk = vkl.copy().round(tol).tolist().index(v_symm.round(tol).tolist())
+                   #ikir = numpy.append(ikir,ikk)
+                   iknr[ik] = ikk
+                   br = 1
+                   break
+              if br == 1: continue
+              #if v is not symmetrically equivalent, then wrong input mesh.
+              mpi.report('No symmetrically equavilent vector in interface vkl set')
+              assert 0, "input grid does not generate interfaced reciprocal vectors"
+        #collect required variables and arrays (initialised to zero) from all threads.
+        nk_ = mpi.all_reduce(mpi.world, nk_, lambda x, y: x + y)
+        iknr = mpi.all_reduce(mpi.world, iknr, lambda x, y: x + y)
+
+        #check that all the vectors from the interface are in this list of vectors
+        if(nk_!=n_k):
+          mpi.report('Incorrect number of irreducible vectors with respect to self.vkl ')
+          mpi.report('%s!=%s'%(nk_,n_k))
+          assert 0, "input grid does not generate interfaced reciprocal vectors"
+        #et = time.time()
+        #mpi.report(et-st,nk,nk_)
+        #assert 0, ""
+        return BZvkl, iknr, nk
+    
+    def bzfoldout(self,n_k,vkl,n_symm,symlat):
+        import triqs.utility.mpi as mpi
+        epslat=1E-6
+        tol=int(numpy.log10(1/epslat))
+        #new temporary arrays for expanding irreducible Brillouin zone
+        iknr = numpy.arange(n_k)
+        BZvkl = vkl.copy()
+        vkl2 = numpy.zeros([n_symm,n_k,3], float)
+        iknr2 = numpy.zeros([n_symm,n_k], int)
+        vkl2[0,:,:] = vkl[:,:].copy()
+        iknr2[0,:] = iknr[:].copy()
+        #expand irreducible Brillouin zone
+        ikarray = numpy.array(range(n_k))
+        for ik in mpi.slice_array(ikarray):
+          for isym in range(n_symm):
+            #find point in BZ by symmetry operation
+            v=numpy.matmul(symlat[isym][:,:].transpose(),vkl[ik,:])
+            #shift back in to range [0,1) - Elk specific
+            #v[:]=self.v3frac(v,epslat)
+            #alter temporary arrays
+            vkl2[isym,ik,:] = v[:]
+            iknr2[isym,ik] = ik
+        # Collect data from mpi (adding to elements with zeros):
+        vkl2 = mpi.all_reduce(mpi.world, vkl2, lambda x, y: x + y)
+        iknr2 = mpi.all_reduce(mpi.world, iknr2, lambda x, y: x + y)
+        mpi.barrier()
+        #flatten arrays
+        BZvkl = vkl2.reshape(n_k*n_symm,3)
+        iknr = iknr2.reshape(n_k*n_symm)
+        #remove duplicates with eplats tolerance
+        [BZvkl,ind]=numpy.unique(BZvkl.round(tol),return_index=True,axis=0)
+        iknr=iknr[ind]
+        #new number of k-points
+        nk=BZvkl.shape[0]
+        #sort the indices for output in decending order
+        iksrt=numpy.lexsort(([BZvkl[:,i] for i in range(0,BZvkl.shape[1], 1)]))
+        #rearrange the vkc and iknr arrays
+        BZvkl=BZvkl[iksrt]
+        iknr=iknr[iksrt]
+        #return new set of lattice vectors, number of vectors and index array which
+        #maps to original irreducible vector set.
+        return BZvkl, iknr, nk        
 

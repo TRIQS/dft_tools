@@ -3,7 +3,7 @@
 Interface with Elk
 =====================
 
-This is the first iteration of the Elk-TRIQS interface, so certain inputs may change in later updates. The Elk part of the interface is not currently in the main distribution, but it can be found `here <https://github.com/AlynJ/Elk_interface-TRIQS>`_.
+This is the first iteration of the Elk-TRIQS interface, so certain inputs may change in later updates. The Elk part of the interface is not currently in the main distribution, but it can be found `here <https://github.com/UoB-Compton-scattering-group/elk-8.4.21-TRIQS>`_.
 
 We assume that the user has obtained a self-consistent solution of the
 Kohn-Sham equations with Elk (a full tutorial can be found here :ref:`Elk SVO tutorial <SrVO3_elk>`). Also, the user needs to be familiar with the main in/output files of Elk, and how to run
@@ -113,36 +113,16 @@ The band structure information is converted into TRIQS by using::
 
   Converter.convert_bands_input()
 
-Spectral function from Elk inputs
----------------------------------
 
-Elk does not calculate the theta projectors for partial DOS calculations. Instead, Elk outputs the band characters into the file BC.OUT when using the elk.in task::
-
-  task 
-  803 
-
-The contents of BC.OUT need to be converted into the HDF5 file by using the Elk Converter module::
-
-  from triqs_dft_tools.converters.elk import *
-  Converter = ElkConverter(filename=filename, repacking=True)
-  Converter.dft_band_characters()
-
-Once these have been saved to the HDF5 file (called "filename" here), the spectral function can be calculated with::
-
-  SK.elk_dos(broadening=0.0, with_Sigma=True, with_dc=True, pdos=False, nk=None)
-
-This outputs the total spectral function and the partial spectral function if enabled. Most of the user inputs are similar to the "SK.dos_parproj_basis()" module in :ref:`analysis`. The "pdos" flag when "True" enables the partial dos of each lm value to be calculated. It should be noted that these band characters are in Elk's irreducible lm basis and as such, the user has to check the irreducible representation used in Elk. This information can be found in the file ELMIREP.OUT after running task 10 (the DOS calculating task). The "nk" flag enables the calculation of the occupied spectral funciton. Here, nk needs to be the occupation density matrix (calculated from integrating the Green's function on the Matsubara axis) in the Bloch basis. This input needs to be in the same format as the occupation density matrix "deltaN" calculated in the sumk_DFT.calc_density_correction(dm_type='elk') module.
-
-
-Spectral function Contour Plots (Fermi Surfaces) from Elk inputs
+Spectral function Energy Contour Plots (Fermi Surfaces) from Elk inputs
 -----------------------------------------------------------------
 
-Here, we will discuss how to plot the Fermi surface contour or any other non-zero omega spectral function contour plot. This is currently tailored for the Elk inputs. From this point, we will refer to these contours as Fermi surfaces. The energy eigenvalues, projectors and so on required for the Fermi surface plot needs to be outputed from Elk. This is done by using::
+Here, we will discuss how to plot the Fermi surface contour or any other non-zero omega spectral function contour plot. The energy eigenvalues, projectors and so on required for the contour plot needs to be outputed from Elk. This is done by using::
 
   task 
   807 
   
-in Elk, but unlike the previous Elk interface tasks, the k-mesh grid needs to be specified. This is done like using the same inputs as the Fermi surface calculations in Elk. In Elk, The user needs to specify the "plot3d" input flag used to generate the k-mesh which the interface variables are evaluated on. A simple example is for SrVO3 where plot3d would look something like::
+in Elk, but unlike the previous Elk interface tasks, the k-mesh grid needs to be specified. This is done by using the same inputs as the Fermi surface calculations in Elk. In Elk, The user needs to specify the "plot3d" input flag used to generate the k-mesh which the interface variables are evaluated on. A simple example is for SrVO3 where plot3d would look something like::
   
   plot3d
   0.0 0.0 0.0 !1) origin
@@ -151,12 +131,12 @@ in Elk, but unlike the previous Elk interface tasks, the k-mesh grid needs to be
   0.0 0.0 1.0 !4) vertex 3
   32 32 32    !5) k-mesh grid size
 
-Lines 1) to 4) specifies the corners (in lattice coordinates) of the k-grid box and line 5) is the grid size in each direction (see the Elk manual). If the user desires to plot a 2D plane, then the user should define the plane using lines 2) and 3) [relative to line 1)] and define line 4) to be the cross-product of lines 2) and 3) [i.e. the vector in line 4) is normal to the 2D plane]. The outputs will be in terms of the k-dependent quantities in the irreducible Brillouin zone (IBZ). The files needed for the interface are:
+Lines 1) to 4) specifies the corners (in lattice coordinates) of the k-grid box and line 5) is the grid size in each direction (see the Elk manual). If the user desires to plot a 2D plane, then the user should define the plane using lines 2) and 3) [relative to line 1)] and define line 4) to be the cross-product of lines 2) and 3) [i.e. the vector in line 4) is normal to the 2D plane]. The outputs will be in terms of the k-dependent quantities in the irreducible Brillouin zone (IBZ). The files needed for this converter routine are:
 
-#. EIGVAL_FS.OUT - same as EIGVAL.OUT but the output is of the Fermi surface calculation.
-#. KPOINT_FS.OUT - same as KPOINT.OUT but the output is of the Fermi surface calculation.   
-#. PROJ_FS.OUT - same as PROJ.OUT but the output is of the Fermi surface calculation.   
-#. WANPROJ_L**_S**_A****_FS.OUT - same as WANPROJ_L**_S**_A****.OUT but the output is of the Fermi surface calculation.   
+#. EIGVAL_FS.OUT - same as EIGVAL.OUT but with the corresponding plot3d user defined k-mesh instead.
+#. KPOINT_FS.OUT - same as KPOINT.OUT but with the corresponding plot3d user defined k-mesh instead.
+#. PROJ_FS.OUT - same as PROJ.OUT but with the corresponding plot3d user defined k-mesh instead.   
+#. WANPROJ_L**_S**_A****_FS.OUT - same as WANPROJ_L**_S**_A****.OUT but with the corresponding plot3d user defined k-mesh instead.   
 #. EFERMI.OUT - contains the Fermi energy.
 #. SYMCRYS.OUT - has the crystal symmetries used for symmetries observables.
 #. LATTICE.OUT - has lattice-Cartesian basis transformation matrices.
@@ -167,26 +147,17 @@ These outputs are converted to the HDF5 file by::
 
   from triqs_dft_tools.converters.elk import *
   Converter = ElkConverter(filename=filename, repacking=True)
-  Converter.convert_fs_input()
+  Converter.convert_contours_input(kgrid,ngrid)
 
-The spectral function for the Fermi surface plots are calculated with::
-
-  SK.fs_plot(broadening=0.0, mesh=None, FS=True, plane=True, sym=True, orthvec=None, with_Sigma=True, with_dc=True)
-
-The new flags specify the following: 
-
-#. "FS" - determines whether the output will be the Fermi surface and uses the closest omega value to 0.0 in the mesh.  
-#. "plane" - required to specify whether the Elk input parameters were generated on a k-mesh plane.
-#. "sym" - needed if the IBZ will be folded out by using symmetry operations.
-#. "orthvec" - (numpy array of length 3) needs to be specified if using "plane" as this input is the orthonormal vector to the 2D plane required for the folding out process.
-
-To give the user a range of output capabilities, This routine can be used in the following ways:
-
-#. If using "with_Sigma", the mesh will be the same as the self-energy. However, by setting FS=False, the user can input a mesh option if they desire the "Fermi surface" plots for each omega value (commensurate with the self-energy mesh) within the input range.
-
-#. If the user is generating the DFT Spectral function plot (i.e. with_Sigma and with_dc both set to False), a mesh needs to be specified if FS=False. This function will output the spectral functions for the input mesh. Otherwise if FS is True, this would return the spectral function at omega=0.0.
-
-The output files will have the form of "Akw_FS_X.dat" (X being either up, down or ud) if FS=True or "Akw_X_omega_Y.dat" (Y being the omega mesh index) otherwise. The latter file will have the omega values within the file (the fourth column). The first three columns of both output file types specifies the cartesian lattice vector (kx, ky, kz) and the last column is the spectral function values.
+The kgrid and ngrid are user-defined numpy array inputs containing the plot3d inputs described above. 
+These inputs are needed to generate the reciprocal lattice coordinates for the output files. 
+The default for both of these variables is None, which in this case the converter automatically generates the 
+full Brilluoin zone by applying all of the symmetry operators to the read IBZ coordinates. However,
+if the plot3d input is a k-mesh not centered around the origin and/or a k-mesh which only requires
+a subset of the symmetry operators (say a 2D k-mesh) then the plot3d input needs to be an input to 
+the converter. Here, kgrid would be a double numpy array of size (4,3) specifying the k-mesh corner, 
+i.e, which contains lines 1) to 4) of the plot3d input described. The ngrid is an integer numpy 
+array of size (3) containing the k-mesh grid size - line 5) in plot3d input above.
 
 
 DFT+DMFT wavefunction dependent quantities
