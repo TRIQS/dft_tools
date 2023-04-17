@@ -551,7 +551,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         #check variables are in correct format
           if ngrid.size != 3:
             assert 0, "The input numpy ngrid is not the required size of 3!"
-          elif ngrid.dtype != numpy.int_:
+          elif ngrid.dtype != int:
             assert 0, "The input numpy ngrid is not an array of integers."
           elif kgrid.shape != (4,3):
             assert 0, "The input numpy kgrid is not the required size of (4x3)!"
@@ -594,7 +594,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         [en,occ,nstsv]=read_Elk.read_eig(self,filext=filext)
 
         #read projectors
-        proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), nstsv], numpy.complex_)
+        proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), nstsv], complex)
         mpi.report("Reading projector(s)")
         for ish in range(n_corr_shells):
           [n_orbitals,band_window,rep,proj_mat]=read_Elk.read_projector(self,corr_shells,n_spin_blocs,ish,proj_mat,ind,T,basis,filext)
@@ -682,7 +682,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
 #        #get the sort entry which is just the species index for Elk
 #        [ns, na, atpos]=read_Elk.read_geometry(self)
 #        isrt=0
-#        sort=numpy.zeros([self.n_atoms], numpy.integer)
+#        sort=numpy.zeros([self.n_atoms],int)
 #        #arrange sort(species) order
 #        for i in range(ns):
 #          for ia in range(na[i]):
@@ -706,7 +706,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
 
 
 #        # Initialise P, here a double list of matrices:
-#        band_dens_muffin = numpy.zeros([self.n_k, n_spin_blocs, n_shells, so*(2*lmax+1), numpy.max(self.n_orbitals)], numpy.float_)
+#        band_dens_muffin = numpy.zeros([self.n_k, n_spin_blocs, n_shells, so*(2*lmax+1), numpy.max(self.n_orbitals)], float)
 #        for ik in range(self.n_k):
 #          for isp in range(n_spin_blocs):
 #            ish=0
