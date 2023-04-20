@@ -43,6 +43,12 @@ from .plotools import generate_plo, output_as_text
 import logging
 
 class PloFormatter(logging.Formatter):
+    """
+    custom event logger for all output, warnings and debug info
+    """
+    def __init__(self, default):
+        self._default_formatter = default
+
     def format(self, record):
 		# Save the original format
         _style = self._style
