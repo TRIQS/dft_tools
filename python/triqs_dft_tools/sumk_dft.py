@@ -117,7 +117,7 @@ class SumkDFT(object):
                                                len(self.mesh))
             elif isinstance(mesh, MeshReFreq):
                 self.mesh = mesh
-                self.mesh_values = np.linspace(self.mesh.omega_min, self.mesh.omega_max, len(self.mesh))
+                self.mesh_values = np.linspace(self.mesh.w_min, self.mesh.w_max, len(self.mesh))
             else:
                 raise ValueError('mesh must be a triqs mesh of type MeshImFreq or MeshReFreq')
 
@@ -564,7 +564,7 @@ class SumkDFT(object):
                 if isinstance(mesh, MeshImFreq):
                     mesh_values = np.linspace(mesh(mesh.first_index()), mesh(mesh.last_index()), len(mesh))
                 else:
-                    mesh_values = np.linspace(mesh.omega_min, mesh.omega_max, len(mesh))
+                    mesh_values = np.linspace(mesh.w_min, mesh.w_max, len(mesh))
             else:
                 mesh = self.mesh
                 mesh_values = self.mesh_values
@@ -574,7 +574,7 @@ class SumkDFT(object):
             if isinstance(mesh, MeshImFreq):
                 mesh_values = np.linspace(mesh(mesh.first_index()), mesh(mesh.last_index()), len(mesh))
             else:
-                mesh_values = np.linspace(mesh.omega_min, mesh.omega_max, len(mesh))
+                mesh_values = np.linspace(mesh.w_min, mesh.w_max, len(mesh))
         else:
             mesh = self.mesh
             mesh_values = self.mesh_values
