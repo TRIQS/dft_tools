@@ -76,6 +76,7 @@ class ProjectorGroup:
 
         else:
             ib_win, ib_min, ib_max = self.select_bands(eigvals)
+
         self.ib_win = ib_win
         self.ib_min = ib_min
         self.ib_max = ib_max

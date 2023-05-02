@@ -37,9 +37,11 @@ r"""
       - EIGENVAL
       - DOSCAR
 """
+import logging
 import numpy as np
 import re
-#import plocar_io.c_plocar_io as c_plocar_io
+
+log = logging.getLogger('plovasp.vaspio')
 
 def read_lines(filename):
     r"""
@@ -83,12 +85,13 @@ class VaspData:
             except (IOError, StopIteration):
                 self.eigenval.eigs = None
                 self.eigenval.ferw = None
-                print("!!! WARNING !!!: Error reading from EIGENVAL, trying LOCPROJ")
+                log.warning("Error reading from EIGENVAL, trying LOCPROJ...")
+
             try:
                 self.doscar.from_file(vasp_dir)
             except (IOError, StopIteration):
                 if efermi_required:
-                    print("!!! WARNING !!!: Error reading from Efermi from DOSCAR, trying LOCPROJ")
+                    log.warning("Error reading Efermi from DOSCAR, trying LOCPROJ...")
                     try:
                         self.plocar.efermi
                         self.doscar.efermi = self.plocar.efermi
@@ -96,7 +99,7 @@ class VaspData:
                         raise Exception("Efermi cannot be read from DOSCAR or LOCPROJ")
                 else:
 # TODO: This a hack. Find out a way to determine ncdij without DOSCAR
-                    print("!!! WARNING !!!: Error reading from DOSCAR, taking Efermi from config")
+                    log.warning("Error reading Efermi from DOSCAR, taking from config")
                     self.doscar.ncdij = self.plocar.nspin
 
 ################################################################################
@@ -168,14 +171,14 @@ class Plocar:
             
             # VASP.6.
             self.nspin = self.ncdij if self.ncdij < 4 else 1
-            print("ISPIN is {}".format(self.nspin))            
+            log.debug("ISPIN is {}".format(self.nspin))
             
             self.nspin_band = 2 if self.ncdij == 2 else 1
 
             try:
                 self.efermi = float(sline[4])
             except:
-                print("!!! WARNING !!!: Error reading E-Fermi from LOCPROJ, trying DOSCAR")
+                log.warning("Error reading Efermi from LOCPROJ, trying DOSCAR...")
 
             plo = np.zeros((nproj, self.nspin, nk, self.nband), dtype=complex)
             proj_params = [{} for i in range(nproj)]
@@ -189,7 +192,8 @@ class Plocar:
                 self.ncdij = 1
             else:
                 self.nc_flag = 0
-            print("NC FLAG : {}".format(self.nc_flag))
+
+            log.debug("NC FLAG : {}".format(self.nc_flag))
 
 # First read the header block with orbital labels
             line = self.search_for(f, "^ *ISITE")
