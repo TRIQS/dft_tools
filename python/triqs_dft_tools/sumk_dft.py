@@ -756,11 +756,14 @@ class SumkDFT(object):
         if mu is None:
             mu = self.chemical_potential
 
-        if with_Sigma:
+        if with_Sigma and hasattr(self, "Sigma_imp"):
             mesh = self.Sigma_imp[0].mesh
             if mesh != self.mesh:
                 warn('self.mesh and self.Sigma_imp[0].mesh are differen! Using mesh from Sigma')
-
+        elif with_Sigma and not hasattr(self, "Sigma_imp"):
+            mpi.report('Warning: No Sigma set but parameter with_Sigma=True, calculating Gloc without Sigma.')
+            with_Sigma = False
+            mesh = self.mesh
         else:
             mesh = self.mesh
 
