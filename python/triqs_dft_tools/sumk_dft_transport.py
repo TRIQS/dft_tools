@@ -674,8 +674,7 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
                                                                                vel_R[v_i, v_i, dir_to_int[direction[1]]]), A_kw[isp][A_i, A_i, iw]).trace().real * sum_k.bz_weights[ik])
 
     for direction in directions:
-        Gamma_w[direction] = (mpi.all_reduce(mpi.world, Gamma_w[direction],
-                              lambda x, y: x + y) / sum_k.cell_vol / sum_k.n_symmetries)
+        Gamma_w[direction] = (mpi.all_reduce(Gamma_w[direction]) / sum_k.cell_vol / sum_k.n_symmetries)
 
     return Gamma_w, omega, temp_Om_mesh
 
@@ -778,7 +777,7 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
     from scipy.integrate import simps, quad
 
     if not (mpi.is_master_node()):
-        return
+        return None
 
     if (Om_mesh[iq] == 0.0 or n == 0.0):
         A = 0.0
@@ -854,7 +853,7 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
     mpi.report('Computing optical conductivity and kinetic coefficients...')
 
     if not (mpi.is_master_node()):
-        return
+        return None, None, None
 
     n_q = Gamma_w[directions[0]].shape[0]
 

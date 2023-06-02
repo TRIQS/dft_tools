@@ -36,7 +36,7 @@ Converter = Wien2kConverter(filename='SrVO3', repacking=True)
 Converter.convert_dft_input()
 Converter.convert_transport_input()
 
-with HDFArchive('SrVO3_Sigma_transport.h5', 'a') as ar:
+with HDFArchive('SrVO3_Sigma_transport.h5', 'r') as ar:
     Sigma = ar['dmft_transp_input']['Sigma_w']
     SK = SumkDFTTools(hdf_file='SrVO3.ref.h5', mesh=Sigma.mesh, use_dft_blocks=True)
     SK.set_Sigma([Sigma])
@@ -47,14 +47,14 @@ SK = init_spectroscopy(SK, code='wien2k')
 Gamma_w, omega, Om_mesh = transport_distribution(SK, directions=['xx'], broadening=0.0, energy_window=[-0.3,0.3],
                                                  Om_mesh=[0.00, 0.02], beta=beta, with_Sigma=True, code='wien2k')
 
-#SK.save(['Gamma_w','Om_meshr','omega','directions'])
-#SK.load(['Gamma_w','Om_meshr','omega','directions'])
+# SK.save(['Gamma_w','Om_meshr','omega','directions'])
+# SK.load(['Gamma_w','Om_meshr','omega','directions'])
 optic_cond, seebeck, kappa = conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SK.SP, ['xx'], beta=beta)
 output_dict = {'seebeck': seebeck, 'optic_cond': optic_cond, 'kappa': kappa}
-write_output_to_hdf(SK, output_dict, 'transp_output')
 
 # comparison of the output transport data
 if mpi.is_master_node():
+    write_output_to_hdf(SK, output_dict, 'transp_output')
     out = HDFArchive('SrVO3.ref.h5','r')
     ref = HDFArchive('srvo3_transp.ref.h5', 'r')
     h5diff.compare('', out['transp_output'], ref['transp_output'], 0, 1e-8)

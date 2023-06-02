@@ -137,11 +137,9 @@ class SumkDFTTools(SumkDFT):
 
         # Collect data from mpi:
         for bname in DOS:
-            DOS[bname] = mpi.all_reduce(
-                mpi.world, DOS[bname], lambda x, y: x + y)
+            DOS[bname] = mpi.all_reduce(DOS[bname])
         for icrsh in range(self.n_corr_shells):
-            G_loc[icrsh] << mpi.all_reduce(
-                mpi.world, G_loc[icrsh], lambda x, y: x + y)
+            G_loc[icrsh] << mpi.all_reduce(G_loc[icrsh])
         mpi.barrier()
 
         # Symmetrize and rotate to local coord. system if needed:
@@ -267,10 +265,8 @@ class SumkDFTTools(SumkDFT):
                 G_loc_all[bname] << self.downfold(ik, 0, bname, gf, G_loc_all[bname], shells='csc')
         # Collect data from mpi:
         for bname in DOS:
-            DOS[bname] = mpi.all_reduce(
-                mpi.world, DOS[bname], lambda x, y: x + y)
-            G_loc_all[bname] << mpi.all_reduce(
-                mpi.world, G_loc_all[bname], lambda x, y: x + y)
+            DOS[bname] = mpi.all_reduce(DOS[bname])
+            G_loc_all[bname] << mpi.all_reduce(G_loc_all[bname])
         mpi.barrier()
 
         # Symmetrize and rotate to local coord. system if needed:
@@ -405,11 +401,9 @@ class SumkDFTTools(SumkDFT):
 
         # Collect data from mpi:
         for bname in DOS:
-            DOS[bname] = mpi.all_reduce(
-                mpi.world, DOS[bname], lambda x, y: x + y)
+            DOS[bname] = mpi.all_reduce(DOS[bname])
         for ish in range(self.n_shells):
-            G_loc[ish] << mpi.all_reduce(
-                mpi.world, G_loc[ish], lambda x, y: x + y)
+            G_loc[ish] << mpi.all_reduce(G_loc[ish])
         mpi.barrier()
 
         # Symmetrize and rotate to local coord. system if needed:
@@ -562,14 +556,12 @@ class SumkDFTTools(SumkDFT):
         mpi.barrier()
         # Collect data from mpi:
         for bname in DOS:
-            DOS[bname] = mpi.all_reduce(
-                mpi.world, DOS[bname], lambda x, y: x + y)
+            DOS[bname] = mpi.all_reduce(DOS[bname])
         if (pdos):
             for bname in pDOS:
               for iatom in range(self.n_atoms):
                  for lm in range(self.maxlm):
-                   pDOS[bname][iatom,lm,:] = mpi.all_reduce(
-                      mpi.world, pDOS[bname][iatom,lm,:], lambda x, y: x + y)
+                   pDOS[bname][iatom,lm,:] = mpi.all_reduce(pDOS[bname][iatom,lm,:])
 
 
         # Write to files
@@ -731,7 +723,7 @@ class SumkDFTTools(SumkDFT):
 
         # Collect data from mpi:
         for sp in spn:
-          Akw[sp] = mpi.all_reduce(mpi.world, Akw[sp], lambda x, y: x + y)
+          Akw[sp] = mpi.all_reduce(Akw[sp])
         mpi.barrier()
 
         #fold out the IBZ k-points using the lattice vectors and symmetries
@@ -907,7 +899,7 @@ class SumkDFTTools(SumkDFT):
                         Akw[sp][ish, ik] = -G_loc[sp].data[numpy.where((mesh > om_minplot)&(mesh < om_maxplot)),ish,ish].imag/numpy.pi
         # Collect data from mpi
         for sp in spn:
-            Akw[sp] = mpi.all_reduce(mpi.world, Akw[sp], lambda x, y: x + y)
+            Akw[sp] = mpi.all_reduce( Akw[sp])
         mpi.barrier()
 
         if save_to_file and mpi.is_master_node():
@@ -1010,8 +1002,7 @@ class SumkDFTTools(SumkDFT):
 
         # Collect data from mpi:
         for ish in range(self.n_shells):
-            G_loc[ish] << mpi.all_reduce(
-                mpi.world, G_loc[ish], lambda x, y: x + y)
+            G_loc[ish] << mpi.all_reduce(G_loc[ish])
         mpi.barrier()
 
         # Symmetrize and rotate to local coord. system if needed:

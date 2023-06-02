@@ -787,8 +787,7 @@ class SumkDFT(object):
 
         # Collect data from mpi
         for icrsh in range(self.n_corr_shells):
-            G_loc[icrsh] << mpi.all_reduce(
-                mpi.world, G_loc[icrsh], lambda x, y: x + y)
+            G_loc[icrsh] << mpi.all_reduce(G_loc[icrsh])
         mpi.barrier()
 
         # G_loc[:] is now the sum over k projected to the local orbitals.
@@ -1530,8 +1529,7 @@ class SumkDFT(object):
         # get data from nodes:
         for icrsh in range(self.n_corr_shells):
             for sp in dens_mat[icrsh]:
-                dens_mat[icrsh][sp] = mpi.all_reduce(
-                    mpi.world, dens_mat[icrsh][sp], lambda x, y: x + y)
+                dens_mat[icrsh][sp] = mpi.all_reduce(dens_mat[icrsh][sp])
         mpi.barrier()
 
         if self.symm_op != 0:
@@ -1910,7 +1908,7 @@ class SumkDFT(object):
                 ik=ik, mu=mu, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening)
             dens += self.bz_weights[ik] * G_latt.total_density()
         # collect data from mpi:
-        dens = mpi.all_reduce(mpi.world, dens, lambda x, y: x + y)
+        dens = mpi.all_reduce(dens)
         mpi.barrier()
 
         if abs(dens.imag) > 1e-20:
@@ -2168,16 +2166,14 @@ class SumkDFT(object):
         # mpi reduce:
         for bname in deltaN:
             for ik in range(self.n_k):
-                deltaN[bname][ik] = mpi.all_reduce(
-                    mpi.world, deltaN[bname][ik], lambda x, y: x + y)
-            dens[bname] = mpi.all_reduce(
-                mpi.world, dens[bname], lambda x, y: x + y)
+                deltaN[bname][ik] = mpi.all_reduce(deltaN[bname][ik])
+            dens[bname] = mpi.all_reduce(dens[bname])
         self.deltaNOld = copy.copy(deltaN)
         mpi.barrier()
 
 
 
-        band_en_correction = mpi.all_reduce(mpi.world, band_en_correction, lambda x,y : x+y)
+        band_en_correction = mpi.all_reduce(band_en_correction)
 
         # now save to file:
         if dm_type == 'wien2k':
@@ -2335,7 +2331,7 @@ class SumkDFT(object):
         hop_slice = mpi.slice_array(hop)
         diag_hop_slice = mpi.slice_array(diag_hop)
         diag_hop_slice[:] = np.linalg.eigvalsh(hop_slice)
-        diag_hop = mpi.all_reduce(mpi.world, diag_hop, lambda x, y: x + y)
+        diag_hop = mpi.all_reduce(diag_hop)
         min_band_energy = diag_hop.min().real
         max_band_energy = diag_hop.max().real
         self.min_band_energy = min_band_energy
