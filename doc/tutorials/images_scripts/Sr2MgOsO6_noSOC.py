@@ -29,7 +29,7 @@ SK.block_structure.pick_gf_struct_solver([{'up_1': [0],'up_2': [0],'up_3': [0],'
 # Now we set up the U matrix, first in cubic Wien2k convention:
 U = 2.0
 J = 0.2
-U_mat = U_matrix(l=2,U_int=U,J_hund=J,basis='other', T=SK.T[0].conjugate())
+U_mat = U_matrix_slater(l=2,U_int=U,J_hund=J,basis='other', T=SK.T[0].conjugate())
 
 # Now we set up the Hamiltonian:
 h_sumk = h_int_slater(['up','down'], range(5), U_mat,  off_diag=True)

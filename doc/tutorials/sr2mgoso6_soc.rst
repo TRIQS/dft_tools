@@ -124,7 +124,7 @@ We now set up the interaction Hamiltonian. Since we want to rotate the interacti
 
     U = 2.0
     J = 0.2
-    U_sph = U_matrix(l=2, U_int=U, J_hund=J)
+    U_sph = U_matrix_slater(l=2, U_int=U, J_hund=J)
     U_sph = np.kron(np.reshape(np.eye(2),(1,2,1,2)),np.kron(np.reshape(np.eye(2),(2,1,2,1)),U_sph))  # inflating the matrix
     U_mat = transform_U_matrix(U_sph, SK.T[0].conjugate())
     

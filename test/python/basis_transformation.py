@@ -73,10 +73,10 @@ for dmi in dm:
 # Test convert_operator
 SK = SumkDFT(hdf_file = 'SrVO3.ref.h5', use_dft_blocks=True)
 BS = SK.block_structure
-from triqs.operators.util import h_int_slater, U_matrix, t2g_submatrix, transform_U_matrix
+from triqs.operators.util import h_int_slater, U_matrix_slater, t2g_submatrix, transform_U_matrix
 
 
-U3x3 = t2g_submatrix(U_matrix(2, U_int=2, J_hund=0.2, basis='spheric'))
+U3x3 = t2g_submatrix(U_matrix_slater(2, U_int=2, J_hund=0.2, basis='spheric'))
 
 BS.transformation = [{'up':np.eye(3), 'down': np.eye(3)}]
 H0 = h_int_slater(spin_names=['up','down'], n_orb=3, U_matrix=U3x3, off_diag=False)

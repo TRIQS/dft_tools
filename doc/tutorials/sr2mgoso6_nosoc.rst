@@ -128,7 +128,7 @@ We now set up the interaction Hamiltonian. Since we want to rotate the interacti
 
     U = 2.0
     J = 0.2
-    U_mat = U_matrix(l=2,U_int=U,J_hund=J,basis='other', T=SK.T[0].conjugate())
+    U_mat = U_matrix_slater(l=2,U_int=U,J_hund=J,basis='other', T=SK.T[0].conjugate())
 
 In the last line we use the Wien2k convention to write the U matrix in the cubic harmonics. Next, we want to set up a Hamiltonian and rotate it into the *solver* basis::
 

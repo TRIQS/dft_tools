@@ -26,7 +26,7 @@ dc_type = 1                      # DC type: 0 FLL, 1 Held, 2 AMF
 #J = 0.8
 #dc_type = 0                      # DC type: 0 FLL, 1 Held, 2 AMF
 ## Construct Slater U matrix
-#U_sph = U_matrix(l=2, U_int=U, J_hund=J)
+#U_sph = U_matrix_slater(l=2, U_int=U, J_hund=J)
 #U_cubic = transform_U_matrix(U_sph, spherical_to_cubic(l=2, convention='wien2k'))
 #Umat = t2g_submatrix(U_cubic, convention='wien2k')
 ## Construct Slater Hamiltonian
