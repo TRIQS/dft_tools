@@ -116,7 +116,7 @@ class SumkDFTTools(SumkDFT):
                 broadening=0.001
         else:
             assert 0, "ReFreqMesh input required for calculations without real frequency self-energy"
-        mesh_val = numpy.linspace(mesh.omega_min,mesh.omega_max,len(mesh))
+        mesh_val = numpy.linspace(mesh.w_min,mesh.w_max,len(mesh))
         n_om = len(mesh)
         om_minplot = mesh_val[0] - 0.001
         om_maxplot = mesh_val[-1] + 0.001
@@ -494,7 +494,7 @@ class SumkDFTTools(SumkDFT):
                 broadening=0.001
         else:
             assert 0, "ReFreqMesh input required for calculations without real frequency self-energy"
-        mesh_val = numpy.linspace(mesh.omega_min,mesh.omega_max,len(mesh))
+        mesh_val = numpy.linspace(mesh.w_min,mesh.w_max,len(mesh))
         n_om = len(mesh)
         om_minplot = mesh_val[0] - 0.001
         om_maxplot = mesh_val[-1] + 0.001
@@ -659,7 +659,7 @@ class SumkDFTTools(SumkDFT):
                 broadening=0.001
         else:
             assert 0, "ReFreqMesh input required for calculations without real frequency self-energy"
-        mesh_val = numpy.linspace(mesh.omega_min,mesh.omega_max,len(mesh))
+        mesh_val = numpy.linspace(mesh.w_min,mesh.w_max,len(mesh))
         n_om = len(mesh)
         om_minplot = mesh_val[0] - 0.001
         om_maxplot = mesh_val[-1] + 0.001
@@ -765,7 +765,7 @@ class SumkDFTTools(SumkDFT):
                        resolved into orbital contributions. Empty if proj_type = None
         """
 
-        mesh_val = numpy.linspace(mesh.omega_min,mesh.omega_max,len(mesh))
+        mesh_val = numpy.linspace(mesh.w_min,mesh.w_max,len(mesh))
         n_om = len(mesh)
         om_minplot = mesh_val[0] - 0.001
         om_maxplot = mesh_val[-1] + 0.001
