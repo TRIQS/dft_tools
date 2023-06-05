@@ -78,8 +78,7 @@ for ik in mpi.slice_array(ikarray):
         add_g_ik << SK.downfold(ik, 0, bname, G_latt_KS[bname], gf, shells='csc', ir=None)
         gf << gf + add_g_ik
 
-G_latt_orb << mpi.all_reduce(
-                mpi.world, G_latt_orb, lambda x, y: x + y)
+G_latt_orb << mpi.all_reduce(G_latt_orb)
 
 mpi.barrier()
 

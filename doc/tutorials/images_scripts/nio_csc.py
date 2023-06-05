@@ -58,7 +58,7 @@ def dmft_cycle():
     J = 1.0
 
 
-    U_sph = U_matrix(l=2, U_int=U, J_hund=J)
+    U_sph = U_matrix_slater(l=2, U_int=U, J_hund=J)
     U_cubic = transform_U_matrix(U_sph, spherical_to_cubic(l=2, convention=''))
     Umat, Upmat = reduce_4index_to_2index(U_cubic)
 

@@ -207,13 +207,11 @@ class SumkDFTTools(SumkDFT):
 
         # Collect data from mpi:
         for bname in DOS:
-            DOS[bname] = mpi.all_reduce(
-                mpi.world, DOS[bname], lambda x, y: x + y)
+            DOS[bname] = mpi.all_reduce(DOS[bname])
         # Collect data from mpi and put in projected arrays
         if(proj_type != None):
           for ish in range(n_shells):
-              G_loc[ish] << mpi.all_reduce(
-                  mpi.world, G_loc[ish], lambda x, y: x + y)
+              G_loc[ish] << mpi.all_reduce(G_loc[ish])
         # Symmetrize and rotate to local coord. system if needed:
           if((proj_type!='vasp') and (proj_type!='elk')):
             if self.symm_op != 0:
@@ -408,7 +406,7 @@ class SumkDFTTools(SumkDFT):
             occik[bname][ik][0,:,:] = gf.density().real
         # Collect data from mpi:
         for sp in spn:
-          occik[sp] = mpi.all_reduce(mpi.world, occik[sp], lambda x, y: x + y)
+          occik[sp] = mpi.all_reduce(occik[sp])
         mpi.barrier()
         #save to HDF5 file (if specified)
         if save_occ and mpi.is_master_node():
@@ -859,10 +857,10 @@ class SumkDFTTools(SumkDFT):
         # Collect data from mpi
         mpi.barrier()
         for sp in spn:
-          Akw[sp] = mpi.all_reduce(mpi.world, Akw[sp], lambda x, y: x + y)
+          Akw[sp] = mpi.all_reduce(Akw[sp])
           if (proj_type):
             for ish in range(n_shells):
-              pAkw_orb[ish][sp] = mpi.all_reduce(mpi.world, pAkw_orb[ish][sp], lambda x, y: x + y)
+              pAkw_orb[ish][sp] = mpi.all_reduce(pAkw_orb[ish][sp])
               pAkw[ish][sp] = pAkw_orb[ish][sp].trace(axis1=2, axis2=3)
         mpi.barrier()
 
@@ -931,8 +929,7 @@ class SumkDFTTools(SumkDFT):
 
         # Collect data from mpi:
         for ish in range(self.n_shells):
-            G_loc[ish] << mpi.all_reduce(
-                mpi.world, G_loc[ish], lambda x, y: x + y)
+            G_loc[ish] << mpi.all_reduce(G_loc[ish])
         mpi.barrier()
 
         # Symmetrize and rotate to local coord. system if needed:
