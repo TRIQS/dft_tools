@@ -15,7 +15,7 @@ jobs:
         include:
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12}
           - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15}
-          - {os: macos-12, cc: gcc-11, cxx: g++-11}
+          - {os: macos-12, cc: gcc-12, cxx: g++-12}
           - {os: macos-12, cc: /usr/local/opt/llvm/bin/clang, cxx: /usr/local/opt/llvm/bin/clang++}
 
     runs-on: ${{ matrix.os }}
@@ -63,7 +63,7 @@ jobs:
     - name: Install homebrew dependencies
       if: matrix.os == 'macos-12'
       run: |
-        brew install gcc@11 llvm boost fftw hdf5 open-mpi openblas
+        brew install gcc@12 llvm boost fftw hdf5 open-mpi openblas
         pip3 install mako numpy scipy mpi4py
         pip3 install -r requirements.txt
 
