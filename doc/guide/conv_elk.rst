@@ -115,7 +115,7 @@ The band structure information is converted into TRIQS by using::
 
 
 Spectral function Energy Contour Plots (Fermi Surfaces) from Elk inputs
------------------------------------------------------------------
+-----------------------------------------------------------------------
 
 Here, we will discuss how to plot the Fermi surface contour or any other non-zero omega spectral function contour plot. The energy eigenvalues, projectors and so on required for the contour plot needs to be outputed from Elk. This is done by using::
 
