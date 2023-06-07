@@ -95,6 +95,7 @@ html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 htmlhelp_basename = '@PROJECT_NAME@doc'
 
 # Plot options
+plot_include_source = True
 plot_html_show_source_link = False
 plot_html_show_formats = False
 
