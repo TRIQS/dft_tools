@@ -69,7 +69,7 @@ html_theme = 'sphinx_rtd_theme'
 # this loads the custom css file to change the page width
 html_style = 'css/custom.css'
 
-#html_favicon = '@CMAKE_CURRENT_SOURCE_DIR@/logos/favicon.ico'
+html_favicon = '@CMAKE_CURRENT_SOURCE_DIR@/_static/triqs_logo/triqs_favicon.ico'
 #html_logo = '@CMAKE_CURRENT_SOURCE_DIR@/logos/logo.png'
 
 # options for the the rtd theme
@@ -97,7 +97,12 @@ html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
 
 htmlhelp_basename = '@PROJECT_NAME@doc'
 
-intersphinx_mapping = {'python': ('https://docs.python.org/3.8', None), 'triqslibs': ('https://triqs.github.io/triqs/latest', None)}
+# Plot options
+plot_include_source = True
+plot_html_show_source_link = False
+plot_html_show_formats = False
+
+intersphinx_mapping = {'python': ('https://docs.python.org/3.11', None), 'triqslibs': ('https://triqs.github.io/triqs/latest', None)}
 
 # open links in new tab instead of same window
 from sphinx.writers.html import HTMLTranslator
