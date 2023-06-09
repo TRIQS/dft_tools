@@ -85,6 +85,9 @@ For plotting the density of states, you type::
 
 where a brief description of all of the inputs are given in :meth:`density_of_states <dft.sumk_dft_tools.SumkDFTTools.density_of_states>`, which a more in depth discussion of using this routine is given here.
 
+.. automethod:: triqs_dft_tools.sumk_dft_tools.SumkDFTTools.density_of_states
+  :noindex: 
+
 Input parameter breakdown:
   * `mu` (Optional, default is None): The `mu` input specifies the chemical potential to be used in the calculation. By default, this is automatically set to the chemical potential within the SK object.
   * `broadening` (Optional, default 0.01 eV). Traditionally, a small imaginary part is included for a non-interacting spectral function to avoid any numerical artifacts. The user can specify this imaginary part with the `broadening` input. The default value of `0.01 eV` if there is no `broadening` or `mesh` input.
