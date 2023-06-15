@@ -9,6 +9,7 @@ Packaged Versions of DFTTools
 =============================
 
 .. _ubuntu_debian:
+
 Ubuntu Debian packages
 ----------------------
 
@@ -17,6 +18,7 @@ We provide a Debian package for the Ubuntu LTS Versions 18.04 (bionic) and 20.04
         sudo apt-get install -y triqs_dft_tools
 
 .. _anaconda:
+
 Anaconda (experimental)
 -----------------------
 
@@ -27,6 +29,7 @@ We provide Linux and OSX packages for the `Anaconda <https://www.anaconda.com/>`
 See also `github.com/conda-forge/triqs_dft_tools-feedstock <https://github.com/conda-forge/triqs_dft_tools-feedstock/>`_.
 
 .. _docker:
+
 Docker
 ------
 

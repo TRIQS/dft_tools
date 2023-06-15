@@ -2,7 +2,7 @@ from triqs.gf import *
 from h5 import *
 from triqs_maxent import *
 
-filename = 'nio'
+filename = 'vasp'
 
 ar = HDFArchive(filename+'.h5','a')
 if 'iteration_count' in ar['DMFT_results']:

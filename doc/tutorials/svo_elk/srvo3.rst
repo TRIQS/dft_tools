@@ -1,6 +1,6 @@
 .. _SrVO3_elk:
 
-This example is almost identical to the :ref:`Wien2k-TRIQS SrVO3 example <SrVO3>`. On the example of SrVO3 we will discuss now how to set up a full working calculation using Elk, including the initialization of the :ref:`CTHYB solver <https://triqs.github.io/cthyb/latest>`_. Some additional parameter are introduced to make the calculation more efficient. This is a more advanced example, which is also suited for parallel execution. 
+This example is almost identical to the :ref:`Wien2k-TRIQS SrVO3 example <SrVO3>`. On the example of SrVO3 we will discuss now how to set up a full working calculation using Elk, including the initialization of the `CTHYB solver <https://triqs.github.io/cthyb/latest>`_. Some additional parameter are introduced to make the calculation more efficient. This is a more advanced example, which is also suited for parallel execution. 
 
 For the convenience of the user, we provide also a full python script (:download:`dft_dmft_cthyb_elk.py <dft_dmft_cthyb_elk.py>`). The user has to adapt it to their own needs. How to execute your script is described :ref:`here<runpy>`.
 
@@ -48,7 +48,7 @@ First, we load the necessary modules::
   import triqs.utility.mpi as mpi
 
 The last two lines load the modules for the construction of the
-:ref:`CTHYB solver <https://triqs.github.io/cthyb/latest/>`_.
+`CTHYB solver <https://triqs.github.io/cthyb/latest/>`_.
 
 Initializing SumkDFT
 --------------------
@@ -73,7 +73,7 @@ And next, we can initialize the :class:`SumkDFT <dft.sumk_dft.SumkDFT>` class::
 Initializing the solver
 -----------------------
 
-We also have to specify the :ref:`CTHYB solver <https://triqs.github.io/cthyb/latest>`_ related settings. We assume that the DMFT script for SrVO3 is executed on 16 cores. A sufficient set of parameters for a first guess is::
+We also have to specify the `CTHYB solver <https://triqs.github.io/cthyb/latest>`_ related settings. We assume that the DMFT script for SrVO3 is executed on 16 cores. A sufficient set of parameters for a first guess is::
 
   p = {}
   # solver
@@ -86,7 +86,7 @@ We also have to specify the :ref:`CTHYB solver <https://triqs.github.io/cthyb/la
   p["fit_min_n"] = 30
   p["fit_max_n"] = 60
 
-Here we use a tail fit to deal with numerical noise of higher Matsubara frequencies. For other options and more details on the solver parameters, we refer to the :ref:`CTHYB solver <https://triqs.github.io/cthyb/latest/reference/constr_parameters.html>`_ documentation. It is important to note that the solver parameters have to be adjusted for each material individually. A guide on how to set the tail fit parameters is given :ref:`below <tailfit>`.
+Here we use a tail fit to deal with numerical noise of higher Matsubara frequencies. For other options and more details on the solver parameters, we refer to the `CTHYB solver <https://triqs.github.io/cthyb/latest/reference/constr_parameters.html>`_ documentation. It is important to note that the solver parameters have to be adjusted for each material individually. A guide on how to set the tail fit parameters is given :ref:`below <tailfit>`.
 
 The next step is to initialize the :class:`solver class <triqs_cthyb.Solver>`. It consist of two parts:
 
@@ -218,21 +218,3 @@ Using the Kanamori Hamiltonian and the parameters above (but on 16 cores), your 
     :width: 700
     :align: center
 
-.. _tailfit:
-
-
-Tail fit parameters
--------------------
-
-A good way to identify suitable tail fit parameters is by "human inspection". Therefore disabled the tail fitting first::
-
-    p["perform_tail_fit"] = False
-
-and perform only one DMFT iteration. The resulting self energy can be tail fitted by hand::
-
-    Sigma_iw_fit = S.Sigma_iw.copy()
-    Sigma_iw_fit << tail_fit(S.Sigma_iw, fit_max_moment = 4, fit_min_n = 40, fit_max_n = 160)[0]
-
-Plot the self energy and adjust the tail fit parameters such that you obtain a proper fit. The :meth:`fit_tail function <triqs.gf.tools.tail_fit>` is part of the :ref:`TRIQS <triqslibs:welcome>` library.
-
-For a self energy which is going to zero for :math:`i\omega \rightarrow 0` our suggestion is to start the tail fit (:emphasis:`fit_min_n`) at a Matsubara frequency considerable above the minimum of the self energy and to stop (:emphasis:`fit_max_n`) before the noise fully takes over. If it is difficult to find a reasonable fit in this region you should increase your statistics (number of measurements). Keep in mind that :emphasis:`fit_min_n` and :emphasis:`fit_max_n` also depend on :math:`\beta`.

@@ -1,14 +1,14 @@
 System  = NiO
 
-ISMEAR = -5
+# for PLOT DOS
+# ISMEAR = -5
+# better convergence for small kpt grids
+ISMEAR = 2
+SIGMA = 0.05
 
 # converge wave functions
 EDIFF = 1.E-7
-PREC = accurate 
-
-# optimize performance
-NCORE = 4
-NBANDS = 24
+NELMIN = 35
 
 # the energy window to optimize projector channels (absolute)
 EMIN = -3
@@ -21,5 +21,5 @@ ISYM = -1
 
 # project to Ni d and O p states
 LORBIT = 14
-LOCPROJ = 1 : d : Pr 
-LOCPROJ = 2 : p : Pr
+LOCPROJ = "1 : d : Pr
+           2 : p : Pr"

@@ -130,7 +130,7 @@ follows:
    :math:`G_{mn}(i\omega)` and the self energy
    :math:`\Sigma_{mn}(i\omega)`. For the details of how to do
    this in practice, we refer to the documentation of one of the
-   Solver applications, for instance the :ref:`CTHYB solver <triqscthyb:welcome>`.
+   Solver applications, for instance the `CTHYB solver <https://triqs.github.io/cthyb/>`_.
 
 #. The self energy, written in orbital space, has to be corrected by
    the double counting correction, and upfolded into Bloch band space:

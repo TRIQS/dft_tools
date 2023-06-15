@@ -52,8 +52,8 @@ class readElkfiles:
         to_replace : dict of str:str
                      Dictionary defining old_char:new_char.
 
-        Yields
-        ------
+        Returns
+        -------
         string
             The next number in file.
 
@@ -87,8 +87,8 @@ class readElkfiles:
         to_replace : dict of str:str
                      Dictionary defining old_char:new_char.
 
-        Yields
-        ------
+        Returns
+        -------
         string
             The next number in file.
 

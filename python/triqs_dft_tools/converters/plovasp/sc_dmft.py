@@ -31,6 +31,7 @@ import time
 import signal
 import sys
 import triqs.utility.mpi as mpi
+from h5 import HDFArchive
 from . import converter
 from shutil import copyfile
 
@@ -136,17 +137,17 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
         mpi.barrier()
 
         if debug: print(bcolors.GREEN + "rank %s"%(mpi.rank) + bcolors.ENDC)
-        corr_energy, dft_dc = dmft_cycle()
+        corr_energy, sum_k = dmft_cycle()
         mpi.barrier()
 
         if mpi.is_master_node():
-            total_energy = dft_energy + corr_energy - dft_dc
+            total_energy = dft_energy + corr_energy - sum_k.dc_energ[0]
             print()
             print("="*80)
             print("  Total energy: ", total_energy)
             print("  DFT energy: ", dft_energy)
             print("  Corr. energy: ", corr_energy)
-            print("  DFT DC: ", dft_dc)
+            print("  DFT DC: ", sum_k.dc_energ[0])
             print("="*80)
             print()
         
@@ -163,6 +164,23 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
         if vasp_version == 'standard':
             copyfile(src='GAMMA',dst='GAMMA_recent')
         while iter_dft < n_iter_dft:
+            # insert recalculation of GAMMA here
+            # Recalculates the density correction
+            # Reads in new projectors and hopping and updates chemical potential
+            # rot_mat is not updated since it's more closely related to the local problem than DFT
+            # New fermi weights are directly read in calc_density_correction
+            if iter > 0 and not iter == n_iter and mpi.is_master_node():
+                with HDFArchive('vasp.h5', 'r') as archive:
+                    sum_k.proj_mat = archive['dft_input/proj_mat']
+                    sum_k.hopping = archive['dft_input/hopping']
+            sum_k.proj_mat = mpi.bcast(sum_k.proj_mat)
+            sum_k.hopping = mpi.bcast(sum_k.hopping)
+            sum_k.calc_mu(precision=0.001)
+
+            # Writes out GAMMA file
+            sum_k.calc_density_correction(dm_type='vasp')
+            
+            mpi.barrier()
             if mpi.is_master_node():
                 open('./vasp.lock', 'a').close()
             while is_vasp_lock_present():
@@ -182,13 +200,13 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
             f_stop.write("LABORT = .TRUE.\n")
             f_stop.close()
     if mpi.is_master_node():
-        total_energy = dft_energy + corr_energy - dft_dc
+        total_energy = dft_energy + corr_energy - sum_k.dc_energ[0]
         with open('TOTENERGY', 'w') as f:
             f.write("  Total energy: %s\n"%(total_energy))
             f.write("  DFT energy: %s\n"%(dft_energy))
             f.write("  Corr. energy: %s\n"%(corr_energy))
-            f.write("  DFT DC: %s\n"%(dft_dc))
-            f.write("  Energy correction: %s\n"%(corr_energy - dft_dc))
+            f.write("  DFT DC: %s\n"%(sum_k.dc_energ[0]))
+            f.write("  Energy correction: %s\n"%(corr_energy - sum_k.dc_energ[0]))
 
     mpi.report("***Done")
 
