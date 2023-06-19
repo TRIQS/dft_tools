@@ -152,7 +152,7 @@ These outputs are converted to the HDF5 file by::
 The kgrid and ngrid are user-defined numpy array inputs containing the plot3d inputs described above. 
 These inputs are needed to generate the reciprocal lattice coordinates for the output files. 
 The default for both of these variables is None, which in this case the converter automatically generates the 
-full Brilluoin zone by applying all of the symmetry operators to the read IBZ coordinates. However,
+full Brillouin zone by applying all of the symmetry operators to the read IBZ coordinates. However,
 if the plot3d input is a k-mesh not centered around the origin and/or a k-mesh which only requires
 a subset of the symmetry operators (say a 2D k-mesh) then the plot3d input needs to be an input to 
 the converter. Here, kgrid would be a double numpy array of size (4,3) specifying the k-mesh corner, 

@@ -83,7 +83,7 @@ For plotting the density of states, you type::
 
   SK.density_of_states(mu, broadening, mesh, with_Sigma, with_dc, proj_type, dosocc, save_to_file)
 
-where a brief description of all of the inputs are given in :meth:`density_of_states <dft.sumk_dft_tools.SumkDFTTools.density_of_states>`, which a more in depth discussion of using this routine is given here.
+where a description of all of the inputs are given in :meth:`density_of_states <dft.sumk_dft_tools.SumkDFTTools.density_of_states>`:
 
 .. automethod:: triqs_dft_tools.sumk_dft_tools.SumkDFTTools.density_of_states
   :noindex: 
@@ -92,7 +92,7 @@ where a brief description of all of the inputs are given in :meth:`density_of_st
     :width: 600
     :align: center
 
-The figure above shows the DFT SrVO\ :sub:`3`\  density of states generated from 2925 k-points in the irreducible Brillouin zone with the V t\ :sub:`2g`\  Wanner projectors generated within a correlated energy window of [-13.6, 13.6] eV. The `broadening` input has been set to the temperature (i.e., 1/Beta). The total, V t\ :sub:`2g`\  Wannier and occupied total density of states generated from the SK.density_of_states() routine are shown. Note that the noise in the density of states comes from the number of k-points used. This can be removed upon by either using more k-points or using a larger `broadening` value.
+The figure above shows the DFT SrVO\ :sub:`3`\  density of states generated from 2925 k-points in the irreducible Brillouin zone with the V t\ :sub:`2g`\  Wannier projectors generated within a correlated energy window of [-13.6, 13.6] eV. The `broadening` input has been set to the temperature (i.e., 1/Beta). The total, V t\ :sub:`2g`\  Wannier and occupied total density of states generated from the SK.density_of_states() routine are shown. Note that the noise in the density of states comes from the number of k-points used. This can be removed upon by either using more k-points or using a larger `broadening` value.
 
 
 Band resolved density matrices
@@ -123,7 +123,7 @@ This spectral function is calculated by typing::
     :width: 1000
     :align: center
 
-The figure above shows the DFT SrVO\ :sub:`3`\  spaghetti plot (generated using V t\ :sub:`2g`\  Wanner projectors generated within a correlated energy window of [-13.6, 13.6] eV). As before, the broadening input has been set to the temperature (i.e., 1/Beta). The left panel shows the total A(k, :math:`\omega`) whereas the right gives the Wannier A(k, :math:`\omega`), both generated from this SK.spaghettis().
+The figure above shows the DFT SrVO\ :sub:`3`\  spaghetti plot (generated using V t\ :sub:`2g`\  Wannier projectors generated within a correlated energy window of [-13.6, 13.6] eV). As before, the broadening input has been set to the temperature (i.e., 1/Beta). The left panel shows the total A(k, :math:`\omega`) whereas the right gives the Wannier A(k, :math:`\omega`), both generated from this SK.spaghettis().
 
 
 Energy contours of the k-resolved Spectral function
@@ -142,7 +142,7 @@ This routine calculates the k-resolved spectral function evaluated at the Fermi 
     :width: 1000
     :align: center
 
-The figure above shows the DFT SrVO\ :sub:`3`\  energy contour plots (again, generated using V t\ :sub:`2g`\  Wanner projectors generated within a correlated energy window of [-13.6, 13,6] eV and broadening of 1/Beta). Both panels have been generated on a k-mesh within the first Brilluoin zone on the k\ :sub:`z`\ = 0.0 plane centered at the :math:`\Gamma` point. Here, each panel generated using the outputs from this SK.spectral_contours_plot() routine shows the A(k, :math:`\omega`) evaluated at :math:`\omega` = -0.5 eV (left) and the Fermi level, :math:`\omega` = 0.0 eV, (right).
+The figure above shows the DFT SrVO\ :sub:`3`\  energy contour plots (again, generated using V t\ :sub:`2g`\  Wannier projectors generated within a correlated energy window of [-13.6, 13,6] eV and broadening of 1/Beta). Both panels have been generated on a k-mesh within the first Brillouin zone on the k\ :sub:`z`\ = 0.0 plane centered at the :math:`\Gamma` point. Here, each panel generated using the outputs from this SK.spectral_contours_plot() routine shows the A(k, :math:`\omega`) evaluated at :math:`\omega` = -0.5 eV (left) and the Fermi level, :math:`\omega` = 0.0 eV, (right).
 
 
 Partial charges
