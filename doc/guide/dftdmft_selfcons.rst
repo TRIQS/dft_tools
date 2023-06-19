@@ -20,8 +20,7 @@ Wien2k + dmftproj
   construct the Wannier functions. For this step, see either sections
   :ref:`conversion`, or the extensive :download:`dmftproj manual<images_scripts/TutorialDmftproj.pdf>`.
 
-In the following, we discuss how to use the
-:ref:`TRIQS <triqslibs:installation>` tools in combination with the Wien2k program.
+In the following, we discuss how to use `TRIQS <https://triqs.github.io>`_ in combination with the Wien2k program.
 
 We can use the DMFT script as introduced in section :ref:`singleshot`,
 with just a few simple modifications. First, in order to be compatible with the Wien2k standards,
@@ -136,8 +135,8 @@ removed. The shell script, in turn, waits for the VASP process and once
 the lock file is created it starts a DMFT iteration. The DMFT iteration
 must finish by generating a Kohn-Sham (KS) density matrix (file `GAMMA`)
 and removing the lock file. The VASP process then reads in `GAMMA`
-and proceeds with the next iteration. PLOVasp interface provides a shell-script :program:`vasp_dmft` (in the triqs bin directory):
-::
+and proceeds with the next iteration. PLOVasp interface provides a shell-script :program:`vasp_dmft` (in the triqs bin directory)::
+
   vasp_dmft [-n <number of cores>] -i <number of iterations>  -j <number of VASP iterations with fixed charge density> [-v <VASP version>] [-p <path to VASP directory>] [<dmft_script.py>]
 
        If the number of cores is not specified it is set to 1 by default.

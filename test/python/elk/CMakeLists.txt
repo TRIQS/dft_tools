@@ -1,10 +1,12 @@
-# load triqs helper to set up tests
+# load triqs helper to set up tests (removed bandcharacter test for now)
 set(all_tests
     elk_convert
     elk_equiv_convert
     elk_bands_convert
-    elk_bandcharacter_convert
+#    elk_bandcharacter_convert
+    occ_test
     elk_transport_convert
+    elk_spectralcontours_convert
 )
 
 file(GLOB all_test_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.py)

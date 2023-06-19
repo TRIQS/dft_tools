@@ -41,7 +41,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
                  dft_subgrp='dft_input', symmcorr_subgrp='dft_symmcorr_input',
                  bc_subgrp='dft_bandchar_input', symmpar_subgrp='dft_symmpar_input',
                  bands_subgrp='dft_bands_input', misc_subgrp='dft_misc_input',
-                 transp_subgrp='dft_transp_input',fs_subgrp='dft_fs_input',
+                 transp_subgrp='dft_transp_input',cont_subgrp='dft_contours_input',
                  repacking=False):
         """
         Initialise the class.
@@ -88,7 +88,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         self.bands_subgrp = bands_subgrp
         self.misc_subgrp = misc_subgrp
         self.transp_subgrp = transp_subgrp
-        self.fs_subgrp = fs_subgrp
+        self.cont_subgrp = cont_subgrp
         self.fortran_to_replace = {'D': 'E'}
 
         # Checks if h5 file is there and repacks it if wanted:
@@ -512,17 +512,63 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         del ar
         mpi.report('Converted the band data')
 
-    def convert_fs_input(self):
+    def convert_contours_input(self,kgrid=None,ngrid=None):
         """
-        Reads the appropriate files and stores the data for the FS_subgrp in the hdf5 archive.
+        Reads the appropriate files and stores the data for the cont_subgrp in the hdf5 archive.
 
+        Parameters:
+        kgrid : size (4,3) double numpy array, optional
+                 Numpy array defining the reciprocal lattice vertices used in the Elk Fermi
+                 surface calculation. Each row has the following meaning:
+                 grid3d[0,:] - origin lattice vertex
+                 grid3d[1,:] - b1 lattice vertex
+                 grid3d[2,:] - b2 lattice vertex
+                 grid3d[3,:] - b3 lattice vertex
+        ngrid : size (3) integer numpy array, optional
+                 Numpy array for the number of points along each (b1,b2,b3) lattice vertices
+
+        Note that these inputs relate to the plot3d input of Elk.
         """
-        # Read and write only on the master node
+
         if not (mpi.is_master_node()):
             return
         filext='_FS.OUT'
         dft_file='PROJ'+filext
         mpi.report("Reading %s" % dft_file)
+        #read the symmetries and k-points first
+        #read kpoints calculated in the Elk FS calculation
+        mpi.report("Reading KPOINT_FS.OUT")
+        [bz_weights,vkl]=read_Elk.read_kpoints(self,filext=filext)
+        n_k=vkl[:,0].size
+        #Need lattice symmetries to unfold the irreducible BZ
+        #Read symmetry files
+        mpi.report("Reading SYMCRYS.OUT")
+        [n_symm,spinmat,symlat,tr] = read_Elk.readsym(self)
+        #generate full vectors for Fermi surface plotting along with index mapping
+        #to irreducible vector set.
+        if (ngrid is not None and kgrid is not None):
+          mpi.report('Using User defined k-mesh')
+        #check variables are in correct format
+          if ngrid.size != 3:
+            assert 0, "The input numpy ngrid is not the required size of 3!"
+          elif ngrid.dtype != int:
+            assert 0, "The input numpy ngrid is not an array of integers."
+          elif kgrid.shape != (4,3):
+            assert 0, "The input numpy kgrid is not the required size of (4x3)!"
+        #generate full set of k-points with mapping to reduced set    
+          [BZ_vkl, BZ_iknr, BZ_n_k] = Elk_tools.plotpt3d(self,n_k,vkl,n_symm,symlat,kgrid,ngrid)
+        elif (ngrid is None and kgrid is None):
+          mpi.report('No grid dimension input for Fermi surface.')
+          mpi.report('Calculating k-points by folding out irreducible vectors instead if using symmetries.')
+          mpi.report('Warning! This may not equate to the same set of vectors used to generate the Fermi surface data.')
+          [BZ_vkl, BZ_iknr, BZ_n_k] = Elk_tools.bzfoldout(self,n_k,vkl,n_symm,symlat)
+        else:
+          assert 0, "Either input both ngrid and kgrid numpy arrays or neither."
+        #return all threads apart from master
+        if not (mpi.is_master_node()):
+            return
+
+        # Read and write the following only on the master thread
         #Energy conversion - Elk uses Hartrees
         energy_unit = 27.2113850560                        # Elk uses hartrees
         shells=[]
@@ -546,9 +592,6 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         #read in the eigenvalues used for the FS calculation
         mpi.report("Reading EIGVAL_FS.OUT and EFERMI.OUT")
         [en,occ,nstsv]=read_Elk.read_eig(self,filext=filext)
-        #read kpoints calculated in the Elk FS calculation
-        mpi.report("Reading KPOINT_FS.OUT")
-        [bz_weights,vkl]=read_Elk.read_kpoints(self,filext=filext)
 
         #read projectors
         proj_mat = numpy.zeros([n_k, n_spin_blocs, n_corr_shells, max([crsh['dim'] for crsh in corr_shells]), nstsv], complex)
@@ -556,19 +599,15 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         for ish in range(n_corr_shells):
           [n_orbitals,band_window,rep,proj_mat]=read_Elk.read_projector(self,corr_shells,n_spin_blocs,ish,proj_mat,ind,T,basis,filext)
 
-        #Need lattice symmetries to unfold the irreducible BZ
-        #Read symmetry files
-        mpi.report("Reading SYMCRYS.OUT")
-        [n_symm,spinmat,symlat,tr] = read_Elk.readsym(self)
         mpi.report("Reading LATTICE.OUT")
-        [amat,amatinv,bmat,bmatinv] = read_Elk.readlat(self)
+        [amat,amatinv,bmat,bmatinv,cell_vol] = read_Elk.readlat(self)
         #Put eigenvalues into array of eigenvalues for the correlated window
         #alter arrays for spin-orbit coupling
         if(SO==1):
           mat=[]
           su2=[]
           [shells,corr_shells,dim_reps,n_orbitals,proj_mat,T,mat]=self.update_so_quatities(n_shells,shells,n_corr_shells,corr_shells,n_inequiv_shells,dim_reps,n_k,n_symm,n_orbitals,proj_mat,T,su2,mat,sym=False)
-          #reduce n_spin_blocs
+        #reduce n_spin_blocs
           n_spin_blocs = SP + 1 - SO
 
         #put the energy eigenvalues arrays in TRIQS format
@@ -576,79 +615,133 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
 
         # Save it to the HDF:
         ar = HDFArchive(self.hdf_file, 'a')
-        if not (self.fs_subgrp in ar):
-            ar.create_group(self.fs_subgrp)
+        if not (self.cont_subgrp in ar):
+            ar.create_group(self.cont_subgrp)
         # The subgroup containing the data. If it does not exist, it is
         # created. If it exists, the data is overwritten!
-        things_to_save = ['n_k', 'n_orbitals', 'proj_mat','bmat',
-                          'hopping', 'vkl','symlat', 'n_symm']
+        things_to_save = ['n_k','n_orbitals', 'proj_mat','bmat',
+                           'BZ_n_k','BZ_iknr','BZ_vkl','hopping']
         for it in things_to_save:
-            ar[self.fs_subgrp][it] = locals()[it]
+            ar[self.cont_subgrp][it] = locals()[it]
         del ar
-        mpi.report('Converted the FS data')
+        mpi.report('Converted the Contours data')
 
-    def dft_band_characters(self):
-        """
-        Reads in the band characters generated in Elk to be used for
-        PDOS and band character band structure plots.
-        """
+# commented out for now - unsure using this produces DFT+DMFT PDOS.
+# The data from BC.OUT are the band-resolved diagonal muffin-tin DFT density matrix elements used in Elk to calculate PDOS 
+# (the PDOS is calculated from the Trace over the bands indices). Although this is equivalent to using using projectors in DFT and is likely valid for DFT+DMFT, 
+# the equivalence needs to be thoroughly checked for DFT+DMFT, but would require theta (or similar) projectors from Elk to do so. 
+# code left here just in case.
+        
+#    def dft_band_characters(self):
+#        """
+#        Reads in the band-resolved muffin-tin density matrix (band characters) generated in Elk 
+#        to be used for PDOS plots.
+#        """
 
-        if not (mpi.is_master_node()):
-            return
-        mpi.report("Reading BC.OUT")
+#        #determine file extension
+#        fileext='.OUT'
+#        #read number of k-points and eigenstates
+#        things_to_read = ['n_k','n_orbitals']
+#        ar = HDFArchive(self.hdf_file, 'r')
+#        for it in things_to_read:
+#            setattr(self, it, ar[self.dft_subgrp][it])
+#        del ar
 
-        # get needed data from hdf file
-        # from general info
-        ar = HDFArchive(self.hdf_file, 'a')
-        things_to_read = ['SP', 'SO','n_k','n_orbitals']
-        for it in things_to_read:
-           if not hasattr(self, it):
-              setattr(self, it, ar[self.dft_subgrp][it])
-        #from misc info
-        things_to_read = ['nstsv','band_window']
-        for it in things_to_read:
-           if not hasattr(self, it):
-              setattr(self, it, ar[self.misc_subgrp][it])
-        #from sym info
-        things_to_read = ['n_atoms']
-        symm_subgrp=self.symmcorr_subgrp
-        for it in things_to_read:
-           if not hasattr(self, it):
-              setattr(self, it, ar[symm_subgrp][it])
+#        if not (mpi.is_master_node()):
+#            return
+#        mpi.report("Reading BC%s"%(fileext))
 
-        #read in band characters
-        [bc,maxlm] = read_Elk.read_bc(self)
-        #set up SO bc array
-        if (self.SO):
-          tmp = numpy.zeros([2*maxlm,1,self.n_atoms,self.nstsv,self.n_k], float)
-          #put both spinors into the lm array indices.
-          tmp[0:maxlm,0,:,:,:]=bc[0:maxlm,0,:,:,:]
-          tmp[maxlm:2*maxlm,0,:,:,:]=bc[0:maxlm,1,:,:,:]
-          maxlm=2*maxlm
-          del bc
-          bc = tmp
-          del tmp
+#        # get needed data from hdf file
+#        # from general info
+#        ar = HDFArchive(self.hdf_file, 'a')
+#        things_to_read = ['SP', 'SO']
+#        for it in things_to_read:
+#           if not hasattr(self, it):
+#              setattr(self, it, ar[self.dft_subgrp][it])
+#        #from misc info
+#        things_to_read = ['nstsv','band_window']
+#        for it in things_to_read:
+#           if not hasattr(self, it):
+#              setattr(self, it, ar[self.misc_subgrp][it])
+#        #from sym info
+#        things_to_read = ['n_atoms','perm']
+#        symm_subgrp=self.symmcorr_subgrp
+#        for it in things_to_read:
+#           if not hasattr(self, it):
+#              setattr(self, it, ar[symm_subgrp][it])
+#        del ar
 
-        #reduce bc matrix to band states stored in hdf file
-        n_spin_blocs=self.SP+1-self.SO
-        tmp = numpy.zeros([maxlm,n_spin_blocs,self.n_atoms,numpy.max(self.n_orbitals),self.n_k], float)
-        for ik in range(self.n_k):
-          for isp in range(n_spin_blocs):
-            nst=self.n_orbitals[ik,isp]
-            ibot=self.band_window[isp][ik, 0]-1
-            itop=ibot+nst
-            tmp[:,isp,:,0:nst,ik]=bc[:,isp,:,ibot:itop,ik]
-        del bc
-        bc = tmp
-        del tmp
+#        #read in band characters
+#        [bc,maxlm] = read_Elk.read_bc(self,fileext)
+        #note that bc is the band resolved inner product of the Elk muffin-tin wave functions in 
+        #a diagonal lm basis (by default). These are used in Elk to calculate the DOS in a diagonal 
+        #irreducible lm basis. This band resolved density matrix in the lm basis will be used
+        #to project to spectral funtion to get the muffin-tin contributions. There will be an 
+        #interstitial contribution (as Elk uses an APW+lo basis) which is the difference between 
+        #the total and summed muffin-tin contributions. Also note that the bc array should be 
+        #symmetrised within Elk.
+        #general variables
+#        lmax = int(numpy.sqrt(maxlm)-1)
+#        n_spin_blocs = self.SP + 1 - self.SO
+#        so = self.SO + 1
+#        #get the sort entry which is just the species index for Elk
+#        [ns, na, atpos]=read_Elk.read_geometry(self)
+#        isrt=0
+#        sort=numpy.zeros([self.n_atoms],int)
+#        #arrange sort(species) order
+#        for i in range(ns):
+#          for ia in range(na[i]):
+#            sort[isrt]=i
+#            isrt+=1
+#        #updating n_shells to include all the atoms and l used in the Elk calculation.
+#        n_shells = self.n_atoms * (lmax+1)
+#        shells = []
+#        shell_entries = ['atom', 'sort', 'l', 'dim']
+#        for iat in range(self.n_atoms):
+#          for l in range(lmax+1):
+#            #sort is not known from Elk outputs  
+#            tmp = [iat+1, sort[iat]+1, l, so*(2*l+1)]
+#            shells.append({name: int(val) for name, val in zip(shell_entries, tmp)})
+#        del tmp, ns, na, atpos, isrt, shell_entries
+#        #overwrite n_shells and shells
+#        things_to_save = ['n_shells', 'shells']
+#        ar = HDFArchive(self.hdf_file, 'a')
+#        for it in things_to_save:
+#          ar[self.dft_subgrp][it] = locals()[it]
 
-        things_to_save = ['maxlm', 'bc']
-        if not (self.bc_subgrp in ar):
-            ar.create_group(self.bc_subgrp)
-        for it in things_to_save:
-            ar[self.bc_subgrp][it] = locals()[it]
-        del ar
-        mpi.report('Converted the band character data')
+
+#        # Initialise P, here a double list of matrices:
+#        band_dens_muffin = numpy.zeros([self.n_k, n_spin_blocs, n_shells, so*(2*lmax+1), numpy.max(self.n_orbitals)], float)
+#        for ik in range(self.n_k):
+#          for isp in range(n_spin_blocs):
+#            ish=0
+#            for iat in range(self.n_atoms):
+#              for l in range(lmax+1):
+#                #variables for putting subset of bc in proj_mat_all  
+#                lm_min=l**2
+#                lm_max=(l+1)**2
+#                nst=self.n_orbitals[ik,isp]
+#                ibot=self.band_window[isp][ik, 0]-1
+#                itop=ibot+nst
+#                dim=l*2+1
+                #check use of abs (negative values should be close to 0)
+#                band_dens_muffin[ik,isp,ish,0:dim,0:nst] = \
+#                      bc[lm_min:lm_max,isp,iat,ibot:itop,ik]
+#                if(self.SO==1):
+#                  band_dens_muffin[ik,isp,ish,dim:2*dim,0:nst] = \
+#                        bc[lm_min:lm_max,1,iat,ibot:itop,ik]
+#                ish+=1
+
+#        things_to_save = ['band_dens_muffin']
+#        # Save it all to the HDF:
+#        with HDFArchive(self.hdf_file, 'a') as ar:
+#            if not (self.bc_subgrp in ar):
+#                ar.create_group(self.bc_subgrp)
+#            # The subgroup containing the data. If it does not exist, it is
+#            # created. If it exists, the data is overwritten!
+#            things_to_save = ['band_dens_muffin']
+#            for it in things_to_save:
+#                ar[self.bc_subgrp][it] = locals()[it]
 
 
     def convert_transport_input(self):

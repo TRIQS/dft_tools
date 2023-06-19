@@ -28,7 +28,7 @@ for orb in orbs:
     for iO in orb:
         gf = gf + G_latt['up'][iO,iO]
     tm.set_G_iw(gf)
-    tm.omega =LinearOmegaMesh(w_min=-20, w_max=20, n_points=201)
+    tm.omega =LinearOmegaMesh(omega_min=-20, omega_max=20, n_points=201)
     tm.alpha_mesh = LogAlphaMesh(alpha_min=0.01, alpha_max=20000, n_points=60)
 
     tm.set_error(1.e-3)

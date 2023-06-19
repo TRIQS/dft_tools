@@ -226,7 +226,7 @@ self energy on the real axis::
 
 put it into SK class and then calculated the actual DOS::
 
-   SK.dos_parproj_basis(broadening=broadening)
+   SK.density_of_states(broadening, proj_type="wien2k")
 
 We may first increase the number of **k**-points in BZ to 10000 by executing the Wien2k
 program :program:`kgen` ::

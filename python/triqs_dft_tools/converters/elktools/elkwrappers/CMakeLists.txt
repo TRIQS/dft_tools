@@ -21,9 +21,6 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} DESTINATION
 ${TRIQS_PYTHON_LIB_DEST_ROOT}/${PROJECT_NAME}/converters/elktools FILES_MATCHING PATTERN "*.so"
 PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
 WORLD_READ WORLD_EXECUTE PATTERN "CMakeFiles" EXCLUDE)
-message(STATUS "foo include dir: ${CMAKE_CURRENT_BINARY_DIR}")
-message(STATUS "foo include dir: ${CMAKE_BINARY_DIR}")
-message(STATUS "foo include dir: ${TRIQS_PYTHON_LIB_DEST_ROOT}/${PROJECT_NAME}")
 
 # user warning
 message(STATUS "-----------------------------------------------------------------------------")

@@ -30,9 +30,9 @@ jobs:
         sudo apt-get install lsb-release wget software-properties-common &&
         wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 13 &&
         sudo apt-get install
-        clang-13
-        g++-10
-        gfortran-10
+        clang-15
+        g++-12
+        gfortran-12
         hdf5-tools
         libblas-dev
         libboost-dev
@@ -82,7 +82,7 @@ jobs:
       env:
         CC: ${{ matrix.cc }}
         CXX: ${{ matrix.cxx }}
-        FC: gfortran-10
+        FC: gfortran-12
         LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
         source $HOME/install/share/triqs/triqsvars.sh

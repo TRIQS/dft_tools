@@ -46,7 +46,7 @@ class SumkDFT(object):
     def __init__(self, hdf_file, h_field=0.0, mesh=None, beta=40, n_iw=1025, use_dft_blocks=False,
                  dft_data='dft_input', symmcorr_data='dft_symmcorr_input', parproj_data='dft_parproj_input',
                  symmpar_data='dft_symmpar_input', bands_data='dft_bands_input', transp_data='dft_transp_input',
-                 misc_data='dft_misc_input',bc_data='dft_bandchar_input',fs_data='dft_fs_input'):
+                 misc_data='dft_misc_input',bc_data='dft_bandchar_input',cont_data='dft_contours_input'):
         r"""
         Initialises the class from data previously stored into an hdf5 archive.
 
@@ -102,7 +102,7 @@ class SumkDFT(object):
             self.transp_data = transp_data
             self.misc_data = misc_data
             self.bc_data = bc_data
-            self.fs_data = fs_data
+            self.cont_data = cont_data
             self.h_field = h_field
 
             if mesh is None:
@@ -534,7 +534,7 @@ class SumkDFT(object):
             if mesh is None:
                 broadening = 0.01
             else:  # broadening = 2 * \Delta omega, where \Delta omega is the spacing of omega points
-                broadening = 2.0 * ((mesh[1] - mesh[0]) / (mesh[2] - 1))
+                broadening = 2.0 * ((mesh.w_max - mesh.w_min) / (len(mesh) - 1))
 
         # Check if G_latt is present
         set_up_G_latt = False                       # Assume not

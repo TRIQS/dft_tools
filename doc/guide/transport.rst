@@ -168,7 +168,7 @@ Example
 -------
 
 Here we present an example calculation of the DFT optical conductivity of SrVO3 comparing the results from the Elk and Wien2k inputs. The DFT codes used 4495 k-points in the 
-irreducible Brillouin zone with Wanner projectors generated within a correlated energy window of [-8, 7.5] eV. We assume that the required DFT files have been read and saved by the TRIQS
+irreducible Brillouin zone with Wannier projectors generated within a correlated energy window of [-8, 7.5] eV. We assume that the required DFT files have been read and saved by the TRIQS
 interface routines as discussed previously. Below is an example script to generate the conductivities::
 
     from sumk_dft_tools import *
