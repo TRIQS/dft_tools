@@ -4,6 +4,12 @@
 
 ## unstable
 
+* updated github work flow to match triqs unstable requisites
+* sumk_dft_tools.py rewritten to have single routines to calculate DOS, spaghettis and (Elk specific for now) spectral contours
+* occupied DOS can be calculated (sumk_dft_tools.occupations() is needed to be calculated first) 
+* analysis.rst and conv_elk.rst updated to improve routine descriptions and includes example figures
+* updated Elk tests and rewritten test scripts (.h5 files remain unchanged)
+* New converter routines to read in Elk data for sumk_dft_tools.spectral_contours() (Elk k-mesh generator and checker needs to be optimized as it's currently slow). commented out Elk "bandcharacter" conversion from Elk converter and Elk DFT+DMFT PDOS code which used it (this method needs to be checked)
 * SumK requires now to pass a mesh on init to clarify the mesh on which it operates
 * rename / unify name of `sumk.Sigma_imp_iw` and `sumk.Sigma_imp_w` -> `sumk.Sigma_imp`
 * remove `iw_or_w` arguments

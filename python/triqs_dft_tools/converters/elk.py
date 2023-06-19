@@ -626,7 +626,12 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         del ar
         mpi.report('Converted the Contours data')
 
-#commented out for now - unsure using this produces DFT+DMFT PDOS.
+# commented out for now - unsure using this produces DFT+DMFT PDOS.
+# The data from BC.OUT are the band-resolved diagonal muffin-tin DFT density matrix elements used in Elk to calculate PDOS 
+# (the PDOS is calculated from the Trace over the bands indices). Although this is equivalent to using using projectors in DFT and is likely valid for DFT+DMFT, 
+# the equivalence needs to be thoroughly checked for DFT+DMFT, but would require theta (or similar) projectors from Elk to do so. 
+# code left here just in case.
+        
 #    def dft_band_characters(self):
 #        """
 #        Reads in the band-resolved muffin-tin density matrix (band characters) generated in Elk 
