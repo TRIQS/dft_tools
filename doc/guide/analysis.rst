@@ -123,7 +123,7 @@ This spectral function is calculated by typing::
     :width: 1000
     :align: center
 
-The figure above shows the DFT SrVO\ :sub:`3`\  spaghetti plot (generated using V t\ :sub:`2g`\  Wanner projectors generated within a correlated energy window of [-13.6, 13,6] eV). As before, the broadening input has been set to the temperature (i.e., 1/Beta). The left panel shows the total A(k, :math:`\omega`) whereas the right gives the Wannier A(k, :math:`\omega`), both generated from this SK.spaghettis().
+The figure above shows the DFT SrVO\ :sub:`3`\  spaghetti plot (generated using V t\ :sub:`2g`\  Wanner projectors generated within a correlated energy window of [-13.6, 13.6] eV). As before, the broadening input has been set to the temperature (i.e., 1/Beta). The left panel shows the total A(k, :math:`\omega`) whereas the right gives the Wannier A(k, :math:`\omega`), both generated from this SK.spaghettis().
 
 
 Energy contours of the k-resolved Spectral function
