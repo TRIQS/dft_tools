@@ -513,19 +513,20 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         mpi.report('Converted the band data')
 
     def convert_contours_input(self,kgrid=None,ngrid=None):
-        """
+        r"""
         Reads the appropriate files and stores the data for the cont_subgrp in the hdf5 archive.
 
-        Parameters:
+        Parameters
+        ----------
         kgrid : size (4,3) double numpy array, optional
-                 Numpy array defining the reciprocal lattice vertices used in the Elk Fermi
-                 surface calculation. Each row has the following meaning:
-                 grid3d[0,:] - origin lattice vertex
-                 grid3d[1,:] - b1 lattice vertex
-                 grid3d[2,:] - b2 lattice vertex
-                 grid3d[3,:] - b3 lattice vertex
+                Numpy array defining the reciprocal lattice vertices used in the Elk Fermi
+                surface calculation. Each row has the following meaning:
+                grid3d[0,:] - origin lattice vertex
+                grid3d[1,:] - b1 lattice vertex
+                grid3d[2,:] - b2 lattice vertex
+                grid3d[3,:] - b3 lattice vertex
         ngrid : size (3) integer numpy array, optional
-                 Numpy array for the number of points along each (b1,b2,b3) lattice vertices
+                Numpy array for the number of points along each (b1,b2,b3) lattice vertices
 
         Note that these inputs relate to the plot3d input of Elk.
         """

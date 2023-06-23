@@ -63,7 +63,7 @@ class Wannier90Converter(ConverterTools):
                  symmcorr_subgrp='dft_symmcorr_input', misc_subgrp='dft_misc_input',
                  repacking=False, rot_mat_type='hloc_diag', bloch_basis=False, add_lambda=None,
                  w90zero=2e-6, reorder_orbital_and_spin_vasp5=False):
-        """
+        r"""
         Initialise the class.
 
         Parameters

@@ -42,28 +42,6 @@ from .elstruct import ElectronicStructure
 from .plotools import generate_plo, output_as_text
 import logging
 
-class PloFormatter(logging.Formatter):
-    """
-    custom event logger for all output, warnings and debug info
-    """
-    def __init__(self, default):
-        self._default_formatter = default
-
-    def format(self, record):
-		# Save the original format
-        _style = self._style
-
-        # Customized WARNING format
-        if record.levelno == logging.WARNING:
-            self._style = logging.PercentStyle("\n!!! WARNING !!!: %(msg)s\n")
-
-        result = super().format(record)
-
-        # Restore the original format
-        self._style = _style
-
-        return result
-
 # Uncomment this to get extra output
 #logging.basicConfig(level=logging.DEBUG)
 
@@ -72,7 +50,8 @@ main_log = logging.getLogger('plovasp')
 main_log.propagate = False
 
 handler = logging.StreamHandler(sys.stdout)
-formatter = PloFormatter("[%(levelname)s]:[%(name)s]: %(message)s")
+# formatter = logging.Formatter("[%(levelname)s]:[%(name)s]: %(message)s")
+formatter = logging.Formatter("[%(levelname)s]: %(message)s")
 handler.setFormatter(formatter)
 main_log.addHandler(handler)
 

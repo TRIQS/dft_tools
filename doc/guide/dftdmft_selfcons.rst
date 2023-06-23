@@ -160,24 +160,34 @@ which takes care of the process management. The user must, however, specify a pa
 The user-provided script is almost the same as for Wien2k charge self-consistent
 calculations with the main difference that its functionality (apart from the
 lines importing other modules) should be placed inside a function `dmft_cycle()`
-which will be called every DMFT cycle.
+which will be called every DMFT cycle and returns both the correlation energy and the SumK object.
 
 VASP has a special INCAR `ICHARG=5` mode, that has to be switched on to make VASP wait for the `vasp.lock` file, and read the updated charge density after each step. One should add the following lines to the `INCAR` file::
 
   ICHARG = 5
   NELM = 1000
   NELMIN = 1000
+  IMIX=1
+  BMIX=0.5
+  AMIX=0.02
 
 Technically, VASP runs with `ICHARG=5` in a SCF mode, and adding the DMFT
 changes to the DFT density in each step, so that the full DFT+DMFT charge
 density is constructed in every step. This is only done in VASP because only the
-changes to the DFT density are read by VASP not the full DFT+DMFT density.
+changes to the DFT density are read by VASP not the full DFT+DMFT density. Here,
+we also adjust the mixing, since iterations become quickly unstable for insulating
+or charge ordered solutions. Also note, that in each DAV step you still have to
+calculate the projectors, recalculate the chemical potential, and update the
+GAMMA file. See the :meth:`triqs_dft_tools.converters.plovasp.sc_dmft` script for details.
+
 Moreover, one should always start with a converged `WAVECAR` file, or make sure,
 that the KS states are well converged before the first projectors are created!
 To understand the difference please make sure to read `ISTART flag VASP wiki
 <https://www.vasp.at/wiki/index.php/ISTART>`_. Furthermore, the flags `NELM` and
 `NELMIN` ensure that VASP does not terminate after the default number of
 iterations of 60.
+
+For more detailed and fine grained methods to run Vasp in CSC also on clusters see the methods implemented in `solid dmft <https://triqs.github.io/solid_dmft/_ref/dft_managers.html>`_.
 
 
 Elk

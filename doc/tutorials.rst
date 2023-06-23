@@ -57,7 +57,7 @@ Complex example: NiO
    :maxdepth: 2
 
 
-   tutorials/nio_csc
+   tutorials/nio_csc_vasp/nio_csc
 
 
 Elk interface examples

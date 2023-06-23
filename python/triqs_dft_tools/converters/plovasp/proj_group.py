@@ -235,16 +235,16 @@ class ProjectorGroup:
         """
         Calculate the complement for a group of projectors.
 
-        This leads to quadtratic projectors P = <l|n> by using a Gram-Schmidt.
+        This leads to quadtratic projectors :math:`P = <l|n>` by using a Gram-Schmidt.
 
         The projector on the orthogonal complement of the existing projectors
-        |l> is P^u = 1 - sum_l |l><l|
+        :math:`|l>` is :math:`P^u = 1 - sum_l |l><l|`
         We get candidates for complement projectors by applying P^u to a Bloch
-        state |n>: |l*> = P^u |n>. For numerical stability we select that Bloch
-        state which leads to the |l*> with the largest norm (that corresponds to
-        that Bloch state with the smallest overlap with the space spanned by |l>)
-        We normalize |l*> and add it to |l>. We do so untill we have as many
-        |l> states as we have |n> states.
+        state :math:`|n>`: :math:`|l*> = P^u |n>`. For numerical stability we select that Bloch
+        state which leads to the :math:`|l*>` with the largest norm (that corresponds to
+        that Bloch state with the smallest overlap with the space spanned by :math:`|l>`)
+        We normalize :math:`|l*>` and add it to :math:`|l>`. We do so untill we have as many
+        :math:`|l>` states as we have :math:`|n>` states.
 
         """
 

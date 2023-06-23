@@ -4,8 +4,8 @@
 int main()
 {
   double e[4], en, ci_sum, ct, res[4];
-  int inds[4], inds_should[4];
-  int i, flag;
+  int inds[4];
+  int i;
   char mess[128];
   
   e[0] = -1.5;
@@ -15,8 +15,6 @@ int main()
 
   en = -0.55;
   printf("\n  Test case 2\n\n");
-
-  flag = dos_reorder(en, e, inds);
 
   dos_corner_weights(en, e, inds, res);
   dos_tet_weights(en, e, inds, &ct);

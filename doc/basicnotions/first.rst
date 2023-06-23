@@ -43,8 +43,8 @@ of results on their meaningfulness is the responsibility of the user.
 The :program:`DFTTools` package is a toolbox and **not** a black box!
 
 
-Learn how to use :ref:`TRIQS <triqslibs:welcome>` (and the :ref:`CTHYB <triqscthyb:welcome>` solver)
-----------------------------------------------------------------------------------------------------
+Learn how to use `TRIQS library <https://triqs.github.io/triqs/>`_ (and the `CTHYB <https://triqs.github.io/cthyb/>`_ solver)
+-----------------------------------------------------------------------------------------------------------------------------
 
 As :program:`DFTTools` is a :ref:`TRIQS <triqslibs:welcome>` based application
 it is beneficial to invest a few hours to become familiar with
@@ -54,7 +54,7 @@ the most important aspects of :ref:`TRIQS <triqslibs:welcome>`. We recommend
 downloading our hands-on training in the form of ipython notebooks from
 the `tutorials repository on GitHub <https://github.com/TRIQS/tutorials>`_.
 Tutorials 1 to 6 are on the :ref:`TRIQS <triqslibs:welcome>` library, whereas tutorials
-7 and 8 are more specific to the usage of the :ref:`CTHYB <triqscthyb:welcome>`
+7 and 8 are more specific to the usage of the `CTHYB solver <https://triqs.github.io/cthyb/>`_
 hybridization-expansion solver. In general, those tutorials will take at least a full day to finish.
 
 Afterwards you can continue with the :ref:`DFTTools user guide <documentation>`.

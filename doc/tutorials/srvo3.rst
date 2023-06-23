@@ -1,7 +1,7 @@
 .. _SrVO3:
 
 On the example of SrVO3 we will discuss now how to set up a full working calculation,
-including the initialization of the :ref:`CTHYB solver <triqscthyb:welcome>`.
+including the initialization of the `CTHYB solver <https://triqs.github.io/cthyb/>`_.
 Some additional parameter are introduced to make the calculation
 more efficient. This is a more advanced example, which is
 also suited for parallel execution. 
@@ -84,7 +84,7 @@ First, we load the necessary modules::
   import triqs.utility.mpi as mpi
 
 The last two lines load the modules for the construction of the
-:ref:`CTHYB solver <triqscthyb:welcome>`.
+`CTHYB solver <https://triqs.github.io/cthyb/>`_.
 
 Initializing SumkDFT
 --------------------
@@ -109,7 +109,7 @@ And next, we can initialize the :class:`SumkDFT <dft.sumk_dft.SumkDFT>` class::
 Initializing the solver
 -----------------------
 
-We also have to specify the :ref:`CTHYB solver <triqscthyb:welcome>` related settings.
+We also have to specify the `CTHYB solver <https://triqs.github.io/cthyb/>`_ related settings.
 We assume that the DMFT script for SrVO3 is executed on 16 cores. A sufficient set
 of parameters for a first guess is::
 
@@ -127,7 +127,7 @@ of parameters for a first guess is::
 
 Here we use a tail fit to deal with numerical noise of higher Matsubara frequencies.
 For other options and more details on the solver parameters, we refer the user to
-the :ref:`CTHYB solver <triqscthyb:welcome>` documentation.
+the `CTHYB solver <https://triqs.github.io/cthyb/>`_ documentation.
 It is important to note that the solver parameters have to be adjusted for
 each material individually. A guide on how to set the tail fit parameters is given
 :ref:`below <tailfit>`.
@@ -278,3 +278,4 @@ of the self energy and to stop (:emphasis:`fit_max_n`) before the noise fully ta
 If it is difficult to find a reasonable fit in this region you should increase
 your statistics (number of measurements). Keep in mind that :emphasis:`fit_min_n`
 and :emphasis:`fit_max_n` also depend on :math:`\beta`.
+
