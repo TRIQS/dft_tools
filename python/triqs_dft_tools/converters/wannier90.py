@@ -559,7 +559,7 @@ def read_wannier90_blochbasis_data(wannier_seed, n_wannier_spin):
     mpi.report('Reading {}: {}'.format(u_filename, u_data[0].strip()))
 
     # Reads k mesh from all lines with 3 floats
-    k_mesh = np.loadtxt((line for line in u_data if line.count('.') == 3))
+    k_mesh = np.loadtxt((line for line in u_data if line.count('.') == 3), ndmin=2)
     assert k_mesh.shape == (n_k, 3)
     # Reads u matrices from all lines with 2 floats
     u_mat_spin = np.loadtxt((line for line in u_data if line.count('.') == 2))
@@ -633,6 +633,8 @@ def read_wannier90_blochbasis_data(wannier_seed, n_wannier_spin):
         #initiate U disentanglement matrices and fill from file 'seedname_u_dis.mat'
         udis_mat_spin = np.zeros([n_k, num_ks_bands, n_wannier_spin], dtype=complex)
         for ik in range(n_k):
+            # this assumes that u_dis_mat first index is the first state in the dis window
+            # which is different from the eig file which starts with the first KS ev given to w90
             udis_mat_spin[ik, inside_window[ik]] = udis_data[ik, :, :n_inside_per_k[ik]].T
             if not np.allclose(udis_data[ik, :, n_inside_per_k[ik]:], 0):
                 raise ValueError('This error could come from rounding of the band window in the seedname.wout. '
