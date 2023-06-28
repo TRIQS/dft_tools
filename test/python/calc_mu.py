@@ -32,13 +32,20 @@ class test_solver(unittest.TestCase):
 
     def setUp(self):
         self.iw_mesh = MeshImFreq(beta=40, S='Fermion', n_iw=300)
+        self.w_mesh = MeshReFreq(n_w=1001, window=(-3,3))
         # magic reference value for the Wien2k SVO t2g example
         self.ref_mu = 0.281
+        self.ref_mu_real = 0.215
 
     def test_dichotomy(self):
         sumk = SumkDFT('SrVO3.ref.h5', mesh=self.iw_mesh)
         mu = sumk.calc_mu(method='dichotomy', precision=0.001, delta=0.1)
         self.assertTrue(abs(self.ref_mu - mu) < 0.01)
+
+    def test_dichotomy_real(self):
+        sumk = SumkDFT('SrVO3.ref.h5', mesh=self.w_mesh)
+        mu = sumk.calc_mu(method='dichotomy', precision=0.001, delta=0.1, broadening = 0.01, beta=1000)
+        self.assertTrue(abs(self.ref_mu_real - mu) < 0.001)
 
     def test_brent(self):
         sumk = SumkDFT('SrVO3.ref.h5', mesh=self.iw_mesh)

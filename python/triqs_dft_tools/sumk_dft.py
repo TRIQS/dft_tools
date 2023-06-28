@@ -1855,7 +1855,7 @@ class SumkDFT(object):
                 else:
                     gf_to_symm[key].from_L_G_R(v, ss, v.conjugate().transpose())
 
-    def total_density(self, mu=None, with_Sigma=True, with_dc=True, broadening=None):
+    def total_density(self, mu=None, with_Sigma=True, with_dc=True, broadening=None, beta=None):
         r"""
         Calculates the total charge within the energy window for a given chemical potential.
         The chemical potential is either given by parameter `mu` or, if it is not specified,
@@ -1891,6 +1891,10 @@ class SumkDFT(object):
                      Imaginary shift for the axis along which the real-axis GF is calculated.
                      If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
                      Only relevant for real-frequency GF.
+        beta : float, optional, default = broadening
+                when using MeshReFreq this determines the temperature for the Fermi function
+                smearing when integrating G(w). If not given broadening will be used
+                (converted to beta)
 
         Returns
         -------
@@ -1901,12 +1905,22 @@ class SumkDFT(object):
 
         if mu is None:
             mu = self.chemical_potential
+
+        if isinstance(self.mesh, MeshReFreq) and beta == None:
+            assert broadening and broadening > 0.0, 'beta and broadening were not specified. Aborting. Specifiy at least broadening (or better both) to correctly call density(beta) for MeshReFreq'
+            beta = 1 / broadening
+
+        if isinstance(self.mesh, MeshReFreq):
+            def tot_den(bgf): return bgf.total_density(beta)
+        else:
+            def tot_den(bgf): return bgf.total_density()
+
         dens = 0.0
         ikarray = np.array(list(range(self.n_k)))
         for ik in mpi.slice_array(ikarray):
             G_latt = self.lattice_gf(
                 ik=ik, mu=mu, with_Sigma=with_Sigma, with_dc=with_dc, broadening=broadening)
-            dens += self.bz_weights[ik] * G_latt.total_density()
+            dens += self.bz_weights[ik] * tot_den(G_latt)
         # collect data from mpi:
         dens = mpi.all_reduce(dens)
         mpi.barrier()
@@ -1927,7 +1941,7 @@ class SumkDFT(object):
         """
         self.chemical_potential = mu
 
-    def calc_mu(self, precision=0.01, broadening=None, delta=0.5, max_loops=100, method="dichotomy"):
+    def calc_mu(self, precision=0.01, broadening=None, delta=0.5, max_loops=100, method="dichotomy", beta=None):
         r"""
         Searches for the chemical potential that gives the DFT total charge.
 
@@ -1947,6 +1961,10 @@ class SumkDFT(object):
                         * dichotomy: usual bisection algorithm from the TRIQS library
                         * newton: newton method, faster convergence but more unstable 
                         * brent: finds bounds and proceeds with hyperbolic brent method, a compromise between speed and ensuring convergence
+        beta : float, optional, default = broadening
+                when using MeshReFreq this determines the temperature for the Fermi function
+                smearing when integrating G(w). If not given broadening will be used
+                (converted to beta)
 
         Returns
         -------
@@ -1989,14 +2007,14 @@ class SumkDFT(object):
 
         # previous implementation
 
-        def F_bisection(mu): return self.total_density(mu=mu, broadening=broadening).real
+        def F_bisection(mu): return self.total_density(mu=mu, broadening=broadening, beta=beta).real
         density = self.density_required - self.charge_below
         # using scipy.optimize
 
         def F_optimize(mu):
 
             mpi.report("Trying out mu = {}".format(str(mu)))
-            calc_dens = self.total_density(mu=mu, broadening=broadening).real - density
+            calc_dens = self.total_density(mu=mu, broadening=broadening, beta=beta).real - density
             mpi.report(f"Target density = {density}; Delta to target = {calc_dens}")
             return calc_dens
 
@@ -2044,7 +2062,7 @@ class SumkDFT(object):
 
         return self.chemical_potential
 
-    def calc_density_correction(self, filename=None, dm_type=None, spinave=False, kpts_to_write=None):
+    def calc_density_correction(self, filename=None, dm_type=None, spinave=False, kpts_to_write=None, broadening=None, beta=None):
         r"""
         Calculates the charge density correction and stores it into a file.
 
@@ -2069,7 +2087,14 @@ class SumkDFT(object):
         kpts_to_write : iterable of int
                    Indices of k points that are written to file. If None (default),
                    all k points are written. Only implemented for dm_type 'vasp'
-
+        broadening : float, optional
+                     Imaginary shift for the axis along which the real-axis GF is calculated.
+                     If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
+                     Only relevant for real-frequency GF.
+        beta : float, optional, default = broadening
+                when using MeshReFreq this determines the temperature for the Fermi function
+                smearing when integrating G(w). If not given broadening will be used
+                (converted to beta)
         Returns
         -------
         (deltaN, dens) : tuple
@@ -2130,21 +2155,24 @@ class SumkDFT(object):
 
         ikarray = np.arange(self.n_k)
         for ik in mpi.slice_array(ikarray):
-            G_latt_iw = self.lattice_gf(
-                ik=ik, mu=self.chemical_potential)
+            G_latt = self.lattice_gf(
+                ik=ik, mu=self.chemical_potential, broadening=broadening)
             if dm_type == 'vasp' and self.proj_or_hk == 'hk':
                 # rotate the Green function into the DFT band basis
-                for bname, gf in G_latt_iw:
-                    G_latt_rot_iw = gf.copy()
-                    G_latt_rot_iw << self.upfold(
-                            ik, 0, bname, G_latt_iw[bname], gf,shells='csc')
+                for bname, gf in G_latt:
+                    G_latt_rot = gf.copy()
+                    G_latt_rot << self.upfold(
+                            ik, 0, bname, G_latt[bname], gf,shells='csc')
 
-                    G_latt_iw[bname] = G_latt_rot_iw.copy()
+                    G_latt[bname] = G_latt_rot.copy()
 
-            for bname, gf in G_latt_iw:
-                deltaN[bname][ik] = G_latt_iw[bname].density()
+            for bname, gf in G_latt:
+                deltaN[bname][ik] = G_latt[bname].density()
 
-                dens[bname] += self.bz_weights[ik] * G_latt_iw[bname].total_density()
+                if isinstance(self.mesh, MeshImFreq):
+                    dens[bname] += self.bz_weights[ik] * G_latt[bname].total_density()
+                else:
+                    dens[bname] += self.bz_weights[ik] * G_latt[bname].total_density(beta)
                 if dm_type in ['vasp','qe']:
 # In 'vasp'-mode subtract the DFT density matrix
                     nb = self.n_orbitals[ik, ntoi[bname]]
