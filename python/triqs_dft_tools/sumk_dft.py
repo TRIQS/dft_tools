@@ -587,10 +587,10 @@ class SumkDFT(object):
                          for isp in range(self.n_spin_blocks[self.SO])]
             block_ind_list = [block for block, inner in gf_struct]
             if isinstance(mesh, MeshImFreq):
-                glist = lambda: [Gf(indices=inner, mesh=mesh)
+                glist = lambda: [Gf(mesh=mesh, target_shape=[len(inner),len(inner)])
                                  for block, inner in gf_struct]
             else:
-                glist = lambda: [Gf(indices=inner, mesh=mesh)
+                glist = lambda: [Gf(mesh=mesh, target_shape=[len(inner),len(inner)])
                                  for block, inner in gf_struct]
             G_latt = BlockGf(name_list=block_ind_list,
                              block_list=glist(), make_copies=False)
@@ -2341,30 +2341,6 @@ class SumkDFT(object):
 ################
 # FIXME LEAVE UNDOCUMENTED
 ################
-
-    def calc_dc_for_density(self, orb, dc_init, dens_mat, density=None, precision=0.01):
-        """Searches for DC in order to fulfill charge neutrality.
-           If density is given, then DC is set such that the LOCAL charge of orbital
-           orb coincides with the given density."""
-
-        def F(dc):
-            self.calc_dc(dens_mat=dens_mat, U_interact=0,
-                         J_hund=0, orb=orb, use_dc_value=dc)
-            if dens_req is None:
-                return self.total_density(mu=mu)
-            else:
-                return self.extract_G_loc()[orb].total_density()
-
-        if density is None:
-            density = self.density_required - self.charge_below
-
-        dc = dichotomy.dichotomy(function=F,
-                                 x_init=dc_init, y_value=density,
-                                 precision_on_y=precision, delta_x=0.5,
-                                 max_loops=100, x_name="Double Counting", y_name="Total Density",
-                                 verbosity=3)[0]
-
-        return dc
 
     def check_projectors(self):
         """Calculated the density matrix from projectors (DM = P Pdagger) to check that it is correct and
