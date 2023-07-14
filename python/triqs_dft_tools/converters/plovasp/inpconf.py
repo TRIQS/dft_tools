@@ -73,8 +73,8 @@ class ConfigParameters:
 ################################################################################
     def __init__(self, input_filename, verbosity=1):
         self.verbosity = verbosity
-        self.cp = configparser.SafeConfigParser()
-        self.cp.readfp(open(input_filename, 'r'))
+        self.cp = configparser.ConfigParser()
+        self.cp.read_file(open(input_filename, 'r'))
 
         self.parameters = {}
 
