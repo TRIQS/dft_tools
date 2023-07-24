@@ -83,7 +83,7 @@ class TestParseInput(arraytest.ArrayTestCase):
 [0.,0.,1.]]),'ion_sort':None,'corr':True},{'user_index':3,'ions':{'ion_list':[[0],[1],[2],[3]],'nion':4},'lshell':3,'ion_sort':None,'corr':True}]
 
 Groups:
-[{'index':1,'shells':[0,1],'ewindow':(-7.6,3.0),'normalize':True,'normion':True,'complement':False},{'index':2,'shells':[2],'ewindow':(-1.6,2.0),'normalize':True,'normion':True,'complement':False}]"""
+[{'index':1,'shells':[0,1],'ewindow':(-7.6,3.0),'normalize':True,'normion':False,'complement':False},{'index':2,'shells':[2],'ewindow':(-1.6,2.0),'normalize':True,'normion':False,'complement':False}]"""
 
         self.assertEqual(res, expected)
 
@@ -106,7 +106,7 @@ Groups:
 [{'user_index':1,'ions':{'ion_list':[[4],[5],[6],[7]],'nion':4},'lshell':2,'ion_sort':None,'corr':True}]
 
 Groups:
-[{'index':'1','ewindow':(-7.6,3.0),'normalize':True,'normion':True,'complement':False,'shells':[0]}]"""
+[{'index':'1','ewindow':(-7.6,3.0),'normalize':True,'normion':False,'complement':False,'shells':[0]}]"""
 
         self.assertEqual(res, expected)
 

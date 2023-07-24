@@ -39,9 +39,9 @@ class TestParseGroups(arraytest.ArrayTestCase):
         conf_pars.parse_groups()
         res = conf_pars.groups
         expected = [{'index': 1, 'shells': [1, 2], 'ewindow': (-7.6, 3.0),
-                     'normalize': True, 'normion': True,'complement': False},
+                     'normalize': True, 'normion': False,'complement': False},
                     {'index': 2, 'shells': [3], 'ewindow': (-1.6, 2.0),
-                     'normalize': True, 'normion': True,'complement': False}]
+                     'normalize': True, 'normion': False,'complement': False}]
         print(res)
         print(expected)
         self.assertListEqual(res, expected)

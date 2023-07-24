@@ -341,7 +341,7 @@ Optional group parameters:
    a per-site (per-ion) basis. That is, if `NORMION = True`, the orthogonality
    condition will be enforced on each site separately but the Wannier functions
    on different sites will not be orthogonal. If `NORMION = False`, the Wannier functions
-   on different sites included in the group will be orthogonal to each other. The default value is **True**
+   on different sites included in the group will be orthogonal to each other. The default value is **False**
 *  **BANDS** (int int): the energy window specified by two ints: band index of
    lowest band and band index of highest band. Using this overrides the selection
    in `EWINDOW`.

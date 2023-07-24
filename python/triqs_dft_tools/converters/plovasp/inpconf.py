@@ -94,7 +94,7 @@ class ConfigParameters:
 
         self.gr_optional = {
             'normalize' : ('normalize', self.parse_string_logical, True),
-            'normion' : ('normion', self.parse_string_logical, True),
+            'normion' : ('normion', self.parse_string_logical, False),
             'complement' : ('complement', self.parse_string_logical, False),
             'bands': ('bands', self.parse_band_window)}
 
