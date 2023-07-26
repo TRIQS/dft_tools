@@ -145,7 +145,7 @@ if(PythonSupport)
 endif()
 
 # Docs
-if(Build_Documentation)
+if(NOT IS_SUBPROJECT AND Build_Documentation)
   add_subdirectory(doc)
 endif()
 
