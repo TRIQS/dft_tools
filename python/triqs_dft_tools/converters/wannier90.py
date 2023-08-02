@@ -859,7 +859,7 @@ def read_misc_input(w90_seed, n_spin_blocks, n_k):
         for line in out_data:
             if 'number of Kohn-Sham states' in line:
                 n_ks = int(line.split()[-1])
-            elif 'Fermi energy' in line:
+            elif 'the Fermi energy is' in line:
                 fermi_energy = float(line.split()[-2])
             elif 'reciprocal axes' in line:
                 reading_kpt_basis = True

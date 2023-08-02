@@ -675,7 +675,7 @@ class SumkDFT(object):
         if isinstance(self.mesh, MeshReFreq):
             if self.min_band_energy is None or self.max_band_energy is None:
                 self.calculate_min_max_band_energies()
-            mesh = np.array([i for i in self.mesh.values()])
+            mesh = np.linspace(self.mesh.w_min, self.mesh.w_max, len(self.mesh))
             if mesh[0] > (self.min_band_energy - self.chemical_potential) or mesh[-1] < (self.max_band_energy - self.chemical_potential):
                 warn('The given Sigma is on a mesh which does not cover the band energy range. The Sigma MeshReFreq runs from %f to %f, while the band energy (minus the chemical potential) runs from %f to %f'%(mesh[0], mesh[-1], self.min_band_energy, self.max_band_energy))
 
