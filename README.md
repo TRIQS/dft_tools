@@ -36,7 +36,7 @@ You can merge future changes to the app4triqs skeleton into your project with th
 
 ```bash
 git remote update
-git merge app4triqs_remote/unstable -m "Merge latest app4triqs skeleton changes"
+git merge app4triqs_remote/unstable -X ours -m "Merge latest app4triqs skeleton changes"
 ```
 
 If you should encounter any conflicts resolve them and `git commit`.
@@ -46,6 +46,11 @@ Finally we repeat the replace and rename command from the initial setup.
 ./share/replace_and_rename.py appname
 git commit --amend
 ```
+
+Now you can compare against the previous commit with: 
+```bash
+git diff prev_git_hash
+````
 
 Getting Started
 ---------------
