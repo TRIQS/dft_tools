@@ -67,6 +67,11 @@ jobs:
         pip3 install mako numpy scipy mpi4py
         pip3 install -r requirements.txt
 
+    - name: add clang cxxflags
+      if: ${{ contains(matrix.cxx, 'clang') }}
+      run:
+        echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
+
     - name: Build & Install TRIQS
       env:
         CC: ${{ matrix.cc }}
