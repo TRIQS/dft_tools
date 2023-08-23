@@ -49,7 +49,7 @@ if(ANALYZE_SOURCES)
 	TARGET ${PROJECT_NAME}_c
 	COMMAND ${CPPCHECK_EXECUTABLE}
 	  --enable=warning,style,performance,portability
-	  --std=c++20
+	  --std=c++23
 	  --template=gcc
 	  --verbose
 	  --force
@@ -64,21 +64,36 @@ if(ANALYZE_SOURCES)
 
 endif()
 
-
 # ========= Dynamic Analyzer Checks ==========
 
 option(ASAN OFF "Compile library and executables with LLVM Address Sanitizer")
-option(UBSAN OFF "Compile library and executables with LLVM Undefined Behavior Sanitizer")
-
 if(ASAN)
   if(NOT TARGET asan)
-    find_package(sanitizer REQUIRED "asan")
+    find_package(sanitizer REQUIRED COMPONENTS asan)
   endif()
   target_link_libraries(${PROJECT_NAME}_c PUBLIC $<BUILD_INTERFACE:asan>)
 endif()
+
+option(UBSAN OFF "Compile library and executables with LLVM Undefined Behavior Sanitizer")
 if(UBSAN)
   if(NOT TARGET ubsan)
-    find_package(sanitizer REQUIRED "ubsan")
+    find_package(sanitizer REQUIRED COMPONENTS ubsan)
   endif()
   target_link_libraries(${PROJECT_NAME}_c PUBLIC $<BUILD_INTERFACE:ubsan>)
+endif()
+
+option(MSAN OFF "Compile library and executables with LLVM Memory Sanitizer")
+if(MSAN)
+  if(NOT TARGET msan)
+    find_package(sanitizer REQUIRED COMPONENTS msan)
+  endif()
+  target_link_libraries(${PROJECT_NAME}_c PUBLIC $<BUILD_INTERFACE:msan>)
+endif()
+
+option(TSAN OFF "Compile library and executables with LLVM Thread Sanitizer")
+if(TSAN)
+  if(NOT TARGET tsan)
+    find_package(sanitizer REQUIRED COMPONENTS tsan)
+  endif()
+  target_link_libraries(${PROJECT_NAME}_c PUBLIC $<BUILD_INTERFACE:tsan>)
 endif()

@@ -28,7 +28,7 @@ jobs:
       run: >
         sudo apt-get update &&
         sudo apt-get install lsb-release wget software-properties-common &&
-        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 13 &&
+        wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
         sudo apt-get install
         clang-15
         g++-12
@@ -66,6 +66,11 @@ jobs:
         brew install gcc@12 llvm boost fftw hdf5 open-mpi openblas
         pip3 install mako numpy scipy mpi4py
         pip3 install -r requirements.txt
+
+    - name: add clang cxxflags
+      if: ${{ contains(matrix.cxx, 'clang') }}
+      run:
+        echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
 
     - name: Build & Install TRIQS
       env:

@@ -1,7 +1,7 @@
 easyblock = 'CMakeMake'
 
 name = 'TRIQS-dft_tools'
-version = '3.1.0'
+version = '3.2.0'
 
 homepage = 'https://triqs.github.io/dft_tools/'
 description = """
@@ -27,7 +27,7 @@ toolchainopts = {'pic': True, 'usempi': True}
 
 source_urls = ['https://github.com/TRIQS/dft_tools/releases/download/%(version)s/']
 sources = ['dft_tools-%(version)s.tar.gz']
-checksums = ['57b7d0fe5a96c5a42bb684c60ca8e136a33e1385bf6cd7e9d1371fa507dc2ec4']
+checksums = ['PUT HERE THE SHA256 OF THE RELEASE TARBALL']
 
 dependencies = [
     ('Python', '3.9.6'),
@@ -38,7 +38,7 @@ dependencies = [
     ('GMP', '6.2.1'),
     ('HDF5', '1.10.7'),
     ('Mako', '1.1.4'),
-    ('TRIQS', '3.1.0'),
+    ('TRIQS', '3.2.0'),
 ]
 
 builddependencies = [
