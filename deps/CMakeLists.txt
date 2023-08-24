@@ -46,11 +46,3 @@ else()
     message(WARNING "For builds with llvm sanitizers (ASAN/UBSAN) it is recommended to use -DBuild_Deps=Always to avoid false positives.")
   endif()
 endif()
-
-# -- GTest --
-external_dependency(GTest
-  GIT_REPO https://github.com/google/googletest
-  GIT_TAG main
-  BUILD_ALWAYS
-  EXCLUDE_FROM_ALL
-)
