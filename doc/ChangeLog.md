@@ -2,17 +2,91 @@
 
 # Changelog
 
-## unstable
+## Version 3.2.0
 
-* updated github work flow to match triqs unstable requisites
-* sumk_dft_tools.py rewritten to have single routines to calculate DOS, spaghettis and (Elk specific for now) spectral contours
-* occupied DOS can be calculated (sumk_dft_tools.occupations() is needed to be calculated first) 
-* analysis.rst and conv_elk.rst updated to improve routine descriptions and includes example figures
-* updated Elk tests and rewritten test scripts (.h5 files remain unchanged)
-* New converter routines to read in Elk data for sumk_dft_tools.spectral_contours() (Elk k-mesh generator and checker needs to be optimized as it's currently slow). commented out Elk "bandcharacter" conversion from Elk converter and Elk DFT+DMFT PDOS code which used it (this method needs to be checked)
+DFTTools Version 3.2.0 is a release that
+* is compatible with TRIQS 3.2.x
+* introduces a coherent mesh of the SumK object passed on init used throughout all member functions (see below for details)
+* unifies post-processing routines in `sumk_dft_tools` for all DFT codes to calculate DOS and spectral functions
+* adds support for non-collinear projectors when using Vasp 6
+* adds transport / optics calculation support with Elk
+* introduces a new `dft_input` variable `dft_code` that identifies automatically the used dft code
+* adds transport / optics calculation with wannier90 using WannierBerri
+* moves all optics and transport related functions to a new module `sumk_dft_transport.py`
+* new chemical potential finder (fully backward combatible), that supports besides bisection also gradient finders
+* new double counting routines, moved to a separate function, improving spin-dependent formulas
+* improve performance of all routines performing k-sums. `extract_G_loc` is up to 5 times faster now
+
+We thank all contributors: Sophie Beck, Alberto Carta, Alexander Hampel, Alyn James, Harrison LaBollita, Dario Fiore Mosca, Oleg Peil, Nils Wentzell
+
+Find below an itemized list of changes in this release.
+
+### General
+* general fixes to match new triqs 3.2 release
 * SumK requires now to pass a mesh on init to clarify the mesh on which it operates
 * rename / unify name of `sumk.Sigma_imp_iw` and `sumk.Sigma_imp_w` -> `sumk.Sigma_imp`
 * remove `iw_or_w` arguments
+* `sumk_dft_tools.py` rewritten to have single routines to calculate DOS (`dos_wannier_basis` renamed to `density_of_states`), spaghettis and (Elk specific for now) spectral contours
+* occupied DOS can be calculated (`sumk_dft_tools.occupations()` is needed to be calculated first) 
+* analysis.rst and conv_elk.rst updated to improve routine descriptions and includes example figures
+* remove any transport from `sumk_dft_tools.py` and move to `sumk_dft_transport`
+* outsource `calc_DC_from_density` into util.py and cleanup
+* Added new way to compute double counting. This is moved to a separate function and the old method is kept to modify in-place the double counting and keep compatibility. A legacy interface was kept for the old method (using integers to denote DC type). The new convention follow the notation introduced here (http://dx.doi.org/10.1038/s41598-018-27731-4)
+* Added tests for DC calculation to compare with old implementation
+* Added 2 new methods to find chemical potential, refactored DC calculation with stateless function while keeping legacy code
+* In magnetic calculations, the dichotomy adjustment is struggling to find the mu (maxes out iterations). Added new methods to find the dft mu: newton (fastest but can fail) and brent (more stable)
+* fix: fix f2py command for numpy ver >1.22
+* fix: np.int / np.float / np. complex are  deprecated (np v1.20) / removed (np v1.24)
+* Fixed DC formulas with SOC (#227)
+* Fixes issue with projected A(k,w) (#225)
+* fix obsolote iw_or_w param in calc_mu
+* improve performance of extract Gloc by factor 5! huge cleanup
+* edit SumKDFT class to take gf mesh at initialization and force Sigma to have that mesh
+* update mpi.all_reduce calls 52bccac
+* issue #216 correctly use beta when calling density on MeshReFreq
+
+### Elk
+* Elk Transport code and subsequent updates (#229)
+* elk-interface bug fixes (#228)
+* updated Elk tests and rewritten test scripts (.h5 files remain unchanged)
+* New converter routines to read in Elk data for sumk_dft_tools.spectral_contours() (Elk k-mesh generator and checker needs to be optimized as it's currently slow). commented out Elk "bandcharacter" conversion from Elk converter and Elk DFT+DMFT PDOS code which used it (this method needs to be checked)
+
+### Vasp
+* change normion default to False
+* change Vasp NiO tutorial scripts to reflect changes to sumk
+* fix deprecated safeconfigparser
+* fixes a bug in the Vasp charge self-consistent update step
+* adjust NiO reference h5-file
+* add test of NiO with two correlated shells
+* fix tests of LuNiO3 and SrVO3 after changes
+* fix mapping from shell/ions to corr-shells in converter
+
+### w90 + QE
+* feat: optical prop with Wannier90 and WannierBerri, see documentation for details
+* fix bug for Gamma only mode
+* w90 conv more generous matching to find fermi
+* Updated W90 converter: bug fixes for SOC, code restructured, more tests for `add_lambda` and `bloch_basis`
+* BUGFIX: changed character in QE output for reading occupations with
+* Split wannier90 tests up
+* Fix for wannier converter: reordering of orbital/spin order only necessary for vasp 5
+
+### clean
+* remove Gf indices and remove calc_dc_for_density (unused)
+
+
+## Version 3.1.1
+
+DFTTools Version 3.1.1 is a patch release that contains a few bug fixes.
+In particular, we resolve incompatibility with recent numpy versions.
+
+We thank all contributors: Alexander Hampel, Harry LaBollita
+
+Find below an itemized list of changes in this release.
+
+### General
+* fix: np.int / np.float / np. complex are  depracted (np v1.20) / removed (np v1.24)
+* Fixes issue with projected A(k,w) (#225)
+
 
 ## Version 3.1.0
 
