@@ -18,6 +18,9 @@
 # TRIQS. If not, see <http://www.gnu.org/licenses/>.
 #
 ##########################################################################
+"""
+Helper utilities / standalone functions for the sumk class
+"""
 
 import numpy as np
 
