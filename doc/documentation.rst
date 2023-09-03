@@ -71,6 +71,7 @@ This is the reference manual for the python routines.
    sumk_dft_tools
    symmetry
    trans_basis
+   util
 
 
 
