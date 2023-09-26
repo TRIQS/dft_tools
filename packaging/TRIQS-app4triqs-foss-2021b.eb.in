@@ -1,7 +1,7 @@
 easyblock = 'CMakeMake'
 
 name = 'TRIQS-app4triqs'
-version = '3.2.0'
+version = '@PROJECT_VERSION@'
 
 homepage = 'https://triqs.github.io/app4triqs/'
 description = """
