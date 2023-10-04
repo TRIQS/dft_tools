@@ -556,7 +556,7 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
 # Uses .data of only GfReFreq objects.
 
 
-def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, Om_mesh=[0.0], with_Sigma=False, n_om=None, broadening=0.0, code='wien2k'):
+def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, Om_mesh=[0.0], with_Sigma=False, n_om=None, broadening=0.0, code='wien2k', mode='optics', raman_options={}):
     r"""
     Calculates the transport distribution
 
@@ -589,6 +589,10 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
         Lorentzian broadening. It is necessary to specify the boradening if with_Sigma = False, otherwise this parameter can be set to 0.0.
     code : string
         DFT code from which velocities are being read. Options: 'wien2k', 'wannier90'
+    mode : string
+        Choose between optical ('optics') or Raman ('raman') transport distribution.
+    raman_options : dictionary
+        additional keywords necessary in case mode == 'raman'. Depending on the situation, the allow keys could be 'custom_dir'.
 
     Returns
     -------
@@ -713,28 +717,47 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
             v_i = slice(b_min - sum_k.band_window_optics[isp][
                         ik, 0], b_max - sum_k.band_window_optics[isp][ik, 0] + 1)
 
-            # loop over all symmetries
-            for R in sum_k.rot_symmetries:
-                # get transformed velocity under symmetry R
-                if code in ('wien2k'):
-                    vel_R = copy.deepcopy(sum_k.velocities_k[isp][ik])
-                elif code in ('wannier90'):
-                    vel_R = copy.deepcopy(sum_k.velocities_k[ik])
-                for nu1 in range(sum_k.band_window_optics[isp][ik, 1] - sum_k.band_window_optics[isp][ik, 0] + 1):
-                    for nu2 in range(sum_k.band_window_optics[isp][ik, 1] - sum_k.band_window_optics[isp][ik, 0] + 1):
-                        vel_R[nu1][nu2][:] = numpy.dot(
-                            R, vel_R[nu1][nu2][:])
+            if mode in ('optics'):
+                # loop over all symmetries
+                for R in sum_k.rot_symmetries:
+                    # get transformed velocity under symmetry R
+                    if code in ('wien2k'):
+                        vel_R = copy.deepcopy(sum_k.velocities_k[isp][ik])
+                    elif code in ('wannier90'):
+                        vel_R = copy.deepcopy(sum_k.velocities_k[ik])
+                    for nu1 in range(sum_k.band_window_optics[isp][ik, 1] - sum_k.band_window_optics[isp][ik, 0] + 1):
+                        for nu2 in range(sum_k.band_window_optics[isp][ik, 1] - sum_k.band_window_optics[isp][ik, 0] + 1):
+                            vel_R[nu1][nu2][:] = numpy.dot(
+                                R, vel_R[nu1][nu2][:])
 
-                # calculate Gamma_w for each direction from the velocities
-                # vel_R and the spectral function A_kw
-                for direction in directions:
-                    for iw in range(n_om):
-                        for iq in range(len(temp_Om_mesh)):
-                            if (iw + iOm_mesh[iq] >= n_om or omega[iw] < -temp_Om_mesh[iq] + energy_window[0] or omega[iw] > temp_Om_mesh[iq] + energy_window[1]):
-                                continue
+                    # calculate Gamma_w for each direction from the velocities
+                    # vel_R and the spectral function A_kw
+                    for direction in directions:
+                        for iw in range(n_om):
+                            for iq in range(len(temp_Om_mesh)):
+                                if (iw + iOm_mesh[iq] >= n_om or omega[iw] < -temp_Om_mesh[iq] + energy_window[0] or omega[iw] > temp_Om_mesh[iq] + energy_window[1]):
+                                    continue
 
-                            Gamma_w[direction][iq, iw] += (numpy.dot(numpy.dot(numpy.dot(vel_R[v_i, v_i, dir_to_int[direction[0]]], A_kw[isp][A_i, A_i, int(iw + iOm_mesh[iq])]),
-                                                                               vel_R[v_i, v_i, dir_to_int[direction[1]]]), A_kw[isp][A_i, A_i, iw]).trace().real * sum_k.bz_weights[ik])
+                                Gamma_w[direction][iq, iw] += (numpy.dot(numpy.dot(numpy.dot(vel_R[v_i, v_i, dir_to_int[direction[0]]], A_kw[isp][A_i, A_i, int(iw + iOm_mesh[iq])]),
+                                                                                vel_R[v_i, v_i, dir_to_int[direction[1]]]), A_kw[isp][A_i, A_i, iw]).trace().real * sum_k.bz_weights[ik])
+            elif mode in ('raman'):
+                if code in ('wannier90'):
+                    assert hasattr(sum_k,"inverse_mass"), 'inverse_mass not available in sum_k. Set calc_inverse_mass=True in w90_params.'
+                elif code in ('wien2k'):
+                    assert 0, 'Raman for wien2k not yet implemented' #ToDo
+                # loop over all symmetries
+                for R in sum_k.rot_symmetries:
+                    for direction in directions:
+                        # calculate the raman vertex for each direction
+                        vert = raman_vertex(sum_k, ik, direction, code, isp, raman_options)
+
+                        for iw in range(n_om):
+                            for iq in range(len(Om_mesh)):
+                                if (iw + iOm_mesh[iq] >= n_om or omega[iw] < -Om_mesh[iq] + energy_window[0] or omega[iw] > Om_mesh[iq] + energy_window[1]):
+                                    continue
+                                
+                                Gamma_w[direction][iq, iw] += (numpy.dot(numpy.dot(numpy.dot(vert[v_i, v_i], A_kw[isp][A_i, A_i, int(iw + iOm_mesh[iq])]),
+                                                                             vert[v_i, v_i]), A_kw[isp][A_i, A_i, iw]).trace().real * sum_k.bz_weights[ik])
 
     for direction in directions:
         Gamma_w[direction] = (mpi.all_reduce(Gamma_w[direction]) / sum_k.cell_vol / sum_k.n_symmetries)
