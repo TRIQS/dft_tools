@@ -32,7 +32,7 @@ import scipy.constants as cst
 import os.path
 
 __all__ = ['transport_distribution', 'conductivity_and_seebeck', 'write_output_to_hdf',
-           'init_spectroscopy', 'transport_function']
+           'init_spectroscopy', 'transport_function', 'raman_vertex']
 
 # ----------------- helper functions -----------------------
 
@@ -401,6 +401,68 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
 
 # ----------------- transport -----------------------
 
+def raman_vertex(sumk,ik,direction,code,isp, options=None):
+    r"""
+    Reads all necessary quantities for transport calculations from transport subgroup of the hdf5 archive.
+    Performs checks on input. Uses interpolation if code=wannier90.
+
+    Parameters
+    ----------
+    sum_k : sum_k object
+            triqs SumkDFT object
+    ik : integer
+            the ik index in which will be calculate the raman vertex
+    direction : string
+            direction to calculate the Raman vertex. 
+    code : string
+        DFT code from which velocities are being read. Options: 'wien2k', 'wannier90'
+    isp : integer
+            spin index
+    options : dictionary, optional
+        additional keywords necessary in case a new direction wants to be implemented
+
+    Returns
+    -------
+    raman_vertex : 2D array
+            numpy array size [n_orb, n_orb] of complex type
+    """
+    if code in ('wien2k'):
+        assert 0, 'Raman for wien2k not yet implemented' #ToDo
+    dir_names=['xx','yy','zz','B2g','B1g','A1g','Eg']
+    dir_array=[ [[1.,0.,0.],[0.,0.,0.],[0.,0.,0.]],
+                [[0.,0.,0.],[0.,1.,0.],[0.,0.,0.]],
+                [[0.,0.,0.],[0.,0.,0.],[0.,0.,1.]],
+                [[0.,1.,0.],[0.,0.,0.],[0.,0.,0.]],
+                [[0.5,0.,0.],[0.,-0.5,0.],[0.,0.,0.]],
+                [[0.,0.,0.],[0.,0.,0.],[0.,0.,1.]],
+                [[0.,0.,1.],[0.,0.,0.],[0.,0.,0.]] ]
+    # Load custom directions
+    if "custom_dir" in options:
+        assert isinstance(options["custom_dir"],dict), "raman_vertex: in options, custom_dir must be a dictionary"
+        for dire in options["custom_dir"]:
+            assert numpy.shape(numpy.array(options["custom_dir"][dire]))==(3,3), "raman_vertex: custom_dir must have shape 3x3 (a numpy array or a nested list)"
+            if dire in dir_names:
+                if direction==dire and ik==0: #reports only when ik==0
+                    mpi.report("Warning: the direction %s was already loaded and will be replace with the one provided in custom_dir"%dire)
+                idir = dir_names.index(dire)
+                dir_array[idir]=options["custom_dir"][dire]
+            else:
+                dir_names.append(dire)
+                dir_array.append(options["custom_dir"][dire])
+    
+    dir_array=[numpy.array(el,dtype=numpy.float_) for el in dir_array] # convert list to numpy array
+
+    if direction in dir_names:
+        idir = dir_names.index(direction)
+    else:
+        assert 0,'raman_vertex: direction %s is not supported by default. Try to add it by raman_vertex options custom_dir.'%direction
+    n_bands = sumk.n_orbitals[ik][isp]
+    ram_vert = numpy.zeros( (n_bands, n_bands), dtype=numpy.complex_)
+    for i in range(n_bands):
+        for j in range(n_bands):
+            ram_vert[i,j]=numpy.dot(dir_array[idir],sumk.inverse_mass[ik,i,j,:,:]).trace()
+    
+    return ram_vert
 
 def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
     r"""
