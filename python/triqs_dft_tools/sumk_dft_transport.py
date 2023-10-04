@@ -336,13 +336,18 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
                 velocities_k = (Hw_alpha + 1j * c_Hw_Aw_alpha) / HARTREETOEV / BOHRTOANG
 
         if calc_inverse_mass:
-            V_dot_D = numpy.einsum('kmnab, knoab -> kmoab', dataK.Xbar('Ham', 1)
-                                   [:, :, :, :, None], dataK.D_H[:, :, :, None, :])
-            V_dot_D_dagger = V_dot_D.conj().transpose(0, 2, 1, 3, 4)
-            V_curly = numpy.einsum('knnab -> knab', V_dot_D + V_dot_D_dagger)
-            del2E_H_diag = numpy.einsum('knnab->knab', dataK.Xbar('Ham', 2)).real
-            inverse_mass = del2E_H_diag + V_curly
-
+            # in the band basis
+            # ToDo: change units of inverse_mass consistently
+            if oc_basis == 'h':
+                inverse_mass = dataK.Xbar('Ham', 2)
+            # in the orbital basis
+            elif oc_basis == 'w':
+                Hw_alphabeta_R = dataK.Ham_R.copy()
+                for i in range(2):
+                    shape_cR = numpy.shape(dataK.cRvec_wcc)
+                    Hw_alphabeta_R = 1j * Hw_alphabeta_R.reshape((Hw_alphabeta_R.shape) + (1, )) * dataK.cRvec_wcc.reshape(
+                        (shape_cR[0], shape_cR[1], dataK.system.nRvec) + (1, ) * len(Hw_alphabeta_R.shape[3:]) + (3, ))
+                inverse_mass = dataK.fft_R_to_k(Hw_alphabeta_R, hermitean=False)[dataK.select_K]
         # read in rest from dataK
         cell_volume = dataK.cell_volume / BOHRTOANG ** 3
         kpts = dataK.kpoints_all
