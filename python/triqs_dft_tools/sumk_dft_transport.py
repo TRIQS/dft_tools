@@ -899,7 +899,7 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
     return A
 
 
-def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, method=None):
+def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, method=None, mode='optics'):
     r"""
     Calculates the Seebeck coefficient and the optical conductivity by calling
     :meth:`transport_coefficient <dft.sumk_dft_tools.SumkDFTTools.transport_coefficient>`.
@@ -923,7 +923,9 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
     method : string
         Integration method: cubic spline and scipy.integrate.quad ('quad'), simpson rule ('simpson'), trapezoidal rule ('trapz'), rectangular integration (otherwise)
         Note that the sampling points of the the self-energy are used!
-
+    mode : string
+        Choose between optical conductivity/seebeck/Kappa ('optics') or Raman conductivity ('raman')
+        
     Returns
     -------
     optic_cond : dictionary of double vectors
@@ -945,45 +947,59 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
 
     # initialization
     A0 = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
-    A1 = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
-    A2 = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
-    optic_cond = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
-    seebeck = {direction: numpy.nan for direction in directions}
-    kappa = {direction: numpy.nan for direction in directions}
+    if mode in ('optics'):
+        A1 = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
+        A2 = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
+        optic_cond = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
+        seebeck = {direction: numpy.nan for direction in directions}
+        kappa = {direction: numpy.nan for direction in directions}
 
-    for direction in directions:
-        for iq in range(n_q):
-            A0[direction][iq] = transport_coefficient(
-                Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=0, beta=beta, method=method)
-            A1[direction][iq] = transport_coefficient(
-                Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=1, beta=beta, method=method)
-            A2[direction][iq] = transport_coefficient(
-                Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=2, beta=beta, method=method)
-            print("A_0 in direction %s for Omega = %.2f    %e a.u." %
-                  (direction, Om_mesh[iq], A0[direction][iq]))
-            print("A_1 in direction %s for Omega = %.2f    %e a.u." %
-                  (direction, Om_mesh[iq], A1[direction][iq]))
-            print("A_2 in direction %s for Omega = %.2f    %e a.u." %
-                  (direction, Om_mesh[iq], A2[direction][iq]))
-            if ~numpy.isnan(A1[direction][iq]):
-                # Seebeck and kappa are overwritten if there is more than one Omega =
-                # 0 in Om_mesh
-                seebeck[direction] = - A1[direction][iq] / A0[direction][iq] * 86.17
-                kappa[direction] = A2[direction][iq] - \
-                    A1[direction][iq]*A1[direction][iq]/A0[direction][iq]
-                kappa[direction] *= 293178.0
+        for direction in directions:
+            for iq in range(n_q):
+                A0[direction][iq] = transport_coefficient(
+                    Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=0, beta=beta, method=method)
+                A1[direction][iq] = transport_coefficient(
+                    Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=1, beta=beta, method=method)
+                A2[direction][iq] = transport_coefficient(
+                    Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=2, beta=beta, method=method)
+                print("A_0 in direction %s for Omega = %.2f    %e a.u." %
+                      (direction, Om_mesh[iq], A0[direction][iq]))
+                print("A_1 in direction %s for Omega = %.2f    %e a.u." %
+                      (direction, Om_mesh[iq], A1[direction][iq]))
+                print("A_2 in direction %s for Omega = %.2f    %e a.u." %
+                      (direction, Om_mesh[iq], A2[direction][iq]))
+                if ~numpy.isnan(A1[direction][iq]):
+                    # Seebeck and kappa are overwritten if there is more than one Omega =
+                    # 0 in Om_mesh
+                    seebeck[direction] = - A1[direction][iq] / A0[direction][iq] * 86.17
+                    kappa[direction] = A2[direction][iq] - \
+                        A1[direction][iq]*A1[direction][iq]/A0[direction][iq]
+                    kappa[direction] *= 293178.0
 
-        # factor for optical conductivity: hbar * velocity_Hartree_to_SI * volume_Hartree_to_SI * m_to_cm * 10^-4 final unit
-        convert_to_SI = cst.hbar * (cst.c * cst.fine_structure) ** 2 * \
-            (1/cst.physical_constants['Bohr radius'][0]) ** 3 * 1e-6
-        optic_cond[direction] = beta * convert_to_SI * A0[direction]
-        for iq in range(n_q):
-            print("Conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" %
-                  (direction, Om_mesh[iq], optic_cond[direction][iq]))
-            if not (numpy.isnan(A1[direction][iq])):
-                print("Seebeck in direction      %s for Omega = 0.00      %f  x 10^(-6) V/K" %
-                      (direction, seebeck[direction]))
-                print("kappa in direction      %s for Omega = 0.00      %f  W/(m * K)" %
-                      (direction, kappa[direction]))
+            # factor for optical conductivity: hbar * velocity_Hartree_to_SI * volume_Hartree_to_SI * m_to_cm * 10^-4 final unit
+            convert_to_SI = cst.hbar * (cst.c * cst.fine_structure) ** 2 * \
+                (1/cst.physical_constants['Bohr radius'][0]) ** 3 * 1e-6
+            optic_cond[direction] = beta * convert_to_SI * A0[direction]
+            for iq in range(n_q):
+                print("Conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" %
+                      (direction, Om_mesh[iq], optic_cond[direction][iq]))
+                if not (numpy.isnan(A1[direction][iq])):
+                    print("Seebeck in direction      %s for Omega = 0.00      %f  x 10^(-6) V/K" %
+                          (direction, seebeck[direction]))
+                    print("kappa in direction      %s for Omega = 0.00      %f  W/(m * K)" %
+                          (direction, kappa[direction]))
 
-    return optic_cond, seebeck, kappa
+        return optic_cond, seebeck, kappa
+    elif mode in ('raman'):
+        # ToDo: correct units
+        raman_cond = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
+
+        for direction in directions:
+            for iq in range(n_q):
+                A0[direction][iq] = transport_coefficient(Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=0, beta=beta, method=method)
+                print("A_0 in direction %s for Omega = %.2f    %e a.u." % (direction, Om_mesh[iq], A0[direction][iq]))
+            raman_cond[direction] = beta * A0[direction] * 10700.0 / numpy.pi
+            for iq in range(n_q):
+                print("Raman conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" % (direction, Om_mesh[iq], raman_cond[direction][iq]))
+
+        return raman_cond
