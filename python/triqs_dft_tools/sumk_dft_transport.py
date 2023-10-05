@@ -337,7 +337,6 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
 
         if calc_inverse_mass:
             # in the band basis
-            # ToDo: change units of inverse_mass consistently
             if oc_basis == 'h':
                 inverse_mass = dataK.Xbar('Ham', 2)
             # in the orbital basis
@@ -348,6 +347,7 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
                     Hw_alphabeta_R = 1j * Hw_alphabeta_R.reshape((Hw_alphabeta_R.shape) + (1, )) * dataK.cRvec_wcc.reshape(
                         (shape_cR[0], shape_cR[1], dataK.system.nRvec) + (1, ) * len(Hw_alphabeta_R.shape[3:]) + (3, ))
                 inverse_mass = dataK.fft_R_to_k(Hw_alphabeta_R, hermitean=False)[dataK.select_K]
+            inverse_mass = inverse_mass / HARTREETOEV / BOHRTOANG**2
         # read in rest from dataK
         cell_volume = dataK.cell_volume / BOHRTOANG ** 3
         kpts = dataK.kpoints_all
@@ -427,7 +427,7 @@ def raman_vertex(sumk,ik,direction,code,isp, options=None):
             numpy array size [n_orb, n_orb] of complex type
     """
     if code in ('wien2k'):
-        assert 0, 'Raman for wien2k not yet implemented' #ToDo
+        assert 0, 'Raman for wien2k not yet implemented' 
     dir_names=['xx','yy','zz','B2g','B1g','A1g','Eg']
     dir_array=[ [[1.,0.,0.],[0.,0.,0.],[0.,0.,0.]],
                 [[0.,0.,0.],[0.,1.,0.],[0.,0.,0.]],
@@ -744,7 +744,7 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
                 if code in ('wannier90'):
                     assert hasattr(sum_k,"inverse_mass"), 'inverse_mass not available in sum_k. Set calc_inverse_mass=True in w90_params.'
                 elif code in ('wien2k'):
-                    assert 0, 'Raman for wien2k not yet implemented' #ToDo
+                    assert 0, 'Raman for wien2k not yet implemented'
                 # loop over all symmetries
                 for R in sum_k.rot_symmetries:
                     for direction in directions:
@@ -1001,15 +1001,15 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
         else:
             return optic_cond, seebeck, kappa
     elif mode in ('raman'):
-        # ToDo: correct units
+        # TODO: express in SI units
         raman_cond = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
 
         for direction in directions:
             for iq in range(n_q):
                 A0[direction][iq] = transport_coefficient(Gamma_w, omega, Om_mesh, SP, direction, iq=iq, n=0, beta=beta, method=method)
-                print("A_0 in direction %s for Omega = %.2f    %e a.u." % (direction, Om_mesh[iq], A0[direction][iq]))
-            raman_cond[direction] = beta * A0[direction] * 10700.0 / numpy.pi
+                print("A_0 in direction %s for Omega = %.2f    %e atomic units" % (direction, Om_mesh[iq], A0[direction][iq]))
+            raman_cond[direction] = beta * A0[direction] 
             for iq in range(n_q):
-                print("Raman conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" % (direction, Om_mesh[iq], raman_cond[direction][iq]))
+                print("Raman conductivity in direction %s for Omega = %.4f       %f  atomic units" % (direction, Om_mesh[iq], raman_cond[direction][iq]))
 
         return raman_cond
