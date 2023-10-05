@@ -899,7 +899,7 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
     return A
 
 
-def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, method=None, mode='optics'):
+def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, method=None, mode='optics', optic_kappa=False):
     r"""
     Calculates the Seebeck coefficient and the optical conductivity by calling
     :meth:`transport_coefficient <dft.sumk_dft_tools.SumkDFTTools.transport_coefficient>`.
@@ -925,6 +925,8 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
         Note that the sampling points of the the self-energy are used!
     mode : string
         Choose between optical conductivity/seebeck/Kappa ('optics') or Raman conductivity ('raman')
+    optic_kappa : bool
+        If calculates $\kappa(\omega)$ or not. Only if mode is 'optics'.
         
     Returns
     -------
@@ -935,7 +937,8 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
         Seebeck coefficient in each direction. If zero is not present in Om_mesh the Seebeck coefficient is set to NaN.
 
     kappa : dictionary of double.
-        thermal conductivity in each direction. If zero is not present in Om_mesh the thermal conductivity is set to NaN
+        thermal conductivity in each direction. If zero is not present in Om_mesh the thermal conductivity is set to NaN.
+        If optic_kappa is True, then returns the kappa for all frequencies.
     """
 
     mpi.report('Computing optical conductivity and kinetic coefficients...')
@@ -953,6 +956,7 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
         optic_cond = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
         seebeck = {direction: numpy.nan for direction in directions}
         kappa = {direction: numpy.nan for direction in directions}
+        if optic_kappa: optic_kappa = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
 
         for direction in directions:
             for iq in range(n_q):
@@ -980,16 +984,22 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
             convert_to_SI = cst.hbar * (cst.c * cst.fine_structure) ** 2 * \
                 (1/cst.physical_constants['Bohr radius'][0]) ** 3 * 1e-6
             optic_cond[direction] = beta * convert_to_SI * A0[direction]
+            if optic_kappa: optic_kappa[direction] = (A2[direction] - A1[direction]*A1[direction]/A0[direction])*293178.0
             for iq in range(n_q):
                 print("Conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" %
                       (direction, Om_mesh[iq], optic_cond[direction][iq]))
+                if optic_kappa:
+                      print("kappa(Omega) in direction %s for Omega = %.2f       %f  W/(m * K)" % 
+                            (direction, Om_mesh[iq], optic_kappa[direction][iq]))
                 if not (numpy.isnan(A1[direction][iq])):
                     print("Seebeck in direction      %s for Omega = 0.00      %f  x 10^(-6) V/K" %
                           (direction, seebeck[direction]))
                     print("kappa in direction      %s for Omega = 0.00      %f  W/(m * K)" %
                           (direction, kappa[direction]))
-
-        return optic_cond, seebeck, kappa
+        if optic_kappa:
+            return optic_cond, seebeck, optic_kappa
+        else:
+            return optic_cond, seebeck, kappa
     elif mode in ('raman'):
         # ToDo: correct units
         raman_cond = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
