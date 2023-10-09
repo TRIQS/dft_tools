@@ -536,7 +536,6 @@ def init_spectroscopy(sum_k, code='wien2k', w90_params={}):
             oc_select = 'both'
         # further checks for calc_inverse_mass
         if calc_inverse_mass:
-            assert oc_basis == 'h', '"calc_inverse_mass" only implemented for "oc_basis" == "h"'
             assert oc_select == 'both', '"oc_select" not implemented for "calc_inverse_mass"'
         # print some information
         mpi.report(f'{"Basis choice [h (Hamiltonian), w (Wannier)]:":<60s} {oc_basis}')
