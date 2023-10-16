@@ -116,6 +116,7 @@ jobs:
     - name: Test app4triqs
       env:
         DYLD_FALLBACK_LIBRARY_PATH: /usr/local/opt/llvm/lib
+        OPENBLAS_NUM_THREADS: "1"
       run: |
         source $HOME/install/share/triqs/triqsvars.sh
         cd build
