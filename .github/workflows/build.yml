@@ -5,6 +5,8 @@ on:
     branches: [ unstable ]
   pull_request:
     branches: [ unstable ]
+  workflow_call:
+  workflow_dispatch:
 
 env:
   CMAKE_C_COMPILER_LAUNCHER: ccache
