@@ -2,3 +2,5 @@
 mako
 numpy
 scipy
+meson
+setuptools
