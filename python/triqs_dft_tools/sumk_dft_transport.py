@@ -162,14 +162,14 @@ def fermi_dis(w, beta, der=0):
     -------
     f : double
     """
-    exponent = numpy.float128(w * beta)
+    exponent = numpy.longdouble(w * beta)
     fermi = 1.0 / (numpy.exp(exponent) + 1)
     if der == 0:
         return fermi
     elif der == 1:
         return - beta * fermi ** 2 * numpy.exp(exponent)
     else:
-        raise ('higher order of derivative than 1 not implemented')
+        raise ValueError('higher order of derivative than 1 not implemented')
 
 
 def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='./', calc_velocity=False, calc_inverse_mass=False, oc_select='both', oc_basis='h'):
