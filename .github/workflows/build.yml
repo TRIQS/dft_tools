@@ -90,7 +90,7 @@ jobs:
 
     - name: add clang cxxflags
       if: ${{ contains(matrix.cxx, 'clang') }}
-      run:
+      run: |
         echo "PATH=/usr/local/opt/llvm/bin:$PATH" >> $GITHUB_ENV
         echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
 
