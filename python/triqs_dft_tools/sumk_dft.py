@@ -1691,7 +1691,7 @@ class SumkDFT(object):
             Value of interaction parameter `U`.
         J_hund : float, optional
             Value of interaction parameter `J`.
-        use_dc_formula : int or string, optional 
+        use_dc_formula : int or string, optional
             Type of double-counting correction (see description of `compute_DC_from_density` above).
             There is an interface with the legacy implementation which allows for the old convention:
             * 0 -> 'sFLL'  spin dependent fully localized limit
@@ -1734,9 +1734,9 @@ class SumkDFT(object):
             if self.SP == 1 and self.SO == 1:
                 assert dim % 2 == 0
                 dim //= 2
-            
+
             if use_dc_value is None:
-                #For legacy compatibility 
+                #For legacy compatibility
                 if use_dc_formula == 0:
                     mpi.report(f"Detected {use_dc_formula=}, changing to sFLL")
                     use_dc_formula = "sFLL"
@@ -1746,7 +1746,7 @@ class SumkDFT(object):
                 if use_dc_formula == 2:
                     mpi.report(f"Detected {use_dc_formula=}, changing to sAMF")
                     use_dc_formula = "sAMF"
-                
+
                 for sp in spn:
                     DC_val, E_val = compute_DC_from_density(N_tot=Ncrtot,U=U_interact, J=J_hund, n_orbitals=dim, N_spin=Ncr[sp], method=use_dc_formula)
                     self.dc_imp[icrsh][sp] *= DC_val
@@ -1790,8 +1790,11 @@ class SumkDFT(object):
             for bname, gf in sigma_minus_dc[icrsh]:
                 # Transform dc_imp to global coordinate system
                 if self.use_rotations:
-                    gf -= np.dot(self.rot_mat[icrsh], np.dot(self.dc_imp[icrsh][
-                                       bname], self.rot_mat[icrsh].conjugate().transpose()))
+                    # if dc_imp is an numpy array simple rotate by hand, otherwise assume it is a triqs Gf
+                    if isinstance(self.dc_imp[icrsh][bname], np.ndarray):
+                        gf -= np.dot(self.rot_mat[icrsh], np.dot(self.dc_imp[icrsh][bname], self.rot_mat[icrsh].conjugate().transpose()))
+                    else:
+                        gf -= self.rotloc(icrsh, self.dc_imp[icrsh][bname], direction='toGlobal')
                 else:
                     gf -= self.dc_imp[icrsh][bname]
 
@@ -1955,11 +1958,11 @@ class SumkDFT(object):
                      Only relevant for real-frequency GF.
         max_loops : int, optional
                     Number of dichotomy loops maximally performed.
-        
+
         method : string, optional
                     Type of optimization used:
                         * dichotomy: usual bisection algorithm from the TRIQS library
-                        * newton: newton method, faster convergence but more unstable 
+                        * newton: newton method, faster convergence but more unstable
                         * brent: finds bounds and proceeds with hyperbolic brent method, a compromise between speed and ensuring convergence
         beta : float, optional, default = broadening
                 when using MeshReFreq this determines the temperature for the Fermi function
@@ -2055,7 +2058,7 @@ class SumkDFT(object):
                 """
                     Please check for typos or select one of the following:
                         * dichotomy: usual bisection algorithm from the TRIQS library
-                        * newton: newton method, fastest convergence but more unstable 
+                        * newton: newton method, fastest convergence but more unstable
                         * brent: finds bounds and proceeds with hyperbolic brent method, a compromise between speed and ensuring convergence
                     """
             )
@@ -2082,8 +2085,8 @@ class SumkDFT(object):
                    DFT code to write the density correction for. Options:
                    'vasp', 'wien2k', 'elk' or 'qe'. Needs to be set for 'qe'
         spinave : logical
-                   Elk specific and for magnetic calculations in DMFT only. 
-                   It averages the spin to keep the DFT part non-magnetic.            
+                   Elk specific and for magnetic calculations in DMFT only.
+                   It averages the spin to keep the DFT part non-magnetic.
         kpts_to_write : iterable of int
                    Indices of k points that are written to file. If None (default),
                    all k points are written. Only implemented for dm_type 'vasp'
