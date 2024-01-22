@@ -36,7 +36,7 @@ from .block_structure import BlockStructure
 from .util import compute_DC_from_density
 from itertools import product
 from warnings import warn
-from scipy import compress
+from numpy import compress
 from scipy.optimize import minimize, newton, brenth
 
 
