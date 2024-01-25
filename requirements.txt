@@ -2,3 +2,6 @@
 mako
 numpy
 scipy
+meson
+setuptools
+ninja

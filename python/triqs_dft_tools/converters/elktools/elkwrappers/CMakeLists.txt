@@ -12,7 +12,7 @@ add_custom_target(${module_name} ALL
 ##generate the fortran python wrapper shared library
 add_custom_command(
   OUTPUT ${generated_module_file}
-  COMMAND ${TRIQS_PYTHON_EXECUTABLE} -m numpy.f2py --f90exec=${CMAKE_Fortran_COMPILER} --f77exec=${CMAKE_Fortran_COMPILER} -c ${fortran_src_file} -m ${module_name} > elk_f2py.log
+  COMMAND ${TRIQS_PYTHON_EXECUTABLE} -m numpy.f2py --build-dir ${CMAKE_CURRENT_BINARY_DIR}/meson --f90exec=${CMAKE_Fortran_COMPILER} --f77exec=${CMAKE_Fortran_COMPILER} -c ${fortran_src_file} -m ${module_name} > elk_f2py.log
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
