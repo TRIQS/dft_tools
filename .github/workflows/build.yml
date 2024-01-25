@@ -93,6 +93,7 @@ jobs:
         source $HOME/install/share/triqs/triqsvars.sh
         mkdir build && cd build && cmake ..
         make -j2 || make -j1 VERBOSE=1
+        cat python/triqs_dft_tools/converters/elktools/elkwrappers/meson/bbdir/meson-logs/meson-log.txt
 
     - name: Test app4triqs
       env:
