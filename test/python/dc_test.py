@@ -55,7 +55,7 @@ def test_dc(SK_compat, SK_new, method, method_dict, dens, Uval, Jval, filename):
 
     dc_no = method_dict[method]["numbering_convention"]
     dc_string = method_dict[method]["new_convention"]
-    
+
     mpi.report("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
     mpi.report(f"\n Testing interface {method} \n")
     mpi.report("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
@@ -71,8 +71,8 @@ def test_dc(SK_compat, SK_new, method, method_dict, dens, Uval, Jval, filename):
     mpi.report("Up DC matrix:")
     mpi.report(SK_new.dc_imp[0]['up'])
     mpi.report(f"Double counting energy = {SK_new.dc_energ} ")
-    
-    # Load previously computed DC values from h5 archive 
+
+    # Load previously computed DC values from h5 archive
     R = HDFArchive(f'./{filename}', 'r')
     dc_comp = R[f'DC_{method}_benchmark']['dc_imp']
     en_comp = R[f'DC_{method}_benchmark']['dc_energ']
@@ -84,7 +84,7 @@ def test_dc(SK_compat, SK_new, method, method_dict, dens, Uval, Jval, filename):
     assert np.allclose(SK_new.dc_imp[0]['up'], dc_comp, atol=1e-12), f"Assertion failed comparing Vdc to reference, method: {method} "
     assert np.allclose(SK_new.dc_energ, en_comp, atol=1e-12), f"Assertion failed comparing energy to reference, method: {method} "
     mpi.report("Comparison with stored DC values successfull!\n")
-    
+
 
 
 
@@ -104,20 +104,20 @@ SK_new.set_mu(13.9)
 
 
 icrsh = 0
-dens = SK_compat.density_matrix()
+dens = SK_compat.density_matrix(transform_to_solver_blocks=True)
 
 with np.printoptions(precision=5):
     for key in dens[0].keys():
         mpi.report(f"{key} channel")
         mpi.report(dens[0][key].real)
 
-N_up = np.trace(dens[0]['up'].real)
-N_down = np.trace(dens[0]['down'].real)
+N_up = np.trace(dens[0]['up_0'].real)
+N_down = np.trace(dens[0]['down_0'].real)
 N_tot = N_up + N_down
 
 mpi.report(f"{N_up=} ,{N_down=}, {N_tot=}\n")
 
-for method in ["FLL", "AMF", "Held"]: 
+for method in ["FLL", "AMF", "Held"]:
     test_dc(SK_compat, SK_new, method, method_dict, dens, Uval, Jval, filename = f"{dft_filename}.h5")
 
     #in case implementation changes, to write new testing data into archive
@@ -141,16 +141,15 @@ SK_compat = SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=use_blocks)
 SK_new    = SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=use_blocks)
 
 icrsh = 0
-dens = SK_compat.density_matrix()
-
+dens = SK_compat.density_matrix(transform_to_solver_blocks=True)
 
 with np.printoptions(precision=5):
     for key in dens[0].keys():
         mpi.report(f"{key} channel")
         mpi.report(dens[0][key].real)
 
-N_up = np.trace(dens[0]['up'].real)
-N_down = np.trace(dens[0]['down'].real)
+N_up = np.trace(dens[0]['up_0'].real)
+N_down = np.trace(dens[0]['down_0'].real)
 N_tot = N_up + N_down
 
 mpi.report(f"{N_up=} ,{N_down=}, {N_tot=}\n")
@@ -158,9 +157,9 @@ mpi.report(f"{N_up=} ,{N_down=}, {N_tot=}\n")
 Uval = 5
 Jval = 0.3
 
-for method in ["FLL", "AMF", "Held"]: 
+for method in ["FLL", "AMF", "Held"]:
     test_dc(SK_compat, SK_new, method, method_dict, dens, Uval, Jval, filename = f"{dft_filename}.h5" )
-    
+
     #in case implementation changes, to write new testing data into archive
     #R = HDFArchive(f'./{dft_filename}.h5', 'a')
     #R.create_group(f'DC_{method}_benchmark')

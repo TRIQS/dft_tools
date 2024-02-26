@@ -20,16 +20,20 @@
 #
 ################################################################################
 
-from h5 import *
+from h5 import HDFArchive
 from triqs_dft_tools.sumk_dft_tools import SumkDFTTools
 import triqs.utility.mpi as mpi
 from triqs.utility.comparison_tests import *
 from triqs.utility.h5diff import h5diff
-
+import numpy as np
 SK = SumkDFTTools(hdf_file = 'SrVO3.ref.h5')
 
-dm = SK.density_matrix(method = 'using_gf')
+dm = SK.density_matrix(method = 'using_gf', transform_to_solver_blocks=False, with_Sigma=False)
 dm_pc = SK.partial_charges(with_Sigma=False, with_dc=False)
+dm_pi = SK.density_matrix_using_point_integration()
+
+for key, value in dm[0].items():
+    assert (np.allclose(value, dm_pi[0][key], atol=1e-6, rtol=1e-6))
 
 with HDFArchive('sumkdft_basic.out.h5','w') as ar:
     ar['dm'] = dm
