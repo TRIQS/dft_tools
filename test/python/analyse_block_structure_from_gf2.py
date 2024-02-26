@@ -48,7 +48,7 @@ G['ud'] << inverse(inverse(G['ud']) - Hloc)
 
 
 SK = SumkDFT(hdf_file = 'SrIrO3_rot.h5', use_dft_blocks=False)
-G_new = SK.analyse_block_structure_from_gf([G])
+G_new = SK.analyse_block_structure_from_gf([G]*2)
 G_new_symm = G_new[0].copy()
 SK.symm_deg_gf(G_new_symm, 0)
 assert_block_gfs_are_close(G_new[0], G_new_symm)
@@ -93,7 +93,7 @@ known_moments[1,:] = np.eye(10)
 tail, err = fit_tail(G['ud'], known_moments)
 Gt['ud'].set_from_fourier(G['ud'], tail)
 
-G_new = SK.analyse_block_structure_from_gf([Gt])
+G_new = SK.analyse_block_structure_from_gf([Gt] * 2)
 G_new_symm = G_new[0].copy()
 SK.symm_deg_gf(G_new_symm, 0)
 assert_block_gfs_are_close(G_new[0], G_new_symm)

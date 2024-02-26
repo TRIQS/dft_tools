@@ -168,8 +168,8 @@ class SumkDFT(object):
             # blocks possible
             self.gf_struct_sumk = [[(sp, self.corr_shells[icrsh]['dim']) for sp in self.spin_block_names[self.corr_shells[icrsh]['SO']]]
                                    for icrsh in range(self.n_corr_shells)]
-            # First set a standard gf_struct solver:
-            self.gf_struct_solver = [dict([(sp, self.corr_shells[self.inequiv_to_corr[ish]]['dim'])
+            # First set a standard gf_struct solver (add _0 here for consistency with analyse_block_structure):
+            self.gf_struct_solver = [dict([(sp+'_0', self.corr_shells[self.inequiv_to_corr[ish]]['dim'])
                                            for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]])
                                      for ish in range(self.n_inequiv_shells)]
             # Set standard (identity) maps from gf_struct_sumk <->
@@ -180,12 +180,12 @@ class SumkDFT(object):
                                          for ish in range(self.n_inequiv_shells)]
             for ish in range(self.n_inequiv_shells):
                 for block, inner_dim in self.gf_struct_sumk[self.inequiv_to_corr[ish]]:
-                    self.solver_to_sumk_block[ish][block] = block
+                    self.solver_to_sumk_block[ish][block+'_0'] = block
                     for inner in range(inner_dim):
                         self.sumk_to_solver[ish][
-                            (block, inner)] = (block, inner)
+                            (block, inner)] = (block+'_0', inner)
                         self.solver_to_sumk[ish][
-                            (block, inner)] = (block, inner)
+                            (block+'_0', inner)] = (block, inner)
             # assume no shells are degenerate
             self.deg_shells = [[] for ish in range(self.n_inequiv_shells)]
 
@@ -862,8 +862,8 @@ class SumkDFT(object):
                     If the difference between density matrix / hloc elements is below threshold,
                     they are considered to be equal.
         include_shells : list of integers, optional
-                         List of correlated shells to be analysed.
-                         If include_shells is not provided all correlated shells will be analysed.
+                         List of inequivalent shells to be analysed.
+                         If include_shells is not provided all inequivalent shells will be analysed.
         dm : list of dict, optional
              List of density matrices from which block stuctures are to be analysed.
              Each density matrix is a dict {block names: 2d numpy arrays} for each correlated shell.
@@ -874,14 +874,11 @@ class SumkDFT(object):
                If not provided, it will be calculated using eff_atomic_levels.
         """
 
-        self.gf_struct_solver = [{} for ish in range(self.n_inequiv_shells)]
-        self.sumk_to_solver = [{} for ish in range(self.n_inequiv_shells)]
-        self.solver_to_sumk = [{} for ish in range(self.n_inequiv_shells)]
-        self.solver_to_sumk_block = [{}
-                                     for ish in range(self.n_inequiv_shells)]
-
         if dm is None:
-            dm = self.density_matrix(method='using_point_integration')
+            warn("WARNING: No density matrix given. Calculating density matrix with default parameters. This will be deprecated in future releases.")
+            dm = self.density_matrix(method='using_gf', transform_to_solver_blocks=False)
+
+        assert len(dm) == self.n_corr_shells, "The number of density matrices must be equal to the number of correlated shells."
         dens_mat = [dm[self.inequiv_to_corr[ish]]
                     for ish in range(self.n_inequiv_shells)]
         if hloc is None:
@@ -890,8 +887,13 @@ class SumkDFT(object):
         if include_shells is None:
             include_shells = list(range(self.n_inequiv_shells))
         for ish in include_shells:
+            self.gf_struct_solver[ish] = {}
+            self.sumk_to_solver[ish] = {}
+            self.solver_to_sumk[ish] = {}
+            self.solver_to_sumk_block[ish] = {}
 
             for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]:
+                assert sp in dens_mat[ish], f"The density matrix does not contain the block {sp}. Is the input dm given in sumk block structure?"
                 n_orb = self.corr_shells[self.inequiv_to_corr[ish]]['dim']
                 # gives an index list of entries larger that threshold
                 dmbool = (abs(dens_mat[ish][sp]) > threshold)
@@ -1049,8 +1051,8 @@ class SumkDFT(object):
                     If the difference between matrix elements is below threshold,
                     they are considered to be equal.
         include_shells : list of integers, optional
-                         List of correlated shells to be analysed.
-                         If include_shells is not provided all correlated shells will be analysed.
+                         List of inequivalent shells to be analysed.
+                         If include_shells is not provided all inequivalent shells will be analysed.
         analyse_deg_shells : bool
                              Whether to call the analyse_deg_shells function
                              after having finished the block structure analysis
@@ -1062,29 +1064,26 @@ class SumkDFT(object):
         """
 
         assert isinstance(G, list), "G must be a list (with elements for each correlated shell)"
+        assert len(G) == self.n_corr_shells, "G must have one element for each correlated shell, run extract_G_loc with transform_to_solver_blocks=False to get the correct G"
 
         gf = self._get_hermitian_quantity_from_gf(G)
-
-        # initialize the variables
-        self.gf_struct_solver = [{} for ish in range(self.n_inequiv_shells)]
-        self.sumk_to_solver = [{} for ish in range(self.n_inequiv_shells)]
-        self.solver_to_sumk = [{} for ish in range(self.n_inequiv_shells)]
-        self.solver_to_sumk_block = [{}
-                                     for ish in range(self.n_inequiv_shells)]
-
-        # the maximum value of each matrix element of each block and shell
-        max_gf = [{name:np.max(np.abs(g.data),0) for name, g in gf[ish]} for ish in range(self.n_inequiv_shells)]
 
         if include_shells is None:
             # include all shells
             include_shells = list(range(self.n_inequiv_shells))
 
         for ish in include_shells:
+            self.gf_struct_solver[ish] = {}
+            self.sumk_to_solver[ish] = {}
+            self.solver_to_sumk[ish] = {}
+            self.solver_to_sumk_block[ish] = {}
             for sp in self.spin_block_names[self.corr_shells[self.inequiv_to_corr[ish]]['SO']]:
+                assert sp in gf[self.inequiv_to_corr[ish]].indices, f"The Green's function does not contain the block {sp}. Is the input G given in sumk block structure?"
                 n_orb = self.corr_shells[self.inequiv_to_corr[ish]]['dim']
 
                 # gives an index list of entries larger that threshold
-                maxgf_bool = (abs(max_gf[ish][sp]) > threshold)
+                max_gf = np.max(np.abs(gf[self.inequiv_to_corr[ish]][sp].data),0)
+                maxgf_bool = (max_gf > threshold)
 
                 # Determine off-diagonal entries in upper triangular part of the
                 # Green's function
@@ -1455,21 +1454,12 @@ class SumkDFT(object):
 
         return trans
 
-
-    def density_matrix(self, method='using_gf'):
-        """Calculate density matrices in one of two ways.
-
-        Parameters
-        ----------
-        method : string, optional
-
-                 - if 'using_gf': First get lattice gf (g_loc is not set up), then density matrix.
-                                  It is useful for Hubbard I, and very quick.
-                                  No assumption on the hopping structure is made (ie diagonal or not).
-                 - if 'using_point_integration': Only works for diagonal hopping matrix (true in wien2k).
-
-        beta : float, optional
-               Inverse temperature.
+    def density_matrix_using_point_integration(self):
+        """
+        Calculate density matrices using point integration: Only works for
+        diagonal hopping matrix (true in wien2k). Consider using extract_G_loc
+        together with [G.density() for G in Gloc] instead. Returned density
+        matrix is always given in SumK block structure.
 
         Returns
         -------
@@ -1483,34 +1473,21 @@ class SumkDFT(object):
                     [self.corr_shells[icrsh]['dim'], self.corr_shells[icrsh]['dim']], complex)
 
         ikarray = np.array(list(range(self.n_k)))
+        ntoi = self.spin_names_to_ind[self.SO]
+        spn = self.spin_block_names[self.SO]
         for ik in mpi.slice_array(ikarray):
+            dims = {sp:self.n_orbitals[ik, ntoi[sp]] for sp in spn}
+            MMat = [np.zeros([dims[sp], dims[sp]], complex) for sp in spn]
 
-            if method == "using_gf":
-
-                G_latt_iw = self.lattice_gf(ik=ik, mu=self.chemical_potential)
-                G_latt_iw *= self.bz_weights[ik]
-                dm = G_latt_iw.density()
-                MMat = [dm[sp] for sp in self.spin_block_names[self.SO]]
-
-            elif method == "using_point_integration":
-
-                ntoi = self.spin_names_to_ind[self.SO]
-                spn = self.spin_block_names[self.SO]
-                dims = {sp:self.n_orbitals[ik, ntoi[sp]] for sp in spn}
-                MMat = [np.zeros([dims[sp], dims[sp]], complex) for sp in spn]
-
-                for isp, sp in enumerate(spn):
-                    ind = ntoi[sp]
-                    for inu in range(self.n_orbitals[ik, ind]):
-                        # only works for diagonal hopping matrix (true in
-                        # wien2k)
-                        if (self.hopping[ik, ind, inu, inu] - self.h_field * (1 - 2 * isp)) < 0.0:
-                            MMat[isp][inu, inu] = 1.0
-                        else:
-                            MMat[isp][inu, inu] = 0.0
-
-            else:
-                raise ValueError("density_matrix: the method '%s' is not supported." % method)
+            for isp, sp in enumerate(spn):
+                ind = ntoi[sp]
+                for inu in range(self.n_orbitals[ik, ind]):
+                    # only works for diagonal hopping matrix (true in
+                    # wien2k)
+                    if (self.hopping[ik, ind, inu, inu] - self.h_field * (1 - 2 * isp)) < 0.0:
+                        MMat[isp][inu, inu] = 1.0
+                    else:
+                        MMat[isp][inu, inu] = 0.0
 
             for icrsh in range(self.n_corr_shells):
                 for isp, sp in enumerate(self.spin_block_names[self.corr_shells[icrsh]['SO']]):
@@ -1519,11 +1496,7 @@ class SumkDFT(object):
                     dim = self.corr_shells[icrsh]['dim']
                     n_orb = self.n_orbitals[ik, ind]
                     projmat = self.proj_mat[ik, ind, icrsh, 0:dim, 0:n_orb]
-                    if method == "using_gf":
-                        dens_mat[icrsh][sp] += np.dot(np.dot(projmat, MMat[isp]),
-                                                         projmat.transpose().conjugate())
-                    elif method == "using_point_integration":
-                        dens_mat[icrsh][sp] += self.bz_weights[ik] * np.dot(np.dot(projmat, MMat[isp]),
+                    dens_mat[icrsh][sp] += self.bz_weights[ik] * np.dot(np.dot(projmat, MMat[isp]),
                                                                                projmat.transpose().conjugate())
 
         # get data from nodes:
@@ -1543,6 +1516,55 @@ class SumkDFT(object):
                         dens_mat[icrsh][sp] = dens_mat[icrsh][sp].conjugate()
                     dens_mat[icrsh][sp] = np.dot(np.dot(self.rot_mat[icrsh].conjugate().transpose(), dens_mat[icrsh][sp]),
                                                     self.rot_mat[icrsh])
+
+        return dens_mat
+
+
+    def density_matrix(self, method='using_gf', mu=None, with_Sigma=True, with_dc=True, broadening=None,
+                      transform_to_solver_blocks=True, show_warnings=True):
+        """Calculate density matrices in one of two ways.
+
+        Parameters
+        ----------
+        method : string, optional
+
+                 - if 'using_gf': First get lattice gf (g_loc is not set up), then density matrix.
+                                  It is useful for Hubbard I, and very quick.
+                                  No assumption on the hopping structure is made (ie diagonal or not).
+                 - if 'using_point_integration': Only works for diagonal hopping matrix (true in wien2k).
+        mu : real, optional
+            Input chemical potential. If not provided the value of self.chemical_potential is used as mu.
+        with_Sigma : boolean, optional
+            If True then the local GF is calculated with the self-energy self.Sigma_imp.
+        with_dc : boolean, optional
+            If True then the double-counting correction is subtracted from the self-energy in calculating the GF.
+        broadening : float, optional
+            Imaginary shift for the axis along which the real-axis GF is calculated.
+            If not provided, broadening will be set to double of the distance between mesh points in 'mesh'.
+            Only relevant for real-frequency GF.
+        transform_to_solver_blocks : bool, optional
+            If True (default), the returned G_loc will be transformed to the block structure ``gf_struct_solver``,
+            else it will be in ``gf_struct_sumk``.
+        show_warnings : bool, optional
+            Displays warning messages during transformation
+            (Only effective if transform_to_solver_blocks = True
+
+        Returns
+        -------
+        dens_mat : list of dicts
+                   Density matrix for each spin in each correlated shell.
+        """
+
+        if method == "using_gf":
+            warn("WARNING: density_matrix: method 'using_gf' is deprecated. Use 'extract_G_loc' instead.")
+            Gloc = self.extract_G_loc(mu, with_Sigma, with_dc, broadening,
+                                      transform_to_solver_blocks, show_warnings)
+            dens_mat = [G.density() for G in Gloc]
+        elif method == "using_point_integration":
+            warn("WARNING: density_matrix: method 'using_point_integration' is deprecated. Use 'density_matrix_using_point_integration' instead. All additionally provided arguments are ignored.")
+            dens_mat = self.density_matrix_using_point_integration()
+        else:
+           raise ValueError("density_matrix: the method '%s' is not supported." % method)
 
         return dens_mat
 
