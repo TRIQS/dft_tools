@@ -18,7 +18,7 @@ if(NOT IS_SUBPROJECT
     FILES
       ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.modulefile
       ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}vars.sh
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
+    DESTINATION share/${PROJECT_NAME}
   )
  
   message(STATUS "*********************************************************************************")
