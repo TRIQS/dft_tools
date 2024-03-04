@@ -15,9 +15,9 @@ target_include_directories(${PROJECT_NAME}_c SYSTEM INTERFACE $<INSTALL_INTERFAC
 target_compile_definitions(${PROJECT_NAME}_c PUBLIC
 				APP4TRIQS_GIT_HASH=${PROJECT_GIT_HASH}
 				TRIQS_GIT_HASH=${TRIQS_GIT_HASH}
-				$<$<CONFIG:Debug,RelWithDebInfo>:APP4TRIQS_DEBUG>
-				$<$<CONFIG:Debug,RelWithDebInfo>:TRIQS_DEBUG>
-				$<$<CONFIG:Debug,RelWithDebInfo>:TRIQS_ARRAYS_ENFORCE_BOUNDCHECK>
+				$<$<CONFIG:Debug>:APP4TRIQS_DEBUG>
+				$<$<CONFIG:Debug>:TRIQS_DEBUG>
+				$<$<CONFIG:Debug>:TRIQS_ARRAYS_ENFORCE_BOUNDCHECK>
 			  )
 
 # Install library and headers
