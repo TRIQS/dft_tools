@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -21,11 +21,17 @@ ignore_lst = [".git/", "replace_and_rename.py", "squash_history.sh"]
 # Find the root directory of app4triqs
 app4triqs_root = os.path.abspath(os.path.dirname(__file__) + "/..")
 
+# Blacklisted file-formats
+fmt_blacklist = ['.png', '.h5', '.jpg', '.ico']
+
 # Recurse over all subdirectories and files
 for root, dirs, files in os.walk(app4triqs_root):
 
     for fname in files:
         fpath = os.path.join(root, fname)
+
+        if os.path.splitext(fname)[1] in fmt_blacklist:
+            continue
 
         # Ignore certain files / directories
         if any(it in fpath for it in ignore_lst): continue

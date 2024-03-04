@@ -5,6 +5,19 @@ on:
     branches: [ unstable ]
   pull_request:
     branches: [ unstable ]
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  CMAKE_C_COMPILER_LAUNCHER: ccache
+  CMAKE_CXX_COMPILER_LAUNCHER: ccache
+  CCACHE_COMPILERCHECK: content
+  CCACHE_BASEDIR: ${{ github.workspace }}
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
+  CCACHE_MAXSIZE: 500M
+  CCACHE_SLOPPINESS: pch_defines,time_macros,include_file_mtime,include_file_ctime
+  CCACHE_COMPRESS: "1"
+  CCACHE_COMPRESSLEVEL: "1"
 
 jobs:
   build:
@@ -16,12 +29,19 @@ jobs:
           - {os: ubuntu-22.04, cc: gcc-12, cxx: g++-12}
           - {os: ubuntu-22.04, cc: clang-15, cxx: clang++-15}
           - {os: macos-12, cc: gcc-12, cxx: g++-12}
-          - {os: macos-12, cc: /usr/local/opt/llvm/bin/clang, cxx: /usr/local/opt/llvm/bin/clang++}
+          - {os: macos-12, cc: clang, cxx: clang++}
 
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+
+    - uses: actions/cache/restore@v3
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
+        restore-keys:
+          ccache-${{ matrix.os }}-${{ matrix.cc }}-
 
     - name: Install ubuntu dependencies
       if: matrix.os == 'ubuntu-22.04'
@@ -30,6 +50,7 @@ jobs:
         sudo apt-get install lsb-release wget software-properties-common &&
         wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh && sudo chmod +x /tmp/llvm.sh && sudo /tmp/llvm.sh 15 &&
         sudo apt-get install
+        ccache
         clang-15
         g++-12
         gfortran-12
@@ -63,13 +84,14 @@ jobs:
     - name: Install homebrew dependencies
       if: matrix.os == 'macos-12'
       run: |
-        brew install gcc@12 llvm boost fftw hdf5 open-mpi openblas
+        brew install ccache gcc@12 llvm boost fftw hdf5 open-mpi openblas
         pip3 install mako numpy scipy mpi4py
         pip3 install -r requirements.txt
 
     - name: add clang cxxflags
       if: ${{ contains(matrix.cxx, 'clang') }}
-      run:
+      run: |
+        echo "PATH=/usr/local/opt/llvm/bin:$PATH" >> $GITHUB_ENV
         echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
 
     - name: Build & Install TRIQS
@@ -102,7 +124,18 @@ jobs:
     - name: Test app4triqs
       env:
         DYLD_FALLBACK_LIBRARY_PATH: /usr/local/opt/llvm/lib
+        OPENBLAS_NUM_THREADS: "1"
       run: |
         source $HOME/install/share/triqs/triqsvars.sh
         cd build
         ctest -j2 --output-on-failure
+
+    - name: ccache statistics
+      if: always()
+      run: ccache -sv
+
+    - uses: actions/cache/save@v3
+      if: always()
+      with:
+        path: ${{ env.CCACHE_DIR }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}

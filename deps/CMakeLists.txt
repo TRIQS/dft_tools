@@ -52,7 +52,7 @@ if(PythonSupport OR (NOT IS_SUBPROJECT AND Build_Documentation))
   external_dependency(Cpp2Py
     GIT_REPO https://github.com/TRIQS/cpp2py
     VERSION 2.0
-    GIT_TAG master
+    GIT_TAG unstable
     BUILD_ALWAYS
     EXCLUDE_FROM_ALL
   )

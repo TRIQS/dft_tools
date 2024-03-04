@@ -21,6 +21,9 @@
 
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 cmake_policy(VERSION 3.20)
+if(POLICY CMP0144)
+  cmake_policy(SET CMP0144 NEW)
+endif()
 
 # ############
 # Define Project
@@ -41,7 +44,7 @@ if(NOT ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR} VERSION_EQUAL ${TRIQS_V
   message(FATAL_ERROR "The ${PROJECT_NAME} version ${PROJECT_VERSION} is not compatible with TRIQS version ${TRIQS_VERSION}.")
 endif()
 
-# Default Install directory to TRIQS_ROOT if not given or invalid.
+# Default Install directory to TRIQS_ROOT if not given or when provided as relative path.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT OR (NOT IS_ABSOLUTE ${CMAKE_INSTALL_PREFIX}))
   message(STATUS "No install prefix given (or invalid). Defaulting to TRIQS_ROOT")
   set(CMAKE_INSTALL_PREFIX ${TRIQS_ROOT} CACHE PATH "default install path" FORCE)
@@ -84,11 +87,11 @@ if(Build_Tests)
   enable_testing()
 endif()
 
-# Build static libraries by default
-option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
-
 # ############
 # Global Compilation Settings
+
+# Build static libraries by default
+option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
 
 # Export the list of compile-commands into compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -120,6 +123,9 @@ target_compile_options(${PROJECT_NAME}_warnings
     $<$<CXX_COMPILER_ID:AppleClang,Clang,IntelLLVM>:-Wno-c++20-compat>
     $<$<CXX_COMPILER_ID:IntelLLVM>:-Wno-tautological-constant-compare>
 )
+
+# Provide GNU Installation directories
+include(GNUInstallDirs)
 
 # #############
 # Build Project
@@ -155,6 +161,9 @@ add_subdirectory(bin)
 
 # Additional configuration files
 add_subdirectory(share)
+
+# add packaging for automatic Versioning
+add_subdirectory(packaging)
 
 # #############
 # Debian Package
