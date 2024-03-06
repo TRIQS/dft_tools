@@ -112,6 +112,7 @@ target_compile_options(${PROJECT_NAME}_warnings
     -Wpedantic
     -Wno-sign-compare
     $<$<CXX_COMPILER_ID:GNU>:-Wno-comma-subscript>
+    $<$<CXX_COMPILER_ID:GNU>:-Wno-psabi> # Disable notes about ABI changes
     $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
     $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
     $<$<CXX_COMPILER_ID:GNU>:-Wno-deprecated-declarations>
