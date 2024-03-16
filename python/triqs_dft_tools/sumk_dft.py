@@ -30,7 +30,7 @@ import triqs.utility.dichotomy as dichotomy
 from triqs.gf import *
 import triqs.utility.mpi as mpi
 from triqs.utility.comparison_tests import assert_arrays_are_close
-from h5 import *
+from h5 import HDFArchive
 from .symmetry import *
 from .block_structure import BlockStructure
 from .util import compute_DC_from_density
@@ -2103,7 +2103,7 @@ class SumkDFT(object):
 
         """
         #automatically set dm_type if required
-        if dm_type==None:
+        if dm_type is None:
             dm_type = self.dft_code
 
         assert dm_type in ('vasp', 'wien2k','elk', 'qe'), "'dm_type' must be either 'vasp', 'wienk', 'elk' or 'qe'"
@@ -2217,9 +2217,9 @@ class SumkDFT(object):
                     f1.write("%.14f\n" %
                              (self.chemical_potential / self.energy_unit))
                 # write beta in rydberg-1
-                f.write("%.14f\n" % (G_latt_iw.mesh.beta * self.energy_unit))
+                f.write("%.14f\n" % (self.mesh.beta * self.energy_unit))
                 if self.SP != 0:
-                    f1.write("%.14f\n" % (G_latt_iw.mesh.beta * self.energy_unit))
+                    f1.write("%.14f\n" % (self.mesh.beta * self.energy_unit))
 
                 if self.SP == 0:  # no spin-polarization
 
@@ -2289,7 +2289,7 @@ class SumkDFT(object):
                     n_spin_blocks = self.SP + 1 - self.SO
                     nbmax = np.max(self.n_orbitals)
         # output beta and mu in Hartrees
-                    beta = G_latt_iw.mesh.beta * self.energy_unit
+                    beta = self.mesh.beta * self.energy_unit
                     mu = self.chemical_potential/self.energy_unit
         # ouput n_k, nspin and max orbitals - a check
                     f.write(" %d  %d  %d  %.14f %.14f ! nkpt, nspin, nstmax, beta, mu\n"%(self.n_k, n_spin_blocks, nbmax, beta, mu))
@@ -2336,7 +2336,7 @@ class SumkDFT(object):
                         delta_N[ik, inu, imu] = valre + 1j*valim
             if mpi.is_master_node():
                 with HDFArchive(self.hdf_file, 'a') as ar:
-                    if not subgrp in ar:
+                    if subgrp not in ar:
                         ar.create_group(subgrp)
                     things_to_save = ['delta_N']
                     for it in things_to_save:
