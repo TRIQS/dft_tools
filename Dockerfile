@@ -2,8 +2,8 @@
 FROM flatironinstitute/triqs:unstable-ubuntu-clang
 ARG APPNAME=app4triqs
 
-COPY requirements.txt /src/$APPNAME/requirements.txt
-RUN pip3 install -r /src/$APPNAME/requirements.txt
+# Install here missing dependencies, e.g.
+# RUN apt-get install -y python3-skimage
 
 COPY --chown=build . $SRC/$APPNAME
 WORKDIR $BUILD/$APPNAME
