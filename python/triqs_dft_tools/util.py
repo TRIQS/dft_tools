@@ -34,25 +34,25 @@ def compute_DC_from_density(N_tot, U, J, N_spin=None,  n_orbitals=5,  method='sF
 
     Parameters
     ----------
-    N_tot : float 
+    N_tot : float
         Total density of the impurity
     N_spin : float , default = None
         Spin density, defaults to N_tot*0.5 if not specified
-    U : float 
+    U : float
         U value
-    J : float 
+    J : float
         J value
     n_orbitals : int, default = 5
         Total number of orbitals
-    method : string, default = 'cFLL' 
+    method : string, default = 'cFLL'
         possibilities:
         -    cFLL: DC potential from Ryee for spin unpolarized DFT: (DOI: 10.1038/s41598-018-27731-4)
         -    sFLL: same as above for spin polarized DFT
         -    cAMF: around mean field
         -    sAMF: spin polarized around mean field
-        -    cHeld: unpolarized Held's formula as reported in (DOI: 10.1103/PhysRevResearch.2.03308)
+        -    cHeld: unpolarized Held's formula as reported in (DOI: 10.1103/PhysRevResearch.2.033088)
         -    sHeld: NOT IMPLEMENTED
-    
+
     Returns
     -------
     List of floats:
@@ -60,7 +60,7 @@ def compute_DC_from_density(N_tot, U, J, N_spin=None,  n_orbitals=5,  method='sF
         -   E_val: double counting energy
 
 
-    todo: 
+    todo:
         - See whether to move this to TRIQS directly instead of dft_tools
         - allow as input full density matrix to allow orbital dependent DC
     """
