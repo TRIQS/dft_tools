@@ -1824,7 +1824,7 @@ class SumkDFT(object):
 
     def symm_deg_gf(self, gf_to_symm, ish=0):
         r"""
-        Averages a GF over degenerate shells.
+        Averages a GF or a dict of np.ndarrays over degenerate shells.
 
         Degenerate shells of an inequivalent correlated shell are defined by
         `self.deg_shells`. This function enforces corresponding degeneracies
@@ -1834,6 +1834,7 @@ class SumkDFT(object):
         ----------
         gf_to_symm : gf_struct_solver like
                      Input and output GF (i.e., it gets overwritten)
+                     or dict of np.ndarrays.
         ish : int
               Index of an inequivalent shell. (default value 0)
 
@@ -1843,6 +1844,13 @@ class SumkDFT(object):
         # an h5 file, self.deg_shells might be None
         if self.deg_shells is None: return
 
+        if not isinstance(gf_to_symm, BlockGf) and isinstance(gf_to_symm[list(gf_to_symm.keys())[0]], np.ndarray):
+            blockgf = False
+        elif isinstance(gf_to_symm, BlockGf):
+            blockgf = True
+        else:
+            raise ValueError("gf_to_symm should be either a BlockGf or a dict of numpy arrays")
+
         for degsh in self.deg_shells[ish]:
             # ss will hold the averaged orbitals in the basis where the
             # blocks are all equal
@@ -1851,18 +1859,30 @@ class SumkDFT(object):
             n_deg = len(degsh)
             for key in degsh:
                 if ss is None:
-                    ss = gf_to_symm[key].copy()
-                    ss.zero()
-                    helper = ss.copy()
+                    if blockgf:
+                        ss = gf_to_symm[key].copy()
+                        ss.zero()
+                        helper = ss.copy()
+                    else:
+                        ss = np.zeros_like(gf_to_symm[key])
+                        helper = np.zeros_like(gf_to_symm[key])
+
                 # get the transformation matrix
                 if isinstance(degsh, dict):
                     v, C = degsh[key]
                 else:
                     # for backward compatibility, allow degsh to be a list
-                    v = np.eye(*ss.target_shape)
+                    if blockgf:
+                        v = np.eye(*ss.target_shape)
+                    else:
+                        v = np.eye(*ss.shape)
                     C = False
                 # the helper is in the basis where the blocks are all equal
-                helper.from_L_G_R(v.conjugate().transpose(), gf_to_symm[key], v)
+                if blockgf:
+                    helper.from_L_G_R(v.conjugate().transpose(), gf_to_symm[key], v)
+                else:
+                    helper = np.dot(v.conjugate().transpose(), np.dot(gf_to_symm[key], v))
+
                 if C:
                     helper << helper.transpose()
                 # average over all shells
@@ -1873,12 +1893,19 @@ class SumkDFT(object):
                     v, C = degsh[key]
                 else:
                     # for backward compatibility, allow degsh to be a list
-                    v = np.eye(*ss.target_shape)
+                    if blockgf:
+                        v = np.eye(*ss.target_shape)
+                    else:
+                        v = np.eye(*ss.shape)
                     C = False
-                if C:
+                if blockgf and C:
                     gf_to_symm[key].from_L_G_R(v, ss.transpose().copy(), v.conjugate().transpose())
-                else:
+                elif blockgf and not C:
                     gf_to_symm[key].from_L_G_R(v, ss, v.conjugate().transpose())
+                elif not blockgf and C:
+                    gf_to_symm[key] = np.dot(v, np.dot(ss.transpose().copy(), v.conjugate().transpose()))
+                elif not blockgf and not C:
+                    gf_to_symm[key] = np.dot(v, np.dot(ss, v.conjugate().transpose()))
 
     def total_density(self, mu=None, with_Sigma=True, with_dc=True, broadening=None, beta=None):
         r"""
