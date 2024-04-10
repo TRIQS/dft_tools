@@ -620,6 +620,23 @@ def read_wannier90_blochbasis_data(wannier_seed, n_wannier_spin):
     assert ks_eigenvals_spin.shape[1] == num_ks_bands, '.eig and u_dis.mat data inconsistent'
 
     if disentangle:
+        # In case the disentanglement window is not set by the user, change manually both limits to 
+        # larger window to avoid possible counting error in next line
+        dis_tol = 1e-5
+        shift_dis_down = np.any(np.isclose(np.min(ks_eigenvals_spin, axis=1), dis_window_min, atol=dis_tol, rtol=0.) == True)
+        shift_dis_up = np.any(np.isclose(np.max(ks_eigenvals_spin, axis=1), dis_window_max, atol=dis_tol, rtol=0.) == True)
+        if shift_dis_down or shift_dis_up:
+            if shift_dis_down:
+                mpi.report('WARNING: dis_win_min too close to value in .eig, manually shifting it down by '
+                           + '{} to avoid counting error'.format(2*dis_tol))
+                dis_window_min -= 2*dis_tol
+            if shift_dis_up:
+                mpi.report('WARNING: dis_win_max too close to value in .eig, manually shifting it up by '
+                           + '{} to avoid counting error'.format(2*dis_tol))
+                dis_window_max += 2*dis_tol
+            mpi.report('This can happen when the user did not specify disentanglement windows in .win. '
+                       + 'Check if this is the case here.')
+
         # Determine which bands are inside the band window
         inside_window = np.logical_and(ks_eigenvals_spin >= dis_window_min,
                                        ks_eigenvals_spin <= dis_window_max)
@@ -1168,7 +1185,8 @@ def check_bloch_basis_hk(n_corr_shells, corr_shells, n_k, n_spin_blocks, n_bands
     hks_are_equal = np.isclose(downfolded_ham, wannier_ham_corr, atol=1e-4, rtol=0)
     if not np.all(hks_are_equal):
         index_difference = np.nonzero(np.logical_not(np.all(hks_are_equal, axis=2)))
-        isp, ik = np.transpose(index_difference)[0]
+        isp = index_difference[0][0]
+        ik = index_difference[1][0]
         mpi.report('WARNING: mismatch between downfolded Hamiltonian and Fourier transformed '
                    + 'H(R). First occurred at kpt {} and spin {}:'.format(ik, isp))
 
