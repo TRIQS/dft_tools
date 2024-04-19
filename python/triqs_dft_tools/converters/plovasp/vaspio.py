@@ -40,6 +40,7 @@ r"""
 import logging
 import numpy as np
 import re
+from h5 import HDFArchive
 
 log = logging.getLogger('plovasp.vaspio')
 
@@ -87,20 +88,17 @@ class VaspData:
                 self.eigenval.ferw = None
                 log.warning("Error reading from EIGENVAL, trying LOCPROJ...")
 
-            try:
-                self.doscar.from_file(vasp_dir)
-            except (IOError, StopIteration):
-                if efermi_required:
-                    log.warning("Error reading Efermi from DOSCAR, trying LOCPROJ...")
-                    try:
-                        self.plocar.efermi
-                        self.doscar.efermi = self.plocar.efermi
-                    except NameError:
-                        raise Exception("Efermi cannot be read from DOSCAR or LOCPROJ")
-                else:
+            if efermi_required:
+                try:
+                    with HDFArchive(vasp_dir + "vasptriqs.h5", 'r') as ar:
+                        self.doscar.efermi = ar['triqs/efermi']
+                    print(f'Fermi energy read from vasptriqs.h5: {self.doscar.efermi:.4f} eV')
+                except NameError:
+                    raise Exception("Efermi cannot be read from vasptriqs.h5 file")
+            else:
 # TODO: This a hack. Find out a way to determine ncdij without DOSCAR
-                    log.warning("Error reading Efermi from DOSCAR, taking from config")
-                    self.doscar.ncdij = self.plocar.nspin
+                log.warning("Error reading Efermi from DOSCAR, taking from config")
+                self.doscar.ncdij = self.plocar.nspin
 
 ################################################################################
 ################################################################################
@@ -168,24 +166,19 @@ class Plocar:
             line = line.split("#")[0]
             sline = line.split()
             self.ncdij, nk, self.nband, nproj = list(map(int, sline[0:4]))
-            
+
             # VASP.6.
             self.nspin = self.ncdij if self.ncdij < 4 else 1
             log.debug("ISPIN is {}".format(self.nspin))
-            
-            self.nspin_band = 2 if self.ncdij == 2 else 1
 
-            try:
-                self.efermi = float(sline[4])
-            except:
-                log.warning("Error reading Efermi from LOCPROJ, trying DOSCAR...")
+            self.nspin_band = 2 if self.ncdij == 2 else 1
 
             plo = np.zeros((nproj, self.nspin, nk, self.nband), dtype=complex)
             proj_params = [{} for i in range(nproj)]
 
             iproj_site = 0
             is_first_read = True
-            
+
             # VASP.6.
             if self.ncdij == 4:
                 self.nc_flag = 1
@@ -218,9 +211,9 @@ class Plocar:
                     proj_params[ip]['m'] = m
 
                 ip +=1
-                
+
                 line = f.readline().strip()
-            
+
             assert ip == nproj, "Number of projectors in the header is wrong in LOCPROJ"
 
             self.eigs = np.zeros((nk, self.nband, self.nspin_band))
@@ -243,7 +236,7 @@ class Plocar:
                             line = f.readline()
                             sline = line.split()
                             ctmp = complex(float(sline[1]), float(sline[2]))
-                            plo[ip, ispin, ik, ib] = ctmp 
+                            plo[ip, ispin, ik, ib] = ctmp
 
         print("Read parameters: LOCPROJ")
         for il, par in enumerate(proj_params):
@@ -580,7 +573,7 @@ class Doscar:
 
 # First line: NION, NION, JOBPAR, NCDIJ
         sline = next(f).split()
-    
+
 # Skip next 4 lines
         for _ in range(4):
             sline = next(f)
