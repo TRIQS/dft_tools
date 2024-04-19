@@ -24,6 +24,7 @@
 General SumK class and helper functions for combining ab-initio code and triqs
 """
 
+import os
 from types import *
 import numpy as np
 import triqs.utility.dichotomy as dichotomy
@@ -2331,6 +2332,14 @@ class SumkDFT(object):
                                 valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
                                 f.write(" %.14f  %.14f"%(valre, valim))
                             f.write("\n")
+
+                if os.path.isfile('vasptriqs.h5'):
+                    with HDFArchive('vasptriqs.h5', 'a') as vasp_h5:
+                        if 'triqs' not in vasp_h5:
+                            vasp_h5.create_group('triqs')
+                        vasp_h5['triqs']['band_window'] = band_window
+                        vasp_h5['triqs']['deltaN'] = deltaN
+
 
         elif dm_type == 'elk':
         # output each k-point density matrix for Elk
