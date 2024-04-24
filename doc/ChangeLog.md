@@ -2,6 +2,18 @@
 
 # Changelog
 
+## Version 3.2.1
+
+DFTTools Version 3.2.1 is a patch release that contains a few bug fixes. The following non breaking changes have been made:
+* fix depracted scipy.compress depr -> numpy.compress
+* fix incorrect numpy data type for Max OS ARM
+* fix a bug in SumkDFT.calc_density_correction: see issue #250
+* fix a bug in the Wannier90 Converter when the disentanglement window isn't set by the user (see issue #252)
+* doc: fix typo in doi id of DC function
+
+We thank all contributors: Sophie Beck, Alexander Hampel
+
+
 ## Version 3.2.0
 
 DFTTools Version 3.2.0 is a release that
@@ -27,7 +39,7 @@ Find below an itemized list of changes in this release.
 * rename / unify name of `sumk.Sigma_imp_iw` and `sumk.Sigma_imp_w` -> `sumk.Sigma_imp`
 * remove `iw_or_w` arguments
 * `sumk_dft_tools.py` rewritten to have single routines to calculate DOS (`dos_wannier_basis` renamed to `density_of_states`), spaghettis and (Elk specific for now) spectral contours
-* occupied DOS can be calculated (`sumk_dft_tools.occupations()` is needed to be calculated first) 
+* occupied DOS can be calculated (`sumk_dft_tools.occupations()` is needed to be calculated first)
 * analysis.rst and conv_elk.rst updated to improve routine descriptions and includes example figures
 * remove any transport from `sumk_dft_tools.py` and move to `sumk_dft_transport`
 * outsource `calc_DC_from_density` into util.py and cleanup
@@ -130,7 +142,7 @@ DFTTools Version 3.1.0 is a release that
 * bugfix for analyse_block_structure in sumk_dft
 * bugfix in blockstructure module for the case of #corr_shells != #ineq_shells
 * fix float comparison tolerances and few minor things in tests
-* Vasp Converter: fixed normalization of kwghts to allow symmetries 
+* Vasp Converter: fixed normalization of kwghts to allow symmetries
 * bugfix in Elk converter when creating the symmetry matrices of low symmetry systems with multiple equivalent atoms
 * vectorize various loops in dfttools
 * fix various from_L_G_R calls that require now data layed out in C-order

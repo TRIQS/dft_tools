@@ -24,7 +24,7 @@ cmake_policy(VERSION 3.20)
 
 # ############
 # Define Project
-project(triqs_dft_tools VERSION 3.2.0 LANGUAGES C CXX Fortran)
+project(triqs_dft_tools VERSION 3.2.1 LANGUAGES C CXX Fortran)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # ############
@@ -131,7 +131,7 @@ add_subdirectory(deps)
 add_subdirectory(c++/${PROJECT_NAME})
 
 # add here stuff for the Fortran part in DFTTools
-add_subdirectory(fortran/dmftproj) 
+add_subdirectory(fortran/dmftproj)
 
 # Tests
 if(Build_Tests)
