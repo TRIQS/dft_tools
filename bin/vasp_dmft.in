@@ -23,8 +23,8 @@ Usage: vasp_dmft [-n <number of cores>] -i <number of iterations>  -j <number of
        <dmft_script.py> must provide an importable function 'dmft_cycle()'
        which is invoked once per DFT+DMFT iteration. If the script name is
        omitted the default name 'csc_dmft.py' is used.
-       
-       
+
+
 "
 }
 
@@ -119,9 +119,8 @@ echo "  VASP version: $VASP_VERSION"
 echo "  Script name: $DMFT_SCRIPT"
 
 rm -f vasp.lock STOPCAR
-# run in serial and use OMP_NUM_THREADS here for vasp >=6.2
-# otherwise set to -np $NPROC
-stdbuf -o 0 $MPIRUN_CMD -np 1 "$VASP_DIR" &
+# run in serial and use OMP_NUM_THREADS here for vasp >=6.2 in case there are problems
+stdbuf -o 0 $MPIRUN_CMD -np $NPROC "$VASP_DIR" &
 
 
 $MPIRUN_CMD -np $NPROC @TRIQS_PYTHON_EXECUTABLE@ -m triqs_dft_tools.converters.plovasp.sc_dmft $(jobs -p) $NITER $NDFTITER $DMFT_SCRIPT 'plo.cfg' $VASP_VERSION || kill %1
