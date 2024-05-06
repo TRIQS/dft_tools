@@ -1,4 +1,3 @@
-
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -44,6 +43,7 @@ from h5 import HDFArchive
 
 log = logging.getLogger('plovasp.vaspio')
 
+
 def read_lines(filename):
     r"""
     Generator of lines for a file
@@ -57,6 +57,7 @@ def read_lines(filename):
         for line in f:
             yield line
 
+
 ################################################################################
 ################################################################################
 #
@@ -68,45 +69,59 @@ class VaspData:
     """
     Container class for all VASP data.
     """
+
     def __init__(self, vasp_dir, read_all=True, efermi_required=True):
         self.vasp_dir = vasp_dir
 
-        self.plocar = Plocar()
-        self.poscar = Poscar()
-        self.kpoints = Kpoints()
-        self.eigenval = Eigenval()
-        self.doscar = Doscar()
+        # NEW vasptriqs.h5
+        vasptriqs = os.path.isfile(os.path.join(vasp_dir, 'vasptriqs.h5'))
+        if vasptriqs:
+            log.warning("Reading from vasptriqs.h5")
+            h5path = os.path.join(vasp_dir, 'vasptriqs.h5')
+            self.plocar = h5Plocar(h5path)
+            self.poscar = h5Poscar(h5path)
+            self.kpoints = h5Kpoints(h5path)
+            self.eigenval = h5Eigenval(h5path)
+            self.doscar = h5Doscar(h5path)
+        else:
+            self.plocar = Plocar()
+            self.poscar = Poscar()
+            self.kpoints = Kpoints()
+            self.eigenval = Eigenval()
+            self.doscar = Doscar()
 
-        if read_all:
-            self.plocar.from_file(vasp_dir)
-            self.poscar.from_file(vasp_dir)
-            self.kpoints.from_file(vasp_dir)
-            try:
-                self.eigenval.from_file(vasp_dir)
-            except (IOError, StopIteration):
-                self.eigenval.eigs = None
-                self.eigenval.ferw = None
-                log.warning("Error reading from EIGENVAL, trying LOCPROJ...")
-
-            if efermi_required:
+            if read_all:
+                self.plocar.from_file(vasp_dir)
+                self.poscar.from_file(vasp_dir)
+                self.kpoints.from_file(vasp_dir)
                 try:
-                    with HDFArchive(vasp_dir + "vasptriqs.h5", 'r') as ar:
-                        self.doscar.efermi = ar['triqs/efermi']
-                    print(f'Fermi energy read from vasptriqs.h5: {self.doscar.efermi:.4f} eV')
-                except NameError:
-                    raise Exception("Efermi cannot be read from vasptriqs.h5 file")
-            else:
-# TODO: This a hack. Find out a way to determine ncdij without DOSCAR
-                log.warning("Error reading Efermi from DOSCAR, taking from config")
-                self.doscar.ncdij = self.plocar.nspin
+                    self.eigenval.from_file(vasp_dir)
+                except (IOError, StopIteration):
+                    self.eigenval.eigs = None
+                    self.eigenval.ferw = None
+                    log.warning("Error reading from EIGENVAL, trying LOCPROJ...")
 
-################################################################################
-################################################################################
+                try:
+                    self.doscar.from_file(vasp_dir)
+                except (IOError, StopIteration):
+                    if efermi_required:
+                        log.warning("Error reading Efermi from DOSCAR, trying LOCPROJ...")
+                        try:
+                            self.plocar.efermi
+                            self.doscar.efermi = self.plocar.efermi
+                        except NameError:
+                            raise Exception("Efermi cannot be read from DOSCAR or LOCPROJ")
+                    else:
+                        # TODO: This a hack. Find out a way to determine ncdij without DOSCAR
+                        log.warning("Error reading Efermi from DOSCAR, taking from config")
+                        self.doscar.ncdij = self.plocar.nspin
+
+
+##########################
 #
 # class Plocar
 #
-################################################################################
-################################################################################
+##########################
 class Plocar:
     """
     Class containing raw PLO data from VASP.
@@ -117,6 +132,7 @@ class Plocar:
         - *ferw* (array(nion, ns, nk, nb)) : Fermi weights from VASP
 
     """
+
     def __init__(self):
         self.plo = None
         self.proj_params = None
@@ -133,14 +149,13 @@ class Plocar:
         plocar_filename (str) : filename [default = 'PLOCAR']
 
         """
-# Add a slash to the path name if necessary
+        # Add a slash to the path name if necessary
         if vasp_dir[-1] != '/':
             vasp_dir += '/'
 
-#        self.params, self.plo, self.ferw = c_plocar_io.read_plocar(vasp_dir + plocar_filename)
-#        self.proj_params, self.plo = self.temp_parser(projcar_filename=vasp_dir + "PROJCAR", locproj_filename=vasp_dir + "LOCPROJ")
+        #        self.params, self.plo, self.ferw = c_plocar_io.read_plocar(vasp_dir + plocar_filename)
+        #        self.proj_params, self.plo = self.temp_parser(projcar_filename=vasp_dir + "PROJCAR", locproj_filename=vasp_dir + "LOCPROJ")
         self.proj_params, self.plo = self.locproj_parser(locproj_filename=vasp_dir + "LOCPROJ")
-
 
     def locproj_parser(self, locproj_filename='LOCPROJ'):
         r"""
@@ -157,10 +172,10 @@ class Plocar:
 
         def lm_to_l_m(lm):
             l = int(np.sqrt(lm))
-            m = lm - l*l
+            m = lm - l * l
             return l, m
 
-# Read the first line of LOCPROJ to get the dimensions
+        # Read the first line of LOCPROJ to get the dimensions
         with open(locproj_filename, 'rt') as f:
             line = f.readline()
             line = line.split("#")[0]
@@ -172,6 +187,11 @@ class Plocar:
             log.debug("ISPIN is {}".format(self.nspin))
 
             self.nspin_band = 2 if self.ncdij == 2 else 1
+
+            try:
+                self.efermi = float(sline[4])
+            except:
+                log.warning("Error reading Efermi from LOCPROJ, trying DOSCAR...")
 
             plo = np.zeros((nproj, self.nspin, nk, self.nband), dtype=complex)
             proj_params = [{} for i in range(nproj)]
@@ -188,7 +208,7 @@ class Plocar:
 
             log.debug("NC FLAG : {}".format(self.nc_flag))
 
-# First read the header block with orbital labels
+            # First read the header block with orbital labels
             line = self.search_for(f, "^ *ISITE")
             ip = 0
             while line:
@@ -197,20 +217,20 @@ class Plocar:
                 label = sline[-1].strip()
                 lm = orb_labels.index(label)
                 l, m = lm_to_l_m(lm)
-#                    ip_new = iproj_site * norb + il
-#                    ip_prev = (iproj_site - 1) * norb + il
+                #                    ip_new = iproj_site * norb + il
+                #                    ip_prev = (iproj_site - 1) * norb + il
                 proj_params[ip]['label'] = label
                 proj_params[ip]['isite'] = isite
                 proj_params[ip]['l'] = l
                 if self.nc_flag == True:
                     if (ip % 2) == 0:
-                        proj_params[ip]['m'] = 2*m
+                        proj_params[ip]['m'] = 2 * m
                     else:
-                        proj_params[ip]['m'] = 2*m + 1
+                        proj_params[ip]['m'] = 2 * m + 1
                 else:
                     proj_params[ip]['m'] = m
 
-                ip +=1
+                ip += 1
 
                 line = f.readline().strip()
 
@@ -244,7 +264,6 @@ class Plocar:
 
         return proj_params, plo
 
-
     def search_for(self, f, patt):
         r"""
         Reads file 'f' until pattern 'patt' is encountered and returns
@@ -258,13 +277,11 @@ class Plocar:
         return line
 
 
-################################################################################
-################################################################################
+##########################
 #
 # class Poscar
 #
-################################################################################
-################################################################################
+##########################
 class Poscar:
     """
     Class containing POSCAR data from VASP.
@@ -278,6 +295,7 @@ class Poscar:
         - q_types ([numpy.array((nions, 3), dtype=float)]) : a list of
           arrays each containing fractional coordinates of ions of a given type
     """
+
     def __init__(self):
         self.q_cart = None
 
@@ -292,68 +310,69 @@ class Poscar:
         plocar_filename (str) : filename [default = 'POSCAR']
 
         """
-# Convenince local function
+
+        # Convenince local function
         def readline_remove_comments():
             return next(f).split('!')[0].split('#')[0].strip()
 
-# Add a slash to the path name if necessary
+        # Add a slash to the path name if necessary
         if vasp_dir[-1] != '/':
             vasp_dir += '/'
 
         f = read_lines(vasp_dir + poscar_filename)
-# Comment line
+        # Comment line
         comment = next(f).rstrip()
-        print("  Found POSCAR, title line: %s"%(comment))
+        print("  Found POSCAR, title line: %s" % (comment))
 
-# Read scale
+        # Read scale
         sline = readline_remove_comments()
         ascale = float(sline)
-# Read lattice vectors
+        # Read lattice vectors
         self.a_brav = np.zeros((3, 3))
         for ia in range(3):
             sline = readline_remove_comments()
             self.a_brav[ia, :] = list(map(float, sline.split()))
-# Negative scale means that it is a volume scale
+        # Negative scale means that it is a volume scale
         if ascale < 0:
             vscale = -ascale
             vol = np.linalg.det(self.a_brav)
-            ascale = (vscale / vol)**(1.0/3)
+            ascale = (vscale / vol) ** (1.0 / 3)
 
         self.a_brav *= ascale
 
-# Depending on the version of VASP there could be
-# an extra line with element names
+        # Depending on the version of VASP there could be
+        # an extra line with element names
         sline = readline_remove_comments()
         try:
-# Old v4.6 format: no element names
+            # Old v4.6 format: no element names
             self.nions = list(map(int, sline.split()))
-            self.el_names = ['El%i'%(i) for i in range(len(self.nions))]
+            self.el_names = ['El%i' % (i) for i in range(len(self.nions))]
         except ValueError:
-# New v5.x format: read element names first
+            # New v5.x format: read element names first
             self.el_names = sline.split()
             sline = readline_remove_comments()
             self.nions = list(map(int, sline.split()))
 
-# Set the number of atom sorts (types) and the total
-# number of atoms in the unit cell
+        # Set the number of atom sorts (types) and the total
+        # number of atoms in the unit cell
         self.ntypes = len(self.nions)
         self.nq = sum(self.nions)
 
-# Check for the line 'Selective dynamics' (and ignore it)
+        # Check for the line 'Selective dynamics' (and ignore it)
         sline = readline_remove_comments()
         if sline[0].lower() == 's':
             sline = readline_remove_comments()
 
-# Check whether coordinates are cartesian or fractional
+        # Check whether coordinates are cartesian or fractional
         cartesian = (sline[0].lower() in 'ck')
         # determine reciprocal basis in units of 2*pi
         self.kpt_basis = np.linalg.inv(self.a_brav.T)
 
-# Read atomic positions
+        # Read atomic positions
         self.q_types = []
         self.type_of_ion = []
         for it in range(self.ntypes):
-# Array mapping ion index to type
+            # Array mapping ion index to type
             self.type_of_ion += self.nions[it] * [it]
 
             q_at_it = np.zeros((self.nions[it], 3))
@@ -370,19 +389,12 @@ class Poscar:
         print("  Number of types:", self.ntypes)
         print("  Number of ions for each type:", self.nions)
 
-#        print
-#        print "  Coords:"
-#        for it in range(ntypes):
-#            print "    Element:", el_names[it]
-#            print q_at[it]
 
-################################################################################
-################################################################################
+##########################
 #
 # class Kpoints
 #
-################################################################################
-################################################################################
+##########################
 class Kpoints:
     """
     Class describing k-points and optionally tetrahedra.
@@ -395,13 +407,15 @@ class Kpoints:
         - volt (float) : volume of a tetrahedron (the k-grid is assumed to
               be uniform)
     """
+
     def __init__(self):
         self.kpts = None
         self.nktot = None
         self.kwghts = None
-#
-# Reads IBZKPT file
-#
+
+    #
+    # Reads IBZKPT file
+    #
     def from_file(self, vasp_dir='./', ibz_filename='IBZKPT'):
         r"""
         Reads from IBZKPT: k-points and optionally
@@ -415,15 +429,15 @@ class Kpoints:
 
         """
 
-# Add a slash to the path name if necessary
+        # Add a slash to the path name if necessary
         if vasp_dir[-1] != '/':
             vasp_dir += '/'
 
         ibz_file = read_lines(vasp_dir + ibz_filename)
 
-#   Skip comment line
+        #   Skip comment line
         line = next(ibz_file)
-#   Number of k-points
+        #   Number of k-points
         line = next(ibz_file)
         self.nktot = int(line.strip().split()[0])
 
@@ -433,7 +447,7 @@ class Kpoints:
         self.kpts = np.zeros((self.nktot, 3))
         self.kwghts = np.zeros((self.nktot))
 
-#   Skip comment line
+        #   Skip comment line
         line = next(ibz_file)
         for ik in range(self.nktot):
             line = next(ibz_file)
@@ -443,12 +457,12 @@ class Kpoints:
 
         self.kwghts /= self.nktot
 
-# Attempt to read tetrahedra
-#   Skip comment line ("Tetrahedra")
+        # Attempt to read tetrahedra
+        #   Skip comment line ("Tetrahedra")
         try:
             line = next(ibz_file)
 
-#   Number of tetrahedra and volume = 1/(6*nkx*nky*nkz)
+            #   Number of tetrahedra and volume = 1/(6*nkx*nky*nkz)
             line = next(ibz_file)
             sline = line.split()
             self.ntet = int(sline[0])
@@ -456,35 +470,26 @@ class Kpoints:
 
             print("   {0:>26} {1:d}".format("Total number of tetrahedra:", self.ntet))
 
-#   Traditionally, itet[it, 0] contains multiplicity
+            #   Traditionally, itet[it, 0] contains multiplicity
             self.itet = np.zeros((self.ntet, 5), dtype=int)
             for it in range(self.ntet):
-               line = next(ibz_file)
-               self.itet[it, :] = list(map(int, line.split()[:5]))
+                line = next(ibz_file)
+                self.itet[it, :] = list(map(int, line.split()[:5]))
         except StopIteration as ValueError:
-            print("  No tetrahedron data found in %s. Skipping..."%(ibz_filename))
+            print("  No tetrahedron data found in %s. Skipping..." % (ibz_filename))
             self.ntet = 0
 
-#        data = { 'nktot': nktot,
-#                 'kpts': kpts,
-#                 'ntet': ntet,
-#                 'itet': itet,
-#                 'volt': volt }
-#
-#        return data
 
-
-################################################################################
-################################################################################
+##########################
 #
 # class Eigenval
 #
-################################################################################
-################################################################################
+##########################
 class Eigenval:
     """
     Class containing Kohn-Sham-eigenvalues data from VASP (EIGENVAL file).
     """
+
     def __init__(self):
         self.eigs = None
         self.ferw = None
@@ -496,43 +501,43 @@ class Eigenval:
         then used to check the consistency of files read.
         """
 
-# Add a slash to the path name if necessary
+        # Add a slash to the path name if necessary
         if vasp_dir[-1] != '/':
             vasp_dir += '/'
 
         f = read_lines(vasp_dir + eig_filename)
 
-# First line: only the first and the last number out of four
-# are used; these are 'nions' and 'ispin'
+        # First line: only the first and the last number out of four
+        # are used; these are 'nions' and 'ispin'
         sline = next(f).split()
         self.nq = int(sline[0])
         self.ispin = int(sline[3])
 
-# Second line: cell volume and lengths of lattice vectors (skip)
+        # Second line: cell volume and lengths of lattice vectors (skip)
         sline = next(f)
 
-# Third line: temperature (skip)
+        # Third line: temperature (skip)
         sline = next(f)
 
-# Fourth and fifth line: useless
+        # Fourth and fifth line: useless
         sline = next(f)
         sline = next(f)
 
-# Sixth line: NELECT, NKTOT, NBTOT
+        # Sixth line: NELECT, NKTOT, NBTOT
         sline = next(f).split()
         self.nelect = int(sline[0])
         self.nktot = int(sline[1])
         self.nband = int(sline[2])
 
-# Set of eigenvalues and k-points
+        # Set of eigenvalues and k-points
         self.kpts = np.zeros((self.nktot, 3))
         self.kwghts = np.zeros((self.nktot,))
         self.eigs = np.zeros((self.nktot, self.nband, self.ispin))
         self.ferw = np.zeros((self.nktot, self.nband, self.ispin))
 
         for ik in range(self.nktot):
-            sline = next(f) # Empty line
-            sline = next(f) # k-point info
+            sline = next(f)  # Empty line
+            sline = next(f)  # k-point info
             tmp = list(map(float, sline.split()))
             self.kpts[ik, :] = tmp[:3]
             self.kwghts[ik] = tmp[3]
@@ -541,21 +546,20 @@ class Eigenval:
                 sline = next(f).split()
                 tmp = list(map(float, sline))
                 assert len(tmp) == 2 * self.ispin + 1, "EIGENVAL file is incorrect (probably from old versions of VASP)"
-                self.eigs[ik, ib, :] = tmp[1:self.ispin+1]
-                self.ferw[ik, ib, :] = tmp[self.ispin+1:]
+                self.eigs[ik, ib, :] = tmp[1:self.ispin + 1]
+                self.ferw[ik, ib, :] = tmp[self.ispin + 1:]
 
 
-################################################################################
-################################################################################
+##########################
 #
 # class Doscar
 #
-################################################################################
-################################################################################
+##########################
 class Doscar:
     """
     Class containing some data from DOSCAR
     """
+
     def __init__(self):
         self.ncdij = None
         self.efermi = None
@@ -565,38 +569,40 @@ class Doscar:
         Reads only E_Fermi from DOSCAR.
         """
 
-# Add a slash to the path name if necessary
+        # Add a slash to the path name if necessary
         if vasp_dir[-1] != '/':
             vasp_dir += '/'
 
         f = read_lines(vasp_dir + dos_filename)
 
-# First line: NION, NION, JOBPAR, NCDIJ
+        # First line: NION, NION, JOBPAR, NCDIJ
         sline = next(f).split()
 
-# Skip next 4 lines
+        # Skip next 4 lines
         for _ in range(4):
             sline = next(f)
 
-# Sixth line: EMAX, EMIN, NEDOS, EFERMI, 1.0
+        # Sixth line: EMAX, EMIN, NEDOS, EFERMI, 1.0
         sline = next(f).split()
         self.efermi = float(sline[3])
 
+
 # TODO: implement output of SYMMCAR in VASP and read it here
-################################################################
+##########################
 #
 # Reads SYMMCAR
 #
-################################################################
+##########################
 def read_symmcar(vasp_dir, symm_filename='SYMMCAR'):
     """
     Reads SYMMCAR.
     """
-#   Shorthand for simple parsing
+
+    #   Shorthand for simple parsing
     def extract_int_par(parname):
         return int(re.findall(parname + '\s*=\s*(\d+)', line)[-1])
 
-# Add a slash to the path name if necessary
+    # Add a slash to the path name if necessary
     if vasp_dir[-1] != '/':
         vasp_dir += '/'
 
@@ -607,11 +613,11 @@ def read_symmcar(vasp_dir, symm_filename='SYMMCAR'):
 
     line = next(sym_file)
     ntrans = extract_int_par('NPCELL')
-#   Lmax
+    #   Lmax
     line = next(sym_file)
     lmax = extract_int_par('LMAX')
     mmax = 2 * lmax + 1
-#   Nion
+    #   Nion
     line = next(sym_file)
     nion = extract_int_par('NION')
 
@@ -620,22 +626,22 @@ def read_symmcar(vasp_dir, symm_filename='SYMMCAR'):
     print("   {0:>26} {1:d}".format("Number of ions:", nion))
     print("   {0:>26} {1:d}".format("L_max:", lmax))
 
-    rot_mats = np.zeros((nrot, lmax+1, mmax, mmax))
+    rot_mats = np.zeros((nrot, lmax + 1, mmax, mmax))
     rot_map = np.zeros((nrot, ntrans, nion), dtype=int)
 
     for irot in range(nrot):
-#   Empty line
+        #   Empty line
         line = next(sym_file)
-#   IROT index (skip it)
+        #   IROT index (skip it)
         line = next(sym_file)
-#   ISYMOP matrix (can be also skipped)
+        #   ISYMOP matrix (can be also skipped)
         line = next(sym_file)
         line = next(sym_file)
         line = next(sym_file)
 
-#   Skip comment "  Permutation map..."
+        #   Skip comment "  Permutation map..."
         line = next(sym_file)
-#   Permutations (in chunks of 20 indices per line)
+        #   Permutations (in chunks of 20 indices per line)
         for it in range(ntrans):
             for ibl in range((nion - 1) // 20 + 1):
                 i1 = ibl * 20
@@ -645,12 +651,163 @@ def read_symmcar(vasp_dir, symm_filename='SYMMCAR'):
 
             for l in range(lmax + 1):
                 mmax = 2 * l + 1
-#   Comment: "L = ..."
+            #   Comment: "L = ..."
             line = next(sym_file)
             for m in range(mmax):
                 line = next(sym_file)
                 rot_mats[irot, l, m, :mmax] = list(map(float, line.split()[:mmax]))
 
-    data.update({ 'nrot': nrot, 'ntrans': ntrans,
-                  'lmax': lmax, 'nion': nion,
-                  'sym_rots': rot_mats, 'perm_map': rot_map })
+    data.update({'nrot': nrot, 'ntrans': ntrans,
+                 'lmax': lmax, 'nion': nion,
+                 'sym_rots': rot_mats, 'perm_map': rot_map})
+
+
+class h5Poscar:
+
+    def __init__(self, h5path):
+        # self.q_cart = None
+
+        with HDFArchive(h5path, 'a') as archive:
+            struct = archive['triqs']['structure']
+            ascale = struct['scale']
+            self.a_brav = struct['lattice_vectors']
+            self.nions = struct['number_ion_types']
+            self.el_names = struct['ion_types']
+            direct = struct['direct_coordinates']
+            qcoord = struct['position_ions']
+
+        if ascale < 0:
+            vscale = -ascale
+            vol = np.linalg.det(self.a_brav)
+            ascale = (vscale / vol) ** (1.0 / 3)
+        self.a_brav *= ascale
+        # determine reciprocal basis in units of 2*pi
+        self.kpt_basis = np.linalg.inv(self.a_brav.T)
+
+        # Set the number of atom sorts (types) and the total
+        # number of atoms in the unit cell
+        self.ntypes = len(self.nions)
+        self.nq = sum(self.nions)
+
+        # Read atomic positions
+        self.q_types = []
+        self.type_of_ion = []
+        for it in range(self.ntypes):
+            # Array mapping ion index to type
+            self.type_of_ion += self.nions[it] * [it]
+            q_at_it = np.zeros((self.nions[it], 3))
+            for iq in range(self.nions[it]):
+                if not direct:
+                    qcoord = np.dot(self.kpt_basis, qcoord[iq + it])
+                q_at_it[iq, :] = qcoord[iq + it]
+
+            self.q_types.append(q_at_it)
+
+        print("  Total number of ions:", self.nq)
+        print("  Number of types:", self.ntypes)
+        print("  Number of ions for each type:", self.nions)
+
+
+class h5Kpoints:
+
+    def __init__(self, h5path):
+
+        # h5path = './vasptriqs.h5'
+        with HDFArchive(h5path, 'a') as archive:
+            kpoints = archive['triqs']['kpoints']
+            self.nktot = kpoints['num_kpoints']
+            self.kpts = kpoints['kpoint_coords']
+            self.kwghts = kpoints['kpoints_symmetry_weight']
+            try:
+                self.ntet = kpoints['num_tetrahedra']
+                self.vtet = kpoints['volume_weight_tetrahedra']
+                self.itet = kpoints['coordinate_id_tetrahedra']
+            except StopIteration as ValueError:
+                print("  No tetrahedron data found in vasptriqs.h5. Skipping...")
+                self.ntet = 0
+
+        print()
+        print("   {0:>26} {1:d}".format("Total number of k-points:", self.nktot))
+        print("   {0:>26} {1:d}".format("Total number of tetrahedra:", self.ntet))
+
+
+class h5Eigenval:
+
+    def __init__(self, h5path):
+        with HDFArchive(h5path, 'a') as archive:
+            self.eigs = archive['triqs']['eigenvalues']
+            self.ferw = archive['triqs']['fermi_weights']
+        # TODO Change the format in VASP to have [kpoints, bands, spin]
+        self.eigs = np.transpose(self.eigs, (1, 2, 0))
+        self.ferw = np.transpose(self.ferw, (1, 2, 0))
+
+
+class h5Doscar:
+
+    def __init__(self, h5path):
+        with HDFArchive(h5path, 'a') as archive:
+            self.efermi = archive['triqs']['efermi']
+
+
+class h5Plocar():
+
+    def __init__(self, h5path):
+        with HDFArchive(h5path, 'a') as archive:
+            plo = np.array(archive['triqs']['plo'])
+            self.nc_flag = int(archive['triqs']['noncoll'])
+
+        self.nproj = plo.shape[0]
+        self.ncdij = plo.shape[1]
+        nk = plo.shape[2]
+        self.nband = plo.shape[3]
+
+        self.nspin = self.ncdij if self.ncdij < 4 else 1
+        self.nspin_band = 2 if self.ncdij == 2 else 1
+
+        log.debug("ISPIN is {}".format(self.nspin))
+        log.debug("NC FLAG : {}".format(self.nc_flag))
+
+        # self.proj_params, self.plo = self.locproj_parser(locproj_filename=vasp_dir + "LOCPROJ")
+
+        orb_labels = ["s", "py", "pz", "px", "dxy", "dyz", "dz2", "dxz", "dx2-y2",
+                      "fy(3x2-y2)", "fxyz", "fyz2", "fz3", "fxz2", "fz(x2-y2)", "fx(x2-3y2)"]
+
+        self.plo = np.zeros((self.nproj, self.nspin, nk, self.nband), dtype=complex)
+
+        for proj in range(self.nproj):
+            for spin in range(self.nspin):
+                for kpt in range(nk):
+                    for band in range(self.nband):
+                        real_plo = plo[proj, spin, kpt, band, 0]  # Real part
+                        imag_plo = plo[proj, spin, kpt, band, 1]  # Imaginary part
+                        self.plo[proj, spin, kpt, band] = complex(real_plo, imag_plo)
+
+        def lm_to_l_m(lm):
+            l = int(np.sqrt(lm))
+            m = lm - l * l
+            return l, m
+
+        self.proj_params = [{} for i in range(self.nproj)]
+        with HDFArchive(h5path, 'a') as archive:
+            for it in range(self.nproj):
+                projectors = archive['triqs']['plo_parameters'][str(it + 1)]
+                self.proj_params[it]['label'] = projectors['ang_type']
+                self.proj_params[it]['isite'] = projectors['site']
+                self.proj_params[it]['coord'] = projectors['coordinates']
+
+        for it in range(self.nproj):
+            lm = orb_labels.index(self.proj_params[it]['label'])
+            l, m = lm_to_l_m(lm)
+            self.proj_params[it]['l'] = l
+            if self.nc_flag == True:
+                if (it % 2) == 0:
+                    self.proj_params[it]['m'] = 2 * m
+                else:
+                    self.proj_params[it]['m'] = 2 * m + 1
+            else:
+                self.proj_params[it]['m'] = m
+        # assert ip == nproj, "Number of projectors in the header is wrong in LOCPROJ"
+
+        print("Read parameters: LOCPROJ")
+        for il, par in enumerate(self.proj_params):
+            print(il, " -> ", par)
