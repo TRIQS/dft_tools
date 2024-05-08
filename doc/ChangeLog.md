@@ -2,6 +2,16 @@
 
 # Changelog
 
+## Version 3.3.0
+
+DFTTools Version 3.2.0 is a release that
+* is compatible with TRIQS 3.2.x
+* improved standard behavior of block struct (#248)
+* allow dc_imp to be a triqs Gf object (freq dependent)
+
+We thank all contributors: Sophie Beck, Alberto Carta, Alexander Hampel, Nils Wentzell
+
+
 ## Version 3.2.1
 
 DFTTools Version 3.2.1 is a patch release that contains a few bug fixes. The following non breaking changes have been made:
