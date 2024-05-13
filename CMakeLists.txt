@@ -27,12 +27,12 @@ endif()
 
 # ############
 # Define Project
-project(triqs_dft_tools VERSION 3.2.1 LANGUAGES C CXX Fortran)
+project(triqs_dft_tools VERSION 3.3.0 LANGUAGES C CXX Fortran)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # ############
 # Load TRIQS and CPP2PY
-find_package(TRIQS 3.2 REQUIRED)
+find_package(TRIQS 3.3 REQUIRED)
 
 # Get the git hash & print status
 triqs_get_git_hash_of_source_dir(PROJECT_GIT_HASH)
