@@ -1657,11 +1657,13 @@ class SumkDFT(object):
 
         """
         self.dc_imp = [{} for icrsh in range(self.n_corr_shells)]
+        self.dc_imp_dyn = [{} for icrsh in range(self.n_corr_shells)]
         for icrsh in range(self.n_corr_shells):
             dim = self.corr_shells[icrsh]['dim']
             spn = self.spin_block_names[self.corr_shells[icrsh]['SO']]
             for sp in spn:
                 self.dc_imp[icrsh][sp] = np.zeros([dim, dim], float)
+                self.dc_imp_dyn[icrsh][sp] = None
         self.dc_energ = [0.0 for icrsh in range(self.n_corr_shells)]
 
     def set_dc(self, dc_imp, dc_energ):
@@ -1812,13 +1814,15 @@ class SumkDFT(object):
             for bname, gf in sigma_minus_dc[icrsh]:
                 # Transform dc_imp to global coordinate system
                 if self.use_rotations:
-                    # if dc_imp is an numpy array simple rotate by hand, otherwise assume it is a triqs Gf
-                    if isinstance(self.dc_imp[icrsh][bname], np.ndarray):
-                        gf -= np.dot(self.rot_mat[icrsh], np.dot(self.dc_imp[icrsh][bname], self.rot_mat[icrsh].conjugate().transpose()))
-                    else:
-                        gf -= self.rotloc(icrsh, self.dc_imp[icrsh][bname], direction='toGlobal')
+                    gf -= np.dot(self.rot_mat[icrsh], np.dot(self.dc_imp[icrsh][bname], self.rot_mat[icrsh].conjugate().transpose()))
                 else:
                     gf -= self.dc_imp[icrsh][bname]
+
+                if self.dc_imp_dyn[icrsh][bname] is not None:
+                    if self.use_rotations:
+                        gf -= self.rotloc(icrsh, self.dc_imp_dyn[icrsh][bname], direction='toGlobal')
+                    else:
+                        gf -= self.dc_imp_dyn[icrsh][bname]
 
         return sigma_minus_dc
 
