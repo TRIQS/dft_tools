@@ -4,7 +4,6 @@
 
 import sys
 sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext")
-sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/numpydoc")
 
 # exclude these folders from scanning by sphinx
 exclude_patterns = ['_templates']
