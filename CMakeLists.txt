@@ -27,7 +27,11 @@ endif()
 
 # ############
 # Define Project
+<<<<<<< Updated upstream
 project(triqs_dft_tools VERSION 3.3.0 LANGUAGES C CXX Fortran)
+=======
+project(triqs_dft_tools VERSION 3.2.0 LANGUAGES CXX Fortran)
+>>>>>>> Stashed changes
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # ############
