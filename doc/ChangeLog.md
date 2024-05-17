@@ -4,12 +4,44 @@
 
 ## Version 3.3.0
 
-DFTTools Version 3.2.0 is a release that
-* is compatible with TRIQS 3.2.x
-* improved standard behavior of block struct (#248)
-* allow dc_imp to be a triqs Gf object (freq dependent)
+DFTTools Version 3.3.0 is a release that
+* is compatible with TRIQS 3.3.x
+* includes the latest app4triqs changes
+* introduce `dc_imp_dyn` attribute in sumk object to store dynamic part of DC potential
+* improved standard behavior of block struct (#248) (see below for details)
 
-We thank all contributors: Sophie Beck, Alberto Carta, Alexander Hampel, Nils Wentzell
+We thank all contributors: Sophie Beck, Thomas Hahn, Alexander Hampel, Henri Menke, Dylan Simon, Nils Wentzell
+
+Find below an itemized list of changes in this release.
+
+### General
+* fix settings environment variables
+* remove constrains on mpi size with vasp
+
+### feat
+* allow dict/np.ndarrays input in `symm_deg_gf`
+* introduce `dc_imp_dyn` attribute in sumk object to store dynamic part of DC potential
+* previously the default `gf_struct_solver` in a initialized blockstructure had keys `up` / `down`, inconsistent with the default behavior after running `analyse_block_structure`: `up_0` / `down_0`. Now the default solver structure always has the `_0`
+in the key.
+* old behavior resulted in error when analyse_block_structure was called
+twice
+* to correctly use `analyse_block_structure` now use `extract_G_loc(transform_to_solver_blocks=False)`
+* changed `density_matrix` function to use directly `extract_G_loc()` if `using_gf` is selected as option.
+* print deprecation warning in `density_matrix`, since this can be achieved via `extract_G_loc` and `[G.density() for G in Gloc]`
+* new function `density_matrix_using_point_integration()` for old point integration method option
+* enforce in `analys_block_structure` that input dm or G is list with length of `n_corr_shells`
+* correct doc string for how include_shells are given
+
+
+### build
+* bump actions/cache restore/save to version 4
+* fix intel f2py build of elk converter (#249)
+* fix MacOS X build: add ninja as req
+* py312 add setuptools and meson as explicit dep for f2py
+* add packaging directory to cmake and set version automatically
+
+### doc
+* add util module to autodoc
 
 
 ## Version 3.2.1
