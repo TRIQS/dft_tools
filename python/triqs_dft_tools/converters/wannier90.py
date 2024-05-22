@@ -166,8 +166,15 @@ class Wannier90Converter(ConverterTools):
         # Second, let's read the file containing the Hamiltonian in WF basis
         # produced by Wannier90
         (wannier_hr, u_total, ks_eigenvals, r_vector, r_degeneracy, n_wannier, n_bands,
-         k_mesh_from_umat) = read_all_wannier90_data(n_spin_blocks, dim_corr_shells, self.w90_seed,
-                                                     self.add_lambda, self.bloch_basis)
+         k_mesh_from_umat, wan_centres) = read_all_wannier90_data(n_spin_blocks, dim_corr_shells,
+                                                                  self.w90_seed, self.add_lambda,
+                                                                  self.bloch_basis)
+
+        # Read high-symmetry k-path from _band.kpt
+        w90_kpath_results = None
+        if mpi.is_master_node():
+            w90_kpath_results = read_wannier90_symm_kpath(self.w90_seed)
+        symm_kpath_info = mpi.bcast(w90_kpath_results)
 
         # Builds kmesh or uses kmesh from _u.mat
         if self.bloch_basis:
@@ -315,8 +322,10 @@ class Wannier90Converter(ConverterTools):
                               'symm_op', 'n_shells', 'shells', 'n_corr_shells', 'corr_shells', 'use_rotations', 'rot_mat',
                               'rot_mat_time_inv', 'n_reps', 'dim_reps', 'T', 'n_orbitals', 'proj_mat', 'bz_weights', 'hopping',
                               'n_inequiv_shells', 'corr_to_inequiv', 'inequiv_to_corr', 'kpt_weights', 'kpts', 'dft_code']
+                if wan_centres is not None:
+                    things_to_save.append('wan_centres')
                 if self.bloch_basis:
-                    np.append(things_to_save, 'kpt_basis')
+                    things_to_save.append('kpt_basis')
                 for it in things_to_save:
                     archive[self.dft_subgrp][it] = locals()[it]
 
@@ -324,6 +333,12 @@ class Wannier90Converter(ConverterTools):
                 if self.misc_subgrp not in archive:
                     archive.create_group(self.misc_subgrp)
                 archive[self.misc_subgrp]['dft_fermi_energy'] = fermi_energy
+                if symm_kpath_info is not None:
+                    archive[self.misc_subgrp].create_group('symm_kpath')
+                    kpath_grp = archive[self.misc_subgrp]['symm_kpath']
+                    kpath_grp['kpts'] = symm_kpath_info[0]
+                    kpath_grp['labels'] = symm_kpath_info[1]
+                    kpath_grp['label_idx'] = symm_kpath_info[2]
                 if self.bloch_basis:
                     archive[self.misc_subgrp]['dft_fermi_weights'] = f_weights
                     archive[self.misc_subgrp]['band_window'] = band_window+1 # Change to 1-based index
@@ -665,6 +680,57 @@ def read_wannier90_blochbasis_data(wannier_seed, n_wannier_spin):
     return u_mat_spin, udis_mat_spin, ks_eigenvals_spin, k_mesh
 
 
+def read_wannier90_centres(wannier_seed):
+    centres_filename = wannier_seed + '_centres.xyz'
+    if not os.path.isfile(centres_filename):
+        mpi.report('Wannier centres file, {}, does not exist. Please set: '
+                   'write_xyz = true, translate_home_cell = false'.format(centres_filename))
+        return None
+
+    centres = []
+    with open(centres_filename, 'r') as c_file:
+        c_data = c_file.readlines()
+        mpi.report('Reading {}: {}'.format(centres_filename, c_data[1].strip()))
+        for l in c_data:
+            if l[0] == 'X':
+                x = np.asarray(l.split())
+                R = x[1:].astype(float)
+                centres.append(R)
+    centres = np.asarray(centres)
+
+    return centres
+
+
+def read_wannier90_symm_kpath(wannier_seed):
+    kpath_filename = wannier_seed + '_band.kpt'
+    label_filename = wannier_seed + '_band.labelinfo.dat'
+    if not os.path.isfile(kpath_filename) or not os.path.isfile(label_filename):
+        return None
+
+    labels = ''
+    label_idx = []
+    with open(label_filename, 'r') as label_file:
+        label_data = label_file.readlines()
+        for line in label_data:
+            l, idx = line.split()[:2]
+            labels += l
+            label_idx.append(int(idx))
+    label_idx = np.asarray(label_idx)
+
+    kpts_interpolate = []
+    with open(kpath_filename, 'r') as path_file:
+        linelist = path_file.readlines()
+        mpi.report('Reading {}: high-symmetry path \'{}\' for '
+                   'band structure'.format(kpath_filename, labels))
+        for line in linelist[1:]:
+            x = np.asarray(line.split()[:-1])
+            x = x.astype(float)
+            kpts_interpolate.append(x)
+    kpts_interpolate = np.asarray(kpts_interpolate)
+
+    return kpts_interpolate, labels, label_idx
+
+
 def read_all_wannier90_data(n_spin_blocks, dim_corr_shells, w90_seed, add_lambda, bloch_basis):
     """
     Reads in all the wannier90 data using the functions read_wannier90_hr_data
@@ -690,9 +756,12 @@ def read_all_wannier90_data(n_spin_blocks, dim_corr_shells, w90_seed, add_lambda
         Number of bands
     k_mesh_from_umat : np.ndarray[n_k, 3] of float
         The k points as used in wannier for consistency. None if not bloch_basis
+    centres: np.ndarray[n_spin_blocks, 3, 3] of float or None
+        Centres of wannier functions
     """
     spin_w90name = ['_up', '_down']
     wannier_hr = []
+    centres = []
     if bloch_basis:
         u_mat = []
         udis_mat = []
@@ -720,6 +789,11 @@ def read_all_wannier90_data(n_spin_blocks, dim_corr_shells, w90_seed, add_lambda
             # number of R vectors, their indices, their degeneracy, number of WFs, H(R),
             # U matrices, U(dis) matrices, band energies, k_mesh of U matrices
             u_mat_spin, udis_mat_spin, ks_eigenvals_spin, k_mesh_from_umat = mpi.bcast(w90_results)
+
+        w90_centres_results = None
+        if mpi.is_master_node():
+            w90_centres_results = read_wannier90_centres(file_seed)
+        centres_spin = mpi.bcast(w90_centres_results)
 
         mpi.report('\n... done: {} R vectors, {} WFs found'.format(n_r_spin, n_wannier_spin))
 
@@ -763,6 +837,7 @@ def read_all_wannier90_data(n_spin_blocks, dim_corr_shells, w90_seed, add_lambda
             assert np.all(r_degeneracy_spin == r_degeneracy), 'R vec. degeneracy different between spin components'
 
         wannier_hr.append(wannier_hr_spin)
+        centres.append(centres_spin)
         if bloch_basis:
             u_mat.append(u_mat_spin)
             udis_mat.append(udis_mat_spin)
@@ -777,9 +852,10 @@ def read_all_wannier90_data(n_spin_blocks, dim_corr_shells, w90_seed, add_lambda
         ks_eigenvals = None
         k_mesh_from_umat = None
     wannier_hr = np.array(wannier_hr)
+    centres = np.array(centres) if centres[0] is not None else None
 
     return (wannier_hr, u_total, ks_eigenvals, r_vector, r_degeneracy,
-            n_wannier, n_bands, k_mesh_from_umat)
+            n_wannier, n_bands, k_mesh_from_umat, centres)
 
 
 def build_kmesh(kmesh_size, kmesh_mode=0):
