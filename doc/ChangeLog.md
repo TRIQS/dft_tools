@@ -8,6 +8,7 @@ DFTTools Version 3.3.0 is a release that
 * is compatible with TRIQS 3.3.x
 * includes the latest app4triqs changes
 * introduce `dc_imp_dyn` attribute in sumk object to store dynamic part of DC potential
+* allows using MeshDLRImFreq as Sumk mesh
 * improved standard behavior of block struct (#248) (see below for details)
 
 We thank all contributors: Sophie Beck, Thomas Hahn, Alexander Hampel, Henri Menke, Dylan Simon, Nils Wentzell
@@ -21,6 +22,7 @@ Find below an itemized list of changes in this release.
 ### feat
 * allow dict/np.ndarrays input in `symm_deg_gf`
 * introduce `dc_imp_dyn` attribute in sumk object to store dynamic part of DC potential
+* allows using MeshDLRImFreq as Sumk mesh
 * previously the default `gf_struct_solver` in a initialized blockstructure had keys `up` / `down`, inconsistent with the default behavior after running `analyse_block_structure`: `up_0` / `down_0`. Now the default solver structure always has the `_0`
 in the key.
 * old behavior resulted in error when analyse_block_structure was called

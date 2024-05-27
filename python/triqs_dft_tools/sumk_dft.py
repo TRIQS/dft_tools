@@ -58,7 +58,7 @@ class SumkDFT(object):
                   The value of magnetic field to add to the DFT Hamiltonian.
                   The contribution -h_field*sigma is added to diagonal elements of the Hamiltonian.
                   It cannot be used with the spin-orbit coupling on; namely h_field is set to 0 if self.SO=True.
-        mesh: MeshImFreq or MeshReFreq, optional. Frequency mesh of Sigma.
+        mesh: MeshImFreq, MeshDLRImFreq, or MeshReFreq, optional. Frequency mesh of Sigma.
         beta : real, optional
                Inverse temperature. Used to construct imaginary frequency if mesh is not given.
         n_iw : integer, optional
@@ -115,6 +115,9 @@ class SumkDFT(object):
                 self.mesh_values = np.linspace(self.mesh(self.mesh.first_index()),
                                                self.mesh(self.mesh.last_index()),
                                                len(self.mesh))
+            elif isinstance(mesh, MeshDLRImFreq):
+                self.mesh = mesh
+                self.mesh_values = np.array([iwn.value for iwn in mesh.values()])
             elif isinstance(mesh, MeshReFreq):
                 self.mesh = mesh
                 self.mesh_values = np.linspace(self.mesh.w_min, self.mesh.w_max, len(self.mesh))
@@ -563,6 +566,8 @@ class SumkDFT(object):
                 mesh = Sigma_imp[0].mesh
                 if isinstance(mesh, MeshImFreq):
                     mesh_values = np.linspace(mesh(mesh.first_index()), mesh(mesh.last_index()), len(mesh))
+                elif isinstance(mesh, MeshDLRImFreq):
+                    mesh_values = np.array([iwn.value for iwn in mesh.values()])
                 else:
                     mesh_values = np.linspace(mesh.w_min, mesh.w_max, len(mesh))
             else:
@@ -570,9 +575,11 @@ class SumkDFT(object):
                 mesh_values = self.mesh_values
 
         elif not mesh is None:
-            assert isinstance(mesh, MeshReFreq) or isinstance(mesh, MeshImFreq),  "mesh must be a triqs MeshReFreq or MeshImFreq"
+            assert isinstance(mesh, (MeshReFreq, MeshDLRImFreq, MeshImFreq)),  "mesh must be a triqs MeshReFreq or MeshImFreq"
             if isinstance(mesh, MeshImFreq):
                 mesh_values = np.linspace(mesh(mesh.first_index()), mesh(mesh.last_index()), len(mesh))
+            elif isinstance(mesh, MeshDLRImFreq):
+                mesh_values = np.array([iwn.value for iwn in mesh.values()])
             else:
                 mesh_values = np.linspace(mesh.w_min, mesh.w_max, len(mesh))
         else:
@@ -586,12 +593,8 @@ class SumkDFT(object):
             gf_struct = [(spn[isp], block_structure[isp])
                          for isp in range(self.n_spin_blocks[self.SO])]
             block_ind_list = [block for block, inner in gf_struct]
-            if isinstance(mesh, MeshImFreq):
-                glist = lambda: [Gf(mesh=mesh, target_shape=[len(inner),len(inner)])
-                                 for block, inner in gf_struct]
-            else:
-                glist = lambda: [Gf(mesh=mesh, target_shape=[len(inner),len(inner)])
-                                 for block, inner in gf_struct]
+            glist = lambda: [Gf(mesh=mesh, target_shape=[len(inner),len(inner)])
+                             for block, inner in gf_struct]
             G_latt = BlockGf(name_list=block_ind_list,
                              block_list=glist(), make_copies=False)
             G_latt.zero()
@@ -603,7 +606,7 @@ class SumkDFT(object):
         for ibl, (block, gf) in enumerate(G_latt):
             ind = ntoi[spn[ibl]]
             n_orb = self.n_orbitals[ik, ind]
-            if isinstance(mesh, MeshImFreq):
+            if isinstance(mesh, (MeshImFreq, MeshDLRImFreq)):
                 gf.data[:, :, :] = (idmat[ibl] * (mesh_values[:, None, None] + mu + self.h_field*(1-2*ibl))
                                     - self.hopping[ik, ind, 0:n_orb, 0:n_orb])
             else:
@@ -647,7 +650,10 @@ class SumkDFT(object):
         assert len(Sigma_imp) == self.n_corr_shells,\
             "put_Sigma: give exactly one Sigma for each corr. shell!"
 
-        if isinstance(self.mesh, MeshImFreq) and all(isinstance(gf.mesh, MeshImFreq) and isinstance(gf, Gf) and gf.mesh == self.mesh for bname, gf in Sigma_imp[0]):
+        if (isinstance(self.mesh, (MeshImFreq, MeshDLRImFreq)) and
+                all(isinstance(gf.mesh, (MeshImFreq, MeshDLRImFreq)) and
+                isinstance(gf, Gf) and
+                gf.mesh == self.mesh for bname, gf in Sigma_imp[0])):
             # Imaginary frequency Sigma:
             self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, space='sumk')
                                  for icrsh in range(self.n_corr_shells)]
