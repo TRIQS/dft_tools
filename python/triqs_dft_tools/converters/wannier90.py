@@ -635,7 +635,7 @@ def read_wannier90_blochbasis_data(wannier_seed, n_wannier_spin):
     assert ks_eigenvals_spin.shape[1] == num_ks_bands, '.eig and u_dis.mat data inconsistent'
 
     if disentangle:
-        # In case the disentanglement window is not set by the user, change manually both limits to 
+        # In case the disentanglement window is not set by the user, change manually both limits to
         # larger window to avoid possible counting error in next line
         dis_tol = 1e-5
         shift_dis_down = np.any(np.isclose(np.min(ks_eigenvals_spin, axis=1), dis_window_min, atol=dis_tol, rtol=0.) == True)
