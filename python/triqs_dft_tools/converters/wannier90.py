@@ -683,9 +683,11 @@ def read_wannier90_blochbasis_data(wannier_seed, n_wannier_spin):
 def read_wannier90_centres(wannier_seed):
     centres_filename = wannier_seed + '_centres.xyz'
     if not os.path.isfile(centres_filename):
-        mpi.report('Wannier centres file, {}, does not exist. Please set: '
-                   'write_xyz = true, translate_home_cell = false'.format(centres_filename))
+        mpi.report(f'Wannier centres file, {centres_filename}, does not exist. Please set: '
+            'write_xyz = true, translate_home_cell = false if you want to use the centres.')
         return None
+    else:
+        mpi.report(f'Wannier centres read from file: {centres_filename}')
 
     centres = []
     with open(centres_filename, 'r') as c_file:
