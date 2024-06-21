@@ -620,14 +620,14 @@ def transport_distribution(sum_k, beta, directions=['xx'], energy_window=None, O
         print("Omega mesh automatically repined to:  ", temp_Om_mesh)
 
     Gamma_w = {direction: numpy.zeros((len(temp_Om_mesh), n_om),
-                                      dtype=numpy.float_) for direction in directions}
+                                      dtype=numpy.float64) for direction in directions}
 
     # Sum over all k-points
     ikarray = numpy.array(list(range(sum_k.n_k)))
     for ik in mpi.slice_array(ikarray):
         # Calculate G_w  for ik and initialize A_kw
         G_w = sum_k.lattice_gf(ik, mu, broadening=broadening, mesh=mesh, with_Sigma=with_Sigma)
-        A_kw = [numpy.zeros((sum_k.n_orbitals[ik][isp], sum_k.n_orbitals[ik][isp], n_om), dtype=numpy.complex_)
+        A_kw = [numpy.zeros((sum_k.n_orbitals[ik][isp], sum_k.n_orbitals[ik][isp], n_om), dtype=numpy.complex128)
                 for isp in range(n_inequiv_spin_blocks)]
 
         for isp in range(n_inequiv_spin_blocks):

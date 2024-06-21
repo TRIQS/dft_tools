@@ -32,7 +32,7 @@ omega_range_elk = SK.spectral_contours(broadening=0.01, mesh=mesh, plot_range=(-
 Converter = ElkConverter(filename='SrVO3', repacking=True)
 Converter.hdf_file = 'elk_spectralcontours_convert.out.h5'
 ngrid=np.array([10,10,1],np.int_)
-kgrid=np.array([[0.0,0.0,0.0],[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]],np.float_)
+kgrid=np.array([[0.0,0.0,0.0],[1.0,0.0,0.0],[0.0,1.0,0.0],[0.0,0.0,1.0]],np.float64)
 Converter.convert_contours_input(kgrid=kgrid,ngrid=ngrid)
 SK2 = SumkDFTTools(hdf_file='elk_spectralcontours_convert.out.h5', use_dft_blocks=True)
 fs_elk_user = SK2.spectral_contours(broadening=0.01, mesh=mesh, with_Sigma=False, with_dc=False, FS=True, proj_type='wann', save_to_file=False)
