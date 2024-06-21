@@ -197,7 +197,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
           #extra array elements in each dimension
           size=2*corr_shells[ish]['l']+1
           #extend the arrays
-          T[ish]=numpy.lib.pad(T[ish],((0,size),(0,size)),'constant',constant_values=(0.0))
+          T[ish]=numpy.pad(T[ish],((0,size),(0,size)),'constant',constant_values=(0.0))
           #make block diagonal
           T[ish][size:2*size,size:2*size]=T[ish][0:size,0:size]
           #update the symmetries arrays if needed
@@ -209,7 +209,7 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
             spinmat = numpy.zeros([size,2,size,2],complex)
             for isym in range(n_symm):
               #expand size of array
-              mat[isym][ish]=numpy.lib.pad(mat[isym][ish],((0,size),(0,size)),'constant',constant_values=(0.0))
+              mat[isym][ish]=numpy.pad(mat[isym][ish],((0,size),(0,size)),'constant',constant_values=(0.0))
               #make arraye block diagonal
               mat[isym][ish][size:2*size,size:2*size]=mat[isym][ish][0:size,0:size]
               #apply SU(2) spin matrices to lm symmetries
