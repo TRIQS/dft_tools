@@ -764,7 +764,7 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
     beta : double
         Inverse temperature :math:`\beta`.
     method : string
-        Integration method: cubic spline and scipy.integrate.quad ('quad'), simpson rule ('simps'), trapezoidal rule ('trapz'), rectangular integration (otherwise)
+        Integration method: cubic spline and scipy.integrate.quad ('quad'), simpson rule ('simpson'), trapezoidal rule ('trapz'), rectangular integration (otherwise)
         Note that the sampling points of the the self-energy are used!
 
     Returns
@@ -774,7 +774,7 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
     """
 
     from scipy.interpolate import interp1d
-    from scipy.integrate import simps, quad
+    from scipy.integrate import simpson, quad
 
     if not (mpi.is_master_node()):
         return None
@@ -796,9 +796,9 @@ def transport_coefficient(Gamma_w, omega, Om_mesh, spin_polarization, direction,
             A = quad(A_int_interp, min(omega), max(omega),
                      epsabs=1.0e-12, epsrel=1.0e-12, limit=500)
             A = A[0]
-        elif method == 'simps':
+        elif method == 'simpson':
             # simpson rule for w-grid
-            A = simps(A_int, omega)
+            A = simpson(A_int, omega)
         elif method == 'trapz':
             # trapezoidal rule for w-grid
             A = numpy.trapz(A_int, omega)
@@ -835,7 +835,7 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
     beta : double
         Inverse temperature :math:`\beta`.
     method : string
-        Integration method: cubic spline and scipy.integrate.quad ('quad'), simpson rule ('simps'), trapezoidal rule ('trapz'), rectangular integration (otherwise)
+        Integration method: cubic spline and scipy.integrate.quad ('quad'), simpson rule ('simpson'), trapezoidal rule ('trapz'), rectangular integration (otherwise)
         Note that the sampling points of the the self-energy are used!
 
     Returns
