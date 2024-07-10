@@ -39,6 +39,7 @@ r"""
 import logging
 import numpy as np
 import re
+import os
 from h5 import HDFArchive
 
 log = logging.getLogger('plovasp.vaspio')
