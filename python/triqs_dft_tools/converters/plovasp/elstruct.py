@@ -90,17 +90,11 @@ class ElectronicStructure:
 
 # FIXME: Reading from EIGENVAL is obsolete and should be
 #        removed completely.
-#        if not vasp_data.eigenval.eigs is None:
-        if False:
+        if vasp_data.eigenval.eigs is not None:
             print("eigvals from EIGENVAL")
             self.eigvals = vasp_data.eigenval.eigs
             self.ferw = vasp_data.eigenval.ferw.transpose((2, 0, 1))
-
-            nk_eig = vasp_data.eigenval.nktot
-            assert nk_eig == self.nktot, "PLOCAR is inconsistent with EIGENVAL (number of k-points)"
-
-# Check that the number of band is the same in PROJCAR and EIGENVAL
-            assert nb_plo == self.nband, "PLOCAR is inconsistent with EIGENVAL (number of bands)"
+            self.efermi = vasp_data.doscar.efermi
         else:
             print("eigvals from LOCPROJ")
             self.eigvals = vasp_data.plocar.eigs
@@ -151,7 +145,7 @@ class ElectronicStructure:
 
 # Spin factor
         sp_fac = 2.0 if ns == 1 and self.nc_flag == False else 1.0
-        
+
         if self.nc_flag == False:
             den_mat = np.zeros((ns, nproj, nproj), dtype=float)
             overlap = np.zeros((ns, nproj, nproj), dtype=float)
@@ -184,9 +178,9 @@ class ElectronicStructure:
                         out += "    "
                         out += ''.join(map("{0:12.7f}".format, dov))
                         print(out)
-                    
-                    
-                    
+
+
+
         else:
             print("!! WARNING !! Non Collinear Routine")
             den_mat = np.zeros((ns, nproj, nproj), dtype=float)
