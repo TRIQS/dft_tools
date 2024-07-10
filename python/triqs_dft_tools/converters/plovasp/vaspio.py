@@ -723,7 +723,7 @@ class h5Kpoints:
                 self.ntet = kpoints['num_tetrahedra']
                 self.vtet = kpoints['volume_weight_tetrahedra']
                 self.itet = kpoints['coordinate_id_tetrahedra']
-            except StopIteration as ValueError:
+            except KeyError:
                 print("  No tetrahedron data found in vasptriqs.h5. Skipping...")
                 self.ntet = 0
 
