@@ -2353,30 +2353,31 @@ class SumkDFT(object):
             assert self.SP == 0, "Spin-polarized density matrix is not implemented"
 
             if mpi.is_master_node():
-                with open(filename, 'w') as f:
-                    f.write(" %i  -1  ! Number of k-points, default number of bands\n" % len(kpts_to_write))
-                    for index, ik in enumerate(kpts_to_write):
-                        ib1 = band_window[0][ik, 0]
-                        ib2 = band_window[0][ik, 1]
-                        f.write(" %i  %i  %i\n" % (index + 1, ib1, ib2))
-                        for inu in range(self.n_orbitals[ik, 0]):
-                            for imu in range(self.n_orbitals[ik, 0]):
-                                if (self.SO == 1):
-                                    valre = (deltaN['ud'][ik][inu, imu].real) / 1.0
-                                    valim = (deltaN['ud'][ik][inu, imu].imag) / 1.0
-                                    f.write(" %.14f  %.14f" % (valre, valim))
-                                else:
-                                    valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
-                                    valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
-                                    f.write(" %.14f  %.14f" % (valre, valim))
-                            f.write("\n")
-
                 if os.path.isfile('vasptriqs.h5'):
                     with HDFArchive('vasptriqs.h5', 'a') as vasp_h5:
                         if 'triqs' not in vasp_h5:
                             vasp_h5.create_group('triqs')
                         vasp_h5['triqs']['band_window'] = band_window
                         vasp_h5['triqs']['deltaN'] = deltaN
+                else:
+                    with open(filename, 'w') as f:
+                        f.write(" %i  -1  ! Number of k-points, default number of bands\n" % len(kpts_to_write))
+                        for index, ik in enumerate(kpts_to_write):
+                            ib1 = band_window[0][ik, 0]
+                            ib2 = band_window[0][ik, 1]
+                            f.write(" %i  %i  %i\n" % (index + 1, ib1, ib2))
+                            for inu in range(self.n_orbitals[ik, 0]):
+                                for imu in range(self.n_orbitals[ik, 0]):
+                                    if (self.SO == 1):
+                                        valre = (deltaN['ud'][ik][inu, imu].real) / 1.0
+                                        valim = (deltaN['ud'][ik][inu, imu].imag) / 1.0
+                                        f.write(" %.14f  %.14f" % (valre, valim))
+                                    else:
+                                        valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
+                                        valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
+                                        f.write(" %.14f  %.14f" % (valre, valim))
+                                f.write("\n")
+
 
 
         elif dm_type == 'elk':
