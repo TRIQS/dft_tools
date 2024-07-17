@@ -257,7 +257,7 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
         try:
             import wannierberri as wb
         except ImportError:
-            print('ImportError: WannierBerri needs to be installed to run test "Py_w90_optics_Sr2RuO4"')
+            print('ImportError: WannierBerri needs to be installed to run optics calculations with Wannier90')
             try:
                 mpi.MPI.COMM_WORLD.Abort(1)
             except:
@@ -269,7 +269,7 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
         # if there's a segfault, uncomment the following line
         wberri = wb.System_w90(pathname + seedname, berry=True, fft='numpy', npar=16)
         grid = wb.Grid(wberri, NKdiv=1, NKFFT=[nk_x, nk_y, nk_z])
-        dataK = wb.data_K.Data_K(wberri, dK=shift_gamma, grid=grid, fftlib='numpy')
+        dataK = wb.data_K.Data_K_R(wberri, dK=shift_gamma, grid=grid, fftlib='numpy')
 
         assert dataK.HH_K.shape == hopping[:, 0, :, :].shape, 'wberri / wannier Hamiltonian has different number of orbitals than SumK object. Disentanglement is not supported as of now.'
 
@@ -335,7 +335,7 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
                     (shape_cR[0], shape_cR[1], dataK.system.nRvec) + (1, ) * len(Hw_alpha_R.shape[3:]) + (3, ))
                 Hw_alpha = dataK.fft_R_to_k(Hw_alpha_R, hermitean=False)[dataK.select_K]
                 # second term
-                Aw_alpha = dataK.fft_R_to_k(dataK.AA_R, hermitean=True)
+                Aw_alpha = dataK.fft_R_to_k(dataK.get_R_mat('AA'), hermitean=True)
                 c_Hw_Aw_alpha = _commutator(hopping[:, 0, :, :], Aw_alpha)
                 velocities_k = (Hw_alpha + 1j * c_Hw_Aw_alpha) / HARTREETOEV / BOHRTOANG
 
