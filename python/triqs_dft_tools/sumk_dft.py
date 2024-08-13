@@ -28,6 +28,7 @@ from types import *
 import numpy as np
 import triqs.utility.dichotomy as dichotomy
 from triqs.gf import *
+from triqs.gf.meshes import MeshImFreq, MeshReFreq, MeshDLRImFreq
 import triqs.utility.mpi as mpi
 from triqs.utility.comparison_tests import assert_arrays_are_close
 from h5 import HDFArchive
@@ -106,21 +107,14 @@ class SumkDFT(object):
             self.h_field = h_field
 
             if mesh is None:
-                self.mesh = MeshImFreq(beta=beta, S='Fermion', n_max=n_iw)
-                self.mesh_values = np.linspace(self.mesh(self.mesh.first_index()),
-                                               self.mesh(self.mesh.last_index()),
-                                               len(self.mesh))
-            elif isinstance(mesh, MeshImFreq):
-                self.mesh = mesh
-                self.mesh_values = np.linspace(self.mesh(self.mesh.first_index()),
-                                               self.mesh(self.mesh.last_index()),
-                                               len(self.mesh))
-            elif isinstance(mesh, MeshDLRImFreq):
-                self.mesh = mesh
-                self.mesh_values = np.array([iwn.value for iwn in mesh.values()])
+                self.mesh = MeshImFreq(beta=beta, statistic='Fermion', n_iw=n_iw)
+                self.mesh_values = np.vectorize(lambda x: x.value)(self.mesh.values())
+            elif isinstance(mesh, (MeshImFreq, MeshDLRImFreq)):
+                self.mesh = mesh.copy()
+                self.mesh_values = np.vectorize(lambda x: x.value)(self.mesh.values())
             elif isinstance(mesh, MeshReFreq):
-                self.mesh = mesh
-                self.mesh_values = np.linspace(self.mesh.w_min, self.mesh.w_max, len(self.mesh))
+                self.mesh = mesh.copy()
+                self.mesh_values = self.mesh.values()
             else:
                 raise ValueError('mesh must be a triqs mesh of type MeshImFreq or MeshReFreq')
 
