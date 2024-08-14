@@ -1,4 +1,4 @@
-.. _welcome: 
+.. _welcome:
 
 #########
 DFTTools
@@ -8,7 +8,7 @@ DFTTools
 
    This is the homepage of DFTTools |PROJECT_VERSION|
    For changes see the :ref:`changelog page <changelog>`.
-      
+
       .. image:: _static/logo_github.png
          :width: 75%
          :align: center
@@ -16,18 +16,18 @@ DFTTools
 
 
 This :ref:`TRIQS-based <triqslibs:welcome>`-based application is aimed
-at ab-initio calculations for 
+at ab-initio calculations for
 correlated materials, combining realistic DFT band-structure
 calculations with the dynamical mean-field theory. Together with the
 necessary tools to perform the DMFT self-consistency loop for
 realistic multi-band problems. The package provides a full-fledged
-charge self-consistent interface to the `Wien2K package
-<http://www.wien2k.at>`_, and `VASP package <https://www.vasp.at>`_. 
-In addition, it provides a generic interface for one-shot DFT+DMFT 
-calculations, where only the single-particle Hamiltonian in 
-orbital space has to be provided. The Hamiltonian can be  
-generated from the above mentioned DFT codes, 
-`wannier90 <http://www.wannier.org/>`_ output files, or with the 
+charge self-consistent interface to the `Wien2K all electron DFT code
+<http://www.wien2k.at>`_, `Elk all electron code <https://elk.sourceforge.io/>`_ and `VASP PAW DFT code <https://www.vasp.at>`_.
+In addition, it provides a generic interface for one-shot DFT+DMFT
+calculations, where only the single-particle Hamiltonian in
+orbital space has to be provided. The Hamiltonian can be
+generated from the above mentioned DFT codes,
+`wannier90 <http://www.wannier.org/>`_ output files, or with the
 built-in generic H(k) converter.
 
 Learn how to use this package in the :ref:`documentation` and the :ref:`tutorials`.
@@ -55,7 +55,7 @@ Learn how to use this package in the :ref:`documentation` and the :ref:`tutorial
    :width: 20%
    :target: https://www.simonsfoundation.org
 
-    
+
 .. toctree::
    :maxdepth: 2
    :hidden:
