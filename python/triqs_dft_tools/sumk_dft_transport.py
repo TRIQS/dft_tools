@@ -267,7 +267,7 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
         # wberri = wb.System_w90(pathname + seedname, berry=True, fft='numpy')
         # WannierBerri uses python multiprocessing which might conflict with mpi.
         # if there's a segfault, uncomment the following line
-        wberri = wb.System_w90(pathname + seedname, berry=True, fft='numpy', npar=16)
+        wberri = wb.System_w90(pathname + seedname, berry=True, fftlib='numpy', npar=16)
         grid = wb.Grid(wberri, NKdiv=1, NKFFT=[nk_x, nk_y, nk_z])
         dataK = wb.data_K.Data_K_R(wberri, dK=shift_gamma, grid=grid, fftlib='numpy')
 
@@ -327,15 +327,11 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
             # in the orbital basis
             # vw_alpha = Hw_alpha + i [Hw, Aw_alpha]
             elif oc_basis == 'w':
-                # first term
-                Hw_alpha_R = dataK.Ham_R.copy()
-                # following three lines copied from wannierberri/data_K.py
-                shape_cR = numpy.shape(dataK.cRvec_wcc)
-                Hw_alpha_R = 1j * Hw_alpha_R.reshape((Hw_alpha_R.shape) + (1, )) * dataK.cRvec_wcc.reshape(
-                    (shape_cR[0], shape_cR[1], dataK.system.nRvec) + (1, ) * len(Hw_alpha_R.shape[3:]) + (3, ))
-                Hw_alpha = dataK.fft_R_to_k(Hw_alpha_R, hermitean=False)[dataK.select_K]
+                # first term, taken from
+                # github.com/wannier-berri/wannier-berri/blob/2d3982331c02775f5ee033c664849d5f2d41d0c1/wannierberri/data_K.py#L687
+                Hw_alpha = wb.data_K.Data_K_R._R_to_k_H(dataK, dataK.Ham_R, der=1, hermitian=True)
                 # second term
-                Aw_alpha = dataK.fft_R_to_k(dataK.get_R_mat('AA'), hermitean=True)
+                Aw_alpha = dataK.fft_R_to_k(dataK.get_R_mat('AA'), hermitian=True)
                 c_Hw_Aw_alpha = _commutator(hopping[:, 0, :, :], Aw_alpha)
                 velocities_k = (Hw_alpha + 1j * c_Hw_Aw_alpha) / HARTREETOEV / BOHRTOANG
 
