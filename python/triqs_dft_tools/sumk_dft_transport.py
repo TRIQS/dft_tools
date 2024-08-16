@@ -336,17 +336,15 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
                 velocities_k = (Hw_alpha + 1j * c_Hw_Aw_alpha) / HARTREETOEV / BOHRTOANG
 
         if calc_inverse_mass:
+            # approximating this as the first term in eq (28) in PRB 75, 195121 (2007)
+            # application published in PHYSICAL REVIEW RESEARCH 6, 023124 (2024)
+            # Procedure is the same as for calc_velocity, but using second derivative of Hamiltonian.
             # in the band basis
             if oc_basis == 'h':
                 inverse_mass = dataK.Xbar('Ham', 2)
             # in the orbital basis
             elif oc_basis == 'w':
-                Hw_alphabeta_R = dataK.Ham_R.copy()
-                for i in range(2):
-                    shape_cR = numpy.shape(dataK.cRvec_wcc)
-                    Hw_alphabeta_R = 1j * Hw_alphabeta_R.reshape((Hw_alphabeta_R.shape) + (1, )) * dataK.cRvec_wcc.reshape(
-                        (shape_cR[0], shape_cR[1], dataK.system.nRvec) + (1, ) * len(Hw_alphabeta_R.shape[3:]) + (3, ))
-                inverse_mass = dataK.fft_R_to_k(Hw_alphabeta_R, hermitean=False)[dataK.select_K]
+                inverse_mass = wb.data_K.Data_K_R._R_to_k_H(dataK, dataK.Ham_R, der=2, hermitian=True)
             inverse_mass = inverse_mass / HARTREETOEV / BOHRTOANG**2
         # read in rest from dataK
         cell_volume = dataK.cell_volume / BOHRTOANG ** 3
@@ -949,6 +947,7 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
 
     # initialization
     A0 = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
+    # The conductivity is proportional to A0, A1 and A2 are only needed for the Seebeck coefficient and thermal conductivity
     if mode in ('optics'):
         A1 = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
         A2 = {direction: numpy.full((n_q,), numpy.nan) for direction in directions}
