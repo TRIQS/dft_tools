@@ -2,6 +2,25 @@
 
 # Changelog
 
+## Version 3.3.1
+
+DFTTools Version 3.3.1 is a patch release that restores compatibility
+against recent numpy and scipy versions.
+
+We thank all contributors: Sophie Beck, Alexander Hampel, Nils Wentzell
+
+Find below an itemized list of changes in this release.
+
+### General
+* fix compatibility against numpy 2.0
+* replace numpy.lib.pad with numpy.pad
+* use scipy.integrate.simpson instead of scipy.integrate.simps (#255)
+* clean-up of optics part using wannierberri
+
+### Doc
+* update list of DFT codes on landing page
+
+
 ## Version 3.3.0
 
 DFTTools Version 3.3.0 is a release that
