@@ -27,7 +27,7 @@ endif()
 
 # ############
 # Define Project
-project(triqs_dft_tools VERSION 3.3.0 LANGUAGES CXX Fortran)
+project(triqs_dft_tools VERSION 3.3.1 LANGUAGES CXX Fortran)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # ############
