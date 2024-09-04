@@ -98,20 +98,21 @@ class readElkfiles:
         if not(os.path.exists(filename)):
             raise IOError("File %s does not exist." % filename)
         for line in open(filename, 'r'):
-            for old, new in to_replace.items():
-                line = line.replace(old, new)
-            # removes the substring after '(' character - if it exists
-            if "(" in line:
-              line = self.split_string2(line,'(')
-            # removes the substring after '+' character - if it exists
-            if "+" in line:
-              line = self.split_string2(line,'+')
-            # removes the substring after '|' character - if it exists
-            if "|" in line:
-              line = self.split_string2(line,'|')
-            #only include lines which have multiple characters
-            if(len(line)>1):
-              yield line.split()
+            if line.strip():
+                for old, new in to_replace.items():
+                    line = line.replace(old, new)
+                # removes the substring after '(' character - if it exists
+                if "(" in line:
+                    line = self.split_string2(line,'(')
+                # removes the substring after '+' character - if it exists
+                if "+" in line:
+                    line = self.split_string2(line,'+')
+                # removes the substring after '|' character - if it exists
+                if "|" in line:
+                    line = self.split_string2(line,'|')
+                #only include lines which have multiple characters
+                if(len(line)>1):
+                    yield line.split() 
 
     def split_string(self,line):
         """
