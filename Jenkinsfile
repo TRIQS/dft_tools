@@ -58,8 +58,8 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
 
 /****************** osx builds (on host) */
 def osxPlatforms = [
-  ["gcc", ['CC=gcc-13', 'CXX=g++-13', 'FC=gfortran-13']],
-  ["clang", ['CC=$BREW/opt/llvm/bin/clang', 'CXX=$BREW/opt/llvm/bin/clang++', 'FC=gfortran-13', 'CXXFLAGS=-I$BREW/opt/llvm/include', 'LDFLAGS=-L$BREW/opt/llvm/lib']]
+  ["gcc", ['CC=gcc-14', 'CXX=g++-14', 'FC=gfortran-14']],
+  ["clang", ['CC=$BREW/opt/llvm/bin/clang', 'CXX=$BREW/opt/llvm/bin/clang++', 'FC=gfortran-14', 'CXXFLAGS=-I$BREW/opt/llvm/include', 'LDFLAGS=-L$BREW/opt/llvm/lib']]
 ]
 for (int i = 0; i < osxPlatforms.size(); i++) {
   def platformEnv = osxPlatforms[i]
@@ -86,8 +86,8 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
           "C_INCLUDE_PATH=$hdf5/include:${env.BREW}/include",
           "CPLUS_INCLUDE_PATH=$venv/include:$hdf5/include:${env.BREW}/include",
           "LIBRARY_PATH=$venv/lib:$hdf5/lib:${env.BREW}/lib",
-          "LD_LIBRARY_PATH=$hdf5/lib",
-          "PYTHONPATH=$installDir/lib/python3.9/site-packages",
+          "DYLD_LIBRARY_PATH=$venv/lib:$hdf5/lib:${env.BREW}/lib",
+          "PYTHONPATH=$installDir/lib/python3.12/site-packages",
           "CMAKE_PREFIX_PATH=$venv/lib/cmake/triqs",
           "VIRTUAL_ENV=$venv",
           "OMP_NUM_THREADS=2"]) {
