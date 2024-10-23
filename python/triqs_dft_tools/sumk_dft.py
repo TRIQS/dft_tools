@@ -2204,7 +2204,8 @@ class SumkDFT(object):
             if dm_type == 'wien2k':
                 filename = 'dens_mat.dat'
             elif dm_type == 'vasp':
-                filename = 'GAMMA'
+                # use new h5 interface to vasp by default, if not wanted specify dm_type='vasp' + filename='GAMMA'
+                filename = 'vaspgamma.h5'
             elif dm_type == 'elk':
                 filename = 'DMATDMFT.OUT'
             elif dm_type == 'qe':
@@ -2353,12 +2354,10 @@ class SumkDFT(object):
             assert self.SP == 0, "Spin-polarized density matrix is not implemented"
 
             if mpi.is_master_node():
-                if os.path.isfile('vasptriqs.h5'):
-                    with HDFArchive('vasptriqs.h5', 'a') as vasp_h5:
-                        if 'triqs' not in vasp_h5:
-                            vasp_h5.create_group('triqs')
-                        vasp_h5['triqs']['band_window'] = band_window
-                        vasp_h5['triqs']['deltaN'] = deltaN
+                if filename == 'vaspgamma.h5':
+                    with HDFArchive('vaspgamma.h5', 'w') as vasp_h5:
+                        vasp_h5['band_window'] = band_window
+                        vasp_h5['deltaN'] = deltaN
                 else:
                     with open(filename, 'w') as f:
                         f.write(" %i  -1  ! Number of k-points, default number of bands\n" % len(kpts_to_write))
