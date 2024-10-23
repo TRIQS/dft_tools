@@ -74,11 +74,11 @@ class VaspData:
     def __init__(self, vasp_dir, read_all=True, efermi_required=True):
         self.vasp_dir = vasp_dir
 
-        # NEW vasptriqs.h5
-        vasptriqs = os.path.isfile(os.path.join(vasp_dir, 'vasptriqs.h5'))
-        if vasptriqs:
-            log.warning("Reading from vasptriqs.h5")
-            h5path = os.path.join(vasp_dir, 'vasptriqs.h5')
+        # read from vaspout.h5 if possible
+        vasph5 = os.path.isfile(os.path.join(vasp_dir, 'vaspout.h5'))
+        if vasph5:
+            log.warning("Reading from vaspout.h5")
+            h5path = os.path.join(vasp_dir, 'vaspout.h5')
             self.plocar = h5Plocar(h5path)
             self.poscar = h5Poscar(h5path)
             self.kpoints = h5Kpoints(h5path)
@@ -669,7 +669,7 @@ class h5Poscar:
         # self.q_cart = None
 
         with HDFArchive(h5path, 'a') as archive:
-            struct = archive['triqs']['structure']
+            struct = archive['results/positions']
             ascale = struct['scale']
             self.a_brav = struct['lattice_vectors']
             self.nions = struct['number_ion_types']
@@ -715,8 +715,8 @@ class h5Kpoints:
 
         # h5path = './vasptriqs.h5'
         with HDFArchive(h5path, 'a') as archive:
-            kpoints = archive['triqs']['kpoints']
-            self.nktot = kpoints['num_kpoints']
+            kpoints = archive['results/electron_eigenvalues']
+            self.nktot = kpoints['kpoints']
             self.kpts = kpoints['kpoint_coords']
             self.kwghts = kpoints['kpoints_symmetry_weight']
             try:
@@ -736,8 +736,8 @@ class h5Eigenval:
 
     def __init__(self, h5path):
         with HDFArchive(h5path, 'a') as archive:
-            self.eigs = archive['triqs']['eigenvalues']
-            self.ferw = archive['triqs']['fermi_weights']
+            self.eigs = archive['results/electron_eigenvalues']['eigenvalues']
+            self.ferw = archive['results/electron_eigenvalues']['fermiweights']
         # TODO Change the format in VASP to have [kpoints, bands, spin]
         self.eigs = np.transpose(self.eigs, (1, 2, 0))
         self.ferw = np.transpose(self.ferw, (1, 2, 0))
@@ -747,15 +747,15 @@ class h5Doscar:
 
     def __init__(self, h5path):
         with HDFArchive(h5path, 'a') as archive:
-            self.efermi = archive['triqs']['efermi']
+            self.efermi = archive['results/electron_dos']['efermi']
 
 
 class h5Plocar():
 
     def __init__(self, h5path):
         with HDFArchive(h5path, 'a') as archive:
-            plo = np.array(archive['triqs']['plo'])
-            self.nc_flag = int(archive['triqs']['noncoll'])
+            plo = np.array(archive['results/locproj']['data'])
+            self.nc_flag = int(archive['results/locproj/parameters']['lnoncollinear'])
 
         self.nproj = plo.shape[0]
         self.ncdij = plo.shape[1]
@@ -791,13 +791,13 @@ class h5Plocar():
         self.proj_params = [{} for i in range(self.nproj)]
         with HDFArchive(h5path, 'a') as archive:
             for it in range(self.nproj):
-                projectors = archive['triqs']['plo_parameters'][str(it + 1)]
-                self.proj_params[it]['label'] = projectors['ang_type']
-                self.proj_params[it]['isite'] = projectors['site']
-                self.proj_params[it]['coord'] = projectors['coordinates']
+                projectors = archive['results/locproj']['parameters']
+                self.proj_params[it]['label'] = projectors['ang_type'][it]
+                self.proj_params[it]['isite'] = projectors['site'][it]
+                self.proj_params[it]['coord'] = projectors['coordinates'][it]
 
         for it in range(self.nproj):
-            lm = orb_labels.index(self.proj_params[it]['label'])
+            lm = orb_labels.index(self.proj_params[it]['label'].strip())
             l, m = lm_to_l_m(lm)
             self.proj_params[it]['l'] = l
             if self.nc_flag == True:
