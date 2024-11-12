@@ -578,7 +578,8 @@ class SumkDFT(object):
                 mesh_values = self.mesh_values
 
         elif not mesh is None:
-            assert isinstance(mesh, (MeshReFreq, MeshDLRImFreq, MeshImFreq)),  "mesh must be a triqs MeshReFreq or MeshImFreq"
+            assert isinstance(mesh,
+                              (MeshReFreq, MeshDLRImFreq, MeshImFreq)), "mesh must be a triqs MeshReFreq or MeshImFreq"
             if isinstance(mesh, MeshImFreq):
                 mesh_values = np.linspace(mesh(mesh.first_index()), mesh(mesh.last_index()), len(mesh))
             elif isinstance(mesh, MeshDLRImFreq):
@@ -596,7 +597,7 @@ class SumkDFT(object):
             gf_struct = [(spn[isp], block_structure[isp])
                          for isp in range(self.n_spin_blocks[self.SO])]
             block_ind_list = [block for block, inner in gf_struct]
-            glist = lambda: [Gf(mesh=mesh, target_shape=[len(inner),len(inner)])
+            glist = lambda: [Gf(mesh=mesh, target_shape=[len(inner), len(inner)])
                              for block, inner in gf_struct]
             G_latt = BlockGf(name_list=block_ind_list,
                              block_list=glist(), make_copies=False)
@@ -610,7 +611,7 @@ class SumkDFT(object):
             ind = ntoi[spn[ibl]]
             n_orb = self.n_orbitals[ik, ind]
             if isinstance(mesh, (MeshImFreq, MeshDLRImFreq)):
-                gf.data[:, :, :] = (idmat[ibl] * (mesh_values[:, None, None] + mu + self.h_field*(1-2*ibl))
+                gf.data[:, :, :] = (idmat[ibl] * (mesh_values[:, None, None] + mu + self.h_field * (1 - 2 * ibl))
                                     - self.hopping[ik, ind, 0:n_orb, 0:n_orb])
             else:
                 gf.data[:, :, :] = (idmat[ibl] *
@@ -655,8 +656,8 @@ class SumkDFT(object):
 
         if (isinstance(self.mesh, (MeshImFreq, MeshDLRImFreq)) and
                 all(isinstance(gf.mesh, (MeshImFreq, MeshDLRImFreq)) and
-                isinstance(gf, Gf) and
-                gf.mesh == self.mesh for bname, gf in Sigma_imp[0])):
+                    isinstance(gf, Gf) and
+                    gf.mesh == self.mesh for bname, gf in Sigma_imp[0])):
             # Imaginary frequency Sigma:
             self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, space='sumk')
                               for icrsh in range(self.n_corr_shells)]
@@ -692,7 +693,7 @@ class SumkDFT(object):
                     self.max_band_energy - self.chemical_potential):
                 warn(
                     'The given Sigma is on a mesh which does not cover the band energy range. The Sigma MeshReFreq runs from %f to %f, while the band energy (minus the chemical potential) runs from %f to %f' % (
-                    mesh[0], mesh[-1], self.min_band_energy, self.max_band_energy))
+                        mesh[0], mesh[-1], self.min_band_energy, self.max_band_energy))
 
     def transform_to_sumk_blocks(self, Sigma_imp, Sigma_out=None):
         r""" transform Sigma from solver to sumk space
@@ -1843,7 +1844,8 @@ class SumkDFT(object):
             for bname, gf in sigma_minus_dc[icrsh]:
                 # Transform dc_imp to global coordinate system
                 if self.use_rotations:
-                    gf -= np.dot(self.rot_mat[icrsh], np.dot(self.dc_imp[icrsh][bname], self.rot_mat[icrsh].conjugate().transpose()))
+                    gf -= np.dot(self.rot_mat[icrsh],
+                                 np.dot(self.dc_imp[icrsh][bname], self.rot_mat[icrsh].conjugate().transpose()))
                 else:
                     gf -= self.dc_imp[icrsh][bname]
 
@@ -2205,7 +2207,8 @@ class SumkDFT(object):
                 filename = 'dens_mat.dat'
             elif dm_type == 'vasp':
                 # use new h5 interface to vasp by default, if not wanted specify dm_type='vasp' + filename='GAMMA'
-                filename = 'vaspgamma.h5'
+                # filename = 'vaspgamma.h5'
+                filename = 'GAMMA'
             elif dm_type == 'elk':
                 filename = 'DMATDMFT.OUT'
             elif dm_type == 'qe':
@@ -2360,7 +2363,7 @@ class SumkDFT(object):
                         vasp_h5['deltaN'] = deltaN
                 else:
                     with open(filename, 'w') as f:
-                        f.write(" %i  -1  ! Number of k-points, default number of bands\n" % len(kpts_to_write))
+                        f.write(" -1  -1  ! Number of k-points, default number of bands\n")  # % len(kpts_to_write))
                         for index, ik in enumerate(kpts_to_write):
                             ib1 = band_window[0][ik, 0]
                             ib2 = band_window[0][ik, 1]
@@ -2372,8 +2375,10 @@ class SumkDFT(object):
                                         valim = (deltaN['ud'][ik][inu, imu].imag) / 1.0
                                         f.write(" %.14f  %.14f" % (valre, valim))
                                     else:
-                                        valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
-                                        valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
+                                        valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][
+                                            inu, imu].real) / 2.0
+                                        valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][
+                                            inu, imu].imag) / 2.0
                                         f.write(" %.14f  %.14f" % (valre, valim))
                                 f.write("\n")
 
@@ -2396,7 +2401,7 @@ class SumkDFT(object):
                     mu = self.chemical_potential / self.energy_unit
                     # ouput n_k, nspin and max orbitals - a check
                     f.write(" %d  %d  %d  %.14f %.14f ! nkpt, nspin, nstmax, beta, mu\n" % (
-                    self.n_k, n_spin_blocks, nbmax, beta, mu))
+                        self.n_k, n_spin_blocks, nbmax, beta, mu))
                     for ik in range(self.n_k):
                         for ispn in range(n_spin_blocks):
                             # Determine the SO density matrix band indices from the spinor band indices
