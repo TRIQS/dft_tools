@@ -82,7 +82,7 @@ class VaspData:
             self.plocar = h5Plocar(h5path)
             self.poscar = h5Poscar(h5path)
             self.kpoints = h5Kpoints(h5path)
-            self.eigenval = h5Eigenval(h5path)
+            self.eigenval = h5Eigenval(h5path, self.kpoints.ksymmap)
             self.doscar = h5Doscar(h5path)
         else:
             self.plocar = Plocar()
@@ -716,28 +716,34 @@ class h5Kpoints:
         # h5path = './vasptriqs.h5'
         with HDFArchive(h5path, 'a') as archive:
             kpoints = archive['results/electron_eigenvalues']
-            self.nktot = kpoints['kpoints']
-            self.kpts = kpoints['kpoint_coords']
-            self.kwghts = kpoints['kpoints_symmetry_weight']
+            self.nkred = kpoints['kpoints']
+            self.kpts = kpoints['kpoint_coords_full']
+            self.nktot = len(self.kpts)
+            self.kwghts = kpoints['kpoints_symmetry_weight_full']
+            self.ksymmap = kpoints['kpoints_symmetry_mapping']
+            self.ksymmap -= 1
             try:
                 self.ntet = kpoints['num_tetrahedra']
                 self.vtet = kpoints['volume_weight_tetrahedra']
                 self.itet = kpoints['coordinate_id_tetrahedra']
             except KeyError:
-                print("  No tetrahedron data found in vasptriqs.h5. Skipping...")
+                print("  No tetrahedron data found in vaspout.h5. Skipping...")
                 self.ntet = 0
 
         print()
+        print("   {0:>26} {1:d}".format("Reduced number of k-points:", self.nkred))
         print("   {0:>26} {1:d}".format("Total number of k-points:", self.nktot))
         print("   {0:>26} {1:d}".format("Total number of tetrahedra:", self.ntet))
 
 
 class h5Eigenval:
 
-    def __init__(self, h5path):
+    def __init__(self, h5path, symmap):
         with HDFArchive(h5path, 'a') as archive:
             self.eigs = archive['results/electron_eigenvalues']['eigenvalues']
+            self.eigs = self.eigs[:, symmap, :]
             self.ferw = archive['results/electron_eigenvalues']['fermiweights']
+            self.ferw = self.ferw[:, symmap, :]
         # TODO Change the format in VASP to have [kpoints, bands, spin]
         self.eigs = np.transpose(self.eigs, (1, 2, 0))
         self.ferw = np.transpose(self.ferw, (1, 2, 0))

@@ -72,22 +72,26 @@ def is_vasp_running(vasp_pid):
     pid_exists = mpi.bcast(pid_exists)
     return pid_exists
 
+
 def get_dft_energy():
     """
-    Reads energy from the last line of OSZICAR.
+    Reads DFT energy from the last line of Vasp's OSZICAR or from vasptriqs.h5
     """
-    with open('OSZICAR', 'r') as f:
-        nextline = f.readline()
-        while nextline.strip():
-            line = nextline
-            nextline = f.readline()
-#            print "OSZICAR: ", line[:-1]
+    h5_energy = False
+    if os.path.isfile('vaspout.h5'):
+        with HDFArchive('vaspout.h5', 'r') as h5:
+            if 'oszicar' in h5['intermediate/ion_dynamics']:
+                dft_energy = h5['intermediate/ion_dynamics/oszicar'][-1,1]
+                h5_energy = True
 
-    try:
+    # as backup use OSZICAR file
+    if not h5_energy:
+        with open('OSZICAR', 'r') as file:
+            nextline = file.readline()
+            while nextline.strip():
+                line = nextline
+                nextline = file.readline()
         dft_energy = float(line.split()[2])
-    except ValueError:
-        print("Cannot read energy from OSZICAR, setting it to zero")
-        dft_energy = 0.0
 
     return dft_energy
 
@@ -98,9 +102,8 @@ class bcolors:
     YELLOW = '\033[93m'
     RED = '\033[91m'
     ENDC = '\033[0m'
-#
+
 # Main self-consistent cycle
-#
 def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
     """
     """
@@ -117,15 +120,14 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
         mpi.barrier()
         while is_vasp_lock_present():
             time.sleep(1)
-#            if debug: print bcolors.YELLOW + " waiting: rank %s"%(mpi.rank) + bcolors.ENDC
+            if debug: print(bcolors.YELLOW + " waiting: rank %s"%(mpi.rank) + bcolors.ENDC)
             if not is_vasp_running(vasp_pid):
                 mpi.report("  VASP stopped")
                 vasp_running = False
                 break
             
-# Tell VASP to stop if the maximum number of iterations is reached
-        
-        
+        # Tell VASP to stop if the maximum number of iterations is reached
+
         if debug: print(bcolors.MAGENTA + "rank %s"%(mpi.rank) + bcolors.ENDC)
         err = 0
         exc = None
@@ -161,7 +163,7 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
         # electron.F around line 644
         iter_dft = 0
         
-        if vasp_version == 'standard':
+        if vasp_version == 'standard' or vasp_version == 'ncl':
             copyfile(src='GAMMA',dst='GAMMA_recent')
         while iter_dft < n_iter_dft:
             # insert recalculation of GAMMA here
@@ -190,7 +192,7 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
                     vasp_running = False
                     break
             iter_dft += 1
-            if vasp_version == 'standard':
+            if vasp_version == 'standard' or vasp_version == 'ncl':
                 copyfile(src='GAMMA_recent',dst='GAMMA')
         iter += 1
         if iter == n_iter:
@@ -253,8 +255,8 @@ def main():
     except KeyError:
         vasp_version = 'standard'
     
-    if vasp_version != 'standard' and vasp_version != 'no_gamma_write':
-        raise Exception('vasp_version has to be standard or no_gamma_write')
+    #if vasp_version != 'standard' and vasp_version != 'no_gamma_write':
+    #    raise Exception('vasp_version has to be standard or no_gamma_write')
 
 #    if len(sys.argv) > 1:
 #        vasp_path = sys.argv[1]
