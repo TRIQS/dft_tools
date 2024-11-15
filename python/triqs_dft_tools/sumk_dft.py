@@ -222,7 +222,7 @@ class SumkDFT(object):
         Returns
         -------
         subgroup_present : boolean
-                           Is the subgrp is present in hdf5 file?
+                           Is the subgrp present in hdf5 file?
         values_not_read : list of strings
                            List of things that could not be read
 
@@ -759,7 +759,7 @@ class SumkDFT(object):
         if with_Sigma and hasattr(self, "Sigma_imp"):
             mesh = self.Sigma_imp[0].mesh
             if mesh != self.mesh:
-                warn('self.mesh and self.Sigma_imp[0].mesh are differen! Using mesh from Sigma')
+                warn('self.mesh and self.Sigma_imp[0].mesh are different! Using mesh from Sigma')
         elif with_Sigma and not hasattr(self, "Sigma_imp"):
             mpi.report('Warning: No Sigma set but parameter with_Sigma=True, calculating Gloc without Sigma.')
             with_Sigma = False
@@ -767,7 +767,7 @@ class SumkDFT(object):
         else:
             mesh = self.mesh
 
-        # create G_loc to be returned in sumk space for all correlated shells. Trafo to solver block structure done later
+        # create G_loc to be returned in sumk space for all correlated shells. Transform to solver block structure done later
         G_loc = [self.block_structure.create_gf(ish=ish, mesh=mesh, space='sumk') for ish in range(self.n_corr_shells)]
 
         ikarray = np.array(list(range(self.n_k)))
@@ -2136,7 +2136,7 @@ class SumkDFT(object):
                    Name of the file to store the charge density correction.
         dm_type : string
                    DFT code to write the density correction for. Options:
-                   'vasp', 'wien2k', 'elk' or 'qe'. Needs to be set for 'qe'
+                   'vasp', 'wien2k', 'elk', 'qe' or 'abinit'. Needs to be set for 'qe' or 'abinit'
         spinave : logical
                    Elk specific and for magnetic calculations in DMFT only.
                    It averages the spin to keep the DFT part non-magnetic.
@@ -2162,7 +2162,7 @@ class SumkDFT(object):
         if dm_type is None:
             dm_type = self.dft_code
 
-        assert dm_type in ('vasp', 'wien2k','elk', 'qe'), "'dm_type' must be either 'vasp', 'wienk', 'elk' or 'qe'"
+        assert dm_type in ('vasp', 'wien2k','elk', 'qe', 'abinit'), "'dm_type' must be either 'vasp', 'wienk', 'elk', 'qe' or 'abinit'"
         #default file names
         if filename is None:
             if dm_type == 'wien2k':
@@ -2173,6 +2173,8 @@ class SumkDFT(object):
                 filename = 'DMATDMFT.OUT'
             elif dm_type == 'qe':
                 filename = self.hdf_file
+            elif dm_type == 'abinit':
+                filename = "abiout.delta_N"
 
 
         assert isinstance(filename, str), ("calc_density_correction: "
@@ -2187,7 +2189,7 @@ class SumkDFT(object):
         band_en_correction = 0.0
 
 # Fetch Fermi weights and energy window band indices
-        if dm_type in ['vasp','qe']:
+        if dm_type in ['vasp','qe', 'abinit']:
             fermi_weights = 0
             band_window = 0
             if mpi.is_master_node():
@@ -2201,7 +2203,6 @@ class SumkDFT(object):
             dens_mat_dft = {}
             for sp in spn:
                 dens_mat_dft[sp] = [fermi_weights[ik, ntoi[sp], :].astype(complex) for ik in range(self.n_k)]
-
 
         # Set up deltaN:
         deltaN = {}
@@ -2229,7 +2230,7 @@ class SumkDFT(object):
                     dens[bname] += self.bz_weights[ik] * G_latt[bname].total_density()
                 else:
                     dens[bname] += self.bz_weights[ik] * G_latt[bname].total_density(beta)
-                if dm_type in ['vasp','qe']:
+                if dm_type in ['vasp', 'qe', 'abinit']:
 # In 'vasp'-mode subtract the DFT density matrix
                     nb = self.n_orbitals[ik, ntoi[bname]]
                     diag_inds = np.diag_indices(nb)
@@ -2398,13 +2399,34 @@ class SumkDFT(object):
                     for it in things_to_save:
                         ar[subgrp][it] = locals()[it]
 
+        elif dm_type == 'abinit':
+            if kpts_to_write is None:
+                kpts_to_write = np.arange(self.n_k)
+            else:
+                assert np.min(kpts_to_write) >= 0 and np.max(kpts_to_write) < self.n_k
+
+            assert self.SP == 0, "Spin-polarized density matrix is not implemented"
+
+            if mpi.is_master_node():
+                with open(filename, 'w') as f:
+                    f.write(" %i  -1  ! Number of k-points, default number of bands\n"%len(kpts_to_write))
+                    for index, ik in enumerate(kpts_to_write):
+                        ib1 = band_window[0][ik, 0]
+                        ib2 = band_window[0][ik, 1]
+                        f.write(" %i  %i  %i\n"%(index + 1, ib1, ib2))
+                        for inu in range(self.n_orbitals[ik, 0]):
+                            for imu in range(self.n_orbitals[ik, 0]):
+                                valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
+                                valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
+                                f.write(" %.14f  %.14f"%(valre, valim))
+                            f.write("\n")
 
         else:
             raise NotImplementedError("Unknown density matrix type: '%s'"%(dm_type))
 
         res = deltaN, dens
 
-        if dm_type in ['vasp', 'qe']:
+        if dm_type in ['vasp', 'qe', 'abinit']:
             res += (band_en_correction,)
 
         return res
