@@ -2207,8 +2207,7 @@ class SumkDFT(object):
                 filename = 'dens_mat.dat'
             elif dm_type == 'vasp':
                 # use new h5 interface to vasp by default, if not wanted specify dm_type='vasp' + filename='GAMMA'
-                # filename = 'vaspgamma.h5'
-                filename = 'GAMMA'
+                filename = 'vaspgamma.h5'
             elif dm_type == 'elk':
                 filename = 'DMATDMFT.OUT'
             elif dm_type == 'qe':
@@ -2229,12 +2228,17 @@ class SumkDFT(object):
         if dm_type in ['vasp', 'qe']:
             fermi_weights = 0
             band_window = 0
+            n_k_ibz = self.n_k
             if mpi.is_master_node():
                 with HDFArchive(self.hdf_file, 'r') as ar:
                     fermi_weights = ar['dft_misc_input']['dft_fermi_weights']
                     band_window = ar['dft_misc_input']['band_window']
+
+                    if 'n_k_ibz' in ar['dft_misc_input']:
+                        n_k_ibz = ar['dft_misc_input']['n_k_ibz']
             fermi_weights = mpi.bcast(fermi_weights)
             band_window = mpi.bcast(band_window)
+            n_k_ibz = mpi.bcast(n_k_ibz)
 
             # Convert Fermi weights to a density matrix
             dens_mat_dft = {}
@@ -2349,8 +2353,13 @@ class SumkDFT(object):
                             fout.write("\n")
                         fout.close()
         elif dm_type == 'vasp':
-            if kpts_to_write is None:
+            if kpts_to_write is None and self.n_k == n_k_ibz:
                 kpts_to_write = np.arange(self.n_k)
+            elif kpts_to_write is None and n_k_ibz < self.n_k:
+                # If the number of IBZ k-points is less than the total number of k-points,
+                # then we only write the IBZ k-points, which are the first n_k_ibz k-points
+                # in VASP
+                kpts_to_write = np.arange(n_k_ibz)
             else:
                 assert np.min(kpts_to_write) >= 0 and np.max(kpts_to_write) < self.n_k
 
@@ -2359,8 +2368,12 @@ class SumkDFT(object):
             if mpi.is_master_node():
                 if filename == 'vaspgamma.h5':
                     with HDFArchive('vaspgamma.h5', 'w') as vasp_h5:
-                        vasp_h5['band_window'] = band_window
-                        vasp_h5['deltaN'] = deltaN
+                        # only store the ibz kpoints in the h5
+                        bnd_win_towrite = [band_window[0][:n_k_ibz,:]]
+                        vasp_h5['band_window'] = bnd_win_towrite
+                        vasp_h5.create_group('deltaN')
+                        vasp_h5['deltaN']['up'] = deltaN['up'][:n_k_ibz]
+                        vasp_h5['deltaN']['down'] = deltaN['down'][:n_k_ibz]
                 else:
                     with open(filename, 'w') as f:
                         f.write(" -1  -1  ! Number of k-points, default number of bands\n")  # % len(kpts_to_write))

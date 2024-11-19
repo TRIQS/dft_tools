@@ -40,6 +40,7 @@ import logging
 import numpy as np
 import re
 import os
+import time
 from h5 import HDFArchive
 
 log = logging.getLogger('plovasp.vaspio')
@@ -79,6 +80,10 @@ class VaspData:
         if vasph5:
             log.warning("Reading from vaspout.h5")
             h5path = os.path.join(vasp_dir, 'vaspout.h5')
+            # give VASP some time to write the file
+            with HDFArchive(h5path, 'r') as archive:
+                if 'locproj' not in archive['results']:
+                    time.sleep(2)
             self.plocar = h5Plocar(h5path)
             self.poscar = h5Poscar(h5path)
             self.kpoints = h5Kpoints(h5path)
@@ -401,7 +406,8 @@ class Kpoints:
     Class describing k-points and optionally tetrahedra.
 
     Properties:
-        - nktot (int) : total number of k-points in the IBZ
+        - nktot (int) : total number of k-points in the BZ
+        - nkibz (int) : number of k-points in the IBZ
         - kpts (numpy.array((nktot, 3), dtype=float)) : k-point vectors (fractional coordinates)
         - ntet (int) : total number of k-point tetrahedra
         - itet (numpy.array((ntet, 5), dtype=float) : array of tetrahedra
@@ -412,6 +418,7 @@ class Kpoints:
     def __init__(self):
         self.kpts = None
         self.nktot = None
+        self.nkibz = None
         self.kwghts = None
 
     #
@@ -441,6 +448,9 @@ class Kpoints:
         #   Number of k-points
         line = next(ibz_file)
         self.nktot = int(line.strip().split()[0])
+        # when reading from IBZKPT file we do not know the full number of k-points, i.e.
+        # works only ISYM=-1
+        self.nkibz = self.nktot
 
         print()
         print("   {0:>26} {1:d}".format("Total number of k-points:", self.nktot))
@@ -716,7 +726,7 @@ class h5Kpoints:
         # h5path = './vasptriqs.h5'
         with HDFArchive(h5path, 'a') as archive:
             kpoints = archive['results/electron_eigenvalues']
-            self.nkred = kpoints['kpoints']
+            self.nkibz = kpoints['kpoints']
             self.kpts = kpoints['kpoint_coords_full']
             self.nktot = len(self.kpts)
             self.kwghts = kpoints['kpoints_symmetry_weight_full']
@@ -731,7 +741,7 @@ class h5Kpoints:
                 self.ntet = 0
 
         print()
-        print("   {0:>26} {1:d}".format("Reduced number of k-points:", self.nkred))
+        print("   {0:>26} {1:d}".format("Reduced number of k-points:", self.nkibz))
         print("   {0:>26} {1:d}".format("Total number of k-points:", self.nktot))
         print("   {0:>26} {1:d}".format("Total number of tetrahedra:", self.ntet))
 
