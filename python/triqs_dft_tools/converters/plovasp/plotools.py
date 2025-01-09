@@ -289,6 +289,8 @@ def ctrl_output(conf_pars, el_struct, ng):
 
      * *nk*: number of `k`-points
 
+     * *nkibz*: number of `k`-points in IBZ
+
      * *ns*: number of spin channels
 
      * *nc_flag*: collinear/noncollinear case (False/True)
@@ -309,6 +311,7 @@ def ctrl_output(conf_pars, el_struct, ng):
 # Construct the header dictionary
     head_dict['ngroups'] = ng
     head_dict['nk'] = el_struct.kmesh['nktot']
+    head_dict['nkibz'] = el_struct.kmesh['nkibz']
     head_dict['ns'] = el_struct.nspin
     head_dict['kvec1'] = list(el_struct.structure['kpt_basis'][:,0])
     head_dict['kvec2'] = list(el_struct.structure['kpt_basis'][:,1])

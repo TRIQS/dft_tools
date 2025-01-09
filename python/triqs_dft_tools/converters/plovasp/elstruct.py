@@ -39,6 +39,7 @@ class ElectronicStructure:
 
     - *natom* (int) : total number of atoms
     - *nktot* (int) : total number of `k`-points
+    - *nkibz* (int) : number of `k`-points in IBZ
     - *nband* (int) : total number of bands
     - *nspin* (int) : spin-polarization
     - *nc_flag* (True/False) : non-collinearity flag
@@ -58,8 +59,9 @@ class ElectronicStructure:
         self.natom = vasp_data.poscar.nq
         self.type_of_ion = vasp_data.poscar.type_of_ion
         self.nktot = vasp_data.kpoints.nktot
+        self.nkibz = vasp_data.kpoints.nkibz
 
-        self.kmesh = {'nktot': self.nktot}
+        self.kmesh = {'nktot': self.nktot, 'nkibz': self.nkibz}
         self.kmesh['kpoints'] = vasp_data.kpoints.kpts
         # VASP.6.
         self.nc_flag = vasp_data.plocar.nc_flag
@@ -86,21 +88,15 @@ class ElectronicStructure:
 
 # Check that the number of k-points is the same in all files
         _, ns_plo, nk_plo, nb_plo = vasp_data.plocar.plo.shape
-        assert nk_plo == self.nktot, "PLOCAR is inconsistent with IBZKPT (number of k-points)"
+        assert nk_plo == self.nktot, "PLOCAR is inconsistent with IBZKPT (number of k-points). If you run VASP with symmetry make sure to use the h5 interface of the converter, i.e. have the locproj information written to vaspout.h5"
 
 # FIXME: Reading from EIGENVAL is obsolete and should be
 #        removed completely.
-#        if not vasp_data.eigenval.eigs is None:
-        if False:
+        if vasp_data.eigenval.eigs is not None:
             print("eigvals from EIGENVAL")
             self.eigvals = vasp_data.eigenval.eigs
             self.ferw = vasp_data.eigenval.ferw.transpose((2, 0, 1))
-
-            nk_eig = vasp_data.eigenval.nktot
-            assert nk_eig == self.nktot, "PLOCAR is inconsistent with EIGENVAL (number of k-points)"
-
-# Check that the number of band is the same in PROJCAR and EIGENVAL
-            assert nb_plo == self.nband, "PLOCAR is inconsistent with EIGENVAL (number of bands)"
+            self.efermi = vasp_data.doscar.efermi
         else:
             print("eigvals from LOCPROJ")
             self.eigvals = vasp_data.plocar.eigs
@@ -151,7 +147,7 @@ class ElectronicStructure:
 
 # Spin factor
         sp_fac = 2.0 if ns == 1 and self.nc_flag == False else 1.0
-        
+
         if self.nc_flag == False:
             den_mat = np.zeros((ns, nproj, nproj), dtype=float)
             overlap = np.zeros((ns, nproj, nproj), dtype=float)
@@ -184,9 +180,9 @@ class ElectronicStructure:
                         out += "    "
                         out += ''.join(map("{0:12.7f}".format, dov))
                         print(out)
-                    
-                    
-                    
+
+
+
         else:
             print("!! WARNING !! Non Collinear Routine")
             den_mat = np.zeros((ns, nproj, nproj), dtype=float)

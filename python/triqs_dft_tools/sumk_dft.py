@@ -477,8 +477,7 @@ class SumkDFT(object):
                 gf_rotated.from_L_G_R(rot_mat[ish].conjugate(
                 ), gf_rotated, rot_mat[ish].transpose())
             else:
-                gf_rotated.from_L_G_R(rot_mat[ish], gf_rotated, rot_mat[
-                                      ish].conjugate().transpose())
+                gf_rotated.from_L_G_R(rot_mat[ish], gf_rotated, rot_mat[ish].conjugate().transpose())
 
         elif direction == 'toLocal':
 
@@ -541,8 +540,7 @@ class SumkDFT(object):
         else:                                       # Check that existing GF is consistent
             G_latt = self.G_latt
             GFsize = [gf.target_shape[0] for bname, gf in G_latt]
-            unchangedsize = all([self.n_orbitals[ik, ntoi[spn[isp]]] == GFsize[
-                                isp] for isp in range(self.n_spin_blocks[self.SO])])
+            unchangedsize = all([self.n_orbitals[ik, ntoi[spn[isp]]] == GFsize[isp] for isp in range(self.n_spin_blocks[self.SO])])
             if (not mesh is None) or (not unchangedsize):
                 set_up_G_latt = True
 
@@ -1564,7 +1562,7 @@ class SumkDFT(object):
             warn("WARNING: density_matrix: method 'using_point_integration' is deprecated. Use 'density_matrix_using_point_integration' instead. All additionally provided arguments are ignored.")
             dens_mat = self.density_matrix_using_point_integration()
         else:
-           raise ValueError("density_matrix: the method '%s' is not supported." % method)
+            raise ValueError("density_matrix: the method '%s' is not supported." % method)
 
         return dens_mat
 
@@ -1620,8 +1618,7 @@ class SumkDFT(object):
                     for ik in range(self.n_k):
                         n_orb = self.n_orbitals[ik, ind]
                         MMat = np.identity(n_orb, complex)
-                        MMat = self.hopping[
-                            ik, ind, 0:n_orb, 0:n_orb] - (1 - 2 * isp) * self.h_field * MMat
+                        MMat = self.hopping[ik, ind, 0:n_orb, 0:n_orb] - (1 - 2 * isp) * self.h_field * MMat
                         projmat = self.proj_mat[ik, ind, icrsh, 0:dim, 0:n_orb]
                         self.Hsumk[icrsh][sp] += self.bz_weights[ik] * np.dot(np.dot(projmat, MMat),
                                                                                  projmat.conjugate().transpose())
@@ -2162,52 +2159,56 @@ class SumkDFT(object):
         if dm_type is None:
             dm_type = self.dft_code
 
-        assert dm_type in ('vasp', 'wien2k','elk', 'qe'), "'dm_type' must be either 'vasp', 'wienk', 'elk' or 'qe'"
-        #default file names
+        assert dm_type in ('vasp', 'wien2k', 'elk', 'qe'), "'dm_type' must be either 'vasp', 'wienk', 'elk' or 'qe'"
+        # default file names
         if filename is None:
             if dm_type == 'wien2k':
                 filename = 'dens_mat.dat'
             elif dm_type == 'vasp':
-                filename = 'GAMMA'
+                # use new h5 interface to vasp by default, if not wanted specify dm_type='vasp' + filename='GAMMA'
+                filename = 'vaspgamma.h5'
             elif dm_type == 'elk':
                 filename = 'DMATDMFT.OUT'
             elif dm_type == 'qe':
                 filename = self.hdf_file
 
-
         assert isinstance(filename, str), ("calc_density_correction: "
-                                              "filename has to be a string!")
+                                           "filename has to be a string!")
 
         assert kpts_to_write is None or dm_type == 'vasp', ('Selecting k-points only'
-                                                            +'implemented for vasp')
+                                                            + 'implemented for vasp')
 
         ntoi = self.spin_names_to_ind[self.SO]
         spn = self.spin_block_names[self.SO]
         dens = {sp: 0.0 for sp in spn}
         band_en_correction = 0.0
 
-# Fetch Fermi weights and energy window band indices
-        if dm_type in ['vasp','qe']:
+        # Fetch Fermi weights and energy window band indices
+        if dm_type in ['vasp', 'qe']:
             fermi_weights = 0
             band_window = 0
+            n_k_ibz = self.n_k
             if mpi.is_master_node():
-                with HDFArchive(self.hdf_file,'r') as ar:
+                with HDFArchive(self.hdf_file, 'r') as ar:
                     fermi_weights = ar['dft_misc_input']['dft_fermi_weights']
                     band_window = ar['dft_misc_input']['band_window']
+
+                    if 'n_k_ibz' in ar['dft_misc_input']:
+                        n_k_ibz = ar['dft_misc_input']['n_k_ibz']
             fermi_weights = mpi.bcast(fermi_weights)
             band_window = mpi.bcast(band_window)
+            n_k_ibz = mpi.bcast(n_k_ibz)
 
-# Convert Fermi weights to a density matrix
+            # Convert Fermi weights to a density matrix
             dens_mat_dft = {}
             for sp in spn:
                 dens_mat_dft[sp] = [fermi_weights[ik, ntoi[sp], :].astype(complex) for ik in range(self.n_k)]
-
 
         # Set up deltaN:
         deltaN = {}
         for sp in spn:
             deltaN[sp] = [np.zeros([self.n_orbitals[ik, ntoi[sp]], self.n_orbitals[
-                                      ik, ntoi[sp]]], complex) for ik in range(self.n_k)]
+                ik, ntoi[sp]]], complex) for ik in range(self.n_k)]
 
         ikarray = np.arange(self.n_k)
         for ik in mpi.slice_array(ikarray):
@@ -2218,7 +2219,7 @@ class SumkDFT(object):
                 for bname, gf in G_latt:
                     G_latt_rot = gf.copy()
                     G_latt_rot << self.upfold(
-                            ik, 0, bname, G_latt[bname], gf,shells='csc')
+                        ik, 0, bname, G_latt[bname], gf, shells='csc')
 
                     G_latt[bname] = G_latt_rot.copy()
 
@@ -2229,16 +2230,16 @@ class SumkDFT(object):
                     dens[bname] += self.bz_weights[ik] * G_latt[bname].total_density()
                 else:
                     dens[bname] += self.bz_weights[ik] * G_latt[bname].total_density(beta)
-                if dm_type in ['vasp','qe']:
-# In 'vasp'-mode subtract the DFT density matrix
+                if dm_type in ['vasp', 'qe']:
+                    # In 'vasp'-mode subtract the DFT density matrix
                     nb = self.n_orbitals[ik, ntoi[bname]]
                     diag_inds = np.diag_indices(nb)
                     deltaN[bname][ik][diag_inds] -= dens_mat_dft[bname][ik][:nb]
 
                     if self.charge_mixing and self.deltaNOld is not None:
-                        G2 = np.sum(self.kpts_cart[ik,:]**2)
+                        G2 = np.sum(self.kpts_cart[ik, :] ** 2)
                         # Kerker mixing
-                        mix_fac = self.charge_mixing_alpha * G2 / (G2 + self.charge_mixing_gamma**2)
+                        mix_fac = self.charge_mixing_alpha * G2 / (G2 + self.charge_mixing_gamma ** 2)
                         deltaN[bname][ik][diag_inds] = (1.0 - mix_fac) * self.deltaNOld[bname][ik][diag_inds] + mix_fac * deltaN[bname][ik][diag_inds]
                     dens[bname] -= self.bz_weights[ik] * dens_mat_dft[bname][ik].sum().real
                     isp = ntoi[bname]
@@ -2283,10 +2284,8 @@ class SumkDFT(object):
                         f.write("%s\n" % self.n_orbitals[ik, 0])
                         for inu in range(self.n_orbitals[ik, 0]):
                             for imu in range(self.n_orbitals[ik, 0]):
-                                valre = (deltaN['up'][ik][
-                                         inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
-                                valim = (deltaN['up'][ik][
-                                         inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
+                                valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
+                                valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
                                 f.write("%.14f  %.14f " % (valre, valim))
                             f.write("\n")
                         f.write("\n")
@@ -2305,32 +2304,53 @@ class SumkDFT(object):
                             fout.write("%s\n" % self.n_orbitals[ik, isp])
                             for inu in range(self.n_orbitals[ik, isp]):
                                 for imu in range(self.n_orbitals[ik, isp]):
-                                    fout.write("%.14f  %.14f " % (deltaN[sp][ik][
-                                               inu, imu].real, deltaN[sp][ik][inu, imu].imag))
+                                    fout.write("%.14f  %.14f " % (deltaN[sp][ik][inu, imu].real, deltaN[sp][ik][inu, imu].imag))
                                 fout.write("\n")
                             fout.write("\n")
                         fout.close()
         elif dm_type == 'vasp':
-            if kpts_to_write is None:
+            if kpts_to_write is None and self.n_k == n_k_ibz:
                 kpts_to_write = np.arange(self.n_k)
+            elif kpts_to_write is None and n_k_ibz < self.n_k:
+                # If the number of IBZ k-points is less than the total number of k-points,
+                # then we only write the IBZ k-points, which are the first n_k_ibz k-points
+                # in VASP
+                kpts_to_write = np.arange(n_k_ibz)
             else:
                 assert np.min(kpts_to_write) >= 0 and np.max(kpts_to_write) < self.n_k
 
             assert self.SP == 0, "Spin-polarized density matrix is not implemented"
 
             if mpi.is_master_node():
-                with open(filename, 'w') as f:
-                    f.write(" %i  -1  ! Number of k-points, default number of bands\n"%len(kpts_to_write))
-                    for index, ik in enumerate(kpts_to_write):
-                        ib1 = band_window[0][ik, 0]
-                        ib2 = band_window[0][ik, 1]
-                        f.write(" %i  %i  %i\n"%(index + 1, ib1, ib2))
-                        for inu in range(self.n_orbitals[ik, 0]):
-                            for imu in range(self.n_orbitals[ik, 0]):
-                                valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][inu, imu].real) / 2.0
-                                valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][inu, imu].imag) / 2.0
-                                f.write(" %.14f  %.14f"%(valre, valim))
-                            f.write("\n")
+                if filename == 'vaspgamma.h5':
+                    with HDFArchive('vaspgamma.h5', 'w') as vasp_h5:
+                        # only store the ibz kpoints in the h5
+                        bnd_win_towrite = [band_window[0][:n_k_ibz,:]]
+                        vasp_h5['band_window'] = bnd_win_towrite
+                        vasp_h5.create_group('deltaN')
+                        vasp_h5['deltaN']['up'] = deltaN['up'][:n_k_ibz]
+                        vasp_h5['deltaN']['down'] = deltaN['down'][:n_k_ibz]
+                else:
+                    with open(filename, 'w') as f:
+                        f.write(" -1  -1  ! Number of k-points, default number of bands\n")  # % len(kpts_to_write))
+                        for index, ik in enumerate(kpts_to_write):
+                            ib1 = band_window[0][ik, 0]
+                            ib2 = band_window[0][ik, 1]
+                            f.write(" %i  %i  %i\n" % (index + 1, ib1, ib2))
+                            for inu in range(self.n_orbitals[ik, 0]):
+                                for imu in range(self.n_orbitals[ik, 0]):
+                                    if (self.SO == 1):
+                                        valre = (deltaN['ud'][ik][inu, imu].real) / 1.0
+                                        valim = (deltaN['ud'][ik][inu, imu].imag) / 1.0
+                                        f.write(" %.14f  %.14f" % (valre, valim))
+                                    else:
+                                        valre = (deltaN['up'][ik][inu, imu].real + deltaN['down'][ik][
+                                            inu, imu].real) / 2.0
+                                        valim = (deltaN['up'][ik][inu, imu].imag + deltaN['down'][ik][
+                                            inu, imu].imag) / 2.0
+                                        f.write(" %.14f  %.14f" % (valre, valim))
+                                f.write("\n")
+
 
         elif dm_type == 'elk':
         # output each k-point density matrix for Elk
@@ -2437,8 +2457,7 @@ class SumkDFT(object):
                 dim = self.corr_shells[icrsh]['dim']
                 n_orb = self.n_orbitals[ik, 0]
                 projmat = self.proj_mat[ik, 0, icrsh, 0:dim, 0:n_orb]
-                dens_mat[icrsh][
-                    :, :] += np.dot(projmat, projmat.transpose().conjugate()) * self.bz_weights[ik]
+                dens_mat[icrsh][:, :] += np.dot(projmat, projmat.transpose().conjugate()) * self.bz_weights[ik]
 
         if self.symm_op != 0:
             dens_mat = self.symmcorr.symmetrize(dens_mat)
@@ -2448,8 +2467,7 @@ class SumkDFT(object):
             for icrsh in range(self.n_corr_shells):
                 if self.rot_mat_time_inv[icrsh] == 1:
                     dens_mat[icrsh] = dens_mat[icrsh].conjugate()
-                dens_mat[icrsh] = np.dot(np.dot(self.rot_mat[icrsh].conjugate().transpose(), dens_mat[icrsh]),
-                                            self.rot_mat[icrsh])
+                dens_mat[icrsh] = np.dot(np.dot(self.rot_mat[icrsh].conjugate().transpose(), dens_mat[icrsh]),self.rot_mat[icrsh])
 
         return dens_mat
 
