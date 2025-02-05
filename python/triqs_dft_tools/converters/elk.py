@@ -89,7 +89,10 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         self.misc_subgrp = misc_subgrp
         self.transp_subgrp = transp_subgrp
         self.cont_subgrp = cont_subgrp
-        self.fortran_to_replace = {'D': 'E'}
+        self.fortran_to_replace = {'D': 'E',
+                                   # replaces unicode characters with ascii ones if present
+                                   '┌': '+', '┐': '+', '└': '+', '┘': '+',
+                                   '─': '-', '│': '|'}
 
         # Checks if h5 file is there and repacks it if wanted:
         if (os.path.exists(self.hdf_file) and repacking):
