@@ -11,6 +11,7 @@ separate_arguments(${PROJECT_NAME}_c_CXXFLAGS)
 macro(generate_docs header_file)
   add_custom_command(
     TARGET ${PROJECT_NAME}_docs_cpp2rst
+    POST_BUILD
     COMMAND rm -rf ${CMAKE_CURRENT_SOURCE_DIR}/cpp2rst_generated
     COMMAND
       PYTHONPATH=${CPP2PY_BINARY_DIR}:$ENV{PYTHONPATH}
@@ -56,6 +57,7 @@ endif()
 add_custom_target(${PROJECT_NAME}_docs_sphinx ALL)
 add_custom_command(
   TARGET ${PROJECT_NAME}_docs_sphinx
+  POST_BUILD
   COMMAND PYTHONPATH=${PROJECT_BINARY_DIR}/python:$ENV{PYTHONPATH} ${SPHINXBUILD_EXECUTABLE} -j auto -c . -b html ${CMAKE_CURRENT_SOURCE_DIR} html
 )
 
