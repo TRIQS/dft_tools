@@ -20,3 +20,13 @@ LMAXMIX = 6
 LORBIT = 14
 LOCPROJ = "1 : d : Pr
            2 : p : Pr"
+
+# CSC flags
+ICHARG = 5
+NELM = 1000
+NELMIN = 1000
+NELMDL = -1
+IMIX=1
+BMIX=0.5
+AMIX=0.02
+LSYNCH5=True
