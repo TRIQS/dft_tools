@@ -481,8 +481,9 @@ class Kpoints:
 
             print("   {0:>26} {1:d}".format("Total number of tetrahedra:", self.ntet))
 
-            #   Traditionally, itet[it, 0] contains multiplicity
-            self.itet = np.zeros((self.ntet, 5), dtype=int)
+            #   Traditionally, itet[it, 0] contains multiplicity, use explicitly np.int64
+            #   since the integration routine in C++ uses long int
+            self.itet = np.zeros((self.ntet, 5), dtype=np.int64)
             for it in range(self.ntet):
                 line = next(ibz_file)
                 self.itet[it, :] = list(map(int, line.split()[:5]))
@@ -734,8 +735,8 @@ class h5Kpoints:
             self.ksymmap -= 1
             try:
                 self.ntet = kpoints['num_tetrahedra']
-                self.vtet = kpoints['volume_weight_tetrahedra']
-                self.itet = kpoints['coordinate_id_tetrahedra']
+                self.volt = kpoints['volume_weight_tetrahedra']
+                self.itet = np.int64(kpoints['coordinate_id_tetrahedra'])
             except KeyError:
                 print("  No tetrahedron data found in vaspout.h5. Skipping...")
                 self.ntet = 0
