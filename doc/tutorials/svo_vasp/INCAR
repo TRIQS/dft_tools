@@ -1,20 +1,20 @@
 SYSTEM = SrVO3
-NCORE = 4
+NCORE = 1
+KPAR = 5
 LMAXMIX=6
 EDIFF = 1.E-10
+# make sure that the wavefunction is properly converged
+NELMIN = 30
 
 # DOS energy window
-NEDOS = 2001
-
-! switch off symmetries
-ISYM=-1
+NEDOS = 3001
 
 # Smearing procedure
 ISMEAR = -5
 
 # the energy window to optimize projector channels
-EMIN = 3.9
-EMAX = 7.1
+EMIN = -1.0
+EMAX = 10.1
 
 # use the PAW channel optimization
 LORBIT=14
