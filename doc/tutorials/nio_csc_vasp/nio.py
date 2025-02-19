@@ -67,8 +67,8 @@ p = {}
 p["max_time"] = -1
 p["random_name"] = ""
 p["length_cycle"] = 400
-p["n_warmup_cycles"] = 2000
-p["n_cycles"] = 80000
+p["n_warmup_cycles"] = 3000
+p["n_cycles"] = 20000
 p["fit_max_moment"] = 4
 p["fit_min_w"] = 20
 p["fit_max_w"] = 30
@@ -102,7 +102,7 @@ if mpi.is_master_node():
         ar['DMFT_input']['code_versions']["cthyb_version"] = cthyb_version.version
         ar['DMFT_input']['code_versions']["cthyb_git"] = cthyb_version.triqs_cthyb_hash
         ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.version
-        ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.triqs_dft_tools_hash
+        ar['DMFT_input']['code_versions']["dft_tools_git"] = dft_tools_version.triqs_dft_tools_hash
         ar['DMFT_input']['sumk_block_structure'] = SK.block_structure
         if 'iteration_count' in ar['DMFT_results']:
             iteration_offset = ar['DMFT_results']['iteration_count']+1
@@ -175,4 +175,3 @@ for it in range(iteration_offset, iteration_offset + n_iterations):
             ar['DMFT_results']['Iterations']['chemical_potential'+str(it)] = SK.chemical_potential
 
     mpi.report('-------------')
-
