@@ -8,7 +8,7 @@ The VASP interface relies on new options introduced since version 5.4.x In
 particular, a new INCAR-option `LOCPROJ
 <https://cms.mpi.univie.ac.at/wiki/index.php/LOCPROJ>`_, the new `LORBIT` modes
 13 and 14 have been added, and the new `ICHARG` mode 5 for charge
-self-consistent DFT+DMFT calculations have been added. The VASP interface for charge self-consistent calculations is officially supported as of VASP version 6.5.0 (see `VASP ICHARG=5 documentation <https://www.vasp.at/wiki/index.php/ICHARG>`_). It is highly recommended to compile VASP with hdf5 support enabled (`-DVASP_HDF5`) to enable features of the interface. This allows to use the interface while symmetries are switched on in VASP, and enables spin-polarized feedback in charge self-consistent calculations to VASP.
+self-consistent DFT+DMFT calculations have been added. The VASP interface for charge self-consistent calculations is officially supported as of VASP version 6.5.0 (see `VASP ICHARG=5 documentation <https://www.vasp.at/wiki/index.php/ICHARG>`_). It is highly recommended to compile VASP with hdf5 support enabled (`-DVASP_HDF5`) to enable all features of the interface. This allows to use the interface while symmetries are switched on in VASP, and enables spin-polarized feedback in charge self-consistent calculations to VASP.
 
 The VASP interface methodologically builds on the so called projection on
 localized orbitals (PLO) scheme, where the resulting KS states from DFT are

@@ -188,9 +188,9 @@ To understand the difference please make sure to read `ISTART flag VASP wiki
 `NELMIN` ensure that VASP does not terminate after the default number of
 iterations of 60.
 
-The `LSYNCH5` flag is set to `True` to ensure that the VASP writte vaspout.h5 file can be read while VASP is running. Starting from VASP 6.5.0 all communication between VASP and TRIQS is performed through two h5 files: `vaspout.h5 <https://www.vasp.at/wiki/index.php/Vaspout.h5>`_ and `vaspgamma.h5 <https://www.vasp.at/wiki/index.php/Vaspgamma.h5>`_ when VASP is compiled with hdf5 support.
+The `LSYNCH5 <https://www.vasp.at/wiki/index.php/LSYNCH5>`_ flag is set to `True` to ensure that the `vaspout.h5 <https://www.vasp.at/wiki/index.php/Vaspout.h5>`_ file can be read while VASP is running. Starting from VASP 6.5.0 all communication between VASP and TRIQS is performed through two hdf5 files: `vaspout.h5 <https://www.vasp.at/wiki/index.php/Vaspout.h5>`_ and `vaspgamma.h5 <https://www.vasp.at/wiki/index.php/Vaspgamma.h5>`_ when VASP is compiled with hdf5 support.
 
-For more detailed and fine grained methods to run Vasp in CSC also on clusters see the methods implemented in `solid dmft <https://triqs.github.io/solid_dmft/_ref/dft_managers.html>`_.
+For more detailed and fine grained methods to run VASP in CSC also on clusters see the methods implemented in `solid dmft <https://triqs.github.io/solid_dmft/_ref/dft_managers.html>`_.
 
 
 Elk

@@ -29,12 +29,12 @@ for orb in orbs:
         gf = gf + G_latt['up'][iO,iO]
     tm.set_G_iw(gf)
     tm.omega =LinearOmegaMesh(omega_min=-20, omega_max=20, n_points=201)
-    tm.alpha_mesh = LogAlphaMesh(alpha_min=0.01, alpha_max=20000, n_points=60)
+    tm.alpha_mesh = LogAlphaMesh(alpha_min=0.01, alpha_max=20000, n_points=30)
 
     tm.set_error(1.e-3)
     result=tm.run()
     result.get_A_out('LineFitAnalyzer')
-    
+
     if 'iteration_count' in ar['DMFT_results']:
         iteration_offset = ar['DMFT_results']['iteration_count']+1
         for oo in orb:

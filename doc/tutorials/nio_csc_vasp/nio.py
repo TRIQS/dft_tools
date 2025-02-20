@@ -67,8 +67,8 @@ p = {}
 p["max_time"] = -1
 p["random_name"] = ""
 p["length_cycle"] = 400
-p["n_warmup_cycles"] = 3000
-p["n_cycles"] = 20000
+p["n_warmup_cycles"] = 2000
+p["n_cycles"] = 80000
 p["fit_max_moment"] = 4
 p["fit_min_w"] = 20
 p["fit_max_w"] = 30
@@ -84,15 +84,15 @@ n_iterations = 10
 iteration_offset = 0
 if mpi.is_master_node():
     with HDFArchive(filename+'.h5', 'a') as ar:
-        if not 'DMFT_results' in ar:
+        if 'DMFT_results' not in ar:
             ar.create_group('DMFT_results')
-        if not 'Iterations' in ar['DMFT_results']:
+        if 'Iterations' not in ar['DMFT_results']:
             ar['DMFT_results'].create_group('Iterations')
-        if not 'DMFT_input' in ar:
+        if 'DMFT_input' not in ar:
             ar.create_group('DMFT_input')
-        if not 'Iterations' in ar['DMFT_input']:
+        if 'Iterations' not in ar['DMFT_input']:
             ar['DMFT_input'].create_group('Iterations')
-        if not 'code_versions' in ar['DMFT_input']:
+        if 'code_versions' not in ar['DMFT_input']:
             ar['DMFT_input'].create_group('code_versions')
         ar['DMFT_input']['code_versions']["triqs_version"] = triqs_version.version
         ar['DMFT_input']['code_versions']["triqs_git"] = triqs_version.git_hash

@@ -1,10 +1,8 @@
 System  = NiO
 
-KPAR = 5
-
 # better convergence for small kpt grids
 ISMEAR = 2
-SIGMA = 0.05
+SIGMA = 0.04
 
 # converge wave functions
 EDIFF = 1.E-7
@@ -12,7 +10,7 @@ NELMIN = 35
 
 # the energy window to optimize projector channels (absolute)
 EMIN = -3
-EMAX = 10
+EMAX = 12
 
 LMAXMIX = 6
 
