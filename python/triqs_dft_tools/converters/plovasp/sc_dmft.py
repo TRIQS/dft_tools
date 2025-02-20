@@ -1,4 +1,4 @@
- 
+
 ################################################################################
 #
 # TRIQS: a Toolbox for Research in Interacting Quantum Systems
@@ -104,7 +104,7 @@ class bcolors:
     ENDC = '\033[0m'
 
 # Main self-consistent cycle
-def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
+def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft):
     """
     """
     mpi.report("  Waiting for VASP lock to appear...")
@@ -125,7 +125,7 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
                 mpi.report("  VASP stopped")
                 vasp_running = False
                 break
-            
+
         # Tell VASP to stop if the maximum number of iterations is reached
 
         if debug: print(bcolors.MAGENTA + "rank %s"%(mpi.rank) + bcolors.ENDC)
@@ -152,7 +152,7 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
             print("  DFT DC: ", sum_k.dc_energ[0])
             print("="*80)
             print()
-        
+
         # check if we should do additional VASP calculations
         # in the standard VASP version, VASP writes out GAMMA itself
         # so that if we want to keep GAMMA fixed we have to copy it to
@@ -162,9 +162,7 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
         # the hack consists of removing the call of LPRJ_LDApU in VASP src file
         # electron.F around line 644
         iter_dft = 0
-        
-        if vasp_version == 'standard' or vasp_version == 'ncl':
-            copyfile(src='GAMMA',dst='GAMMA_recent')
+
         while iter_dft < n_iter_dft:
             # insert recalculation of GAMMA here
             # Recalculates the density correction
@@ -181,7 +179,7 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
 
             # Writes out GAMMA file
             sum_k.calc_density_correction(dm_type='vasp')
-            
+
             mpi.barrier()
             if mpi.is_master_node():
                 open('./vasp.lock', 'a').close()
@@ -192,8 +190,6 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
                     vasp_running = False
                     break
             iter_dft += 1
-            if vasp_version == 'standard' or vasp_version == 'ncl':
-                copyfile(src='GAMMA_recent',dst='GAMMA')
         iter += 1
         if iter == n_iter:
             print("\n  Maximum number of iterations reached.")
@@ -213,9 +209,9 @@ def run_all(vasp_pid, dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version):
     mpi.report("***Done")
 
 def main():
-    
+
     import importlib
-    
+
     try:
         vasp_pid = int(sys.argv[1])
     except (ValueError, KeyError):
@@ -229,7 +225,7 @@ def main():
         if mpi.is_master_node():
             print("ERROR: Number of iterations must be provided as the second argument")
         raise
-        
+
     try:
         n_iter_dft = int(sys.argv[3])
     except (ValueError, KeyError):
@@ -249,14 +245,7 @@ def main():
         cfg_file = sys.argv[5]
     except KeyError:
         cfg_file = 'plo.cfg'
-        
-    try:
-        vasp_version = sys.argv[6]
-    except KeyError:
-        vasp_version = 'standard'
-    
-    #if vasp_version != 'standard' and vasp_version != 'no_gamma_write':
-    #    raise Exception('vasp_version has to be standard or no_gamma_write')
+
 
 #    if len(sys.argv) > 1:
 #        vasp_path = sys.argv[1]
@@ -271,7 +260,7 @@ def main():
 
     dmft_mod = importlib.import_module(dmft_script)
 
-    run_all(vasp_pid, dmft_mod.dmft_cycle, cfg_file, n_iter, n_iter_dft, vasp_version)
+    run_all(vasp_pid, dmft_mod.dmft_cycle, cfg_file, n_iter, n_iter_dft)
 
 if __name__ == '__main__':
     main()
