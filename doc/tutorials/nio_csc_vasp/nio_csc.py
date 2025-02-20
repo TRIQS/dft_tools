@@ -73,8 +73,8 @@ def dmft_cycle():
     p["max_time"] = -1
     p["random_name"] = ""
     p["length_cycle"] = 400
-    p["n_warmup_cycles"] = 3000
-    p["n_cycles"] = 20000
+    p["n_warmup_cycles"] = 2000
+    p["n_cycles"] = 80000
     p["fit_max_moment"] = 4
     p["fit_min_w"] = 20
     p["fit_max_w"] = 30
@@ -101,7 +101,7 @@ def dmft_cycle():
                 ar.create_group('DMFT_input')
             if 'Iterations' not in ar['DMFT_input']:
                 ar['DMFT_input'].create_group('Iterations')
-            if not 'code_versions' in ar['DMFT_input']:
+            if not 'code_versions' not in ar['DMFT_input']:
                 ar['DMFT_input'].create_group('code_versions')
             ar['DMFT_input']['code_versions']["triqs_version"] = triqs_version.version
             ar['DMFT_input']['code_versions']["triqs_git"] = triqs_version.git_hash
