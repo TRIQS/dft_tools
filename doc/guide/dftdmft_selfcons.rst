@@ -133,8 +133,8 @@ Once VASP reaches the point where the projectors are generated
 it creates a lock file `vasp.lock` and waits until the lock file is
 removed. The shell script, in turn, waits for the VASP process and once
 the lock file is created it starts a DMFT iteration. The DMFT iteration
-must finish by generating a Kohn-Sham (KS) density matrix (file `GAMMA`)
-and removing the lock file. The VASP process then reads in `GAMMA`
+must finish by generating a Kohn-Sham (KS) density matrix (file `GAMMA` or `vaspgamma.h5`)
+and removing the lock file. The VASP process then reads in `GAMMA`/`vaspgamma.h5`
 and proceeds with the next iteration. PLOVasp interface provides a shell-script :program:`vasp_dmft` (in the triqs bin directory)::
 
   vasp_dmft [-n <number of cores>] -i <number of iterations>  -j <number of VASP iterations with fixed charge density> [-v <VASP version>] [-p <path to VASP directory>] [<dmft_script.py>]
@@ -162,7 +162,7 @@ calculations with the main difference that its functionality (apart from the
 lines importing other modules) should be placed inside a function `dmft_cycle()`
 which will be called every DMFT cycle and returns both the correlation energy and the SumK object.
 
-VASP has a special INCAR `ICHARG=5` mode, that has to be switched on to make VASP wait for the `vasp.lock` file, and read the updated charge density after each step. One should add the following lines to the `INCAR` file::
+VASP has a special INCAR `ICHARG=5 <https://www.vasp.at/wiki/index.php/ICHARG>`_ mode, that has to be switched on to make VASP wait for the `vasp.lock` file, and read the updated charge density after each step. One should add the following lines to the `INCAR` file::
 
   ICHARG = 5
   NELM = 1000
@@ -170,6 +170,7 @@ VASP has a special INCAR `ICHARG=5` mode, that has to be switched on to make VAS
   IMIX=1
   BMIX=0.5
   AMIX=0.02
+  LSYNCH5=True
 
 Technically, VASP runs with `ICHARG=5` in a SCF mode, and adding the DMFT
 changes to the DFT density in each step, so that the full DFT+DMFT charge
@@ -187,7 +188,9 @@ To understand the difference please make sure to read `ISTART flag VASP wiki
 `NELMIN` ensure that VASP does not terminate after the default number of
 iterations of 60.
 
-For more detailed and fine grained methods to run Vasp in CSC also on clusters see the methods implemented in `solid dmft <https://triqs.github.io/solid_dmft/_ref/dft_managers.html>`_.
+The `LSYNCH5 <https://www.vasp.at/wiki/index.php/LSYNCH5>`_ flag is set to `True` to ensure that the `vaspout.h5 <https://www.vasp.at/wiki/index.php/Vaspout.h5>`_ file can be read while VASP is running. Starting from VASP 6.5.0 all communication between VASP and TRIQS is performed through two hdf5 files: `vaspout.h5 <https://www.vasp.at/wiki/index.php/Vaspout.h5>`_ and `vaspgamma.h5 <https://www.vasp.at/wiki/index.php/Vaspgamma.h5>`_ when VASP is compiled with hdf5 support.
+
+For more detailed and fine grained methods to run VASP in CSC also on clusters see the methods implemented in `solid dmft <https://triqs.github.io/solid_dmft/_ref/dft_managers.html>`_.
 
 
 Elk

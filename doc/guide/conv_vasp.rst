@@ -8,7 +8,7 @@ The VASP interface relies on new options introduced since version 5.4.x In
 particular, a new INCAR-option `LOCPROJ
 <https://cms.mpi.univie.ac.at/wiki/index.php/LOCPROJ>`_, the new `LORBIT` modes
 13 and 14 have been added, and the new `ICHARG` mode 5 for charge
-self-consistent DFT+DMFT calculations have been added.
+self-consistent DFT+DMFT calculations have been added. The VASP interface for charge self-consistent calculations is officially supported as of VASP version 6.5.0 (see `VASP ICHARG=5 documentation <https://www.vasp.at/wiki/index.php/ICHARG>`_). It is highly recommended to compile VASP with hdf5 support enabled (`-DVASP_HDF5`) to enable all features of the interface. This allows to use the interface while symmetries are switched on in VASP, and enables spin-polarized feedback in charge self-consistent calculations to VASP.
 
 The VASP interface methodologically builds on the so called projection on
 localized orbitals (PLO) scheme, where the resulting KS states from DFT are
@@ -18,26 +18,16 @@ The implementation is presented in `M. Schüler et al. 2018 J. Phys.: Condens.
 Matter 30 475901 <https://doi.org/10.1088/1361-648X/aae80a>`_.
 
 The interface consists of two parts, :py:mod:`PLOVASP<triqs_dft_tools.converters.plovasp>`, a collection of
-python classes and functions converting the raw VASP output to proper projector
+python classes and functions converting the VASP output to proper projector
 functions, and the python based :py:mod:`VaspConverter<triqs_dft_tools.converters.vasp>`, which
 creates a h5 archive from the :py:mod:`PLOVASP<triqs_dft_tools.converters.plovasp>` output readable by
 `SumkDFT`. Therefore, the conversion consist always of two steps.
 
 Here, we will present a guide how the interface `can` be used to create input for a DMFT calculation, using SrVO3 as an example. Full examples can be found in the :ref:`tutorial section of DFTTools<tutorials>`.
 
-Limitations of the interface
-============================
+For VASP version older than 6.5.0 there are a few limitation of the interface as it was not officially supported and only text file based. See `Remarks for VASP older than 6.5.0`_ for details.
 
-* The interface works correctly only if the k-point symmetries
-  are turned off during the VASP run (ISYM=-1).
-* Generation of projectors for k-point lines (option `Lines` in KPOINTS)
-  needed for Bloch spectral function calculations is not possible at the moment.
-* The interface currently supports only collinear-magnetism calculation
-  (this implies no spin-orbit coupling) and spin-polarized projectors have not
-  been tested.
-* The converter needs the correct Fermi energy from VASP, which is read from
-  the LOCPROJ file. However, VASP by default does not output this information.
-  Please see `Remarks on the VASP version`_.
+Generation of projectors for k-point lines (option `Lines` in KPOINTS) needed for Bloch spectral function calculations is not possible at the moment.
 
 VASP: generating raw projectors
 ===============================
@@ -383,16 +373,20 @@ For two correlated sites, one can define the file as follows:
     0.0   1.0   0.0   0.0   0.0
     0.0   0.0   0.0   1.0   0.0
 
-Remarks on the VASP version
-===============================
+Remarks for VASP older than 6.5.0
+=================================
 
-In the current version of the interface the Fermi energy is extracted from the
-DOSCAR. However, if one pursues to do charge self-consistent calculations one 
-needs to write the Fermi energy to the projectors (`LOCPROJ` file), as the DOSCAR 
-is only updated after a full SCF/NSCF run. The file should contain the Fermi energy 
-in the header. One can either copy the Fermi energy manually there after a successful
-VASP run, or modify the VASP source code slightly, by replacing the following line in
-`locproj.F` (around line 695):
+The above mentioned interface has some limitations for VASP versions older than 6.5.0:
+
+* The interface works correctly only if the k-point symmetries
+  are turned off during the VASP run (ISYM=-1).
+* The interface currently supports only collinear-magnetism calculation
+  (this implies no spin-orbit coupling) and spin-polarized projectors have not
+  been tested.
+* The converter needs the correct Fermi energy from VASP, which is read from
+  the LOCPROJ file. However, VASP by default does not output this information.
+
+For VASP older than 6.5.0 the Fermi level cannot be extracted from the `vaspout.h5` file, then interface falls back to extract the Fermi level from the DOSCAR. However, if one pursues to do charge self-consistent calculations one needs to write the Fermi energy to the projectors (`LOCPROJ` file), as the DOSCAR is only updated after a full SCF/NSCF run. The file should contain the Fermi energy in the header. One can either copy the Fermi energy manually there after a successful VASP run, or modify the VASP source code slightly, by replacing the following line in `locproj.F` (around line 695):
 ::
 
   <   WRITE(99,'(4I6,"  # of spin, # of k-points, # of bands, # of proj" )') NS,NK,NB,NF
@@ -416,7 +410,6 @@ Next, we need to pass this option when calling from `electron.F` and `main.F`
   >   CALL LPRJ_WRITE(IO%IU6, IO%IU0, W, EFERMI)
 
 Now Vasp should print in the header of the `LOCPROJ` file additionally the Fermi energy.
-
 
 Another critical point for CSC calculations is the function call of
 `LPRJ_LDApU` in VASP. This function is not needed, and was left there for debug

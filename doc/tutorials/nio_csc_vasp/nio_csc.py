@@ -1,7 +1,6 @@
 from itertools import *
-import numpy as np
 import triqs.utility.mpi as mpi
-from h5 import *
+from h5 import HDFArchive
 from triqs.gf import *
 import sys, triqs.version as triqs_version
 from triqs_dft_tools.sumk_dft import *
@@ -25,13 +24,11 @@ def dmft_cycle():
     Converter.convert_dft_input()
 
     beta = 5.0
-    mesh = MeshImFreq(beta=beta, S='Fermion', n_iw=1000)
+    mesh = MeshImFreq(beta=beta, S='Fermion', n_iw=500)
 
     SK = SumkDFT(hdf_file=filename+'.h5', use_dft_blocks=False, mesh=mesh)
 
-    Sigma = SK.block_structure.create_gf(mesh=mesh)
-    SK.put_Sigma([Sigma])
-    G = SK.extract_G_loc()
+    G = SK.extract_G_loc(transform_to_solver_blocks=False, with_Sigma=False)
     SK.analyse_block_structure_from_gf(G, threshold=1e-2)
     for i_sh in range(len(SK.deg_shells)):
         num_block_deg_orbs = len(SK.deg_shells[i_sh])
@@ -52,7 +49,7 @@ def dmft_cycle():
     mpi.report('GF struct sumk: %s' % SK.gf_struct_sumk)
     mpi.report('GF struct solver: %s' % SK.gf_struct_solver)
 
-    S = Solver(beta=beta, gf_struct=gf_struct, n_iw=1000)
+    S = Solver(beta=beta, gf_struct=gf_struct, n_iw=500)
 
     # Construct the Hamiltonian and save it in Hamiltonian_store.txt
     H = Operator()
@@ -75,13 +72,12 @@ def dmft_cycle():
     p = {}
     p["max_time"] = -1
     p["random_name"] = ""
-    p["random_seed"] = 123 * mpi.rank + 567
-    p["length_cycle"] = 100
+    p["length_cycle"] = 400
     p["n_warmup_cycles"] = 2000
-    p["n_cycles"] = 20000
+    p["n_cycles"] = 80000
     p["fit_max_moment"] = 4
-    p["fit_min_n"] = 30
-    p["fit_max_n"] = 50
+    p["fit_min_w"] = 20
+    p["fit_max_w"] = 30
     p["perform_tail_fit"] = True
 
     # Double Counting: 0 FLL, 1 Held, 2 AMF
@@ -93,32 +89,32 @@ def dmft_cycle():
 
     iteration_offset = 0
     if mpi.is_master_node():
-        ar = HDFArchive(filename+'.h5', 'a')
-        if not 'DMFT_results' in ar:
-            ar.create_group('DMFT_results')
-        if not 'Iterations' in ar['DMFT_results']:
-            ar['DMFT_results'].create_group('Iterations')
-        if not 'DMFT_input' in ar:
-            ar.create_group('DMFT_input')
-        if not 'Iterations' in ar['DMFT_input']:
-            ar['DMFT_input'].create_group('Iterations')
-        if not 'code_versions' in ar['DMFT_input']:
-            ar['DMFT_input'].create_group('code_versions')
-        ar['DMFT_input']['code_versions']["triqs_version"] = triqs_version.version
-        ar['DMFT_input']['code_versions']["triqs_git"] = triqs_version.git_hash
-        ar['DMFT_input']['code_versions']["cthyb_version"] = cthyb_version.version
-        ar['DMFT_input']['code_versions']["cthyb_git"] = cthyb_version.triqs_cthyb_hash
-        ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.version
-        ar['DMFT_input']['code_versions']["dft_tools_git"] = dft_tools_version.triqs_dft_tools_hash
-        ar['DMFT_input']['sumk_block_structure'] = SK.block_structure
-        if 'iteration_count' in ar['DMFT_results']:
-            iteration_offset = ar['DMFT_results']['iteration_count']+1
-            S.Sigma_iw = ar['DMFT_results']['Iterations']['Sigma_it'+str(iteration_offset-1)]
-            SK.dc_imp = ar['DMFT_results']['Iterations']['dc_imp'+str(iteration_offset-1)]
-            SK.dc_energ = ar['DMFT_results']['Iterations']['dc_energ'+str(iteration_offset-1)]
-            SK.chemical_potential = ar['DMFT_results']['Iterations']['chemical_potential' +
-                                                                     str(iteration_offset-1)].real
-        ar['DMFT_input']["dmft_script_it"+str(iteration_offset)] = open(sys.argv[0]).read()
+        with HDFArchive(filename+'.h5', 'a') as ar:
+            if 'DMFT_results' not in ar:
+                ar.create_group('DMFT_results')
+            if 'Iterations' not in ar['DMFT_results']:
+                ar['DMFT_results'].create_group('Iterations')
+            if 'DMFT_input' not in ar:
+                ar.create_group('DMFT_input')
+            if 'Iterations' not in ar['DMFT_input']:
+                ar['DMFT_input'].create_group('Iterations')
+            if not 'code_versions' not in ar['DMFT_input']:
+                ar['DMFT_input'].create_group('code_versions')
+            ar['DMFT_input']['code_versions']["triqs_version"] = triqs_version.version
+            ar['DMFT_input']['code_versions']["triqs_git"] = triqs_version.git_hash
+            ar['DMFT_input']['code_versions']["cthyb_version"] = cthyb_version.version
+            ar['DMFT_input']['code_versions']["cthyb_git"] = cthyb_version.triqs_cthyb_hash
+            ar['DMFT_input']['code_versions']["dft_tools_version"] = dft_tools_version.version
+            ar['DMFT_input']['code_versions']["dft_tools_git"] = dft_tools_version.triqs_dft_tools_hash
+            ar['DMFT_input']['sumk_block_structure'] = SK.block_structure
+            if 'iteration_count' in ar['DMFT_results']:
+                iteration_offset = ar['DMFT_results']['iteration_count']+1
+                S.Sigma_iw = ar['DMFT_results']['Iterations']['Sigma_it'+str(iteration_offset-1)]
+                SK.dc_imp = ar['DMFT_results']['Iterations']['dc_imp'+str(iteration_offset-1)]
+                SK.dc_energ = ar['DMFT_results']['Iterations']['dc_energ'+str(iteration_offset-1)]
+                SK.chemical_potential = ar['DMFT_results']['Iterations']['chemical_potential' +
+                                                                         str(iteration_offset-1)].real
+            ar['DMFT_input']["dmft_script_it"+str(iteration_offset)] = open(sys.argv[0]).read()
     iteration_offset = mpi.bcast(iteration_offset)
     S.Sigma_iw = mpi.bcast(S.Sigma_iw)
     SK.dc_imp = mpi.bcast(SK.dc_imp)
@@ -151,10 +147,11 @@ def dmft_cycle():
         # Solve the impurity problem
         S.solve(h_int=H, **p)
         if mpi.is_master_node():
-            ar['DMFT_input']['Iterations']['solver_dict_it'+str(it)] = p
-            ar['DMFT_results']['Iterations']['Gimp_it'+str(it)] = S.G_iw
-            ar['DMFT_results']['Iterations']['Gtau_it'+str(it)] = S.G_tau
-            ar['DMFT_results']['Iterations']['Sigma_uns_it'+str(it)] = S.Sigma_iw
+            with HDFArchive(filename+'.h5', 'a') as ar:
+                ar['DMFT_input']['Iterations']['solver_dict_it'+str(it)] = p
+                ar['DMFT_results']['Iterations']['Gimp_it'+str(it)] = S.G_iw
+                ar['DMFT_results']['Iterations']['Gtau_it'+str(it)] = S.G_tau
+                ar['DMFT_results']['Iterations']['Sigma_uns_it'+str(it)] = S.Sigma_iw
         # Calculate double counting
         dm = S.G_iw.density()
         SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0,
@@ -171,20 +168,21 @@ def dmft_cycle():
         mpi.report('Total charge of Gloc : %.6f' % S.G_iw.total_density().real)
 
         if mpi.is_master_node():
-            ar['DMFT_results']['iteration_count'] = it
-            ar['DMFT_results']['Iterations']['Sigma_it'+str(it)] = S.Sigma_iw
-            ar['DMFT_results']['Iterations']['Gloc_it'+str(it)] = S.G_iw
-            ar['DMFT_results']['Iterations']['G0loc_it'+str(it)] = S.G0_iw
-            ar['DMFT_results']['Iterations']['dc_imp'+str(it)] = SK.dc_imp
-            ar['DMFT_results']['Iterations']['dc_energ'+str(it)] = SK.dc_energ
-            ar['DMFT_results']['Iterations']['chemical_potential'+str(it)] = SK.chemical_potential
+            with HDFArchive(filename+'.h5', 'a') as ar:
+                ar['DMFT_results']['iteration_count'] = it
+                ar['DMFT_results']['Iterations']['Sigma_it'+str(it)] = S.Sigma_iw
+                ar['DMFT_results']['Iterations']['Gloc_it'+str(it)] = S.G_iw
+                ar['DMFT_results']['Iterations']['G0loc_it'+str(it)] = S.G0_iw
+                ar['DMFT_results']['Iterations']['dc_imp'+str(it)] = SK.dc_imp
+                ar['DMFT_results']['Iterations']['dc_energ'+str(it)] = SK.dc_energ
+                ar['DMFT_results']['Iterations']['chemical_potential'+str(it)] = SK.chemical_potential
 
     if mpi.is_master_node():
         print('calculating mu...')
     SK.chemical_potential = SK.calc_mu(precision=0.000001)
 
     if mpi.is_master_node():
-        print('calculating GAMMA')
+        print('calculating charge density update')
     SK.calc_density_correction(dm_type='vasp')
 
     if mpi.is_master_node():
@@ -196,10 +194,8 @@ def dmft_cycle():
     SK.calc_dc(dm, U_interact=U, J_hund=J, orb=0, use_dc_formula=DC_type, use_dc_value=DC_value)
 
     if mpi.is_master_node():
-        ar['DMFT_results']['Iterations']['corr_energy_it'+str(it)] = correnerg
-        ar['DMFT_results']['Iterations']['dc_energy_it'+str(it)] = SK.dc_energ[0]
-
-    if mpi.is_master_node():
-        del ar
+        with HDFArchive(filename+'.h5', 'a') as ar:
+            ar['DMFT_results']['Iterations']['corr_energy_it'+str(it)] = correnerg
+            ar['DMFT_results']['Iterations']['dc_energy_it'+str(it)] = SK.dc_energ[0]
 
     return correnerg, SK

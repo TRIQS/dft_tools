@@ -5,6 +5,8 @@ DFT and projections
 
 We will perform DFT+DMFT calculations for the charge-transfer insulator NiO. We start from scratch and provide all necessary input files to do the calculations: First for doing a single-shot calculation (and then for charge-self consistency).
 
+**Note: This example works with VASP version 6.5.0 or newer with hdf5 support enabled**
+
 VASP setup
 -------------------------------
 We start by running a simple VASP calculation to converge the charge density initially.
@@ -17,8 +19,7 @@ for our many-body calculation.
 .. literalinclude:: INCAR
 
 `LORBIT = 14` takes care of optimizing the projectors in the energy window defined
-by `EMIN` and `EMAX`. We switch off all symmetries with `ISYM=-1` since symmetries
-are not implemented in the later DMFT scripts. Finally, we select the relevant orbitals
+by `EMIN` and `EMAX`. Finally, we select the relevant orbitals
 for atom 1 (Ni, d-orbitals) and 2 (O, p-orbitals) by the two `LOCPROJ` lines.
 For details refer to the VASP wiki on the `LOCPROJ <https://cms.mpi.univi
 e.ac.at/wiki/index.php/LOCPROJ>`_ flag. The projectors are stored in the file `LOCPROJ`.
@@ -26,8 +27,9 @@ e.ac.at/wiki/index.php/LOCPROJ>`_ flag. The projectors are stored in the file `L
 
 PLOVASP
 ------------------------------
-Next, we post-process the projectors, which VASP stored in the file `LOCPROJ`.
-We do this by invoking :program:`plovasp plo.cfg` which is configured by an input file, e.g., named :ref:`plo.cfg`.
+Next, we post-process the projectors, which VASP stored in the file `vaspout.h5/results/locproj`.
+You can also take a look at the text file `LOCPROJ` which holds the equivalent information.
+By invoking :program:`plovasp plo.cfg` we run the converter, which is configured by an input file, e.g., named :ref:`plo.cfg`.
 
 .. literalinclude:: plo.cfg
 
@@ -43,7 +45,7 @@ optional but later used in the post-processing.
 
 Converting to hdf5 file
 -------------------------------
-We run the whole conversion to a dft_tools readable h5 archive by running the converter script provided :program:`python converter.py` 
+We run the whole conversion to a dft_tools readable h5 archive by running the converter script provided :program:`python converter.py` . This actually includes the `plovasp` set in the first line:
 
 .. literalinclude:: converter.py
 
@@ -80,24 +82,26 @@ Charge self-consistent DMFT
 ==================================================
 
 
-In this part we will perform charge self-consistent DMFT calculations. To do so we have to adapt the VASP `INCAR` such that :program:`VASP` reads the updated charge density after each step. We add the lines::
+In this part we will perform charge self-consistent DMFT calculations. To do so we have to adapt the VASP `INCAR` such that :program:`VASP` reads the updated charge density after each step. We add the lines (see also `INCAR.CSC`)::
 
   ICHARG = 5
   NELM = 1000
   NELMIN = 1000
+  NELMDL = -1
   IMIX=1
   BMIX=0.5
   AMIX=0.02
+  LSYNCH5=True
 
-which makes VASP wait after each step of its iterative diagonalization until the file vasp.lock is created. It then reads the update of the charge density in the file `GAMMA`. We change the mixing here to stabilize the updating, which can be problem for charge ordered systems. Vasp is terminated by an external script after a desired amount of steps, such that we deactivate all automatic stoping criterion by setting the number of steps to a very high number.
+which makes VASP wait after each step of its iterative diagonalization until the file vasp.lock is created. It then reads the update of the charge density in the file `GAMMA` or `vaspgamma.h5` if VASP is compiled with hdf5 support. We change the mixing here to stabilize the updating, which can be problem for charge ordered systems. Vasp is terminated by an external script after a desired amount of steps, such that we deactivate all automatic stoping criterion by setting the number of steps to a very high number.
 
-We take the respective converged DFT and DMFT calculations from before as a starting point. I.e., we copy the `CHGCAR` and `nio.h5` together with the other :program:`VASP` input files and :file:`plo.cfg` in a new directory. We use a script called :program:`vasp_dmft` to invoke :program:`VASP` in the background and start the DMFT calculation together with :program:`plovasp` and the converter. This script assumes that the dmft sript contains a function `dmft_cycle()` and also the conversion from text files to the h5 file. Additionally we have to add a few lines to calculate the density correction and calculate the correlation energy. We adapt the script straightforwardly (for a working example see :ref:`nio_csc.py`). The most important new lines are::
+We take the respective converged DFT and DMFT calculations from before as a starting point. I.e., we copy the `WAVECAR`, `CHGCAR`, and `vasp.h5` together with the other :program:`VASP` input files (copy INCAR.CSC here) and :file:`plo.cfg` in a new directory. We use a script called :program:`vasp_dmft` to invoke :program:`VASP` in the background and start the DMFT calculation together with :program:`plovasp` and the converter. This script assumes that the dmft sript contains a function `dmft_cycle()` and also the conversion from text files to the h5 file. Additionally we have to add a few lines to calculate the density correction and calculate the correlation energy. We adapt the script straightforwardly (for a working example see :ref:`nio_csc.py`). The most important new lines are::
 
   SK.chemical_potential = SK.calc_mu( precision = 0.000001 )
   SK.calc_density_correction(dm_type='vasp')
   correnerg = 0.5 * (S.G_iw * S.Sigma_iw).total_density()
 
-where the chemical potential is determined to a greater precision than before, the correction to the dft density matrix is calculated and output to the file :file:`GAMMA`. The correlation energy is calculated via Migdal-Galitski formula. We also slightly increase the tolerance for the detection of blocks since the DFT calculation now includes some QMC noise.
+where the chemical potential is determined to a greater precision than before, the correction to the dft density matrix is calculated and output to the file :file:`GAMMA` :file:`vaspgamma.h5`. The correlation energy is calculated via Migdal-Galitski formula. We also slightly increase the tolerance for the detection of blocks since the starting point now includes some QMC noise.
 
 To help convergence, we keep the density (i.e., the GAMMA file) fixed for a few DFT iterations. We do so since VASP uses an iterative diagonalization. Within these steps we still need to update the projectors and recalculate the GAMMA file to not shuffle eigenvalues around by accident.
 
