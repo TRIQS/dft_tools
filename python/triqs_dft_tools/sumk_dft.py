@@ -649,19 +649,17 @@ class SumkDFT(object):
             # Imaginary frequency Sigma:
             self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, space='sumk')
                                  for icrsh in range(self.n_corr_shells)]
-            SK_Sigma_imp = self.Sigma_imp
         elif isinstance(self.mesh, MeshReFreq) and all(isinstance(gf, Gf) and isinstance(gf.mesh, MeshReFreq) and gf.mesh == self.mesh for bname, gf in Sigma_imp[0]):
             # Real frequency Sigma:
             self.Sigma_imp = [self.block_structure.create_gf(ish=icrsh, mesh=Sigma_imp[icrsh].mesh, gf_function=Gf, space='sumk')
                                 for icrsh in range(self.n_corr_shells)]
-            SK_Sigma_imp = self.Sigma_imp
 
         else:
             raise ValueError("put_Sigma: Sigma_imp must have the same mesh as SumKDFT.mesh.")
 
         # rotation from local to global coordinate system:
         for icrsh in range(self.n_corr_shells):
-            for bname, gf in SK_Sigma_imp[icrsh]:
+            for bname, gf in self.Sigma_imp[icrsh]:
                 if self.use_rotations:
                     gf << self.rotloc(icrsh,
                                       Sigma_imp[icrsh][bname],
