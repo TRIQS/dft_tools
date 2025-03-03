@@ -28,6 +28,7 @@ from types import *
 import numpy as np
 import triqs.utility.dichotomy as dichotomy
 from triqs.gf import *
+from triqs.gf import Gf
 from triqs.gf.meshes import MeshImFreq, MeshReFreq, MeshDLRImFreq
 import triqs.utility.mpi as mpi
 from triqs.utility.comparison_tests import assert_arrays_are_close

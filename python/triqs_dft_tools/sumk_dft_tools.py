@@ -58,7 +58,7 @@ class SumkDFTTools(SumkDFT):
         Calculates the density of states and the projected density of states.
         The basis of the projected density of states is specified by proj_type.
 
-        The output files (if `save_to_file = True`) have two (three in the orbital-resolved case) columns representing the frequency and real part of the DOS (and imaginary part of the DOS) in that order. 
+        The output files (if `save_to_file = True`) have two (three in the orbital-resolved case) columns representing the frequency and real part of the DOS (and imaginary part of the DOS) in that order.
 
         The output files are as follows:
 
@@ -75,12 +75,12 @@ class SumkDFTTools(SumkDFT):
                        Lorentzian broadening of the spectra to avoid any numerical artifacts.
                        If not given, standard value of lattice_gf (0.001 eV) is used.
         mesh         : real frequency MeshType, optional
-                       Omega mesh for the real-frequency Green's function. 
+                       Omega mesh for the real-frequency Green's function.
                        Given as parameter to lattice_gf.
         with_Sigma   : boolean, optional
-                       If True, the self energy is used for the calculation. 
+                       If True, the self energy is used for the calculation.
                        If false, the DOS is calculated without self energy.
-                       Both with_Sigma and with_dc equal to True is needed for DFT+DMFT A(w) calculated. 
+                       Both with_Sigma and with_dc equal to True is needed for DFT+DMFT A(w) calculated.
                        Both with_Sigma and with_dc equal to false is needed for DFT A(w) calculated.
         with_dc      : boolean, optional
                        If True the double counting correction is used.
@@ -90,7 +90,7 @@ class SumkDFTTools(SumkDFT):
                         By default, no projected DOS type will be calculated (the corresponding projected arrays will be empty).
                         The following options are:
 
-                       'None'   - Only total DOS calculated 
+                       'None'   - Only total DOS calculated
                        'wann'   - Wannier DOS calculated from the Wannier projectors
                        'vasp'   - Vasp orbital-projected DOS only from Vasp inputs
                        'wien2k' - Wien2k orbital-projected DOS from the wien2k theta projectors
@@ -108,11 +108,11 @@ class SumkDFTTools(SumkDFT):
         DOSproj      : Dict of numpy arrays
                        DOS projected to atom (shell) with the form of DOSproj[n_shells][spn][n_om] where "n_shells" is the total number of correlated or uncorrelated shells (depending on the input "proj_type"). This array gives the trace of the orbital-projected density of states. Empty if proj_type = None
         DOSproj_orb  : Dict of numpy arrays
-                       Orbital-projected DOS projected to atom (shell) and resolved into orbital contributions with the form of DOSproj_orb[n_shells][spn][n_om,dim,dim] where "dim" specifies the orbital dimension of the correlated/uncorrelated shell (depending on the input "proj_type"). 
+                       Orbital-projected DOS projected to atom (shell) and resolved into orbital contributions with the form of DOSproj_orb[n_shells][spn][n_om,dim,dim] where "dim" specifies the orbital dimension of the correlated/uncorrelated shell (depending on the input "proj_type").
                        Empty if proj_type = None
         """
 
-        # Note the proj_type = 'elk'  (- Elk orbital-projected DOS only from Elk inputs) is not included for now. 
+        # Note the proj_type = 'elk'  (- Elk orbital-projected DOS only from Elk inputs) is not included for now.
         # Brief description to why can be found in the comment above the currently commented out dft_band_characters() routine
         # in converters/elk.py.
         # code left here just in case it will be reused.
@@ -284,7 +284,7 @@ class SumkDFTTools(SumkDFT):
 
     def proj_type_G_loc(self, G_latt, G_inp, ik, ish, proj_type=None):
         """
-        Internal routine which calculates the project Green's function subject to the 
+        Internal routine which calculates the project Green's function subject to the
         proj_type input.
 
         Parameters
@@ -302,7 +302,7 @@ class SumkDFTTools(SumkDFT):
                    'wann'   - Wannier DOS calculated from the Wannier projectors
                    'vasp'   - Vasp orbital-projected DOS only from Vasp inputs
                    'wien2k' - Wien2k orbital-projected DOS from the wien2k theta projectors
-                   
+
         Returns
         -------
         G_proj   : Gf
@@ -310,7 +310,7 @@ class SumkDFTTools(SumkDFT):
                    Contains the band-resolved density matrices per k-point.
         """
 
-        # Note the proj_type = 'elk'  (- Elk orbital-projected DOS only from Elk inputs) is not included for now. 
+        # Note the proj_type = 'elk'  (- Elk orbital-projected DOS only from Elk inputs) is not included for now.
         # Brief description to why can be found in the comment above the currently commented out dft_band_characters() routine
         # in converters/elk.py.
         # code left here just in case it will be reused.
@@ -338,7 +338,7 @@ class SumkDFTTools(SumkDFT):
 #              isp=ntoi[bname]
 #              nst=self.n_orbitals[ik,isp]
 #              #matrix multiply band resolved muffin density with
-#              #diagonal of band resolved spectral function and fill diagonal of 
+#              #diagonal of band resolved spectral function and fill diagonal of
 #              #DOSproj_orb orbital dimensions with the result for each frequency
 #              bdm=self.band_dens_muffin[ik,isp,ish,0:dim,0:nst]
 #              tmp=[numpy.matmul(bdm, gf.data[iom,:,:].diagonal())
@@ -356,14 +356,14 @@ class SumkDFTTools(SumkDFT):
 
     def load_parproj(self, data_type=None):
         """
-        Internal routine which loads the n_parproj, proj_mat_all, rot_mat_all and 
+        Internal routine which loads the n_parproj, proj_mat_all, rot_mat_all and
         rot_mat_all_time_inv from parproj data from .h5 file.
 
         Parameters
         ----------
         data_type : string, optional
-                    which data type desired to be read in. 
-                    'band' - reads data converted by bands_convert()        
+                    which data type desired to be read in.
+                    'band' - reads data converted by bands_convert()
                     None - reads data converted by parproj_convert()
         """
 
@@ -390,7 +390,7 @@ class SumkDFTTools(SumkDFT):
 
     def occupations(self, mu=None, with_Sigma=True, with_dc=True, save_occ=True):
         """
-        Calculates the band resolved density matrices (occupations) from the Matsubara 
+        Calculates the band resolved density matrices (occupations) from the Matsubara
         frequency self-energy.
 
         Parameters
@@ -398,7 +398,7 @@ class SumkDFTTools(SumkDFT):
         mu           : double, optional
                        Chemical potential, overrides the one stored in the hdf5 archive.
         with_Sigma   : boolean, optional
-                       If True, the self energy is used for the calculation. 
+                       If True, the self energy is used for the calculation.
                        If false, the DOS is calculated without self energy.
         with_dc      : boolean, optional
                        If True the double counting correction is used.
@@ -455,16 +455,16 @@ class SumkDFTTools(SumkDFT):
     def spectral_contours(self, mu=None, broadening=None, mesh=None, plot_range=None, FS=True, with_Sigma=True, with_dc=True, proj_type=None, save_to_file=True):
         """
         Calculates the correlated spectral function at the Fermi level (relating to the Fermi
-        surface) or at specific frequencies. 
+        surface) or at specific frequencies.
 
         The output files have three columns representing the k-point index, frequency and A(k,w) in that order. The output files are as follows:
 
         * `Akw_(sp).dat`, the total A(k,w)
         * `Akw_(proj_type)_(spn)_proj(i).dat`, the A(k,w) projected to shell with index (i).
         * `Akw_(proj_type)_(spn)_proj(i)_(m)_(n).dat`, as above, but for each (m) and (n) orbital contribution.
-        
-        The files are prepended with either of the following: 
-        For `FS` set to True the output files name include _FS_ and these files contain four columns which are the cartesian reciprocal coordinates (kx, ky, kz) and Akw. 
+
+        The files are prepended with either of the following:
+        For `FS` set to True the output files name include _FS_ and these files contain four columns which are the cartesian reciprocal coordinates (kx, ky, kz) and Akw.
         For `FS` set to False the output files name include _omega_(iom) (with `iom` being the frequency mesh index). These files also contain four columns  as described above along with a comment at the top of the file which gives the frequency value at which the spectral function was evaluated.
 
         Parameters
@@ -476,7 +476,7 @@ class SumkDFTTools(SumkDFT):
                        Lorentzian broadening of the spectra to avoid any numerical artifacts.
                        If not given, standard value of lattice_gf (0.001 eV) is used.
         mesh         : real frequency MeshType, optional
-                       Omega mesh for the real-frequency Green's function. 
+                       Omega mesh for the real-frequency Green's function.
                        Given as parameter to lattice_gf.
         plot_shift   : double, optional
                        Offset [=(ik-1)*plot_shift, where ik is the index of the k-point] for each A(k,w) for stacked plotting of spectra.
@@ -485,12 +485,12 @@ class SumkDFTTools(SumkDFT):
                        If not provided, the min and max values of the energy mesh is used.
         FS           : boolean
                        Flag for calculating the spectral function at the Fermi level (omega ~ 0)
-                       If False, the spectral function will be generated for each frequency within 
-                       plot_range.              
+                       If False, the spectral function will be generated for each frequency within
+                       plot_range.
         with_Sigma   : boolean, optional
-                       If True, the self energy is used for the calculation. 
+                       If True, the self energy is used for the calculation.
                        If false, the DOS is calculated without self energy.
-                       Both with_Sigma and with_dc equal to True is needed for DFT+DMFT A(k,w) calculated. 
+                       Both with_Sigma and with_dc equal to True is needed for DFT+DMFT A(k,w) calculated.
                        Both with_Sigma and with_dc equal to false is needed for DFT A(k,w) calculated.
         with_dc      : boolean, optional
                        If True the double counting correction is used.
@@ -500,7 +500,7 @@ class SumkDFTTools(SumkDFT):
                        By default, no projected DOS type will be calculated (the corresponding projected arrays will be empty).
                        The following options are:
 
-                       * `None` Only total DOS calculated 
+                       * `None` Only total DOS calculated
                        * `wann` Wannier DOS calculated from the Wannier projectors
         save_to_file : boolean, optional
                        If True, text files with the calculated data will be created.
@@ -652,7 +652,7 @@ class SumkDFTTools(SumkDFT):
                        Chemical potential, overrides the one stored in the hdf5 archive.
                        By default, this is automatically set to the chemical potential within the SK object.
         broadening   : double, optional
-                       Lorentzian broadening of the spectra to avoid any numerical artifacts. 
+                       Lorentzian broadening of the spectra to avoid any numerical artifacts.
                        If not given, standard value of lattice_gf (0.001 eV) is used.
         mesh         : real frequency MeshType, optional
                        Omega mesh for the real-frequency Green's function.
@@ -669,9 +669,9 @@ class SumkDFTTools(SumkDFT):
                        function is calculated for all shells.
                        Note for experts: The spectra from Wien2k inputs are not rotated to the local coordinate system used in Wien2k.
         with_Sigma   : boolean, optional
-                       If True, the self energy is used for the calculation. 
+                       If True, the self energy is used for the calculation.
                        If false, the DOS is calculated without self energy.
-                       Both with_Sigma and with_dc equal to True is needed for DFT+DMFT A(k,w) calculated. 
+                       Both with_Sigma and with_dc equal to True is needed for DFT+DMFT A(k,w) calculated.
                        Both with_Sigma and with_dc equal to false is needed for DFT A(k,w) calculated.
         with_dc      : boolean, optional
                        If True the double counting correction is used.
@@ -681,12 +681,12 @@ class SumkDFTTools(SumkDFT):
                         By default, no projected DOS type will be calculated (the corresponding projected arrays will be empty).
                         The following options are:
 
-                       'None'   - Only total DOS calculated 
+                       'None'   - Only total DOS calculated
                        'wann'   - Wannier DOS calculated from the Wannier projectors
                        'wien2k' - Wien2k orbital-projected DOS from the wien2k theta projectors
         save_to_file : boolean, optional
                        If True, text files with the calculated data will be created.
-        
+
         Returns
         -------
         Akw          : Dict of numpy arrays
@@ -698,7 +698,7 @@ class SumkDFTTools(SumkDFT):
                        Empty if proj_type = None
         pAkw_orb     : Dict of numpy arrays
                        (Correlated) k-resolved spectral function projected to atoms and
-                       resolved into orbital contributions. 
+                       resolved into orbital contributions.
                        This dictionary has the form of pAkw[n_shells][spn][n_k, n_om,dim,dim] where dim specifies the orbital dimension of the correlated/uncorrelated shell.
                        Empty if proj_type = None
         """
@@ -941,7 +941,7 @@ class SumkDFTTools(SumkDFT):
         mpi.barrier()
 
         return Akw, pAkw, pAkw_orb
-        
+
     def partial_charges(self, mu=None, with_Sigma=True, with_dc=True):
         """
         Calculates the orbitally-resolved density matrix for all the orbitals considered in the input, consistent with
