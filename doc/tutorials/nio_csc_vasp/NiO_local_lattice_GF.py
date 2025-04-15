@@ -13,15 +13,9 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 filename = 'vasp'
 beta = 5.0
-mesh = MeshImFreq(beta=beta, S='Fermion', n_iw=1000)
+mesh = MeshImFreq(beta=beta, S='Fermion', n_iw=500)
 
 SK = SumkDFT(hdf_file = filename+'.h5', use_dft_blocks = False, mesh=mesh)
-
-
-# We analyze the block structure of the Hamiltonian
-Sigma = SK.block_structure.create_gf(mesh=mesh)
-
-SK.put_Sigma([Sigma])
 
 
 # Setup CTQMC Solver
@@ -56,7 +50,7 @@ SK.chemical_potential = mpi.bcast(SK.chemical_potential)
 if block_structure:
     SK.block_structure = block_structure
 else:
-    G = SK.extract_G_loc()
+    G = SK.extract_G_loc(transform_to_solver_blocks=False, with_Sigma=False)
     SK.analyse_block_structure_from_gf(G, threshold = 1e-3)
 
 SK.put_Sigma(Sigma_imp = [Sigma_iw])
