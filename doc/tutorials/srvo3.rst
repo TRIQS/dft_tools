@@ -124,6 +124,9 @@ of parameters for a first guess is::
   p["fit_max_moment"] = 4
   p["fit_min_n"] = 30
   p["fit_max_n"] = 60
+  # measure impurity density matrix to get self-energy moments for improved tail fit
+  p["measure_density_matrix"] = True
+  p["use_norm_as_weight"] = True
 
 Here we use a tail fit to deal with numerical noise of higher Matsubara frequencies.
 For other options and more details on the solver parameters, we refer the user to

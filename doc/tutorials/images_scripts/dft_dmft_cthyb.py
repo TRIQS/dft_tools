@@ -43,6 +43,9 @@ p["perform_tail_fit"] = True
 p["fit_max_moment"] = 4
 p["fit_min_n"] = 30
 p["fit_max_n"] = 60
+# measure impurity density matrix to get self-energy moments for improved tail fit
+p["measure_density_matrix"] = True
+p["use_norm_as_weight"] = True
 
 # If conversion step was not done, we could do it here. Uncomment the lines it you want to do this.
 #from triqs_dft_tools.converters.wien2k import *
