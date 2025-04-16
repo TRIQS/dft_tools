@@ -21,7 +21,7 @@ SK.calculate_diagonalization_matrix(prop_to_be_diagonal='eal',calc_in_solver_blo
 
 ###########################
 # Now we pick the orbitals:
-# BE CAREFUL: THIS NEEDS TO BE DONE PROPERLY 
+# BE CAREFUL: THIS NEEDS TO BE DONE PROPERLY
 # AND IS DIFFERENT FORM CASE TO CASE!
 SK.block_structure.pick_gf_struct_solver([{'up_1': [0],'up_2': [0],'up_3': [0],'down_1': [0],'down_2': [0],'down_3': [0]}])
 ###########################
@@ -52,6 +52,9 @@ p["perform_tail_fit"] = True
 p["fit_max_moment"] = 4
 p["fit_min_n"] = 30
 p["fit_max_n"] = 70
+# measure impurity density matrix to get self-energy moments for improved tail fit
+p["measure_density_matrix"] = True
+p["use_norm_as_weight"] = True
 
 # double counting correction:
 dc_type = 0  # FLL
@@ -67,7 +70,7 @@ if mpi.is_master_node():
 for iteration_number in range(1,n_loops+1):
 
     mpi.report("Iteration = %s"%iteration_number)
-    
+
     SK.symm_deg_gf(S.Sigma_iw)                # symmetrizing Sigma
     SK.set_Sigma([ S.Sigma_iw ])                    # put Sigma into the SumK class
     chemical_potential = SK.calc_mu( precision = 0.01 )  # find the chemical potential for given density
@@ -113,5 +116,5 @@ for iteration_number in range(1,n_loops+1):
 
     # Save stuff into the user_data group of hdf5 archive in case of rerun:
     SK.save(['chemical_potential','dc_imp','dc_energ'])
-    
+
 

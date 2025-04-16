@@ -85,6 +85,9 @@ We also have to specify the `CTHYB solver <https://triqs.github.io/cthyb/latest>
   p["fit_max_moment"] = 4
   p["fit_min_n"] = 30
   p["fit_max_n"] = 60
+  # measure impurity density matrix to get self-energy moments for improved tail fit
+  p["measure_density_matrix"] = True
+  p["use_norm_as_weight"] = True
 
 Here we use a tail fit to deal with numerical noise of higher Matsubara frequencies. For other options and more details on the solver parameters, we refer to the `CTHYB solver <https://triqs.github.io/cthyb/latest/reference/constr_parameters.html>`_ documentation. It is important to note that the solver parameters have to be adjusted for each material individually. A guide on how to set the tail fit parameters is given :ref:`below <tailfit>`.
 

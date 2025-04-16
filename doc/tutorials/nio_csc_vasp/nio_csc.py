@@ -79,6 +79,9 @@ def dmft_cycle():
     p["fit_min_w"] = 20
     p["fit_max_w"] = 30
     p["perform_tail_fit"] = True
+    # measure impurity density matrix to get self-energy moments for improved tail fit
+    p["measure_density_matrix"] = True
+    p["use_norm_as_weight"] = True
 
     # Double Counting: 0 FLL, 1 Held, 2 AMF
     DC_type = 0

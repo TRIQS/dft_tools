@@ -158,6 +158,9 @@ Now we have the interaction Hamiltonian for the solver, which we set up next::
     p["fit_max_moment"] = 4
     p["fit_min_n"] = 40
     p["fit_max_n"] = 100
+    # measure impurity density matrix to get self-energy moments for improved tail fit
+    p["measure_density_matrix"] = True
+    p["use_norm_as_weight"] = True
 
 
 The DMFT loop with automatic basis rotations
