@@ -2073,11 +2073,27 @@ class SumkDFT(object):
         # check for lowercase matching for the method variable
         if method.lower() == "dichotomy":
             mpi.report("\nsumk calc_mu: Using dichtomy adjustment to find chemical potential\n")
-            self.chemical_potential = dichotomy.dichotomy(function=F_bisection,
-                                                          x_init=self.chemical_potential, y_value=density,
-                                                          precision_on_y=precision, delta_x=delta, max_loops=max_loops,
-                                                          x_name="Chemical Potential", y_name="Total Density",
-                                                          verbosity=3)[0]
+            result = dichotomy.dichotomy(function=F_bisection,
+                                x_init=self.chemical_potential,
+                                y_value=density,
+                                precision_on_y=precision,
+                                delta_x=delta,
+                                max_loops=max_loops,
+                                x_name="Chemical Potential",
+                                y_name="Total Density",
+                                verbosity=3)
+            if result[0] is None:
+                raise ValueError(
+                    f"\nsumk calc_mu: Failed to find chemical potential using dichotomy method.\n"
+                    f"  Target total density: {density}\n"
+                    f"  Starting guess for chemical potential: {self.chemical_potential}\n"
+                    f"  Step size (delta): {delta}, Precision required: {precision}\n"
+                    f"  Maximum iterations allowed: {max_loops}\n"
+                    f"  The method could not converge: no value of mu found such that |F(mu) - {density}| < {precision}.\n"
+                    f"  Suggestion:\n"
+                    f"    Adjust the initial guess or increase delta."
+                )
+            self.chemical_potential = result[0]
         elif method.lower() == "newton":
             mpi.report("\nsumk calc_mu: Using Newton method to find chemical potential\n")
             self.chemical_potential = newton(func=F_optimize,
