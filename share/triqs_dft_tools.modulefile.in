@@ -32,8 +32,6 @@ setenv          @PROJECT_NAME@_VERSION   $version
 setenv          @PROJECT_NAME@_GIT_HASH  $git_hash
 
 prepend-path    PATH                $root/bin
-prepend-path    CPLUS_INCLUDE_PATH  $root/include
-prepend-path    LIBRARY_PATH        $root/lib
 prepend-path    LD_LIBRARY_PATH     $root/lib
 prepend-path    CMAKE_PREFIX_PATH   $root
 @MODFILE_PYTHON_PATH@

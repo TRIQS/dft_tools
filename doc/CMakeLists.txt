@@ -39,7 +39,7 @@ foreach(example ${ExampleList})
   add_executable(${PROJECT_NAME}_doc_${f} EXCLUDE_FROM_ALL ${example})
   set_property(TARGET ${PROJECT_NAME}_doc_${f} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${d})
   target_link_libraries(${PROJECT_NAME}_doc_${f} triqs)
-  add_custom_command(TARGET ${PROJECT_NAME}_doc_${f}
+  add_custom_command(TARGET ${PROJECT_NAME}_doc_${f} POST_BUILD
    COMMAND ${PROJECT_NAME}_doc_${f} > ${CMAKE_CURRENT_SOURCE_DIR}/${d}/${f}.output 2>/dev/null
    WORKING_DIRECTORY ${d}
   )

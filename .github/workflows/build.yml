@@ -81,28 +81,28 @@ jobs:
         python3-sphinx
         python3-nbsphinx
 
+    - name: Set up virtualenv
+      run: |
+        mkdir $HOME/.venv
+        python3 -m venv --system-site-packages $HOME/.venv/my_python
+        source $HOME/.venv/my_python/bin/activate
+        echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
+        echo "PATH=$PATH" >> $GITHUB_ENV
+
     - name: Install homebrew dependencies
       if: ${{ contains(matrix.os, 'macos') }}
       run: |
         brew update
         brew install ccache gcc llvm boost fftw hdf5 open-mpi openblas
-        mkdir $HOME/.venv
-        python3 -m venv $HOME/.venv/my_python
-        source $HOME/.venv/my_python/bin/activate
         pip install mako numpy scipy mpi4py
         pip install -r requirements.txt
-        echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
         echo "PATH=$(brew --prefix llvm)/bin:$(brew --prefix gcc)/bin:$PATH" >> $GITHUB_ENV
+        echo "PYTHONPATH=$(brew --prefix llvm)/lib/python3.13/site-packages" >> $GITHUB_ENV
 
     - name: Add clang CXXFLAGS
       if: ${{ contains(matrix.cxx, 'clang') }}
       run: |
         echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
-
-    - name: Add clang LDFLAGS for macos to link against brew's libc++
-      if: ${{ contains(matrix.os, 'macos') && contains(matrix.cxx, 'clang') }}
-      run: |
-        echo 'LDFLAGS="-L$(brew --prefix llvm)/lib/c++ -L$(brew --prefix llvm)/lib -lunwind"' >> $GITHUB_ENV
 
     - name: Build & Install TRIQS
       env:
