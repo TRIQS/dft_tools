@@ -26,3 +26,13 @@ later version (see <http://www.gnu.org/licenses/>).
 It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
 without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+## Support
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" width="20%" srcset="doc/_static/CCQ-dark.png">
+  <img alt="Flatiron Center for Computational Quantum Physics logo." width="20%" src="doc/_static/CCQ.png">
+</picture>
+
+TRIQS/dft_tools is supported by the Flatiron Institute, a division of the Simons Foundation.
+
