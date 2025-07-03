@@ -23,6 +23,10 @@
 
 ##########################################################################
 import sys
+try: # try wannierberri import - needs to be placed before importing numpy
+    import wannierberri as wb
+except ImportError:
+    pass
 import numpy
 from warnings import warn
 from triqs.gf import *
@@ -253,23 +257,17 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
         inverse_mass = None
 
     if mpi.is_master_node():
-        # try wannierberri import
-        try:
-            import wannierberri as wb
-        except ImportError:
-            print('ImportError: WannierBerri needs to be installed to run test "Py_w90_optics_Sr2RuO4"')
+        if 'wannierberri' not in sys.modules:
+            print('ImportError: WannierBerri needs to be installed to run optics calculations with Wannier90')
             try:
                 mpi.MPI.COMM_WORLD.Abort(1)
             except:
                 sys.exit()
         # initialize WannierBerri system
         shift_gamma = numpy.array([0.0, 0.0, 0.0])
-        # wberri = wb.System_w90(pathname + seedname, berry=True, fft='numpy')
-        # WannierBerri uses python multiprocessing which might conflict with mpi.
-        # if there's a segfault, uncomment the following line
-        wberri = wb.System_w90(pathname + seedname, berry=True, fftlib='numpy', npar=16)
+        wberri = wb.System_w90(pathname + seedname, berry=True)
         grid = wb.Grid(wberri, NKdiv=1, NKFFT=[nk_x, nk_y, nk_z])
-        dataK = wb.data_K.Data_K(wberri, dK=shift_gamma, grid=grid, fftlib='numpy')
+        dataK = wb.data_K.Data_K_R(wberri, dK=shift_gamma, grid=grid)
 
         assert dataK.HH_K.shape == hopping[:, 0, :, :].shape, 'wberri / wannier Hamiltonian has different number of orbitals than SumK object. Disentanglement is not supported as of now.'
 
@@ -327,11 +325,12 @@ def recompute_w90_input_on_different_mesh(sum_k, seedname, nk_optics, pathname='
             # in the orbital basis
             # vw_alpha = Hw_alpha + i [Hw, Aw_alpha]
             elif oc_basis == 'w':
-                # first term, taken from
-                # github.com/wannier-berri/wannier-berri/blob/2d3982331c02775f5ee033c664849d5f2d41d0c1/wannierberri/data_K.py#L687
-                Hw_alpha = wb.data_K.Data_K_R._R_to_k_H(dataK, dataK.Ham_R, der=1, hermitian=True)
+                # first term
+                Hw_R = dataK.get_R_mat('Ham').copy()
+                Hw_alpha = dataK.rvec.R_to_k(Hw_R, hermitian=True, der=1)[dataK.select_K]
                 # second term
-                Aw_alpha = dataK.fft_R_to_k(dataK.get_R_mat('AA'), hermitian=True)
+                Aw_R = dataK.get_R_mat('AA').copy()
+                Aw_alpha = dataK.rvec.R_to_k(Aw_R, hermitian=True)[dataK.select_K]
                 c_Hw_Aw_alpha = _commutator(hopping[:, 0, :, :], Aw_alpha)
                 velocities_k = (Hw_alpha + 1j * c_Hw_Aw_alpha) / HARTREETOEV / BOHRTOANG
 
