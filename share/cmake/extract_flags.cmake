@@ -92,6 +92,11 @@ macro(extract_flags)
     endif()
   endforeach()
 
+  get_property_recursive(libdirs TARGET ${target} PROPERTY INTERFACE_LINK_DIRECTORIES)
+  foreach(dir ${libdirs})
+    set(${target}_LDFLAGS "${${target}_LDFLAGS} -L${dir}")
+  endforeach()
+
   # ==== We have to replace generator expressions explicitly ====
 
   if(ARG_BUILD_INTERFACE)
@@ -114,8 +119,12 @@ macro(extract_flags)
   endif()
 
   # Remove all remaining generator expressions
-  string(REGEX REPLACE " [^ ]*\\$<[^ ]*:[^>]*>" "" ${target}_LDFLAGS "${${target}_LDFLAGS}")
-  string(REGEX REPLACE " [^ ]*\\$<[^ ]*:[^>]*>" "" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
+  string(REGEX REPLACE " [^ ]*\\$<[^ ]*:[^ ]*>" "" ${target}_LDFLAGS "${${target}_LDFLAGS}")
+  string(REGEX REPLACE " [^ ]*\\$<[^ ]*:[^ ]*>" "" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
+
+  # Filter out ::@ expressions
+  string(REGEX REPLACE "::@[^ ]* " "" ${target}_LDFLAGS "${${target}_LDFLAGS}")
+  string(REGEX REPLACE "::@[^ ]* " "" ${target}_CXXFLAGS "${${target}_CXXFLAGS}")
 
   # Filter out system directories from LDFLAGS and CXXFLAGS
   string(REGEX REPLACE " -L/usr/lib " " " ${target}_LDFLAGS "${${target}_LDFLAGS}")
