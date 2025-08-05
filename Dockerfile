@@ -3,7 +3,7 @@ FROM flatironinstitute/triqs:unstable-ubuntu-clang
 ARG APPNAME=app4triqs
 
 # Install here missing dependencies, e.g.
-# RUN apt-get install -y python3-skimage
+# RUN apt-get update && apt-get install -y python3-skimage
 
 COPY --chown=build . $SRC/$APPNAME
 WORKDIR $BUILD/$APPNAME

@@ -54,7 +54,6 @@ jobs:
         g++
         gfortran
         hdf5-tools
-        libblas-dev
         libboost-dev
         libclang-dev
         libc++-dev
@@ -64,7 +63,7 @@ jobs:
         libgfortran5
         libgmp-dev
         libhdf5-dev
-        liblapack-dev
+        libopenblas-dev
         libopenmpi-dev
         openmpi-bin
         openmpi-common
@@ -77,38 +76,38 @@ jobs:
         python3-numpy
         python3-pip
         python3-scipy
-        python3-sphinx
-        python3-nbsphinx
+        python3-ipython
+
+    - name: Set up virtualenv
+      run: |
+        mkdir $HOME/.venv
+        python3 -m venv --system-site-packages $HOME/.venv/my_python
+        source $HOME/.venv/my_python/bin/activate
+        echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
+        echo "PATH=$PATH" >> $GITHUB_ENV
 
     - name: Install homebrew dependencies
       if: ${{ contains(matrix.os, 'macos') }}
       run: |
         brew update
         brew install ccache gcc llvm boost fftw hdf5 open-mpi openblas
-        mkdir $HOME/.venv
-        python3 -m venv $HOME/.venv/my_python
-        source $HOME/.venv/my_python/bin/activate
         pip install mako numpy scipy mpi4py
         pip install -r requirements.txt
-        echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
         echo "PATH=$(brew --prefix llvm)/bin:$(brew --prefix gcc)/bin:$PATH" >> $GITHUB_ENV
+        echo "PYTHONPATH=$(brew --prefix llvm)/lib/python3.13/site-packages" >> $GITHUB_ENV
 
     - name: Add clang CXXFLAGS
       if: ${{ contains(matrix.cxx, 'clang') }}
       run: |
         echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
 
-    - name: Add clang LDFLAGS for macos to link against brew's libc++
-      if: ${{ contains(matrix.os, 'macos') && contains(matrix.cxx, 'clang') }}
-      run: |
-        echo 'LDFLAGS="-L$(brew --prefix llvm)/lib/c++ -L$(brew --prefix llvm)/lib -lunwind"' >> $GITHUB_ENV
-
     - name: Build & Install TRIQS
       env:
         CC: ${{ matrix.cc }}
         CXX: ${{ matrix.cxx }}
+        TRIQS_BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
       run: |
-        git clone https://github.com/TRIQS/triqs --branch ${{ github.ref_name }}
+        git clone https://github.com/TRIQS/triqs --branch $TRIQS_BRANCH
         mkdir triqs/build && cd triqs/build
         cmake .. -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$HOME/install
         make -j1 install VERBOSE=1
