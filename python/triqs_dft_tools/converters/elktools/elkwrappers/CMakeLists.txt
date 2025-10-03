@@ -1,31 +1,32 @@
+# F2PY headers
+execute_process(
+  COMMAND "${TRIQS_PYTHON_EXECUTABLE}" -c
+          "import numpy.f2py; print(numpy.f2py.get_include())"
+  OUTPUT_VARIABLE F2PY_INCLUDE_DIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-# List the sources
-set(module_name "getpmatelk")
-set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/getpmatelk.f90")
+add_library(fortranobject OBJECT "${F2PY_INCLUDE_DIR}/fortranobject.c")
+target_link_libraries(fortranobject PUBLIC Python::NumPy)
+target_include_directories(fortranobject PUBLIC "${F2PY_INCLUDE_DIR}")
+set_property(TARGET fortranobject PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-set(generated_module_file ${module_name}${TRIQS_PYTHON_MODULE_EXT})
-
-add_custom_target(${module_name} ALL
-  DEPENDS ${generated_module_file}
-  )
-
-# for Intel fortran compilers we manually have to link against libiomp5 (-fqopenmp is always on in f2py)
-if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
-  set(F2PY_INTEL_OPTIONS -liomp5 --fcompiler=intelem)
-endif()
-
-##generate the fortran python wrapper shared library
 add_custom_command(
-  OUTPUT ${generated_module_file}
-  COMMAND ${TRIQS_PYTHON_EXECUTABLE} -m numpy.f2py --build-dir ${CMAKE_CURRENT_BINARY_DIR}/meson --f90exec=${CMAKE_Fortran_COMPILER} --f77exec=${CMAKE_Fortran_COMPILER} ${F2PY_INTEL_OPTIONS} -c ${fortran_src_file} -m ${module_name} > elk_f2py.log
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  )
+  OUTPUT getpmatelkmodule.c getpmatelk-f2pywrappers.f getpmatelk-f2pywrappers2.f90
+  DEPENDS getpmatelk.f90
+  VERBATIM
+  COMMAND "${CMAKE_COMMAND}" -E touch "getpmatelkmodule.c" "getpmatelk-f2pywrappers.f" "getpmatelk-f2pywrappers2.f90"
+  COMMAND "${TRIQS_PYTHON_EXECUTABLE}" -m numpy.f2py
+          "${CMAKE_CURRENT_SOURCE_DIR}/getpmatelk.f90" -m getpmatelk --lower)
 
-# where to install
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} DESTINATION
-${TRIQS_PYTHON_LIB_DEST_ROOT}/${PROJECT_NAME}/converters/elktools FILES_MATCHING PATTERN "*.so"
-PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-WORLD_READ WORLD_EXECUTE PATTERN "CMakeFiles" EXCLUDE)
+Python_add_library(getpmatelk MODULE
+                   "${CMAKE_CURRENT_BINARY_DIR}/getpmatelkmodule.c"
+                   "${CMAKE_CURRENT_BINARY_DIR}/getpmatelk-f2pywrappers.f"
+                   "${CMAKE_CURRENT_BINARY_DIR}/getpmatelk-f2pywrappers2.f90"
+                   "${CMAKE_CURRENT_SOURCE_DIR}/getpmatelk.f90")
+set_property(TARGET getpmatelk PROPERTY SUFFIX "${TRIQS_PYTHON_MODULE_EXT}")
+target_link_libraries(getpmatelk PRIVATE fortranobject)
+
+install(TARGETS getpmatelk DESTINATION ${TRIQS_PYTHON_LIB_DEST_ROOT}/${PROJECT_NAME}/converters/elktools/elkwrappers)
 
 # user warning
 message(STATUS "-----------------------------------------------------------------------------")
@@ -33,4 +34,3 @@ message(STATUS "                             ********  USER NOTE ******** ")
 message(STATUS "  This version of DFTTools contains interface routines to read Elk's binary  ")
 message(STATUS "  files. ")
 message(STATUS "-----------------------------------------------------------------------------")
-
