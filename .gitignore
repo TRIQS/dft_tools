@@ -6,3 +6,5 @@ doc/cpp2rst_generated
 __pycache__/
 *.py[cod]
 *$py.class
+
+.claude

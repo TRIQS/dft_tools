@@ -25,11 +25,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - {os: ubuntu-24.04, cc: gcc, cxx: g++}
-          - {os: ubuntu-24.04, cc: clang, cxx: clang++}
-          - {os: macos-14, cc: gcc-14, cxx: g++-14}
-          - {os: macos-14, cc: clang, cxx: clang++}
+        os:  [ubuntu-24.04, macos-15]
+        cxx: [g++, clang++]
 
     runs-on: ${{ matrix.os }}
 
@@ -39,9 +36,17 @@ jobs:
     - uses: actions/cache/restore@v4
       with:
         path: ${{ env.CCACHE_DIR }}
-        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
-        restore-keys:
-          ccache-${{ matrix.os }}-${{ matrix.cc }}-
+        key: ccache-${{ matrix.os }}-${{ matrix.cxx }}-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: |
+          ccache-${{ matrix.os }}-${{ matrix.cxx }}-
+
+    - name: Set cxx variables
+      run: |
+        if [[ ${{ matrix.os }} == 'macos-15' && ${{ matrix.cxx }} == 'g++' ]]; then
+          echo "CXX=g++-15" >> $GITHUB_ENV
+        else
+          echo "CXX=${{ matrix.cxx }}" >> $GITHUB_ENV
+        fi
 
     - name: Install ubuntu dependencies
       if: ${{ contains(matrix.os, 'ubuntu') }}
@@ -50,9 +55,12 @@ jobs:
         sudo apt-get install lsb-release wget software-properties-common &&
         sudo apt-get install
         ccache
-        clang-15
-        g++-12
-        gfortran-12
+        cmake
+        ninja-build
+        clang
+        clang-tools
+        g++
+        gfortran
         hdf5-tools
         libboost-dev
         libclang-dev
@@ -81,7 +89,7 @@ jobs:
 
     - name: Set up virtualenv
       run: |
-        mkdir $HOME/.venv
+        mkdir -p $HOME/.venv
         python3 -m venv --system-site-packages $HOME/.venv/my_python
         source $HOME/.venv/my_python/bin/activate
         echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
@@ -96,34 +104,27 @@ jobs:
         pip install -r requirements.txt
         echo "PATH=$(brew --prefix llvm)/bin:$(brew --prefix gcc)/bin:$PATH" >> $GITHUB_ENV
         echo "PYTHONPATH=$(brew --prefix llvm)/lib/python3.13/site-packages" >> $GITHUB_ENV
+        echo "SDKROOT=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix llvm)/lib/c++ -L/opt/homebrew/opt/llvm/lib/unwind -lunwind" >> $GITHUB_ENV
 
     - name: Add clang CXXFLAGS
-      if: ${{ contains(matrix.cxx, 'clang') }}
+      if: ${{ matrix.cxx == 'clang++' }}
       run: |
         echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
 
     - name: Build & Install TRIQS
       env:
-        CC: ${{ matrix.cc }}
-        CXX: ${{ matrix.cxx }}
         TRIQS_BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
       run: |
-        git clone https://github.com/TRIQS/triqs --branch $TRIQS_BRANCH
-        mkdir triqs/build && cd triqs/build
-        cmake .. -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$HOME/install
-        make -j1 install VERBOSE=1
-        cd ../
+        git clone https://github.com/TRIQS/triqs --branch "$TRIQS_BRANCH"
+        cmake -S triqs -B triqs/build -G Ninja -DBuild_Tests=OFF -DCMAKE_INSTALL_PREFIX=$HOME/install
+        cmake --build triqs/build --target install --verbose
 
     - name: Build dft_tools
-      env:
-        CC: ${{ matrix.cc }}
-        CXX: ${{ matrix.cxx }}
-        FC: gfortran-12
-        LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
         source $HOME/install/share/triqs/triqsvars.sh
-        mkdir build && cd build && cmake ..
-        make -j2 || make -j1 VERBOSE=1
+        cmake -S . -B build -G Ninja
+        cmake --build build --verbose
     
     - name: Print logs
       if: ${{ failure() }}
@@ -146,4 +147,4 @@ jobs:
       if: always()
       with:
         path: ${{ env.CCACHE_DIR }}
-        key: ccache-${{ matrix.os }}-${{ matrix.cc }}-${{ github.run_id }}
+        key: ccache-${{ matrix.os }}-${{ matrix.cxx }}-${{ github.run_id }}-${{ github.run_attempt }}
