@@ -541,7 +541,7 @@ def read_wannier90_hr_data(wannier_seed):
 
 
 def read_wannier90_blochbasis_data(wannier_seed, n_wannier_spin):
-    """
+    r"""
     Method for reading the files needed in the bloch_basis: seedname_u.mat,
     seedname.eig and potentially seedname_u_dis.mat.
 
