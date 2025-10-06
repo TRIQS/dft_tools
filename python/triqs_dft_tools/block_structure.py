@@ -35,7 +35,7 @@ from collections import defaultdict
 
 
 class BlockStructure(object):
-    """ Contains information about the Green function structure.
+    r""" Contains information about the Green function structure.
 
     This class contains information about the structure of the solver
     and sumk Green functions and the mapping between them.
