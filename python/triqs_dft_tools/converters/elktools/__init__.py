@@ -25,6 +25,7 @@ elk converter tools for file I/O
 
 from .readElkfiles import readElkfiles
 from .elk_converter_tools import ElkConverterTools
+from .getpmatelk import getpmatelk
 
-__all__ =['readElkfiles','ElkConverterTools']
+__all__ =['readElkfiles','ElkConverterTools','getpmatelk']
 
