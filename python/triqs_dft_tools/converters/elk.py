@@ -787,8 +787,8 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         # velocities_k: velocity (momentum) matrix elements between all bands in band_window_optics
         #               and each k-point.
 
-        #load fortran wrapper module
-        import triqs_dft_tools.converters.elktools.elkwrappers.getpmatelk as et
+        #load pure Python module to read PMAT.OUT
+        from triqs_dft_tools.converters.elktools import getpmatelk
         #elk velocities for all bands
         pmat=numpy.zeros([self.nstsv,self.nstsv,3],dtype=complex)
 
@@ -802,10 +802,8 @@ class ElkConverter(ConverterTools,Elk_tools,read_Elk):
         mpi.report("Reading PMAT.OUT")
         #read velocities for each k-point
         for ik in range(self.n_k):
-          #need to use a fortran array for wrapper
-          f_vkl = numpy.asfortranarray(self.vkl[ik,:])
-          #read the ik velocity using the wrapper
-          pmat[:,:,:]=et.getpmatelk(ik+1,self.nstsv,f_vkl)
+          #read the ik velocity using pure Python
+          pmat[:,:,:]=getpmatelk(ik+1, self.nstsv, self.vkl[ik,:])
           #loop over spin
           for isp in range(n_spin_blocks):
             #no. correlated bands at ik
