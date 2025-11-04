@@ -131,9 +131,6 @@ include(GNUInstallDirs)
 # Find / Build dependencies
 add_subdirectory(deps)
 
-# Build and install the library
-add_subdirectory(c++/${PROJECT_NAME})
-
 # add here stuff for the Fortran part in DFTTools
 add_subdirectory(fortran/dmftproj)
 
