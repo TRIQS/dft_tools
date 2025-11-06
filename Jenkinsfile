@@ -34,16 +34,17 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
       checkout scm
       /* construct a Dockerfile for this base */
       sh """
-      ( echo "FROM flatironinstitute/triqs:${triqsBranch}-${env.STAGE_NAME}" ; sed '0,/^FROM /d' Dockerfile ) > Dockerfile.jenkins
-        mv -f Dockerfile.jenkins Dockerfile
+      ( echo "FROM flatironjenkins/triqs:${triqsBranch}-${env.STAGE_NAME}" ; sed '0,/^FROM /d' Dockerfile ) > Dockerfile.${env.STAGE_NAME}
+        cp -f Dockerfile.${env.STAGE_NAME} Dockerfile
       """
+      archiveArtifacts(artifacts: "Dockerfile.${env.STAGE_NAME}")
       /* build and tag */
       def args = ''
       if (platform == documentationPlatform)
         args = '-DBuild_Documentation=1'
       else if (platform == "sanitize")
         args = '-DASAN=ON -DUBSAN=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo'
-      def img = docker.build("flatironinstitute/${dockerName}:${env.BRANCH_NAME}-${env.STAGE_NAME}", "--build-arg APPNAME=${projectName} --build-arg BUILD_ID=${env.BUILD_TAG} --build-arg CMAKE_ARGS='${args}' .")
+      def img = docker.build("flatironjenkins/${dockerName}:${env.BRANCH_NAME}-${env.STAGE_NAME}", "--build-arg APPNAME=${projectName} --build-arg BUILD_ID=${env.BUILD_TAG} --build-arg CMAKE_ARGS='${args}' .")
       catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
         img.inside("--shm-size=4gb") {
           sh "make -C \$BUILD/${projectName} test CTEST_OUTPUT_ON_FAILURE=1"
@@ -58,8 +59,8 @@ for (int i = 0; i < dockerPlatforms.size(); i++) {
 
 /****************** osx builds (on host) */
 def osxPlatforms = [
-  ["gcc", ['CC=gcc-14', 'CXX=g++-14', 'FC=gfortran-14']],
-  ["clang", ['CC=$BREW/opt/llvm/bin/clang', 'CXX=$BREW/opt/llvm/bin/clang++', 'FC=gfortran-14', 'CXXFLAGS=-I$BREW/opt/llvm/include', 'LDFLAGS=-L$BREW/opt/llvm/lib']]
+  ["gcc", ['CC=gcc-15', 'CXX=g++-15', 'FC=gfortran-15']],
+  ["clang", ['CC=$BREW/opt/llvm/bin/clang', 'CXX=$BREW/opt/llvm/bin/clang++', 'FC=gfortran-15', 'CXXFLAGS=-I$BREW/opt/llvm/include', 'LDFLAGS=-L$BREW/opt/llvm/lib']]
 ]
 for (int i = 0; i < osxPlatforms.size(); i++) {
   def platformEnv = osxPlatforms[i]
@@ -79,15 +80,15 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
 
       checkout scm
 
-      def hdf5 = "${env.BREW}/opt/hdf5@1.10"
+      def hdf5 = "${env.BREW}/opt/hdf5"
       dir(buildDir) { withEnv(platformEnv[1].collect { it.replace('\$BREW', env.BREW) } + [
           "PATH=$venv/bin:${env.BREW}/bin:/usr/bin:/bin:/usr/sbin",
           "HDF5_ROOT=$hdf5",
           "C_INCLUDE_PATH=$hdf5/include:${env.BREW}/include",
           "CPLUS_INCLUDE_PATH=$venv/include:$hdf5/include:${env.BREW}/include",
           "LIBRARY_PATH=$venv/lib:$hdf5/lib:${env.BREW}/lib",
-          "LD_LIBRARY_PATH=$hdf5/lib",
-          "PYTHONPATH=$installDir/lib/python3.12/site-packages",
+          "DYLD_LIBRARY_PATH=$venv/lib:$hdf5/lib:${env.BREW}/lib",
+          "PYTHONPATH=$installDir/lib/python3.13/site-packages",
           "CMAKE_PREFIX_PATH=$venv/lib/cmake/triqs",
           "VIRTUAL_ENV=$venv",
           "OMP_NUM_THREADS=2"]) {
@@ -124,7 +125,7 @@ try {
         def subdir = "${projectName}/${env.BRANCH_NAME}"
         git(url: "ssh://git@github.com/TRIQS/TRIQS.github.io.git", branch: "master", credentialsId: "ssh", changelog: false)
         sh "rm -rf ${subdir}"
-        docker.image("flatironinstitute/${dockerName}:${env.BRANCH_NAME}-${documentationPlatform}").inside() {
+        docker.image("flatironjenkins/${dockerName}:${env.BRANCH_NAME}-${documentationPlatform}").inside() {
           sh """#!/bin/bash -ex
             base=\$INSTALL/share/doc
             dir="${projectName}"
