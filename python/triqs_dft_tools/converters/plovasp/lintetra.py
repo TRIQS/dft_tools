@@ -2,138 +2,235 @@ import numpy as np
 
 _TOL = 1e-8
 
-# Ensure strictly positive imaginary part with minimal scale
-_regularize = lambda z : 1j * max(float(z), 1.0e-20) / 100.0
+def _regularize_scalar(value):
+    """Regularize a scalar to avoid numerical underflow or division by zero."""
+    return max(float(value), 1.0e-20) / 100.0
 
-def _F(en, e1, e2, e3, e4):
-    if abs(e1 - e3) > _TOL and abs(e4 - e2) > _TOL: return (e1 - en) * (en - e2) / ((e1 - e3) * (e4 - e2))
-    s = _regularize(min(abs(e3 - e1), abs(e4 - e2)))
-    num = (e1 - en + s) * (en - e2 + s)
+def _select(mask, *arrays):
+    """Helper to select masked values for multiple arrays efficiently."""
+    idx = np.nonzero(mask)[0]
+    return idx, [a[idx] for a in arrays]
+
+# === Auxiliary numerical functions (formerly F, K1, K2) ===
+
+def _stable_fraction_F(e_eval, e1, e2, e3, e4):
+    """
+    Stable evaluation of the F-term used in tetrahedron DOS integration.
+
+    Parameters
+    ----------
+    e_eval : float or ndarray
+        Evaluation energy.
+    e1, e2, e3, e4 : ndarray
+        Corner energies of the tetrahedron.
+
+    Returns
+    -------
+    ndarray
+        Evaluated F-term.
+    """
+    e1, e2, e3, e4, e_eval = map(np.asarray, (e1, e2, e3, e4, e_eval))
+    mask = (np.abs(e1 - e3) > _TOL) & (np.abs(e4 - e2) > _TOL)
+    safe_val = ((e1 - e_eval) * (e_eval - e2)) / ((e1 - e3) * (e4 - e2))
+
+    s_real = np.maximum(np.minimum(np.abs(e3 - e1), np.abs(e4 - e2)), 1.0e-20) / 100.0
+    s = 1j * s_real
+    num = (e1 - e_eval + s) * (e_eval - e2 + s)
     den = (e1 - e3 + s) * (e4 - e2 + s)
-    return float(np.real(num / den))
+    fallback = (num / den).real
+    return np.where(mask, safe_val, fallback.astype(np.float64))
 
-def _K2(en, e1, e2, e3):
-    if abs(e1 - e3) > _TOL and abs(e1 - e2) > _TOL: return (en - e1) / ((e2 - e1) * (e3 - e1))
-    s = _regularize(min(abs(e3 - e1), abs(e1 - e2)))
-    num = (en - e1 + s)
+
+def _stable_fraction_K1(e_eval, e1, e2):
+    """
+    Stable evaluation of the first K-term used in tetrahedron DOS integration.
+
+    Parameters
+    ----------
+    e_eval : float or ndarray
+        Evaluation energy.
+    e1, e2 : ndarray
+        Corner energies of the tetrahedron.
+
+    Returns
+    -------
+    ndarray
+        Evaluated K1-term.
+    """
+    e1, e2, e_eval = map(np.asarray, (e1, e2, e_eval))
+    mask = np.abs(e1 - e2) > _TOL
+    safe_val = (e1 - e_eval) / ((e2 - e1) ** 2)
+
+    s_real = np.maximum(np.abs(e1 - e2), 1.0e-20) / 100.0
+    s = 1j * s_real
+    num = e1 - e_eval + s
+    den = (e2 - e1 + s) ** 2
+    fallback = (num / den).real
+    return np.where(mask, safe_val, fallback.astype(np.float64))
+
+
+def _stable_fraction_K2(e_eval, e1, e2, e3):
+    """
+    Stable evaluation of the second K-term used in tetrahedron DOS integration.
+
+    Parameters
+    ----------
+    e_eval : float or ndarray
+        Evaluation energy.
+    e1, e2, e3 : ndarray
+        Corner energies of the tetrahedron.
+
+    Returns
+    -------
+    ndarray
+        Evaluated K2-term.
+    """
+    e1, e2, e3, e_eval = map(np.asarray, (e1, e2, e3, e_eval))
+    mask = (np.abs(e1 - e3) > _TOL) & (np.abs(e1 - e2) > _TOL)
+    safe_val = (e_eval - e1) / ((e2 - e1) * (e3 - e1))
+
+    s_real = np.maximum(np.minimum(np.abs(e3 - e1), np.abs(e1 - e2)), 1.0e-20) / 100.0
+    s = 1j * s_real
+    num = e_eval - e1 + s
     den = (e2 - e1 + s) * (e3 - e1 + s)
-    return float(np.real(num / den))
+    fallback = (num / den).real
+    return np.where(mask, safe_val, fallback.astype(np.float64))
 
-def _K1(en, e1, e2):
-    if abs(e1 - e2) > _TOL: return (e1 - en) / ((e2 - e1) * (e2 - e1))
-    s = _regularize(abs(e1 - e2))
-    num = (e1 - en + s)
-    den = (e2 - e1 + s) * (e2 - e1 + s)
-    return float(np.real(num / den))
 
-def _dos_reorder(en, e):
-    # Returns (flag, order, sorted_e)
-    order = np.argsort(e)
-    se = e[order].copy()
-
-    if (se[0] <= en <= se[3]) and abs(se[3] - se[0]) < _TOL: return 6, order, se
-    if se[0] <= en <= se[1]: return 1, order, se
-    if se[1] <= en <= se[2]: return 2, order, se
-    if se[2] <= en <= se[3]: return 3, order, se
-    if en < se[0]: return 4, order, se
-    if se[3] < en: return 5, order, se
-
-    return -1, order, se
-
-def _fun_case1(en, e):
-    e1, e2, e3, e4 = e
-    ci = np.zeros(4, dtype=float)
-    ci[0] = _K2(en, e1, e2, e4) * _F(en, e2, e1, e1, e3) \
-          + _K2(en, e1, e2, e3) * _F(en, e3, e1, e1, e4) \
-          + _K2(en, e1, e3, e4) * _F(en, e4, e1, e1, e2)
-    ci[1] = -_K1(en, e1, e2) * _F(en, e1, e1, e3, e4)
-    ci[2] = -_K1(en, e1, e3) * _F(en, e1, e1, e2, e4)
-    ci[3] = -_K1(en, e1, e4) * _F(en, e1, e1, e2, e3)
-    return ci
-
-def _fun_case2(en, e):
-    e1, e2, e3, e4 = e
-    ci = np.zeros(4, dtype=float)
-    ci[0] = 0.5 * (_K1(en, e3, e1) * (
-                    _F(en, e3, e2, e2, e4) +
-                    _F(en, e4, e1, e2, e4) +
-                    _F(en, e3, e1, e2, e4)) +
-                   _K1(en, e4, e1) * (
-                    _F(en, e4, e1, e2, e3) +
-                    _F(en, e4, e2, e2, e3) +
-                    _F(en, e3, e1, e2, e3)))
-    ci[1] = 0.5 * (_K1(en, e3, e2) * (
-                    _F(en, e3, e2, e1, e4) +
-                    _F(en, e4, e2, e1, e4) +
-                    _F(en, e3, e1, e1, e4)) +
-                   _K1(en, e4, e2) * (
-                    _F(en, e3, e2, e1, e3) +
-                    _F(en, e4, e1, e1, e3) +
-                    _F(en, e4, e2, e1, e3)))
-    ci[2] = 0.5 * (-_K1(en, e2, e3) * (
-                    _F(en, e3, e2, e1, e4) +
-                    _F(en, e4, e2, e1, e4) +
-                    _F(en, e3, e1, e1, e4)) -
-                   _K1(en, e1, e3) * (
-                    _F(en, e3, e2, e2, e4) +
-                    _F(en, e4, e1, e2, e4) +
-                    _F(en, e3, e1, e2, e4)))
-    ci[3] = 0.5 * (-_K1(en, e2, e4) * (
-                    _F(en, e3, e2, e1, e3) +
-                    _F(en, e4, e1, e1, e3) +
-                    _F(en, e4, e2, e1, e3)) -
-                   _K1(en, e1, e4) * (
-                    _F(en, e4, e1, e2, e3) +
-                    _F(en, e4, e2, e2, e3) +
-                    _F(en, e3, e1, e2, e3)))
-    return ci
-
-def _fun_case3(en, e):
-    e1, e2, e3, e4 = e
-    ci = np.zeros(4, dtype=float)
-    ci[0] =  _K1(en, e4, e1) * _F(en, e4, e4, e2, e3)
-    ci[1] =  _K1(en, e4, e2) * _F(en, e4, e4, e1, e3)
-    ci[2] =  _K1(en, e4, e3) * _F(en, e4, e4, e1, e2)
-    ci[3] = -_K2(en, e4, e3, e1) * _F(en, e4, e3, e2, e4) \
-            -_K2(en, e4, e2, e3) * _F(en, e4, e2, e1, e4) \
-            -_K2(en, e4, e1, e2) * _F(en, e4, e1, e3, e4)
-    return ci
-
-def _dos_corner_weights(en, e):
-    flag, order, se = _dos_reorder(en, e)
-    if   flag == 1: ci = _fun_case1(en, se)
-    elif flag == 2: ci = _fun_case2(en, se)
-    elif flag == 3: ci = _fun_case3(en, se)
-    elif flag in (4, 5): 
-        ci = np.zeros(4, dtype=float)
-    elif flag == 6:
-        ci = np.full(4, 0.25, dtype=float)
-    else: raise ValueError("Unexpected flag in tetra reorder")
-    return flag, order, ci
+# === Main driver ===
 
 def dos_tetra_weights_3d(eigenvalues, energy, k_points):
     """
-    Pure-Python version of dos_tetra_weights_3d.
-    Inputs:
-      - eigenvalues: 1D ndarray, band energies for each k-point (one band)
-      - energy: float, evaluation energy
-      - k_points: int ndarray with shape (5, ntet); corners are rows 1..4
-    Returns:
-      - cti: float ndarray (4, ntet), corner weights per tetrahedron
+    Compute tetrahedron corner weights for 3D DOS integration.
+
+    This version is fully vectorized in NumPy, operating on all tetrahedra
+    simultaneously without MPI or Python loops.
+
+    Parameters
+    ----------
+    eigenvalues : (n_kpoints,) array_like of float
+        Energies at k-points.
+    energy : float
+        Target energy for DOS evaluation.
+    k_points : (5, n_tetra) array_like of int
+        Tetrahedron connectivity. Only rows [1:5] are used for corner indices.
+
+    Returns
+    -------
+    corner_weights : (4, n_tetra) ndarray of float
+        Corner weights for each tetrahedron at the specified energy.
     """
     eigk = np.asarray(eigenvalues, dtype=float)
-    itt = np.asarray(k_points, dtype=np.int64)
-    if itt.ndim != 2 or itt.shape[0] != 5:
-        raise ValueError("k_points must have shape (5, ntet)")
-    ntet = itt.shape[1]
-    cti = np.zeros((4, ntet), dtype=float)
+    tetra = np.asarray(k_points, dtype=np.int64)
+    if tetra.ndim != 2 or tetra.shape[0] != 5:
+        raise ValueError("k_points must have shape (5, n_tetra)")
 
-    for it in range(ntet):
-        # rows 1..4 index the four corners
-        corners = itt[1:5, it].astype(np.int64)
-        e = eigk[corners].astype(float).copy()
-        _, order, ci = _dos_corner_weights(energy, e)
-        # Map sorted corner weights back to original corner ordering
-        # order[j] is original corner index 0..3 for sorted position j
-        cti[order, it] = ci
-    return cti
+    n_tetra = tetra.shape[1]
+    corners = tetra[1:5, :]  # (4, n_tetra)
+    corner_energies = eigk[corners]
+
+    # Sort each tetrahedron's corner energies ascending
+    order = np.argsort(corner_energies, axis=0)
+    sorted_energies = np.take_along_axis(corner_energies, order, axis=0)
+
+    e1, e2, e3, e4 = sorted_energies
+    e_eval = float(energy)
+
+    # Determine which energy range each tetrahedron falls into
+    flag_uniform = (e1 <= e_eval) & (e_eval <= e4) & (np.abs(e4 - e1) < _TOL)
+    flag_case1 = (e1 <= e_eval) & (e_eval <= e2) & (~flag_uniform)
+    flag_case2 = (e2 <= e_eval) & (e_eval <= e3)
+    flag_case3 = (e3 <= e_eval) & (e_eval <= e4)
+
+    weights_sorted = np.zeros_like(sorted_energies, dtype=float)
+    idx = lambda mask: np.nonzero(mask)[0]
+
+    # === Case 6: uniform tetrahedra (degenerate energies)
+    if flag_uniform.any():
+        weights_sorted[:, idx(flag_uniform)] = 0.25
+
+    # === Case 1
+    if flag_case1.any():
+        i, (ge1, ge2, ge3, ge4) = _select(flag_case1, e1, e2, e3, e4)
+        ee = e_eval
+
+        w0 = (_stable_fraction_K2(ee, ge1, ge2, ge4) * _stable_fraction_F(ee, ge2, ge1, ge1, ge3)
+              + _stable_fraction_K2(ee, ge1, ge2, ge3) * _stable_fraction_F(ee, ge3, ge1, ge1, ge4)
+              + _stable_fraction_K2(ee, ge1, ge3, ge4) * _stable_fraction_F(ee, ge4, ge1, ge1, ge2))
+        w1 = -_stable_fraction_K1(ee, ge1, ge2) * _stable_fraction_F(ee, ge1, ge1, ge3, ge4)
+        w2 = -_stable_fraction_K1(ee, ge1, ge3) * _stable_fraction_F(ee, ge1, ge1, ge2, ge4)
+        w3 = -_stable_fraction_K1(ee, ge1, ge4) * _stable_fraction_F(ee, ge1, ge1, ge2, ge3)
+        weights_sorted[:, i] = np.vstack([w0, w1, w2, w3])
+
+    # === Case 2
+    if flag_case2.any():
+        i, (ge1, ge2, ge3, ge4) = _select(flag_case2, e1, e2, e3, e4)
+        ee = e_eval
+
+        w0 = 0.5 * (
+            _stable_fraction_K1(ee, ge3, ge1)
+            * (_stable_fraction_F(ee, ge3, ge2, ge2, ge4)
+               + _stable_fraction_F(ee, ge4, ge1, ge2, ge4)
+               + _stable_fraction_F(ee, ge3, ge1, ge2, ge4))
+            + _stable_fraction_K1(ee, ge4, ge1)
+            * (_stable_fraction_F(ee, ge4, ge1, ge2, ge3)
+               + _stable_fraction_F(ee, ge4, ge2, ge2, ge3)
+               + _stable_fraction_F(ee, ge3, ge1, ge2, ge3))
+        )
+
+        w1 = 0.5 * (
+            _stable_fraction_K1(ee, ge3, ge2)
+            * (_stable_fraction_F(ee, ge3, ge2, ge1, ge4)
+               + _stable_fraction_F(ee, ge4, ge2, ge1, ge4)
+               + _stable_fraction_F(ee, ge3, ge1, ge1, ge4))
+            + _stable_fraction_K1(ee, ge4, ge2)
+            * (_stable_fraction_F(ee, ge3, ge2, ge1, ge3)
+               + _stable_fraction_F(ee, ge4, ge1, ge1, ge3)
+               + _stable_fraction_F(ee, ge4, ge2, ge1, ge3))
+        )
+
+        w2 = 0.5 * (
+            -_stable_fraction_K1(ee, ge2, ge3)
+            * (_stable_fraction_F(ee, ge3, ge2, ge1, ge4)
+               + _stable_fraction_F(ee, ge4, ge2, ge1, ge4)
+               + _stable_fraction_F(ee, ge3, ge1, ge1, ge4))
+            - _stable_fraction_K1(ee, ge1, ge3)
+            * (_stable_fraction_F(ee, ge3, ge2, ge2, ge4)
+               + _stable_fraction_F(ee, ge4, ge1, ge2, ge4)
+               + _stable_fraction_F(ee, ge3, ge1, ge2, ge4))
+        )
+
+        w3 = 0.5 * (
+            -_stable_fraction_K1(ee, ge2, ge4)
+            * (_stable_fraction_F(ee, ge3, ge2, ge1, ge3)
+               + _stable_fraction_F(ee, ge4, ge1, ge1, ge3)
+               + _stable_fraction_F(ee, ge4, ge2, ge1, ge3))
+            - _stable_fraction_K1(ee, ge1, ge4)
+            * (_stable_fraction_F(ee, ge4, ge1, ge2, ge3)
+               + _stable_fraction_F(ee, ge4, ge2, ge2, ge3)
+               + _stable_fraction_F(ee, ge3, ge1, ge2, ge3))
+        )
+
+        weights_sorted[:, i] = np.vstack([w0, w1, w2, w3])
+
+    # === Case 3
+    if flag_case3.any():
+        i, (ge1, ge2, ge3, ge4) = _select(flag_case3, e1, e2, e3, e4)
+        ee = e_eval
+
+        w0 = _stable_fraction_K1(ee, ge4, ge1) * _stable_fraction_F(ee, ge4, ge4, ge2, ge3)
+        w1 = _stable_fraction_K1(ee, ge4, ge2) * _stable_fraction_F(ee, ge4, ge4, ge1, ge3)
+        w2 = _stable_fraction_K1(ee, ge4, ge3) * _stable_fraction_F(ee, ge4, ge4, ge1, ge2)
+        w3 = (
+            -_stable_fraction_K2(ee, ge4, ge3, ge1) * _stable_fraction_F(ee, ge4, ge3, ge2, ge4)
+            - _stable_fraction_K2(ee, ge4, ge2, ge3) * _stable_fraction_F(ee, ge4, ge2, ge1, ge4)
+            - _stable_fraction_K2(ee, ge4, ge1, ge2) * _stable_fraction_F(ee, ge4, ge1, ge3, ge4)
+        )
+
+        weights_sorted[:, i] = np.vstack([w0, w1, w2, w3])
+
+    # === Remap to original corner order
+    corner_weights = np.zeros_like(corner_energies, dtype=float)
+    corner_weights[order, np.arange(n_tetra)[None, :]] = weights_sorted
+
+    return corner_weights
