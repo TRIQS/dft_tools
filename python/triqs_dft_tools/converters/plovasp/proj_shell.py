@@ -437,8 +437,7 @@ class ProjectorShell:
             for ib, eigk in enumerate(el_struct.eigvals[:, self.ib_min:self.ib_max+1, isp].T):
                 for ie, e in enumerate(emesh):
                     eigk_ef = eigk - el_struct.efermi
-                    #cti = atm.dos_tetra_weights_3d(eigk_ef, e, itt)
-                    cti = atm_py.dos_tetra_weights_3d(eigk_ef, e, itt)
+                    cti = dos_tetra_weights_3d(eigk_ef, e, itt)
                     for im in range(nlm):
                         for io in range(nion):
                             dos[ie, isp, io, im] += np.sum((cti * w_k[itt[1:, :], ib, isp, io, im].real).sum(0) * itt[0, :])
