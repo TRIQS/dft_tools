@@ -1,6 +1,6 @@
 # ##############################################################################
 #
-# triqs_dft_tools - An example application using triqs and cpp2py
+# triqs_dft_tools - An example application using triqs
 #
 # Copyright (C) ...
 #
@@ -28,7 +28,7 @@ project(triqs_dft_tools VERSION 3.3.1 LANGUAGES C CXX Fortran)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # ############
-# Load TRIQS and CPP2PY
+# Load TRIQS
 find_package(TRIQS 3.3 REQUIRED)
 
 # Get the git hash & print status
@@ -66,17 +66,8 @@ if(NOT IS_SUBPROJECT)
   message(STATUS "-------- BUILD-TYPE: ${CMAKE_BUILD_TYPE} --------")
 endif()
 
-# Python Support
-option(PythonSupport "Build with Python support" ON)
-if(PythonSupport AND NOT TRIQS_WITH_PYTHON_SUPPORT)
-  message(FATAL_ERROR "TRIQS was installed without Python support. Cannot build the Python Interface. Disable the build with -DPythonSupport=OFF")
-endif()
-
 # Documentation
 option(Build_Documentation "Build documentation" OFF)
-if(NOT IS_SUBPROJECT AND (Build_Documentation AND NOT PythonSupport))
-  message(FATAL_ERROR "Build_Documentation=ON requires PythonSupport to be enabled")
-endif()
 
 # Testing
 option(Build_Tests "Build tests" ON)
@@ -140,9 +131,7 @@ if(Build_Tests)
 endif()
 
 # Python
-if(PythonSupport)
-  add_subdirectory(python/${PROJECT_NAME})
-endif()
+add_subdirectory(python/${PROJECT_NAME})
 
 # Docs
 if(NOT IS_SUBPROJECT AND Build_Documentation)
