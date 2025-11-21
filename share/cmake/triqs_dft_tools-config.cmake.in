@@ -23,18 +23,12 @@ set(@PROJECT_NAME@_ROOT @CMAKE_INSTALL_PREFIX@ CACHE STRING "@PROJECT_NAME@ root
 #endfunction()
 #find_dep(depname 1.0)
 
-# Include the exported targets of this project
-include(@CMAKE_INSTALL_FULL_LIBDIR@/cmake/@PROJECT_NAME@/@PROJECT_NAME@-targets.cmake)
+## Include the exported targets of this project
+#include(@CMAKE_INSTALL_FULL_LIBDIR@/cmake/@PROJECT_NAME@/@PROJECT_NAME@-targets.cmake)
 
 message(STATUS "Found @PROJECT_NAME@-config.cmake with version @PROJECT_VERSION@, hash = @PROJECT_GIT_HASH@, root = @CMAKE_INSTALL_PREFIX@")
 
 # Was the Project built with Documentation?
 set(@PROJECT_NAME@_WITH_DOCUMENTATION @Build_Documentation@ CACHE BOOL "Was @PROJECT_NAME@ build with documentation?")
-
-# Was the Project built with PythonSupport?
-set(@PROJECT_NAME@_WITH_PYTHON_SUPPORT @PythonSupport@ CACHE BOOL "Was @PROJECT_NAME@ build with python support?")
-if(@PythonSupport@)
-  set(@PROJECT_NAME@_MODULE_DIR @CMAKE_INSTALL_PREFIX@/@CPP2PY_PYTHON_LIB_DEST_ROOT@ CACHE BOOL "The @PROJECT_NAME@ python module directory")
-endif()
 
 endif()

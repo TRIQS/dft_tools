@@ -1,6 +1,6 @@
 # ##############################################################################
 #
-# triqs_dft_tools - An example application using triqs and cpp2py
+# triqs_dft_tools - An example application using triqs
 #
 # Copyright (C) ...
 #
@@ -24,11 +24,11 @@ cmake_policy(VERSION ${CMAKE_VERSION})
 
 # ############
 # Define Project
-project(triqs_dft_tools VERSION 3.3.1 LANGUAGES C CXX Fortran)
+project(triqs_dft_tools VERSION 3.3.1 LANGUAGES CXX Fortran)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # ############
-# Load TRIQS and CPP2PY
+# Load TRIQS
 find_package(TRIQS 3.3 REQUIRED)
 
 # Get the git hash & print status
@@ -67,60 +67,18 @@ if(NOT IS_SUBPROJECT)
 endif()
 
 # Python Support
-option(PythonSupport "Build with Python support" ON)
-if(PythonSupport AND NOT TRIQS_WITH_PYTHON_SUPPORT)
+if(NOT TRIQS_WITH_PYTHON_SUPPORT)
   message(FATAL_ERROR "TRIQS was installed without Python support. Cannot build the Python Interface. Disable the build with -DPythonSupport=OFF")
 endif()
 
 # Documentation
 option(Build_Documentation "Build documentation" OFF)
-if(NOT IS_SUBPROJECT AND (Build_Documentation AND NOT PythonSupport))
-  message(FATAL_ERROR "Build_Documentation=ON requires PythonSupport to be enabled")
-endif()
 
 # Testing
 option(Build_Tests "Build tests" ON)
 if(Build_Tests)
   enable_testing()
 endif()
-
-# ############
-# Global Compilation Settings
-
-# Build static libraries by default
-option(BUILD_SHARED_LIBS "Enable compilation of shared libraries" OFF)
-
-# Export the list of compile-commands into compile_commands.json
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# Disable compiler extensions
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Provide additional debugging information for Debug builds
-add_compile_options($<$<CONFIG:Debug>:-ggdb3>)
-
-# Create an Interface target for compiler warnings
-add_library(${PROJECT_NAME}_warnings INTERFACE)
-target_compile_options(${PROJECT_NAME}_warnings
-  INTERFACE
-    -Wall
-    -Wextra
-    -Wfloat-conversion
-    -Wpedantic
-    -Wno-sign-compare
-    $<$<CXX_COMPILER_ID:GNU>:-Wno-comma-subscript>
-    $<$<CXX_COMPILER_ID:GNU>:-Wno-psabi> # Disable notes about ABI changes
-    $<$<CXX_COMPILER_ID:GNU>:-Wshadow=local>
-    $<$<CXX_COMPILER_ID:GNU>:-Wno-attributes>
-    $<$<CXX_COMPILER_ID:GNU>:-Wno-deprecated-declarations>
-    $<$<CXX_COMPILER_ID:AppleClang,Clang,IntelLLVM>:-Wno-deprecated-comma-subscript>
-    $<$<CXX_COMPILER_ID:AppleClang,Clang,IntelLLVM>:-Wno-unknown-warning-option>
-    $<$<CXX_COMPILER_ID:AppleClang,Clang,IntelLLVM>:-Wshadow>
-    $<$<CXX_COMPILER_ID:AppleClang,Clang,IntelLLVM>:-Wno-gcc-compat>
-    $<$<CXX_COMPILER_ID:AppleClang,Clang,IntelLLVM>:-Wno-c++20-extensions>
-    $<$<CXX_COMPILER_ID:AppleClang,Clang,IntelLLVM>:-Wno-c++20-compat>
-    $<$<CXX_COMPILER_ID:IntelLLVM>:-Wno-tautological-constant-compare>
-)
 
 # Provide GNU Installation directories
 include(GNUInstallDirs)
@@ -131,9 +89,6 @@ include(GNUInstallDirs)
 # Find / Build dependencies
 add_subdirectory(deps)
 
-# Build and install the library
-add_subdirectory(c++/${PROJECT_NAME})
-
 # add here stuff for the Fortran part in DFTTools
 add_subdirectory(fortran/dmftproj)
 
@@ -143,9 +98,7 @@ if(Build_Tests)
 endif()
 
 # Python
-if(PythonSupport)
-  add_subdirectory(python/${PROJECT_NAME})
-endif()
+add_subdirectory(python/${PROJECT_NAME})
 
 # Docs
 if(NOT IS_SUBPROJECT AND Build_Documentation)
@@ -158,7 +111,7 @@ add_subdirectory(bin)
 # Additional configuration files
 add_subdirectory(share)
 
-# add packaging for automatic Versioning
+# add packaging for automatic versioning
 add_subdirectory(packaging)
 
 # #############

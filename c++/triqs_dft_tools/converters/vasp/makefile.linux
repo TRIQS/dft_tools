@@ -1,4 +1,0 @@
-
-c_atm_mod.so: argsort.c  argsort.h  dos_tetra3d.c  dos_tetra3d.h
-	python setup.py build_ext --inplace
-
