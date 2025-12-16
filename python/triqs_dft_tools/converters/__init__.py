@@ -20,14 +20,18 @@
 #
 ##########################################################################
 """
-module containing all available converters for DFTTools
+Backward-compatible converters module - re-exports from triqs_dftkit
 """
 
-from .wien2k import Wien2kConverter
-from .hk import HkConverter
-from .vasp import VaspConverter
-from .wannier90 import Wannier90Converter
-from .elk import ElkConverter
+from triqs_dftkit.wien2k import Converter as Wien2kConverter
+from triqs_dftkit.hk import Converter as HkConverter
+from triqs_dftkit.vasp import Converter as VaspConverter
+from triqs_dftkit.wannier90 import Converter as Wannier90Converter
+from triqs_dftkit.elk import Converter as ElkConverter
 
-__all__ =['Wien2kConverter','HkConverter','Wannier90Converter','VaspConverter','ElkConverter']
+# Re-export plovasp and elktools submodules
+from triqs_dftkit.vasp import plovasp
+from triqs_dftkit.elk import elktools
 
+__all__ = ['Wien2kConverter', 'HkConverter', 'Wannier90Converter',
+           'VaspConverter', 'ElkConverter', 'plovasp', 'elktools']
