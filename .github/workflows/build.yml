@@ -26,10 +26,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: ubuntu-24.04, cc: gcc, cxx: g++}
-          - {os: ubuntu-24.04, cc: clang, cxx: clang++}
-          - {os: macos-14, cc: gcc-14, cxx: g++-14}
-          - {os: macos-14, cc: clang, cxx: clang++}
+          - {os: ubuntu-24.04, cc: gcc, cxx: g++, fc: gfortran}
+          - {os: ubuntu-24.04, cc: clang, cxx: clang++, fc: gfortran}
+          - {os: macos-14, cc: gcc-14, cxx: g++-14, fc: gfortran-14}
+          - {os: macos-14, cc: clang, cxx: clang++, fc: gfortran-14}
 
     runs-on: ${{ matrix.os }}
 
@@ -118,7 +118,7 @@ jobs:
       env:
         CC: ${{ matrix.cc }}
         CXX: ${{ matrix.cxx }}
-        FC: gfortran-12
+        FC: ${{ matrix.fc }}
         LIBRARY_PATH: /usr/local/opt/llvm/lib
       run: |
         source $HOME/install/share/triqs/triqsvars.sh
