@@ -69,6 +69,7 @@ This is the reference manual for the python routines.
    converters
    sumk_dft
    sumk_dft_tools
+   sumk_dft_transport
    symmetry
    trans_basis
    util
