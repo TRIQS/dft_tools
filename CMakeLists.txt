@@ -24,7 +24,7 @@ cmake_policy(VERSION ${CMAKE_VERSION})
 
 # ############
 # Define Project
-project(triqs_dft_tools VERSION 3.3.1 LANGUAGES CXX Fortran)
+project(triqs_dft_tools VERSION 3.3.1 LANGUAGES CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
 # ############
@@ -88,9 +88,6 @@ include(GNUInstallDirs)
 
 # Find / Build dependencies
 add_subdirectory(deps)
-
-# add here stuff for the Fortran part in DFTTools
-add_subdirectory(fortran/dmftproj)
 
 # Tests
 if(Build_Tests)

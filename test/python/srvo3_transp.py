@@ -23,7 +23,7 @@
 
 from numpy import *
 from h5 import HDFArchive
-from triqs_dft_tools.converters.wien2k import *
+from triqs_dft_tools.converters import Wien2kConverter
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
 from triqs_dft_tools.sumk_dft_transport import transport_distribution, init_spectroscopy, conductivity_and_seebeck, write_output_to_hdf
