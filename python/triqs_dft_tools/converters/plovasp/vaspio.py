@@ -733,9 +733,11 @@ class h5Kpoints:
             self.ksymmap = kpoints['kpoints_symmetry_mapping']
             self.ksymmap -= 1
             try:
-                self.ntet = kpoints['num_tetrahedra']
-                self.vtet = kpoints['volume_weight_tetrahedra']
-                self.itet = kpoints['coordinate_id_tetrahedra']
+                self.ntet = int(kpoints['num_tetrahedra'])
+                # VASP stores a single tetrahedron volume weight
+                self.volt = float(np.array(kpoints['volume_weight_tetrahedra']).ravel()[0])
+                # Ensure correct dtype for C++ atm.dos_tetra_weights_3d (expects long)
+                self.itet = np.ascontiguousarray(kpoints['coordinate_id_tetrahedra'], dtype=np.int64)
             except KeyError:
                 print("  No tetrahedron data found in vaspout.h5. Skipping...")
                 self.ntet = 0

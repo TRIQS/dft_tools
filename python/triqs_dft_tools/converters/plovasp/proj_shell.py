@@ -430,8 +430,9 @@ class ProjectorShell:
                         w_k[ik, ib, isp, io, :] = proj_k * proj_k.conj()
 
 #        eigv_ef = el_struct.eigvals[ik, ib, isp] - el_struct.efermi
-        itt = el_struct.kmesh['itet'].T.copy()
-# k-indices are starting from 0 in Python
+        # Ensure correct dtype for C++ atm.dos_tetra_weights_3d (expects long)
+        itt = np.ascontiguousarray(el_struct.kmesh['itet'].T, dtype=np.int64)
+        # k-indices are starting from 0 in Python
         itt[1:, :] -= 1
         for isp in range(ns):
             for ib, eigk in enumerate(el_struct.eigvals[:, self.ib_min:self.ib_max+1, isp].T):
