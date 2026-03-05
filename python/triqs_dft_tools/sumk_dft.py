@@ -2157,8 +2157,10 @@ class SumkDFT(object):
                    DFT code to write the density correction for. Options:
                    'vasp', 'wien2k', 'elk' or 'qe'. Needs to be set for 'qe'
         spinave : logical
-                   Elk specific and for magnetic calculations in DMFT only.
-                   It averages the spin to keep the DFT part non-magnetic.
+                   For magnetic calculations in DMFT only.
+                   If True, the density matrix is averaged over spin up/down to
+                   keep the DFT part non-magnetic (supported for 'elk', 'vasp'
+                   and 'qe').
         kpts_to_write : iterable of int
                    Indices of k points that are written to file. If None (default),
                    all k points are written. Only implemented for dm_type 'vasp'
@@ -2177,11 +2179,11 @@ class SumkDFT(object):
                          the corresponing total charge `dens`.
 
         """
-        #automatically set dm_type if required
+        # automatically set dm_type if required
         if dm_type is None:
             dm_type = self.dft_code
 
-        assert dm_type in ('vasp', 'wien2k', 'elk', 'qe'), "'dm_type' must be either 'vasp', 'wienk', 'elk' or 'qe'"
+        assert dm_type in ('vasp', 'wien2k', 'elk', 'qe'), "'dm_type' must be either 'vasp', 'wien2k', 'elk' or 'qe'"
         # default file names
         if filename is None:
             if dm_type == 'wien2k':
@@ -2341,7 +2343,10 @@ class SumkDFT(object):
             else:
                 assert np.min(kpts_to_write) >= 0 and np.max(kpts_to_write) < self.n_k
 
-            assert self.SP == 0, "Spin-polarized density matrix is not implemented"
+            if not spinave:
+                assert self.SP == 0, "Spin-polarized density matrix is not implemented"
+            elif self.SP != 0:
+                mpi.report("SumK calc_density_correction: WARNING! Averaging out spin-polarized correction in the density channel")
 
             if mpi.is_master_node():
                 if filename == 'vaspgamma.h5':
@@ -2350,8 +2355,13 @@ class SumkDFT(object):
                         bnd_win_towrite = [band_window[0][:n_k_ibz,:]]
                         vasp_h5['band_window'] = bnd_win_towrite
                         vasp_h5.create_group('deltaN')
-                        vasp_h5['deltaN']['up'] = deltaN['up'][:n_k_ibz]
-                        vasp_h5['deltaN']['down'] = deltaN['down'][:n_k_ibz]
+                        if spinave and self.SP != 0 and self.SO == 0:
+                            deltaN_ave = [(u + d) / 2.0 for (u, d) in zip(deltaN['up'][:n_k_ibz], deltaN['down'][:n_k_ibz])]
+                            vasp_h5['deltaN']['up'] = deltaN_ave
+                            vasp_h5['deltaN']['down'] = deltaN_ave
+                        else:
+                            vasp_h5['deltaN']['up'] = deltaN['up'][:n_k_ibz]
+                            vasp_h5['deltaN']['down'] = deltaN['down'][:n_k_ibz]
                 else:
                     with open(filename, 'w') as f:
                         f.write(" -1  -1  ! Number of k-points, default number of bands\n")  # % len(kpts_to_write))
@@ -2417,7 +2427,9 @@ class SumkDFT(object):
                             f.write("\n")
 
         elif dm_type == 'qe':
-            if self.SP == 0:
+            if not spinave:
+                assert self.SP == 0, "Spin-polarized density matrix is not implemented"
+            elif self.SP != 0:
                 mpi.report("SUMK calc_density_correction: WARNING! Averaging out spin-polarized correction in the density channel")
 
             subgrp = 'dft_update'
