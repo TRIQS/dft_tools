@@ -2,6 +2,53 @@
 
 # Changelog
 
+## Version 3.3.2
+
+DFTTools Version 3.3.2 is a patch release that brings significant improvements
+to the VASP interface, including a new h5-based interface for CSC calculations,
+support for symmetries ISYM=1 in VASP, and various general bug fixes.
+
+We thank all contributors: Alexander Hampel, Dario Fiore Mosca
+,Nils Wentzell
+
+Find below an itemized list of changes in this release.
+
+### General
+* allow `spinave` in `calc_density_correction` also for VASP and QE interfaces
+* raise error if dichotomy fails to converge
+* allow comment lines in SRC_templates for newer Wien2k versions
+
+### VASP interface
+* new h5-based interface: read Fermi energy and write `deltaN` to `vasptriqs.h5` archive
+* read `vasptriqs.h5` file; read GAMMA file for non-collinear full CSC
+* write `deltaN` only to vasp h5 if present; write to GAMMA text file only for old interface
+* update new vasp h5 interface to new structure
+* symmetric DFT implementation: use IBZ k-point list for writing GAMMA `vaspgamma.h5`
+
+### Fix
+* ensure tetrahedron arrays use `int64` for `atm.dos_tetra_weights_3d`
+* fix read error for tetrahedron data and eigs properties
+* fix WannierBerri velocity updates
+* fix unicode characters in Elk files (issue #266, #267)
+* fix `SyntaxWarning`: invalid escape sequence
+
+### Build
+* fix github CI Fortran compiler settings
+* fix `add_custom_commands` to be compliant with cmake 3.31
+* remove dependency on Meson
+* update runner images and compiler versions
+* update readElkfiles.py
+
+### Doc
+* update VASP interface documentation for new interface features
+* update VASP SVO tutorial for new interface features
+* NiO VASP CSC tutorial updates for new interface
+* add `measure_density_matrix` to all cthyb tutorials using tail_fit
+* add missing transport module reference
+* add FI support notice to README.md
+* backport doc fixes to address issue #270
+
+
 ## Version 3.3.1
 
 DFTTools Version 3.3.1 is a patch release that restores compatibility
