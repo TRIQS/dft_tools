@@ -67,7 +67,7 @@ Besides the self energy the Wien2k files read by the transport converter (:meth:
 
 These Wien2k files are read and the relevant information is stored in the hdf5 archive by using the following::
 
-    from triqs_dft_tools.converters.wien2k import *
+    from triqs_dft_tools.converters import Wien2kConverter
     from triqs_dft_tools.sumk_dft_tools import *
 
     Converter = Wien2kConverter(filename='case', repacking=True)
@@ -113,7 +113,7 @@ Except for `PMAT.OUT`, the other files are standard outputs from Elk's groundsta
 
 These Elk files are then read and the relevant information is stored in the hdf5 archive by using the following::
 
-    from triqs_dft_tools.converters.elk import *
+    from triqs_dft_tools.converters import ElkConverter
     from triqs_dft_tools.sumk_dft_tools import *
 
     Converter = ElkConverter(filename='case', repacking=True)

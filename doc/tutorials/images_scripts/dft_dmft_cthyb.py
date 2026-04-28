@@ -4,7 +4,7 @@ from h5 import HDFArchive
 from triqs_cthyb import *
 from triqs.gfs import *
 from triqs_dft_tools.sumk_dft import *
-from triqs_dft_tools.converters.wien2k import *
+from triqs_dft_tools.converters import Wien2kConverter
 
 dft_filename='SrVO3'
 beta = 40
@@ -48,7 +48,7 @@ p["measure_density_matrix"] = True
 p["use_norm_as_weight"] = True
 
 # If conversion step was not done, we could do it here. Uncomment the lines it you want to do this.
-#from triqs_dft_tools.converters.wien2k import *
+#from triqs_dft_tools.converters import Wien2kConverter
 #Converter = Wien2kConverter(filename=dft_filename, repacking=True)
 #Converter.convert_dft_input()
 #mpi.barrier()

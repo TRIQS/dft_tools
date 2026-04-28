@@ -101,7 +101,11 @@ plot_include_source = True
 plot_html_show_source_link = False
 plot_html_show_formats = False
 
-intersphinx_mapping = {'python': ('https://docs.python.org/3.11', None), 'triqslibs': ('https://triqs.github.io/triqs/latest', None)}
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3.11', None),
+    'triqslibs': ('https://triqs.github.io/triqs/latest', None),
+    'dftkit': ('https://triqs.github.io/dftkit/latest', None),
+}
 
 # numpydoc options
 numpydoc_show_class_members = False

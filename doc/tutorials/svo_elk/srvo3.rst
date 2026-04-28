@@ -20,7 +20,7 @@ This :download:`elk.in` will generate the ground state (task 0) and the Wannier 
 
 A simple python script that initializes the converter is::
 
-  from triqs_dft_tools.converters.elk import *
+  from triqs_dft_tools.converters import ElkConverter
   Converter = elkConverter(filename = "SrVO3")
 
 After initializing the converter, we can now convert the input text files into an hdf5 archive by::
