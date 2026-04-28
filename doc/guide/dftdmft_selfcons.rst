@@ -179,7 +179,7 @@ changes to the DFT density are read by VASP not the full DFT+DMFT density. Here,
 we also adjust the mixing, since iterations become quickly unstable for insulating
 or charge ordered solutions. Also note, that in each DAV step you still have to
 calculate the projectors, recalculate the chemical potential, and update the
-GAMMA file. See the :meth:`triqs_dft_tools.converters.plovasp.sc_dmft` script for details.
+GAMMA file. See the :py:mod:`triqs_dftkit.vasp.plovasp.sc_dmft` script for details.
 
 Moreover, one should always start with a converged `WAVECAR` file, or make sure,
 that the KS states are well converged before the first projectors are created!

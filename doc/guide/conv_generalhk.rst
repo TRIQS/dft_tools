@@ -87,7 +87,7 @@ matrix of the imaginary part, and then move on to the next :math:`\mathbf{k}`-po
 
 The converter itself is used as::
 
-  from triqs_dft_tools.converters.hk import *
+  from triqs_dft_tools.converters import HkConverter
   Converter = HkConverter(filename = hkinputfile)
   Converter.convert_dft_input()
 
@@ -95,6 +95,6 @@ where :file:`hkinputfile` is the name of the input file described
 above. This produces the hdf file that you need for a DMFT calculation.
 
 For more options of this converter, have a look at the
-:py:mod:`Converters <triqs_dft_tools.converters>` section of the reference manual.
+:ref:`converters_reference` section of the reference manual.
 
 

@@ -59,7 +59,7 @@ As you can see, there are off-diagonal elements between the :math:`d_{x^2-y^2}` 
 We convert the output to the hdf5 archive, using 
 the python module :class:`Wien2kConverter <dft.converters.wien2k.Wien2kConverter>`. A simple python script doing this is::
 
-  from triqs_dft_tools.converters.wien2k import *
+  from triqs_dft_tools.converters import Wien2kConverter
   Converter = Wien2kConverter(filename = "Sr2MgOsO6_noSOC")
   Converter.convert_dft_input()
 

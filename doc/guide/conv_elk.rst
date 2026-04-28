@@ -83,7 +83,7 @@ As a side note, there are two other tasks which also generate the Wannier projec
 
 The Elk outputs are read into the TRIQS library using the following lines::
 
-  from triqs_dft_tools.converters.elk import *
+  from triqs_dft_tools.converters import ElkConverter
   Converter = ElkConverter(filename=filename, repacking=True)
   Converter.convert_dft_input()
 
@@ -145,7 +145,7 @@ Lines 1) to 4) specifies the corners (in lattice coordinates) of the k-grid box 
 
 These outputs are converted to the HDF5 file by::
 
-  from triqs_dft_tools.converters.elk import *
+  from triqs_dft_tools.converters import ElkConverter
   Converter = ElkConverter(filename=filename, repacking=True)
   Converter.convert_contours_input(kgrid,ngrid)
 

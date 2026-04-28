@@ -4,7 +4,7 @@ from h5 import HDFArchive
 from triqs_cthyb import *
 from triqs.gfs import *
 from triqs_dft_tools.sumk_dft import *
-from triqs_dft_tools.converters.elk import *
+from triqs_dft_tools.converters import ElkConverter
 
 dft_filename='SrVO3'
 beta = 40

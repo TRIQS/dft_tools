@@ -60,7 +60,7 @@ As you can see, there are a lot of off-diagonal elements now, in particular also
 We convert the output to the hdf5 archive, using 
 the python module :class:`Wien2kConverter <dft.converters.wien2k.Wien2kConverter>`. A simple python script doing this is::
 
-  from triqs_dft_tools.converters.wien2k import *
+  from triqs_dft_tools.converters import Wien2kConverter
   Converter = Wien2kConverter(filename = "Sr2MgOsO6_SOC")
   Converter.convert_dft_input()
 

@@ -119,7 +119,7 @@ Now we convert these files into an hdf5 file that can be used for the
 DMFT calculations. For this purpose we
 use the python module :class:`Wien2kConverter <dft.converters.wien2k.Wien2kConverter>`. It is initialized as::
 
-  from triqs_dft_tools.converters.wien2k import *
+  from triqs_dft_tools.converters import Wien2kConverter
   Converter = Wien2kConverter(filename = case)
 
 The only necessary parameter to this construction is the parameter `filename`.
@@ -128,7 +128,7 @@ example, the :program:`Wien2k` naming convention is that all files have the
 same name, but different extensions, :file:`case.*`. The constructor opens
 an hdf5 archive, named :file:`case.h5`, where all relevant data will be
 stored. For other parameters of the constructor please visit the
-:py:mod:`Converters <triqs_dft_tools.converters>` section of the reference manual.
+:ref:`converters_reference` section of the reference manual.
 
 After initializing the interface module, we can now convert the input
 text files to the hdf5 archive by::
@@ -181,7 +181,7 @@ and convert the input for :class:`SumkDFTTools <dft.sumk_dft_tools.SumkDFTTools>
 
 After having converted this input, you can further proceed with the
 :ref:`analysis`. For more options on the converter module, please have
-a look at the :py:mod:`Converters <triqs_dft_tools.converters>` section of the reference manual.
+a look at the :ref:`converters_reference` section of the reference manual.
 
 Data for transport calculations
 -------------------------------

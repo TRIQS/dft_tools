@@ -8,7 +8,7 @@ from triqs_cthyb import *
 import triqs.utility.mpi as mpi
 
 # Convert the input
-from triqs_dft_tools.converters.wien2k import *
+from triqs_dft_tools.converters import Wien2kConverter
 Converter = Wien2kConverter(filename = "Sr2MgOsO6_noSOC")
 Converter.convert_dft_input()
 

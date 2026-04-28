@@ -1,4 +1,4 @@
-from triqs_dft_tools.converters.vasp import *
+from triqs_dft_tools.converters import VaspConverter
 import triqs_dft_tools.converters.plovasp.converter as plo_converter
 
 # Generate and store PLOs

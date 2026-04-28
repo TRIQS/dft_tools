@@ -66,13 +66,22 @@ This is the reference manual for the python routines.
    :template: autosummary_module_template.rst
 
    block_structure
-   converters
    sumk_dft
    sumk_dft_tools
    sumk_dft_transport
    symmetry
    trans_basis
    util
+
+Converters
+----------
+
+The converter modules are maintained in the `dftkit <https://triqs.github.io/dftkit/latest>`_ package.
+
+.. toctree::
+   :maxdepth: 1
+
+   converters_reference
 
 
 
