@@ -125,6 +125,8 @@ This spectral function is calculated by typing::
 
 The figure above shows the DFT SrVO\ :sub:`3`\  spaghetti plot (generated using V t\ :sub:`2g`\  Wannier projectors generated within a correlated energy window of [-13.6, 13.6] eV). As before, the broadening input has been set to the temperature (i.e., 1/Beta). The left panel shows the total A(k, :math:`\omega`) whereas the right gives the Wannier A(k, :math:`\omega`), both generated from this SK.spaghettis().
 
+For VASP inputs containing band projectors, e.g. data converted from a VASP ``KPOINTS_OPT``/``LOCPROJ_OPT`` calculation, orbital-projected spaghetti plots are available with ``proj_type='vasp'``.
+
 
 Energy contours of the k-resolved Spectral function
 ---------------------------------------------------
@@ -160,5 +162,4 @@ which calculates the partial charges using the self energy, double counting, and
 `SK` object. On return, `dm` is a list, where the list items correspond to the density matrices of all shells
 defined in the list `SK.shells`. This list is constructed by the Wien2k converter routines and stored automatically
 in the hdf5 archive. For the structure of `dm`, see also :meth:`partial charges <dft.sumk_dft_tools.SumkDFTTools.partial_charges>`.
-
 

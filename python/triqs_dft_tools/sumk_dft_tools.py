@@ -676,14 +676,15 @@ class SumkDFTTools(SumkDFT):
         with_dc      : boolean, optional
                        If True the double counting correction is used.
         proj_type    : string, optional
-                        The type of projection used for the orbital-projected DOS.
+                        The type of projection used for the orbital-projected spectral function.
                         These projected spectral functions will be determined alongside the total spectral function.
-                        By default, no projected DOS type will be calculated (the corresponding projected arrays will be empty).
+                        By default, no projected spectral function will be calculated (the corresponding projected arrays will be empty).
                         The following options are:
 
-                       'None'   - Only total DOS calculated
-                       'wann'   - Wannier DOS calculated from the Wannier projectors
-                       'wien2k' - Wien2k orbital-projected DOS from the wien2k theta projectors
+                       'None'   - Only total A(k,w) calculated
+                       'wann'   - Wannier A(k,w) calculated from the Wannier projectors
+                       'vasp'   - Vasp orbital-projected A(k,w) from Vasp inputs
+                       'wien2k' - Wien2k orbital-projected A(k,w) from the wien2k theta projectors
         save_to_file : boolean, optional
                        If True, text files with the calculated data will be created.
 
@@ -705,7 +706,7 @@ class SumkDFTTools(SumkDFT):
 
         # initialisation
         if (proj_type != None):
-            assert proj_type in ('wann', 'wien2k'), "'proj_type' must be either 'wann', 'wien2k'"
+            assert proj_type in ('wann', 'vasp', 'wien2k'), "'proj_type' must be either 'wann', 'vasp', 'wien2k'"
             if (proj_type != 'wann'):
                 assert proj_type == self.dft_code, "proj_type must be from the corresponding dft inputs."
         things_to_read = ['n_k', 'n_orbitals', 'proj_mat', 'hopping']
@@ -825,6 +826,7 @@ class SumkDFTTools(SumkDFT):
         proj_type    : string
                        Output the orbital-projected A(k,w) type from the following:
                        'wann'   - Wannier A(k,w) calculated from the Wannier projectors
+                       'vasp'   - Vasp orbital-projected A(k,w) from Vasp inputs
                        'wien2k' - Wien2k orbital-projected A(k,w) from the wien2k theta projectors
 
         Returns
@@ -859,6 +861,11 @@ class SumkDFTTools(SumkDFT):
         #set-up projected A(k,w) and parameters if required
         if (proj_type):
             if (proj_type == 'wann'):
+                n_shells = self.n_corr_shells
+                gf_struct = self.gf_struct_sumk.copy()
+                dims = [self.corr_shells[ish]['dim'] for ish in range(n_shells)]
+                shells_type = 'corr'
+            elif (proj_type == 'vasp'):
                 n_shells = self.n_corr_shells
                 gf_struct = self.gf_struct_sumk.copy()
                 dims = [self.corr_shells[ish]['dim'] for ish in range(n_shells)]
@@ -914,10 +921,11 @@ class SumkDFTTools(SumkDFT):
                     G_loc[ish].zero()
                     tmp = G_loc[ish].copy()
                     tmp.zero()
-                    tmp << self.proj_type_G_loc(G_latt_w, tmp, ik, ish, proj_type)
+                    downfold_proj_type = 'wann' if proj_type == 'vasp' else proj_type
+                    tmp << self.proj_type_G_loc(G_latt_w, tmp, ik, ish, downfold_proj_type)
                     G_loc[ish] += tmp
                 # Rotate to local frame
-                if (self.use_rotations):
+                if ((proj_type != 'vasp') and self.use_rotations):
                   for ish in range(n_shells):
                     jsh=shell_list[ish]
                     for bname, gf in G_loc[ish]:
@@ -928,7 +936,7 @@ class SumkDFTTools(SumkDFT):
                         pAkw_orb[ish][bname][ik,:,:,:] = -gf.data[numpy.where((mesh_val > om_minplot) &
                                             (mesh_val < om_maxplot)),:,:].imag/numpy.pi
                         # shift pAkw_orb for plotting stacked k-resolved eps(k) curves
-                        pAkw_orb[ish][sp][ik] += ik * plot_shift
+                        pAkw_orb[ish][bname][ik] += ik * plot_shift
 
         # Collect data from mpi
         mpi.barrier()
@@ -1057,4 +1065,3 @@ class SumkDFTTools(SumkDFT):
                             (ik, self.hopping[ik, 0, i, i].real))
                 f.write('\n')
             f.close()
-
