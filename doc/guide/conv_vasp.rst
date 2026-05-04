@@ -27,7 +27,7 @@ Here, we will present a guide how the interface `can` be used to create input fo
 
 For VASP version older than 6.5.0 there are a few limitation of the interface as it was not officially supported and only text file based. See `Remarks for VASP older than 6.5.0`_ for details.
 
-Generation of projectors for k-point lines (option `Lines` in KPOINTS) needed for Bloch spectral function calculations is not possible at the moment.
+For VASP versions that write ``LOCPROJ_OPT`` data for ``KPOINTS_OPT``, projectors for a separate k-point path or grid can be converted for Bloch spectral function calculations. This workflow uses the HDF5 output in ``vaspout.h5`` and requires VASP to be compiled with HDF5 support enabled.
 
 VASP: generating raw projectors
 ===============================
@@ -187,6 +187,36 @@ in :class:`SumkDFT <dft.sumk_dft.SumkDFT>`, e.g.::
     SK.analyse_block_structure(threshold = 1e-4)
 
 However, this should only be done after a careful study of the density matrix and the projected DOS in the localized basis. For the complete process for SrVO3 see the tutorial for the VASP interface `here <../tutorials/svo_vasp/svo_notebook.html>`_.
+
+When VASP band projectors are available in the HDF5 archive, for example from a ``KPOINTS_OPT``/``LOCPROJ_OPT`` bands conversion, :meth:`SumkDFTTools.spaghettis <dft.sumk_dft_tools.SumkDFTTools.spaghettis>` supports VASP orbital-projected spectral functions with ``proj_type='vasp'``.
+
+Data for post-processing - Spectral functions
+=============================================
+
+For momentum-resolved spectral functions along a separate VASP k-point path or grid, use ``KPOINTS_OPT`` together with ``LOCPROJ`` in the VASP calculation. Recent VASP versions write the corresponding optional-k-point projector output to:
+
+* ``LOCPROJ_OPT`` and ``PROJCAR_OPT`` for text output.
+* ``vaspout.h5:/results/locproj_opt`` for HDF5 output.
+
+The HDF5 route is used by the converter. The same calculation also provides the optional-k-point eigenvalues and weights under ``vaspout.h5:/results/electron_eigenvalues_kpoints_opt``. The relevant datasets are:
+
+* ``results/electron_eigenvalues_kpoints_opt/eigenvalues``
+* ``results/electron_eigenvalues_kpoints_opt/fermiweights``
+* ``results/electron_eigenvalues_kpoints_opt/kpoint_coords``
+* ``results/electron_eigenvalues_kpoints_opt/kpoints_symmetry_weight``
+* ``results/locproj_opt/data``
+* ``results/locproj_opt/format``
+* ``results/locproj_opt/parameters/*``
+
+The normal converter workflow will automatically detect the optional-k-point bands data into ``dft_bands_input``::
+
+    Converter.convert_dft_input()
+
+and will internally call the bands converter with the same config::
+
+    Converter.convert_bands_input()
+
+After this conversion, :meth:`SumkDFTTools.spaghettis <dft.sumk_dft_tools.SumkDFTTools.spaghettis>` can calculate total and VASP orbital-projected spectral functions. Use ``proj_type='vasp'`` for orbital-projected VASP spaghetti plots.
 
 PLOVASP detailed guide
 ======================
