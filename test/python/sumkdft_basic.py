@@ -28,7 +28,7 @@ from triqs.utility.h5diff import h5diff
 import numpy as np
 SK = SumkDFTTools(hdf_file = 'SrVO3.ref.h5')
 
-dm = SK.density_matrix(method = 'using_gf', transform_to_solver_blocks=False, with_Sigma=False)
+dm = [G.density() for G in SK.extract_G_loc(transform_to_solver_blocks=False, with_Sigma=False)]
 dm_pc = SK.partial_charges(with_Sigma=False, with_dc=False)
 dm_pi = SK.density_matrix_using_point_integration()
 

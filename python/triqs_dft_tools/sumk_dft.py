@@ -871,8 +871,14 @@ class SumkDFT(object):
         """
 
         if dm is None:
-            warn("WARNING: No density matrix given. Calculating density matrix with default parameters. This will be deprecated in future releases.")
-            dm = self.density_matrix(method='using_gf', transform_to_solver_blocks=False)
+            dm = [
+                G.density()
+                for G in self.extract_G_loc(
+                    transform_to_solver_blocks=False,
+                    with_Sigma=hasattr(self, "Sigma_imp"),
+                    with_dc=True,
+                )
+            ]
 
         assert len(dm) == self.n_corr_shells, "The number of density matrices must be equal to the number of correlated shells."
         dens_mat = [dm[self.inequiv_to_corr[ish]]

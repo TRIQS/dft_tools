@@ -24,7 +24,7 @@
 import numpy as np
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.util import compute_DC_from_density
-from triqs.gf import  *
+from triqs.gfs import *
 from h5 import HDFArchive
 from triqs.operators.util import *
 import triqs.utility.mpi as mpi
@@ -104,7 +104,7 @@ SK_new.set_mu(13.9)
 
 
 icrsh = 0
-dens = SK_compat.density_matrix(transform_to_solver_blocks=True)
+dens = [G.density() for G in SK_compat.extract_G_loc(transform_to_solver_blocks=True)]
 
 with np.printoptions(precision=5):
     for key in dens[0].keys():
@@ -141,7 +141,7 @@ SK_compat = SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=use_blocks)
 SK_new    = SumkDFT(hdf_file=dft_filename+'.h5',use_dft_blocks=use_blocks)
 
 icrsh = 0
-dens = SK_compat.density_matrix(transform_to_solver_blocks=True)
+dens = [G.density() for G in SK_compat.extract_G_loc(transform_to_solver_blocks=True)]
 
 with np.printoptions(precision=5):
     for key in dens[0].keys():
