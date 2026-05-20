@@ -21,7 +21,7 @@
 
 from h5 import HDFArchive
 from triqs.utility import mpi
-from triqs.gf import MeshImFreq, MeshDLRImFreq, Gf, BlockGf, make_gf_dlr, make_gf_imfreq
+from triqs.gfs import MeshImFreq, MeshDLRImFreq, Gf, BlockGf, make_gf_dlr, make_gf_imfreq
 from triqs_dft_tools.sumk_dft import SumkDFT
 from triqs.operators.util import set_operator_structure
 from triqs.utility.comparison_tests import assert_block_gfs_are_close

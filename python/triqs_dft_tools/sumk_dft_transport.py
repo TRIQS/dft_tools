@@ -29,7 +29,7 @@ except ImportError:
     pass
 import numpy
 from warnings import warn
-from triqs.gf import *
+from triqs.gfs import *
 import triqs.utility.mpi as mpi
 from .symmetry import *
 import scipy.constants as cst

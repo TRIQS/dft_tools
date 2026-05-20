@@ -23,7 +23,7 @@ import unittest
 import numpy as np
 
 from h5 import *
-from triqs.gf import MeshImFreq
+from triqs.gfs import MeshImFreq
 
 from triqs_dft_tools.sumk_dft import *
 

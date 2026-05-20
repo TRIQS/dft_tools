@@ -20,8 +20,8 @@
 ################################################################################
 
 from h5 import *
-from triqs.gf import *
-from triqs.gf.tools import *
+from triqs.gfs import *
+from triqs.gfs.tools import *
 from triqs_dft_tools.sumk_dft_tools import *
 from triqs.utility.comparison_tests import *
 import numpy as np

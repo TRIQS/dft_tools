@@ -1,4 +1,4 @@
-from triqs.gf import *
+from triqs.gfs import *
 from triqs_dft_tools.sumk_dft import SumkDFT
 import numpy as np
 from triqs.utility.comparison_tests import assert_block_gfs_are_close

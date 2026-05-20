@@ -1,6 +1,6 @@
 # Import the modules:
 from triqs_dft_tools.sumk_dft import *
-from triqs.gf import *
+from triqs.gfs import *
 from h5 import HDFArchive
 from triqs.operators.util import *
 from triqs.operators.util.U_matrix import *
@@ -112,4 +112,3 @@ for iteration_number in range(1,n_loops+1):
 
     # Save stuff into the user_data group of hdf5 archive in case of rerun:
     SK.save(['chemical_potential','dc_imp','dc_energ'])
-

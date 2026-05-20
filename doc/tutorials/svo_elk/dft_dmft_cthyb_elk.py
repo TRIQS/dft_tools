@@ -2,7 +2,7 @@ import triqs.utility.mpi as mpi
 from triqs.operators.util import *
 from h5 import HDFArchive
 from triqs_cthyb import *
-from triqs.gf import *
+from triqs.gfs import *
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.converters.elk import *
 
@@ -161,4 +161,3 @@ if (mpi.is_master_node()):
   f=open('DMATDMFT.OUT','a')
   f.write("%.16f\n"%correnerg)
   f.close()
-

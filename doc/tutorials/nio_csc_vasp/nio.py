@@ -1,7 +1,7 @@
 from itertools import *
 import triqs.utility.mpi as mpi
 from h5 import HDFArchive
-from triqs.gf import *
+from triqs.gfs import *
 import sys, triqs.version as triqs_version
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.sumk_dft_tools import *
@@ -175,4 +175,3 @@ for it in range(iteration_offset, iteration_offset + n_iterations):
             ar['DMFT_results']['Iterations']['chemical_potential'+str(it)] = SK.chemical_potential
 
     mpi.report('-------------')
-

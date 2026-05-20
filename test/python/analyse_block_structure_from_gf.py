@@ -1,4 +1,4 @@
-from triqs.gf import MeshImFreq, inverse, Omega
+from triqs.gfs import MeshImFreq, inverse, Omega
 from triqs_dft_tools.sumk_dft import SumkDFT
 from scipy.linalg import expm
 import numpy as np

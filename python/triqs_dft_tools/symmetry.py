@@ -26,7 +26,7 @@ module for the symmetry operations in k sums
 import copy
 import numpy
 from types import *
-from triqs.gf import *
+from triqs.gfs import *
 from h5 import *
 import triqs.utility.mpi as mpi
 

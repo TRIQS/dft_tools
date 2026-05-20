@@ -27,7 +27,7 @@ Block structure class and helper functions
 
 import copy
 import numpy as np
-from triqs.gf import BlockGf, Gf, GfImFreq
+from triqs.gfs import BlockGf, Gf, GfImFreq
 from ast import literal_eval
 import triqs.utility.mpi as mpi
 from warnings import warn

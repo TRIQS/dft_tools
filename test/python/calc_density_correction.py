@@ -19,7 +19,7 @@
 
 import shutil
 import os
-from triqs.gf import Gf, MeshImFreq
+from triqs.gfs import Gf, MeshImFreq
 from triqs_dft_tools.sumk_dft import SumkDFT
 
 # Path to dftkit test data (set by CMake)
@@ -96,4 +96,3 @@ sumk.set_Sigma(Sigma_iw)
 sumk.n_k = 1
 
 deltaN, dens, en_corr = sumk.calc_density_correction(dm_type='qe', filename='dump.h5')
-

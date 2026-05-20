@@ -25,7 +25,7 @@ Extension to the SumkDFT class with some analyiss tools
 import sys
 from types import *
 import numpy
-from triqs.gf import *
+from triqs.gfs import *
 import triqs.utility.mpi as mpi
 from .symmetry import *
 from .sumk_dft import SumkDFT
@@ -1057,5 +1057,4 @@ class SumkDFTTools(SumkDFT):
                             (ik, self.hopping[ik, 0, i, i].real))
                 f.write('\n')
             f.close()
-
 

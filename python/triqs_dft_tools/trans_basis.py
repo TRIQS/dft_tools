@@ -25,7 +25,7 @@ Module for orbital basis transformations
 
 from triqs_dft_tools.sumk_dft import *
 from triqs_dft_tools.converters import Wien2kConverter
-from triqs.gf import *
+from triqs.gfs import *
 from h5 import *
 import triqs.utility.mpi as mpi
 import numpy
