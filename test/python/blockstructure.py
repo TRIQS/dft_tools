@@ -1,10 +1,13 @@
-from triqs_dft_tools.sumk_dft import *
+from triqs_dft_tools.sumk_dft import SumkDFT
 from triqs.utility.h5diff import h5diff, compare, failures
-from triqs.gf import *
+from triqs.gfs import BlockGf, MeshImFreq, SemiCircular
 from triqs.utility.comparison_tests import assert_block_gfs_are_close
+import triqs.utility.mpi as mpi
+from h5 import HDFArchive
 from scipy.linalg import expm
 from triqs_dft_tools.block_structure import BlockStructure
 import numpy as np
+import warnings
 
 
 def cmp(a, b, precision=1.e-15):
@@ -144,7 +147,8 @@ map1 = original_bs.copy()
 map1.map_gf_struct_solver(mapping)
 
 # check create_gf
-G1 = original_bs.create_gf(beta=40, n_points=3)
+test_mesh = MeshImFreq(beta=40, statistic='Fermion', n_iw=3)
+G1 = original_bs.create_gf(mesh=test_mesh)
 widths = dict(up_0=1, up_1=2, down_0=4, down_1=3)
 for block, gf in G1:
     gf << SemiCircular(widths[block])
@@ -156,13 +160,15 @@ offd = original_bs.copy()
 offd.approximate_as_diagonal()
 
 # check map_gf_struct_solver
-import warnings
 with warnings.catch_warnings(record=True) as w:
-    G2 = map1.convert_gf(G1, original_bs, beta=40, n_points=3,
-                         show_warnings=True)
-    assert len(w) == 1
-    assert issubclass(w[-1].category, UserWarning)
-    assert "Block up_1 maximum difference" in str(w[-1].message)
+    warnings.simplefilter("always")
+    G2 = map1.convert_gf(G1, original_bs, show_warnings=True)
+    matching = [
+        wi for wi in w
+        if issubclass(wi.category, UserWarning)
+        and "Block up_1 maximum difference" in str(wi.message)
+    ]
+    assert len(matching) == 1
 
 m2 = map1.convert_matrix(created_matrix, original_bs, show_warnings=True)
 cmp(m2,
@@ -182,9 +188,7 @@ for i in range(3):
     G_sumk['down'][i, i] << SemiCircular(4 if i < 2 else 3)
 G3 = original_bs.convert_gf(G_sumk,
                             None,
-                            space_from='sumk',
-                            beta=40,
-                            n_points=3)
+                            space_from='sumk')
 assert_block_gfs_are_close(G1, G3)
 
 # check convert_gf with transformation
@@ -197,8 +201,7 @@ for block, gf in G_T:
     gf.from_L_G_R(T.conjugate().transpose(), gf, T)
 transformed_bs = original_bs.copy()
 transformed_bs.transformation = [T]
-G_bT = transformed_bs.convert_gf(G_T, None, space_from='sumk',
-                                 beta=40, n_points=3)
+G_bT = transformed_bs.convert_gf(G_T, None, space_from='sumk')
 assert_block_gfs_are_close(G1, G_bT)
 
 assert original_bs.gf_struct_sumk_list ==\
