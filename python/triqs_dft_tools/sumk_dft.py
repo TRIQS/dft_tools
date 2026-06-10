@@ -2353,7 +2353,11 @@ class SumkDFT(object):
                         bnd_win_towrite = [band_window[0][:n_k_ibz,:]]
                         vasp_h5['band_window'] = bnd_win_towrite
                         vasp_h5.create_group('deltaN')
-                        if spinave and self.SP != 0 and self.SO == 0:
+                        if self.SO == 1:
+                            # spin-orbit: a single spinor-band channel -> deltaN/ud
+                            # (VASP keys the non-collinear charge correction on deltaN/ud)
+                            vasp_h5['deltaN']['ud'] = deltaN['ud'][:n_k_ibz]
+                        elif spinave and self.SP != 0 and self.SO == 0:
                             deltaN_ave = [(u + d) / 2.0 for (u, d) in zip(deltaN['up'][:n_k_ibz], deltaN['down'][:n_k_ibz])]
                             vasp_h5['deltaN']['up'] = deltaN_ave
                             vasp_h5['deltaN']['down'] = deltaN_ave
