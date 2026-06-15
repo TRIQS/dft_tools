@@ -1,4 +1,5 @@
 add_subdirectory(c++)
+add_subdirectory(fortran)
 
 if(PythonSupport)
  add_subdirectory(python)
