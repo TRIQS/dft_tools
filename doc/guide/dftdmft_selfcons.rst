@@ -172,6 +172,15 @@ VASP has a special INCAR `ICHARG=5 <https://www.vasp.at/wiki/index.php/ICHARG>`_
   AMIX=0.02
   LSYNCH5=True
 
+.. note::
+
+   Starting from VASP 6.5.0 no modifications to the VASP source code are required:
+   when VASP is compiled with hdf5 support (`-DVASP_HDF5`) the full communication
+   between VASP and TRIQS runs through the `vaspout.h5` and `vaspgamma.h5` files, and
+   `ICHARG=5` CSC calculations work out of the box. The manual source-code patches
+   described in the VASP interface guide (section "Remarks for VASP older than 6.5.0")
+   only apply to older, unsupported versions.
+
 Technically, VASP runs with `ICHARG=5` in a SCF mode, and adding the DMFT
 changes to the DFT density in each step, so that the full DFT+DMFT charge
 density is constructed in every step. This is only done in VASP because only the

@@ -93,7 +93,9 @@ In this part we will perform charge self-consistent DMFT calculations. To do so 
   AMIX=0.02
   LSYNCH5=True
 
-which makes VASP wait after each step of its iterative diagonalization until the file vasp.lock is created. It then reads the update of the charge density in the file `GAMMA` or `vaspgamma.h5` if VASP is compiled with hdf5 support. We change the mixing here to stabilize the updating, which can be problem for charge ordered systems. Vasp is terminated by an external script after a desired amount of steps, such that we deactivate all automatic stoping criterion by setting the number of steps to a very high number.
+Note that from VASP 6.5.0 onwards no changes to the VASP source code are needed; with hdf5 support enabled everything works through the `vaspout.h5`/`vaspgamma.h5` interface.
+
+This makes VASP wait after each step of its iterative diagonalization until the file vasp.lock is created. It then reads the update of the charge density in the file `GAMMA` or `vaspgamma.h5` if VASP is compiled with hdf5 support. We change the mixing here to stabilize the updating, which can be problem for charge ordered systems. Vasp is terminated by an external script after a desired amount of steps, such that we deactivate all automatic stoping criterion by setting the number of steps to a very high number.
 
 We take the respective converged DFT and DMFT calculations from before as a starting point. I.e., we copy the `WAVECAR`, `CHGCAR`, and `vasp.h5` together with the other :program:`VASP` input files (copy INCAR.CSC here) and :file:`plo.cfg` in a new directory. We use a script called :program:`vasp_dmft` to invoke :program:`VASP` in the background and start the DMFT calculation together with :program:`plovasp` and the converter. This script assumes that the dmft sript contains a function `dmft_cycle()` and also the conversion from text files to the h5 file. Additionally we have to add a few lines to calculate the density correction and calculate the correlation energy. We adapt the script straightforwardly (for a working example see :ref:`nio_csc.py`). The most important new lines are::
 
