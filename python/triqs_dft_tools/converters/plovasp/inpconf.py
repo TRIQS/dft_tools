@@ -361,6 +361,40 @@ class ConfigParameters:
 
         return parsed
 
+################################################################################
+#
+# check_for_unknown_parameters()
+#
+################################################################################
+    def check_for_unknown_parameters(self, section, known_pars):
+        """
+        Issues a warning for every option in `section` that is not part of
+        `known_pars` (the set of keywords recognized for this section type).
+
+        If an unrecognized keyword is in fact valid for a different section
+        type (e.g. COMPLEMENT placed under [General] instead of [Group]),
+        the warning points to the section(s) where it would be honoured.
+        This catches misplaced or misspelled tags that would otherwise be
+        silently ignored.
+        """
+# Map every recognized keyword to the section type(s) where it is valid
+        valid_in = {
+            'General': set(self.gen_optional.keys()),
+            'Shell': set(self.sh_required.keys()) | set(self.sh_optional.keys()),
+            'Group': set(self.gr_required.keys()) | set(self.gr_optional.keys())}
+
+        for opt in self.cp.options(section):
+            if opt in known_pars:
+                continue
+            misplaced_in = [sec for sec, pars in valid_in.items() if opt in pars]
+            if misplaced_in:
+                hint = (" It is a valid [%s] parameter and is ignored here."
+                        %("] / [".join(misplaced_in)))
+            else:
+                hint = " It is not a recognized keyword and is ignored."
+            issue_warning("Parameter '%s' in section [%s] has no effect.%s"
+                          %(opt, section, hint))
+
 
 ################################################################################
 #
@@ -438,6 +472,12 @@ class ConfigParameters:
             parsed = self.parse_parameter_set(section, self.gr_optional, exception=False, defaults=False)
             shell.update(parsed)
 
+# Warn about any misplaced/unknown tags in this [Shell] section.
+# Shells may legitimately carry group parameters, so those are allowed too.
+            known_sh = (set(self.sh_required.keys()) | set(self.sh_optional.keys())
+                        | set(self.gr_required.keys()) | set(self.gr_optional.keys()))
+            self.check_for_unknown_parameters(section, known_sh)
+
             self.shells.append(shell)
 
 ################################################################################
@@ -480,6 +520,10 @@ class ConfigParameters:
 # Group optional parameters
             parsed = self.parse_parameter_set(section, self.gr_optional, exception=False)
             group.update(parsed)
+
+# Warn about any misplaced/unknown tags in this [Group] section
+            known_gr = set(self.gr_required.keys()) | set(self.gr_optional.keys())
+            self.check_for_unknown_parameters(section, known_gr)
 
             self.groups.append(group)
 
@@ -615,6 +659,10 @@ class ConfigParameters:
         gen_section = gen_section[0]
         parsed = self.parse_parameter_set(gen_section, self.gen_optional, exception=False)
         self.general.update(parsed)
+
+# Warn about any misplaced/unknown tags in the [General] section
+        if self.cp.has_section(gen_section):
+            self.check_for_unknown_parameters(gen_section, set(self.gen_optional.keys()))
 
 ################################################################################
 #
