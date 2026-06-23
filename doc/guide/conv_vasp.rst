@@ -262,7 +262,7 @@ The entire section is optional and it contains four parameters:
 *  **HK** (True/False): If True, the projectors are applied the the Kohn-Sham
    eigenvalues which results in a Hamitlonian H(k) in orbital basis. The H(k)
    is written for each group to a file :file:`Basename.hk<Ng>`. It is recommended
-   to also set `COMPLEMENT = True` (see below). Default is False.
+   to also set `COMPLEMENT = True` in the `[Group]` section (see below). Default is False.
 
 There are no required parameters in this section.
 
