@@ -15,6 +15,8 @@ foreach(test ${all_tests})
   get_filename_component(test_name ${test} NAME_WE)
   get_filename_component(test_dir ${test} DIRECTORY)
   add_test(NAME Py_${test_name} COMMAND ${TRIQS_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${test_dir}/${test_name}.py WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${test_dir})
-  set_property(TEST Py_${test_name} APPEND PROPERTY ENVIRONMENT PYTHONPATH=${PROJECT_BINARY_DIR}/python:${triqs_dftkit_BINARY_DIR}/python:$ENV{PYTHONPATH})
+  set_property(TEST Py_${test_name} APPEND PROPERTY ENVIRONMENT_MODIFICATION
+    "PYTHONPATH=path_list_prepend:${triqs_dftkit_BINARY_DIR}/python"
+    "PYTHONPATH=path_list_prepend:${PROJECT_BINARY_DIR}/python")
   set_property(TEST Py_${test_name} APPEND PROPERTY ENVIRONMENT dftkit_SOURCE_DIR=${triqs_dftkit_SOURCE_DIR})
 endforeach()

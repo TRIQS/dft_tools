@@ -8,7 +8,7 @@ sys.path.insert(0, "@CMAKE_CURRENT_SOURCE_DIR@/sphinxext/numpydoc")
 sys.path.insert(0, "@CMAKE_BINARY_DIR@/python")
 
 # exclude these folders from scanning by sphinx
-exclude_patterns = ['_templates']
+exclude_patterns = ['_templates', 'doxygen']
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
@@ -42,11 +42,14 @@ myst_enable_extensions = [
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
-source_suffix = '.rst'
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown',
+}
 
 # Turn on sphinx.ext.autosummary
 autosummary_generate = True
-autosummary_imported_members=False
+autosummary_imported_members = False
 
 project = 'TRIQS DFTTools'
 version = '@PROJECT_VERSION@'
@@ -107,10 +110,9 @@ intersphinx_mapping = {
     'dftkit': ('https://triqs.github.io/dftkit/latest', None),
 }
 
-# numpydoc options
-numpydoc_show_class_members = False
-numpydoc_show_inherited_class_members = False
-numpydoc_class_members_toctree = False
+# configure numpydoc if enabled
+numpydoc_attributes_as_param_list = False
+
 
 # open links in new tab instead of same window
 from sphinx.writers.html import HTMLTranslator
@@ -147,10 +149,112 @@ class PatchedHTMLTranslator(HTMLTranslator):
         if 'target' in node:
             atts['target'] = node['target']
         self.body.append(self.starttag(node, 'a', '', **atts))
- 
+
         if node.get('secnumber'):
             self.body.append(('%s' + self.secnumber_suffix) %
                              '.'.join(map(str, node['secnumber'])))
 
+
+# process doc strings for better rst/html output
+import re
+
+# regular expressions for docstring parsing
+_autosummary_re = re.compile(r'^\s*\.\.\s+autosummary::', re.M)
+_dispatched_desc_re = re.compile(r'^\s*(?:\[([^\]]*)\]\s*)?([^\n]*)')
+
+
+def mark_autosummary_sources(app, docname, source):
+    """
+    Sphinx hook to mark rst files that contain an autosummary directive.
+
+    This is needed in the processing hook to identify files with autosummary
+    directives. 
+
+    Parameters
+    ----------
+    app : Sphinx application object
+        The Sphinx application instance.
+    docname : str
+        The name of the document being processed.
+    source : list of str
+        The source content of the document.
+    """
+    text = source[0]
+    marks = getattr(app.env, "_docs_with_autosummary", set())
+    if _autosummary_re.search(text):
+        marks.add(docname)
+    app.env._docs_with_autosummary = marks
+
+
+def process_docstring(app, what, name, obj, options, lines):
+    """
+    Process doc string lines for autosummary tables.
+
+    Note: For functions, any changes to the doc string are not reflected in the actual documentation page.
+    For classes, this is not the case!
+
+    Parameters
+    ----------
+    app : Sphinx application object
+        The Sphinx application instance.
+    what : str
+        The type of the object being documented (e.g., 'function', 'class').
+    name : str
+        The fully qualified name of the object.
+    obj : object
+        The object being documented.
+    options : object
+        The options given to the directive.
+    lines : list of str
+        The lines of the doc string to process.
+    """
+    if not lines:
+        return
+    
+    # process doc string only for autosummary tables
+    docname = app.env.temp_data.get('docname') or getattr(app.env, 'docname', None)
+    if docname in getattr(app.env, "_docs_with_autosummary", set()):
+        # find the first line which is not empty, not whitespace-only and not intended
+        first_idx = next((i for i, s in enumerate(lines) if s and s.strip() and s == s.lstrip()), None)
+
+        # if no such line is found, do nothing (what else could we do?)
+        first_line = lines[first_idx] if first_idx is not None else None
+        if not first_line:
+            return
+        
+        # handle wrapped classes with no description
+        if first_line == 'Dispatched C++ constructor(s).' or first_line == 'Synthesized constructor with the following keyword arguments:':
+            # somehow this not only changes the table but also the actual documentation page
+            lines.insert(0, 'Wrapped C++ class.')
+            lines.insert(1, '')
+            return
+
+        # handle dispatched functions
+        if first_line == 'Dispatched C++ function(s).':
+            # try to find a doc string
+            doc_str = ''
+            for i in range(first_idx + 3, len(lines)):
+                if lines[i].strip() and lines[i] == lines[i].lstrip():
+                    doc_str = lines[i].strip()
+                    break
+
+            # empty doc string, use "Dispatched C++ function(s)."
+            if doc_str == '..':
+                return
+
+            # try to match "[...] str_desc"
+            match = _dispatched_desc_re.match(doc_str)
+
+            # we only care about lines[0] since autosummary uses it for the function table
+            lines[0] = match.group(2) if match.group(1) else doc_str 
+            lines[1] = ''
+
+
 def setup(app):
     app.set_translator('html', PatchedHTMLTranslator)
+
+    # use process_docstring to modify docstrings
+    app.connect("source-read", mark_autosummary_sources)
+    app.connect('autodoc-process-docstring', process_docstring, priority=1000)
+
+    return {'version': '1.0'}

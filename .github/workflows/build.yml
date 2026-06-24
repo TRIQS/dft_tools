@@ -78,7 +78,6 @@ jobs:
         openmpi-bin
         openmpi-common
         openmpi-doc
-        python3-clang-20
         python3-dev
         python3-mako
         python3-matplotlib
@@ -95,7 +94,7 @@ jobs:
         echo "VIRTUAL_ENV=$HOME/.venv/my_python" >> $GITHUB_ENV
         echo "$HOME/.venv/my_python/bin"         >> $GITHUB_PATH
 
-    - name: Install homebrew dependencies
+    - name: Set up macOS environment
       if: ${{ contains(matrix.os, 'macos') }}
       run: |
         brew update
