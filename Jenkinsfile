@@ -95,6 +95,15 @@ for (int i = 0; i < osxPlatforms.size(); i++) {
         deleteDir()
         /* note: this is installing into the parent (triqs) venv (install dir), which is thus shared among apps and so not be completely safe */
         sh "pip3 install -U -r $srcDir/requirements.txt"
+        /* triqs_dft_tools imports triqs_dftkit at runtime (the converters re-export it).
+           Build & install it into installDir (on PYTHONPATH) before building this app. */
+        sh """
+          rm -rf $tmpDir/dftkit
+          git clone --depth 1 -b ${triqsBranch} https://github.com/TRIQS/dftkit $tmpDir/dftkit || git clone --depth 1 -b unstable https://github.com/TRIQS/dftkit $tmpDir/dftkit
+          cmake -S $tmpDir/dftkit -B $tmpDir/dftkit/build -DCMAKE_INSTALL_PREFIX=$installDir -DTRIQS_ROOT=$triqsDir -DBuild_Tests=OFF
+          cmake --build $tmpDir/dftkit/build -j2
+          cmake --build $tmpDir/dftkit/build --target install
+        """
         sh "cmake $srcDir -DCMAKE_INSTALL_PREFIX=$installDir -DTRIQS_ROOT=$triqsDir"
         sh "make -j2 || make -j1 VERBOSE=1"
         catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') { try {
