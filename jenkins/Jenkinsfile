@@ -8,8 +8,9 @@ def regenPlatforms = []
 /* depend on triqs upstream branch/project */
 def triqsBranch = env.BRANCH_NAME == "jenkins" ? "jenkins" : "unstable"
 def triqsProject = '/CCQ/TRIQS/triqs/' + triqsBranch.replaceAll('/', '%2F')
+def dftkitProject = '/CCQ/TRIQS/dftkit/' + triqsBranch.replaceAll('/', '%2F')
 /* whether to keep and publish the results */
-def keepInstall = false // disabled on jenkins-new: !env.BRANCH_NAME.startsWith("PR-")
+def keepInstall = !env.BRANCH_NAME.startsWith("PR-")
 
 properties([
   disableConcurrentBuilds(),
@@ -17,7 +18,7 @@ properties([
   pipelineTriggers(keepInstall ? [
     upstream(
       threshold: 'SUCCESS',
-      upstreamProjects: triqsProject
+      upstreamProjects: triqsProject + ',' + dftkitProject
     ), githubPush()
   ] : [githubPush()])
 ])
@@ -39,7 +40,9 @@ def runBuild = { String platform, String prefix, List<String> envs ->
   def python3 = macos ? "${env.BREW}/bin/python3" : "python3"
   def pythonVer = sh(returnStdout: true, script: """$python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'""").trim()
   def triqsPy = "$triqsDir/lib/python$pythonVer"
-  envs << "PYTHONPATH=$triqsPy/dist-packages:$triqsPy/site-packages"
+  def dftkitDir = "$prefix/install$dftkitProject/${platform}"
+  def dftkitPy  = "$dftkitDir/lib/python$pythonVer"
+  envs << "PYTHONPATH=$dftkitPy/dist-packages:$dftkitPy/site-packages:$triqsPy/dist-packages:$triqsPy/site-packages"
   if (macos) {
     dir(installDir) {
       deleteDir()
@@ -142,7 +145,7 @@ for (int i = 0; i < macosPlatforms.size(); i++) {
 catchError {
   parallel platforms
 
-  if (keepInstall) {
+  if (false && keepInstall) {
     /* Publish results */
     stage("publish") {
       timeout(time: 10, unit: 'MINUTES') {
