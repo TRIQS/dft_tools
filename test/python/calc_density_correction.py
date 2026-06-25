@@ -18,12 +18,8 @@
 # Authors: A. Hampel
 
 import shutil
-import os
 from triqs.gfs import Gf, MeshImFreq
 from triqs_dft_tools.sumk_dft import SumkDFT
-
-# Path to dftkit test data (set by CMake)
-dftkit_test_dir = os.environ.get('dftkit_SOURCE_DIR', '')
 
 # Simple run w/o error test for all DFT codes to write the density correction to a file
 # Comparison with real self energy against refrence data should be done in the future
@@ -48,7 +44,7 @@ deltaN, dens = sumk.calc_density_correction(dm_type='wien2k')
 
 ####################################
 # Elk
-elk_ref_file = os.path.join(dftkit_test_dir, 'test/python/elk/elk_convert/elk_convert.ref.h5')
+elk_ref_file = 'elk_convert.ref.h5'
 sumk = SumkDFT(hdf_file=elk_ref_file, mesh=mesh)
 
 Sigma_iw = [
@@ -64,7 +60,7 @@ deltaN, dens = sumk.calc_density_correction(dm_type='elk')
 
 ####################################
 # Vasp
-vasp_ref_file = os.path.join(dftkit_test_dir, 'test/python/vasp/converter/lunio3.ref.h5')
+vasp_ref_file = 'lunio3.ref.h5'
 sumk = SumkDFT(hdf_file=vasp_ref_file, mesh=mesh)
 
 Sigma_iw = [
@@ -80,7 +76,7 @@ deltaN, dens, en_corr = sumk.calc_density_correction(dm_type='vasp')
 
 ####################################
 # QE
-w90_ref_file = os.path.join(dftkit_test_dir, 'test/python/wannier90/w90_convert/SrVO3_col_blochbasis.ref.h5')
+w90_ref_file = 'SrVO3_col_blochbasis.ref.h5'
 shutil.copy(w90_ref_file, 'SrVO3_col_blochbasis.test.h5')
 sumk = SumkDFT(hdf_file='SrVO3_col_blochbasis.test.h5', mesh=mesh)
 

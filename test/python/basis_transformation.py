@@ -1,10 +1,6 @@
 from triqs.utility.comparison_tests import *
 from triqs_dft_tools.sumk_dft import *
 import numpy as np
-import os
-
-# Path to dftkit test data (set by CMake)
-dftkit_test_dir = os.environ.get('dftkit_SOURCE_DIR', '')
 
 def is_diagonal_matrix(M):
     return abs(np.sum(M-np.diag(np.diagonal(M)))) < 1e-10
@@ -53,8 +49,8 @@ for orb in range(SK.n_corr_shells):
         assert_arrays_are_close(t_solver_eal[orb][block],np.identity(3), precision=1e-6)
         assert_arrays_are_close(t_solver_dm[orb][block],np.identity(3), precision=1e-6)
 
-# Reference file from dftkit
-SK = SumkDFT(hdf_file=os.path.join(dftkit_test_dir, 'test/python/wannier90/w90_convert/LaVO3-Pnma_wannier.ref.h5'), use_dft_blocks=True)
+# Reference file from dftkit (vendored into this test dir)
+SK = SumkDFT(hdf_file='LaVO3-Pnma_wannier.ref.h5', use_dft_blocks=True)
 
 t_sumk_eal, t_solver_eal, t_sumk_dm, t_solver_dm = call_diagonalize(SK)
 
