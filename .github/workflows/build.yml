@@ -141,6 +141,24 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=$HOME/install
         cmake --build triqs/build --target install --verbose
 
+    - name: Build & Install triqs_dftkit
+      env:
+        DFTKIT_BRANCH: ${{ github.event_name == 'pull_request' && github.base_ref || github.ref_name }}
+      run: |
+        source $HOME/install/share/triqs/triqsvars.sh
+        git ls-remote --exit-code --heads https://github.com/TRIQS/dftkit "$DFTKIT_BRANCH" > /dev/null 2>&1 || DFTKIT_BRANCH=unstable
+        git clone https://github.com/TRIQS/dftkit --branch "$DFTKIT_BRANCH"
+        # dftkit builds the Fortran dmftproj executable; pick an available gfortran
+        FC=$(command -v gfortran gfortran-14 gfortran-15 gfortran-16 2>/dev/null | head -1)
+        cmake -S dftkit -B dftkit/build -G Ninja \
+          -DCMAKE_C_COMPILER=$CC \
+          -DCMAKE_CXX_COMPILER=$CXX \
+          -DCMAKE_Fortran_COMPILER=$FC \
+          -DPython_EXECUTABLE=$VIRTUAL_ENV/bin/python \
+          -DBuild_Tests=OFF \
+          -DCMAKE_INSTALL_PREFIX=$HOME/install
+        cmake --build dftkit/build --target install --verbose
+
     - name: Build dft_tools
       run: |
         source $HOME/install/share/triqs/triqsvars.sh
