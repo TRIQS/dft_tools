@@ -235,7 +235,7 @@ DFTTools Version 3.1.0 is a release that
 * Instead of `gf_struct = [("up", [0, 1]), ("down", [0, 1])]`, the new convention uses `gf_struct = [("up", 2), ("down", 2)]`
 * This modifies the form of `gf_struct_solver` (and `sumk`) in `block_structure` and `SumkDFT` as well.
 * Backwards-compatibility with old, stored `block_structure` objects is given, however a warning is issued.
-* A helper-function `triqs.gf.block_gf.fix_gf_struct_type(gf_struct_old)` is provided in triqs to manually bring `gf_struct`s to the new form.
+* A helper-function `triqs.gfs.block_gf.fix_gf_struct_type(gf_struct_old)` is provided in triqs to manually bring `gf_struct`s to the new form.
 
 ### Documentation
 * change to read the docs sphinx theme

@@ -41,7 +41,7 @@ Loading modules
 First, we load the necessary modules::
 
   from triqs_dft_tools.sumk_dft import *
-  from triqs.gf import *
+  from triqs.gfs import *
   from h5 import HDFArchive
   from triqs.operators.util import *
   from triqs_cthyb import *

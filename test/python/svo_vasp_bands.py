@@ -1,7 +1,7 @@
 import numpy as np
 
 from h5 import HDFArchive
-from triqs.gf import BlockGf, Gf
+from triqs.gfs import BlockGf, Gf
 from triqs.utility.comparison_tests import assert_arrays_are_close
 
 from triqs_dft_tools.sumk_dft_tools import SumkDFTTools

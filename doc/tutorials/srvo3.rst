@@ -77,7 +77,7 @@ Loading modules
 First, we load the necessary modules::
 
   from triqs_dft_tools.sumk_dft import *
-  from triqs.gf import *
+  from triqs.gfs import *
   from h5 import HDFArchive
   from triqs.operators.util import *
   from triqs_cthyb import *
@@ -272,7 +272,7 @@ and perform only one DMFT iteration. The resulting self energy can be tail fitte
     Sigma_iw_fit << tail_fit(S.Sigma_iw, fit_max_moment = 4, fit_min_n = 40, fit_max_n = 160)[0]
 
 Plot the self energy and adjust the tail fit parameters such that you obtain a
-proper fit. The :meth:`fit_tail function <triqs.gf.tools.tail_fit>` is part
+proper fit. The :meth:`fit_tail function <triqs.gfs.tools.tail_fit>` is part
 of the :ref:`TRIQS <triqslibs:welcome>` library.
 
 For a self energy which is going to zero for :math:`i\omega \rightarrow 0` our suggestion is
