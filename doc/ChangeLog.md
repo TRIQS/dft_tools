@@ -2,6 +2,51 @@
 
 # Changelog
 
+## Version 4.0.0
+
+DFTTools Version 4.0.0 is a major release that
+
+* is compatible with TRIQS 4.0.x and uses the latest app4triqs skeleton
+* outsources all DFT converters to the new [dftkit](https://github.com/TRIQS/dftkit) package, which is now a dependency
+* removes the C++ and cpp2py dependencies, making DFTTools a pure-Python application
+* replaces the remaining Fortran/C code (linear tetrahedron integration, Elk `PMAT.OUT` reader) with pure-Python implementations, dropping the f2py and Meson build dependencies
+* adds support for the new VASP 6.5.0 HDF5 interface
+* ensures compatibility with NumPy 2.0
+
+We thank all contributors: Markus Aichhorn, Sophie Beck, Germán Blesio, Jennifer Coulter, Thomas Hahn, Alexander Hampel, Xiao Jiang, Harrison LaBollita, Henri Menke, Dario Fiore Mosca, Dylan Simon, Nils Wentzell, Chia-Nan Yeh, jmmshn
+
+Find below an itemized list of changes in this release.
+
+### Converters moved to dftkit
+
+All DFT converters (Wien2k, VASP, Wannier90, Elk, generic H(k)) have been moved into the standalone [dftkit](https://github.com/TRIQS/dftkit) package and are now consumed from there. The `triqs_dft_tools.converters` module is kept for backward compatibility and simply re-exports the converters from `triqs_dftkit`, so existing user code continues to work. `dftkit` is resolved as a CMake (CPM) dependency at build time.
+
+### Removal of C++ support
+
+DFTTools no longer compiles any C++ or Fortran code and no longer depends on cpp2py; it is now a pure-Python application built on the `python_only` app4triqs skeleton. The C code for tetrahedron integration and the f2py Fortran module for the Elk `PMAT.OUT` reader were rewritten in pure Python, removing the f2py and Meson build dependencies.
+
+### Other Changes
+
+* Run port_to_triqs4 script (`triqs.gf` -> `triqs.gfs`) for the TRIQS 4.0 API changes
+* Use the latest app4triqs skeleton (python-only), including the PyPI publishing workflow
+* New VASP 6.5.0 HDF5 support capability and updated documentation (#262, #269)
+* Read `dft_bands_input` for VASP calculations
+* Allow to write `vaspgamma.h5` file for SOC (SO==1)
+* Allow `spinave` in `calc_density_correction` also for VASP and QE
+* Add option to use a DLR mesh in Sumk (#254)
+* Read Wannier centres and symmetry k-path from Wannier90 (#253)
+* WannierBerri velocity updates and optics cleanup
+* Optimize tetrahedron integration for NumPy
+* Use the new `.values()` functionality of meshes
+* Allow comment lines in `SRC_templates` for newer Wien2k versions
+* Raise an error if `dichotomy` fails to converge
+* Avoid the deprecated `using_gf` fallback for block analysis
+* Replace `scipy.integrate.simps` with `scipy.integrate.simpson` (#255)
+* Replace `numpy.lib.pad` with `numpy.pad` and ensure compatibility against NumPy 2.0
+* Fix `SyntaxWarning` for invalid escape sequences
+* Fix Unicode characters in Elk files (#267)
+* Fix the dtype used for `dos_tetra_weights_3d`
+
 ## Version 3.3.2
 
 DFTTools Version 3.3.2 is a patch release that brings significant improvements
