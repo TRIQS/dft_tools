@@ -6,7 +6,7 @@ def documentationPlatform = "ubuntu-clang"
    dft_tools is pure-Python with no bindings to regenerate. */
 def regenPlatforms = []
 /* depend on triqs upstream branch/project */
-def triqsBranch = env.BRANCH_NAME == "jenkins" ? "jenkins" : "unstable"
+def triqsBranch = env.CHANGE_TARGET ?: env.BRANCH_NAME
 def triqsProject = '/CCQ/TRIQS/triqs/' + triqsBranch.replaceAll('/', '%2F')
 def dftkitProject = '/CCQ/TRIQS/dftkit/' + triqsBranch.replaceAll('/', '%2F')
 /* whether to keep and publish the results */
