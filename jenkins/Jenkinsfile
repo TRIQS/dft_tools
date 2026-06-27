@@ -28,14 +28,14 @@ def mounts = ["triqs": installBase]
 
 def runBuild = { String platform, String prefix, List<String> envs ->
   def macos = platform.startsWith("macos-")
-  def regen = regenPlatforms.contains(platform)
   def buildDir = "$WORKSPACE_TMP/build"
   /* install real branches in a fixed predictable place so apps can find them */
   def installDir = keepInstall ? "$prefix/install/$JOB_NAME/$platform" : "$WORKSPACE_TMP/install"
   def triqsDir = "$prefix/install$triqsProject/${platform}"
   envs += [
     "OPENBLAS_NUM_THREADS=1",
-    "MKL_NUM_THREADS=1"]
+    "MKL_NUM_THREADS=1",
+    "OMP_NUM_THREADS=1"]
   /* the triqs venv on macOS is built from the brew python, which may differ from the system python3 */
   def python3 = macos ? "${env.BREW}/bin/python3" : "python3"
   def pythonVer = sh(returnStdout: true, script: """$python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'""").trim()
@@ -62,8 +62,7 @@ def runBuild = { String platform, String prefix, List<String> envs ->
       "LIBRARY_PATH=$venv/lib:$hdf5/lib:$brew/lib",
       "DYLD_LIBRARY_PATH=$venv/lib:$hdf5/lib:$brew/lib",
       "CMAKE_PREFIX_PATH=$venv/lib/cmake/triqs",
-      "VIRTUAL_ENV=$venv",
-      "OMP_NUM_THREADS=${env.PARALLEL}"]
+      "VIRTUAL_ENV=$venv"]
     /* note: this is installing into the parent (triqs) venv (install dir), which is thus shared among apps and so not be completely safe */
     sh """#!/bin/sh -ex
       source $venv/bin/activate
@@ -74,7 +73,7 @@ def runBuild = { String platform, String prefix, List<String> envs ->
     envs << "PATH=$triqsDir/bin:$path"
   }
   withEnv(envs) {
-    def args = regen ? '-DUpdate_Python_Bindings=ON' : ''
+    def args = ''
     if (platform == documentationPlatform)
       args += ' -DBuild_Documentation=ON'
     else if (platform == "sanitize")
@@ -86,7 +85,7 @@ def runBuild = { String platform, String prefix, List<String> envs ->
       """
       catchError(buildResult: 'UNSTABLE', stageResult: 'UNSTABLE') {
         try {
-          sh "make test CTEST_OUTPUT_ON_FAILURE=1"
+          sh "ctest --output-on-failure -j\$PARALLEL"
         } catch (exc) {
           archiveArtifacts(artifacts: 'Testing/Temporary/LastTest.log')
           throw exc
@@ -103,22 +102,26 @@ def platforms = [:]
 /****************** linux builds (in docker) */
 /* Each platform must have a corresponding Dockerfile.PLATFORM in triqs/packaging */
 def dockerPlatforms = ["ubuntu-clang", "ubuntu-gcc"]
+buildImages(dockerPlatforms.collect { platform ->
+  [ tag: platform,
+    context: 'jenkins',
+    dockerfile: "Dockerfile.$platform",
+    prep: {
+      /* construct a Dockerfile for this base */
+      sh """
+        ( echo "FROM $REGISTRY_PREFIX${triqsProject.toLowerCase()}:$platform" ; sed '0,/^FROM /d' jenkins/Dockerfile ) > jenkins/Dockerfile.$platform
+      """
+    }
+  ]
+}, checkout: true)
 for (int i = 0; i < dockerPlatforms.size(); i++) {
   def platform = dockerPlatforms[i]
   platforms[platform] = { ->
     stage(platform) {
       timeout(time: 1, unit: 'HOURS') {
-        buildPod(tag: platform,
-          context: 'jenkins',
-          dockerfile: "Dockerfile.$platform",
+        runPod(tag: platform,
           devShm: true,
-          mounts: mounts,
-          prep: {
-            /* construct a Dockerfile for this base */
-            sh """
-              ( echo "FROM $REGISTRY_PREFIX${triqsProject.toLowerCase()}:$platform" ; sed '0,/^FROM /d' jenkins/Dockerfile ) > jenkins/Dockerfile.$platform
-            """
-          }) {
+          mounts: mounts) {
           runBuild(platform, installBase, [])
         }
       }

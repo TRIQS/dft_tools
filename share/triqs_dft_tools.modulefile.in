@@ -8,7 +8,7 @@ set     root        @CMAKE_INSTALL_PREFIX@
 set     git_hash    @PROJECT_GIT_HASH@
 
 set     url         "https://github.com/TRIQS/@PROJECT_NAME@"
-set     description "An example application using cpp2py and triqs."
+set     description "An example application using triqs."
 
 module-whatis   "$description"
 

@@ -1,0 +1,13 @@
+prune test
+prune .git
+prune .github
+prune doc
+prune share
+prune Docker
+prune deps
+prune packaging
+prune paper
+prune bin
+prune build
+
+global-exclude .clang-format .clang-tidy .dockerignore .gitignore CMakeLists.txt Jenkinsfile 

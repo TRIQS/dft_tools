@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["python"]
+
+[project]
+name = "triqs_dft_tools"
+version = "@PROJECT_VERSION@"
+authors = [
+  { name="TRIQS", email="triqs@flatironinstitute.org" }
+]
+description = "A TRIQS application for ab initio calculations and DFT+DMFT"
+readme = "README.md"
+keywords = ["triqs", "dft", "dmft"]
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy",
+    "scipy"
+]
+
+[project.urls]
+"Homepage" = "https://triqs.github.io/dft_tools"
+"Bug Tracker" = "https://github.com/triqs/dft_tools/issues"
+
+# in case you want an executable hook of your app
+# [project.scripts]
+# solid_dmft = "solid_dmft.main:main"
+

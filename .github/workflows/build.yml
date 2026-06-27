@@ -26,10 +26,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-24.04, cc: clang-20, cxx: clang++-20, clang_cc: clang-20, clang_cxx: clang++-20 }
-          - { os: ubuntu-24.04, cc: gcc-14, cxx: g++-14, clang_cc: clang-20, clang_cxx: clang++-20 }
-          - { os: macos-15, cc: clang, cxx: clang++, clang_cc: clang, clang_cxx: clang++ }
-          - { os: macos-15, cc: gcc-16, cxx: g++-16, clang_cc: clang, clang_cxx: clang++ }
+          - { os: ubuntu-24.04, cc: clang-20, cxx: clang++-20 }
+          - { os: ubuntu-24.04, cc: gcc-14, cxx: g++-14 }
+          - { os: macos-15, cc: clang, cxx: clang++ }
+          - { os: macos-15, cc: gcc-16, cxx: g++-16 }
 
     runs-on: ${{ matrix.os }}
 
@@ -63,8 +63,6 @@ jobs:
         gfortran-14
         hdf5-tools
         libboost-dev
-        llvm-20-dev
-        libclang-20-dev
         libomp-20-dev
         libc++-20-dev
         libc++abi-20-dev
@@ -111,21 +109,6 @@ jobs:
       if: ${{ contains(matrix.cxx, 'clang') }}
       run: |
         echo "CXXFLAGS=-stdlib=libc++" >> $GITHUB_ENV
-
-    - name: Build & Install clair
-      env:
-        CC: ${{ matrix.clang_cc }}
-        CXX: ${{ matrix.clang_cxx }}
-        CXXFLAGS: ""
-      run: |
-        git clone https://github.com/flatironinstitute/clair --branch unstable
-        cmake -S clair -B clair/build -G Ninja \
-          -DCMAKE_C_COMPILER=$CC \
-          -DCMAKE_CXX_COMPILER=$CXX \
-          -DPython_EXECUTABLE=$VIRTUAL_ENV/bin/python \
-          -DBuild_Tests=OFF \
-          -DCMAKE_INSTALL_PREFIX=$HOME/install
-        cmake --build clair/build --target install --verbose
 
     - name: Build & Install TRIQS
       env:
