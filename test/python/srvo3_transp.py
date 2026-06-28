@@ -54,7 +54,8 @@ output_dict = {'seebeck': seebeck, 'optic_cond': optic_cond, 'kappa': kappa}
 
 # comparison of the output transport data
 if mpi.is_master_node():
+    SK.hdf_file = 'srvo3_transp.out.h5'
     write_output_to_hdf(SK, output_dict, 'transp_output')
-    out = HDFArchive('SrVO3.ref.h5','r')
+    out = HDFArchive('srvo3_transp.out.h5','r')
     ref = HDFArchive('srvo3_transp.ref.h5', 'r')
     h5diff.compare('', out['transp_output'], ref['transp_output'], 0, 1e-8)
