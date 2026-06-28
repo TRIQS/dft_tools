@@ -163,13 +163,23 @@ class BlockStructure(object):
         ``gf_struct_solver_list[ish][b][1]``
         is the dimension of the block ``b``.
 
-        The list for each shell is sorted alphabetically by block name.
+        Blocks are ordered reproducibly by their sumk block's position in
+        ``gf_struct_sumk`` (the ``spin_block_names`` order), then by block name
+        -- independent of the gf_struct_solver dict order, which after an h5
+        round-trip reflects the h5 group iteration order.
         """
         if self.gf_struct_solver is None:
             return None
-        # we sort by block name in order to get a reproducible result
-        return [sorted([(k, v) for k, v in list(gfs.items())], key=lambda x: x[0])
-                for gfs in self.gf_struct_solver]
+        result = []
+        for ish, gfs in enumerate(self.gf_struct_solver):
+            try:
+                sumk_rank = {bl: i for i, (bl, _) in enumerate(self.gf_struct_sumk[self.inequiv_to_corr[ish]])}
+                s2s = self.solver_to_sumk_block[ish]
+                result.append(sorted(gfs.items(), key=lambda item: (sumk_rank[s2s[item[0]]], item[0])))
+            except (TypeError, KeyError):
+                # sumk mapping unavailable -- fall back to ordering by block name
+                result.append(sorted(gfs.items(), key=lambda item: item[0]))
+        return result
 
     @property
     def gf_struct_sumk_list(self):
@@ -695,10 +705,12 @@ class BlockStructure(object):
         return self._create_gf_or_matrix(ish, gf_function, block_function, space)
 
     def _create_gf_or_matrix(self, ish=0, gf_function=Gf, block_function=BlockGf, space='solver', **kwargs):
+        # Build from the *_list accessors so the block order is the canonical,
+        # reproducible one rather than the gf_struct_solver dict (h5) order.
         if space == 'solver':
-            gf_struct = self.gf_struct_solver
+            struct = self.gf_struct_solver_list[ish]
         elif space == 'sumk':
-            gf_struct = self.gf_struct_sumk_dict
+            struct = self.gf_struct_sumk_list[ish]
         else:
             raise Exception(
                 "Argument space has to be either 'solver' or 'sumk'.")
@@ -706,13 +718,9 @@ class BlockStructure(object):
         if 'mesh' not in kwargs and 'beta' in kwargs:
             gf_function = GfImFreq
 
-        names = list(gf_struct[ish].keys())
-        blocks = []
-        for n in names:
-            G = gf_function(target_shape=(gf_struct[ish][n],gf_struct[ish][n]), **kwargs)
-            blocks.append(G)
-        G = block_function(name_list=names, block_list=blocks)
-        return G
+        names = [name for name, _ in struct]
+        blocks = [gf_function(target_shape=(dim, dim), **kwargs) for _, dim in struct]
+        return block_function(name_list=names, block_list=blocks)
 
     def check_gf(self, G, ish=None, space='solver'):
         """ check whether the Green's function G has the right structure

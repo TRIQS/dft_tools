@@ -211,7 +211,7 @@ assert original_bs.gf_struct_solver_dict ==\
 assert original_bs.gf_struct_sumk_dict ==\
     [{'down': 3, 'up': 3}]
 assert original_bs.gf_struct_solver_list ==\
-    [[('down_0', 2), ('down_1', 1), ('up_0', 2), ('up_1', 1)]]
+    [[('up_0', 2), ('up_1', 1), ('down_0', 2), ('down_1', 1)]]
 
 # check __eq__
 assert full == full, 'equality not correct (equal structures not equal)'
