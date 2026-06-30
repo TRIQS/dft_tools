@@ -10,8 +10,9 @@ jobs:
   build:
     name: Build distribution 📦
     runs-on: ubuntu-latest
-    container:   # we have to provide a working triqs installation to make the cmake step work
-      image: flatironinstitute/triqs:4.0.x
+    container:   # we have to provide a working triqs 4.0.x installation to make the cmake step work
+      # no flatironinstitute/triqs:4.0.x image is published yet; reuse the solid_dmft CI image which ships triqs 4.0.x
+      image: ghcr.io/triqs/solid_dmft_github_ci:4.0.x
       options: --user root
 
     steps:
