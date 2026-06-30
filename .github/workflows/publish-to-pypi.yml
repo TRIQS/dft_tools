@@ -11,7 +11,8 @@ jobs:
     name: Build distribution 📦
     runs-on: ubuntu-latest
     container:   # we have to provide a working triqs installation to make the cmake step work
-      image: flatironinstitute/triqs:unstable
+      # no flatironinstitute/triqs:unstable image is published; reuse the solid_dmft CI image which ships triqs unstable
+      image: ghcr.io/triqs/solid_dmft_github_ci:unstable
       options: --user root
 
     steps:
