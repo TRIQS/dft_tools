@@ -92,7 +92,19 @@ html_theme_options = {
 
 html_show_sphinx = False
 
-html_context = {'header_title': '@PROJECT_NAME@'}
+html_context = {
+    'header_title': '@PROJECT_NAME@',
+    # Version switcher flyout (rendered by _templates/versions.html, which
+    # overrides the empty versions.html shipped by sphinx_rtd_theme 3.x). The
+    # list is static -- update it when a new release line is published.
+    'current_version': version,
+    'versions': [
+        ['latest',   'https://triqs.github.io/@PROJECT_NAME@/latest/'],
+        ['unstable', 'https://triqs.github.io/@PROJECT_NAME@/unstable/'],
+        ['4.0.x',    'https://triqs.github.io/@PROJECT_NAME@/4.0.x/'],
+        ['3.3.x',    'https://triqs.github.io/@PROJECT_NAME@/3.3.x/'],
+    ],
+}
 
 html_static_path = ['@CMAKE_CURRENT_SOURCE_DIR@/_static']
 html_sidebars = {'index': ['sideb.html', 'searchbox.html']}
