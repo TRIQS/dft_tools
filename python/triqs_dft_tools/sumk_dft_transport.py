@@ -973,7 +973,13 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
                 if ~numpy.isnan(A1[direction][iq]):
                     # Seebeck and kappa are overwritten if there is more than one Omega =
                     # 0 in Om_mesh
+                    # 86.17 = (k_B/|e|) in uV/K = k_B[eV/K] * 1e6, giving the Seebeck coeff in uV/K.
                     seebeck[direction] = - A1[direction][iq] / A0[direction][iq] * 86.17
+                    # 293178.0 carries kappa to SI units, W/(m K). Structurally it is
+                    #   k_B[eV/K] * (DC conductivity prefactor in base S/m),
+                    # where the S/m prefactor is convert_to_SI (defined just below; it yields sigma in
+                    # 10^4 Ohm^-1 cm^-1 = 1e6 S/m) times 1e6. Numerically k_B * convert_to_SI * 1e6 ~=
+                    # 2.935e5; the literal here is that value rounded (~0.1% low).
                     kappa[direction] = A2[direction][iq] - \
                         A1[direction][iq]*A1[direction][iq]/A0[direction][iq]
                     kappa[direction] *= 293178.0
@@ -982,6 +988,7 @@ def conductivity_and_seebeck(Gamma_w, omega, Om_mesh, SP, directions, beta, meth
             convert_to_SI = cst.hbar * (cst.c * cst.fine_structure) ** 2 * \
                 (1/cst.physical_constants['Bohr radius'][0]) ** 3 * 1e-6
             optic_cond[direction] = beta * convert_to_SI * A0[direction]
+            # 293178.0: same SI factor for kappa(Omega) as the DC kappa above (= k_B * convert_to_SI * 1e6).
             if optic_kappa: optic_kappa[direction] = (A2[direction] - A1[direction]*A1[direction]/A0[direction])*293178.0
             for iq in range(n_q):
                 print("Conductivity in direction %s for Omega = %.2f       %f  x 10^4 Ohm^-1 cm^-1" %
