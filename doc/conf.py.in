@@ -46,8 +46,7 @@ autosummary_generate = True
 autosummary_imported_members=False
 
 project = '@PROJECT_NAME@'
-version = '@PROJECT_VERSION@'
-version_suffix = '@VERSION_SUFFIX@'
+version = '@BRANCH_FOR_DOC@'
 
 # this makes the current project version available as var in every rst file
 rst_epilog = """
@@ -98,9 +97,7 @@ html_context = {
     # Version switcher flyout (rendered by _templates/versions.html, which
     # overrides the empty versions.html shipped by sphinx_rtd_theme 3.x). The
     # list is static -- update it when a new release line is published.
-    # current_version is the "v: <x>" label: "unstable" on the dev branch (set
-    # via VERSION_SUFFIX in the top-level CMakeLists.txt), else this release line.
-    'current_version': '@PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.x' if version_suffix == '' else 'unstable',
+    'current_version': version,
     'versions': [
         ['unstable', 'https://triqs.github.io/@PROJECT_NAME@/unstable/'],
         ['4.0.x',    'https://triqs.github.io/@PROJECT_NAME@/4.0.x/'],
