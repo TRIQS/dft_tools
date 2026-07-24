@@ -27,6 +27,9 @@ cmake_policy(VERSION ${CMAKE_VERSION})
 project(triqs_dft_tools VERSION 4.0.0 LANGUAGES CXX)
 get_directory_property(IS_SUBPROJECT PARENT_DIRECTORY)
 
+# version displayed in the documentation
+set(BRANCH_FOR_DOC ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.x)
+
 # ############
 # Load TRIQS
 find_package(TRIQS 4.0 REQUIRED)
