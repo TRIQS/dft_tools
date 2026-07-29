@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21691748.svg)](https://doi.org/10.5281/zenodo.21691748)
+
 DFT_Tools - A TRIQS application for ab initio calculations
  
 Copyright (C) 2011-2019: M. Aichhorn, L. Pourovskii, V. Vildosola and C. Martins
