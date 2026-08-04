@@ -1,3 +1,4 @@
+[![build](https://github.com/TRIQS/dft_tools/workflows/build/badge.svg)](https://github.com/TRIQS/dft_tools/actions?query=workflow%3Abuild)
 [![PyPI version](https://img.shields.io/pypi/v/triqs_dft_tools.svg)](https://pypi.org/project/triqs_dft_tools/)
 [![conda-forge](https://img.shields.io/conda/vn/conda-forge/triqs_dft_tools.svg)](https://anaconda.org/conda-forge/triqs_dft_tools)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21691748-blue.svg)](https://doi.org/10.5281/zenodo.21691748)
