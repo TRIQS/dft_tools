@@ -17,10 +17,23 @@ We provide a Debian package for the Ubuntu LTS Version 22.04 (jammy), which can 
 
         sudo apt-get install -y triqs_dft_tools
 
+.. _pypi:
+
+PyPI
+----
+
+We provide a Python package through the `Python Package Index <https://pypi.org/>`_ (PyPI). After :ref:`installing TRIQS <triqslibs:triqs_install>` you can install DFTTools with::
+
+        pip install triqs_dft_tools
+
+Note that the PyPI package requires a TRIQS installation with a matching major.minor version number.
+
+See also `pypi.org/project/triqs_dft_tools <https://pypi.org/project/triqs_dft_tools/>`_.
+
 .. _anaconda:
 
-Anaconda (experimental)
------------------------
+Anaconda
+--------
 
 We provide Linux and OSX packages for the `Anaconda <https://www.anaconda.com/>`_ distribution. The packages are provided through the `conda-forge <https://conda-forge.org/>`_ repositories. After `installing conda <https://docs.conda.io/en/latest/miniconda.html>`_ you can install DFTTools with::
 
