@@ -468,7 +468,8 @@ class Wien2kConverter(ConverterTools):
                                     proj_mat_all[ik, isp, ish,
                                                  ir, i, j] = next(R)
 
-                            # read imaginary part:
+                        # Native outband writes both real spin blocks first.
+                        for isp in range(self.n_spin_blocs):
                             for i in range(self.shells[ish]['dim']):
                                 for j in range(n_orbitals[ik, isp]):
                                     proj_mat_all[ik, isp, ish,
